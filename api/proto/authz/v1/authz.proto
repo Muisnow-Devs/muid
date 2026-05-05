@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package one.muisnowdevs.apps.muid.authz.v1;
+
+option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";

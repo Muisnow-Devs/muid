@@ -1,0 +1,148 @@
+﻿<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New sign-in detected</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #ffffff;
+            color: #333333;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: left;
+        }
+
+        .logo {
+            margin-bottom: 32px;
+        }
+
+        .logo img {
+            max-height: 50px;
+            display: block;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #111111;
+            margin-bottom: 16px;
+            margin-top: 0;
+        }
+
+        p {
+            font-size: 16px;
+            color: #555555;
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+
+        .details-container {
+            background-color: #f4f4f5;
+            border-radius: 6px;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .details-row {
+            margin-bottom: 12px;
+            font-size: 15px;
+            display: flex;
+        }
+
+        .details-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .details-label {
+            font-weight: 600;
+            color: #111111;
+            min-width: 100px;
+            display: inline-block;
+        }
+
+        .details-value {
+            color: #333333;
+            word-break: break-all;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: #111111;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 16px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid #eaeaea;
+            font-size: 14px;
+            color: #888888;
+        }
+
+        .footer p {
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="https://objects.sanziusercontent.com/full_logo.webp" alt="Muisnow Devs" width="150" height="50"
+                style="border: 0; outline: none; text-decoration: none;" />
+        </div>
+
+        <h1>New sign-in detected</h1>
+        <p>We noticed a new sign-in to your account from a device or location we haven't seen recently.</p>
+
+        <div class="details-container">
+            <div class="details-row">
+                <div class="details-label">Device:</div>
+                <div class="details-value">{{ .Device }}</div>
+            </div>
+            <div class="details-row">
+                <div class="details-label">Location:</div>
+                <div class="details-value">{{ .Location }}</div>
+            </div>
+            <div class="details-row">
+                <div class="details-label">IP Address:</div>
+                <div class="details-value">{{ .IPAddress }}</div>
+            </div>
+            <div class="details-row">
+                <div class="details-label">Time:</div>
+                <div class="details-value">{{ .Time }}</div>
+            </div>
+        </div>
+
+        <p>If this was you, you can safely ignore this email.</p>
+        <p>If you don't recognize this activity, please secure your account immediately.</p>
+
+        <a href="{{ .SecureAccountLink }}" class="btn">Secure Account</a>
+
+        <div class="footer">
+            <p>&copy; Muisnow Devs.</p>
+        </div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package muid.authn.v1.client;
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1/client;client";
+
+message AuthorizedClient {
+  string client_id   = 1;
+  string client_name = 2;
+
+  repeated string scopes = 3;
+
+  int64 authorized_at = 4;
+  int64 last_used_at  = 5;
+}

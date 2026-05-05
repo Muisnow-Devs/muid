@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package muid.authn.v1.certification;
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1/certification;certification";
+
+message PublicKey {
+  string kid = 1;  // key id
+  string kty = 2;  // "RSA", "EC"
+  string alg = 3;  // "RS256", "ES256"
+  string use = 4;  // "sig"
+
+  // RSA
+  string n = 10;   // base64url modulus
+  string e = 11;   // base64url exponent
+
+  // EC
+  string crv = 20; // "P-256"
+  string x = 21;   // base64url
+  string y = 22;   // base64url
+
+  int64 not_before = 30;
+  int64 not_after = 31;
+}

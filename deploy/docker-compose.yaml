@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  nats:
+    image: nats:2.14
+    container_name: nats
+    volumes:
+      - ./nats.conf:/etc/nats/nats.conf
+      - ./nats-data:/data
+    command: [ "-c", "/etc/nats/nats.conf" ]
+
+  mailer:
+    image: ghcr.io/Muisnow-Devs/muid:latest
+    command: [ "/mailer" ]
+    restart: always
+    depends_on:
+      - nats
+
+  pubsub_bridge:
+    image: ghcr.io/Muisnow-Devs/muid:latest
+    command: [ "/pubsub_bridge" ]
+    restart: always
+    depends_on:
+      - nats
+
+  authn:
+    image: ghcr.io/Muisnow-Devs/muid:latest
+    command: [ "/muid-authn" ]
+    restart: always
+    depends_on:
+      - nats
+
+  authz:
+    image: ghcr.io/Muisnow-Devs/muid:latest
+    command: [ "/muid-authz" ]
+    restart: always
+    depends_on:
+      - nats
+
+  gateway:
+    image: ghcr.io/Muisnow-Devs/muid:latest
+    command: [ "/muid-gateway" ]
+    ports:
+      - "8080:8080"
+    depends_on:
+      - authn
+      - authz
+      - nats
+    restart: always
+    environment:
+      - GATEWAY_PORT=8080
+      - GATEWAY_AUTHN_GRPC_URL=authn:8080
+      - GATEWAY_AUTHZ_GRPC_URL=authz:8080

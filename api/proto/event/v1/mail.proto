@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package muid.event.v1.mail;
+
+option go_package = "sanzi.io/muid/api/proto/event/v1/mail;mail";
+
+message EmailAddress {
+  string email = 1;
+  string name  = 2;
+}
+
+message EmailMessage {
+  string id = 1;
+
+  repeated EmailAddress to      = 3;
+  string                subject = 4;
+
+  string template = 5;
+  string locale   = 6;
+
+  map<string, string> data = 7;
+
+  int64 created_at = 8;
+}
+
+message SendOTPEmailEvent {
+  string id = 1;
+
+  string email  = 2;
+  string locale = 3;
+
+  string code       = 4;
+  int64  expires_at = 5;
+
+  string product_name = 6;
+
+  int64 created_at = 7;
+}
+
+message SendLoginAlertEmailEvent {
+  string id = 1;
+
+  string email  = 2;
+  string locale = 3;
+
+  string ip_address  = 4;
+  string location    = 5;
+  string device      = 6;
+  int64  occurred_at = 7;
+
+  int64 created_at = 8;
+}

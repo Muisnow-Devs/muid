@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package muid.profile.v1;
+
+option go_package = "sanzi.io/muid/api/proto/profile/v1;profile";
+
+// service ProfileService {
+//   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+//   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+
+//   rpc ListIdentities(ListIdentitiesRequest) returns (ListIdentitiesResponse);
+//   rpc LinkIdentity(LinkIdentityRequest) returns (LinkIdentityResponse);
+//   rpc UnlinkIdentity(UnlinkIdentityRequest) returns (UnlinkIdentityResponse);
+
+//   rpc ResolveIdentity(ResolveIdentityRequest) returns (ResolveIdentityResponse);
+// }
+
+// // TODO: Add more fields to profile and support partial update
+// // Use FieldMask for partial update if needed
+// message Change {
+//     optional string display_name = 1;
+//     optional string avatar_url = 2;
+// }

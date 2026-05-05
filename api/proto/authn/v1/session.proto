@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package muid.authn.v1.session;
+
+import "authn/v1/challenge.proto";
+import "shared/v1/claims.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1/session;session";
+
+enum AuthLevel {
+  AUTH_LEVEL_UNSPECIFIED = 0;
+  AUTH_LEVEL_LOW         = 1;
+  AUTH_LEVEL_MEDIUM      = 2;
+  AUTH_LEVEL_HIGH        = 3;
+}
+
+message VerifiedIdentity {
+  string provider       = 1;
+  string subject        = 2;
+  string email          = 3;
+  bool   email_verified = 4;
+}
+
+message AuthenticatedResult {
+  string user_id = 1;
+
+  int64 issued_at  = 2;
+  int64 expires_at = 3;
+
+  AuthLevel auth_level = 4;
+}
+
+message ChallengeRequired {
+  muid.authn.v1.challenge.AuthChallenge challenge = 1;
+}
+
+message RegistrationRequired {
+  VerifiedIdentity                     identity = 1;
+  muid.shared.v1.claims.IdentityClaims claims   = 2;
+}
+
+message AuthSuccess {
+  AuthenticatedResult result = 1;
+}
+
+message AuthFailure {
+  string reason     = 1;
+  string error_code = 2;
+}

@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package muid.authn.v1.challenge;
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1/challenge;challenge";
+
+message AuthChallenge {
+  string challenge_id = 1;
+
+  int64 issued_at  = 2;
+  int64 expires_at = 3;
+
+  oneof challenge {
+    EmailChallenge   email_challenge   = 4;
+    OAuthChallenge   oauth_challenge   = 5;
+    PasskeyChallenge passkey_challenge = 6;
+  }
+}
+
+message EmailChallenge {
+  string email_masked           = 1;
+  int64  resend_cooldown_millis = 2;
+}
+
+message OAuthChallenge {
+  string provider = 1;
+  string auth_url = 2;
+}
+
+message PasskeyChallenge {
+  string state                                      = 1;
+  string public_key_credential_request_options_json = 2;
+  int64  timeout_millis                             = 3;
+}

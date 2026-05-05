@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package muid.shared.v1.claims;
+
+option go_package = "sanzi.io/muid/api/proto/shared/v1/claims;claims";
+
+message IdentityClaims {
+  optional string name = 1;
+  optional string given_name = 2;
+  optional string family_name = 3;
+
+  optional string picture = 4;
+  optional string locale = 5;
+
+  optional string email = 6;
+  optional bool email_verified = 7;
+}

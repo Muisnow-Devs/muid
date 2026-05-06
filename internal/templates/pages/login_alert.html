@@ -1,0 +1,28 @@
+﻿{{ define "content" }}
+<h1>{{ t "title" }}</h1>
+<p>{{ t "description" }}</p>
+
+<div class="details-container">
+    <div class="details-row">
+        <div class="details-label">{{ t "information_device" }}</div>
+        <div class="details-value">{{ .Device }}</div>
+    </div>
+    <div class="details-row">
+        <div class="details-label">{{ t "information_location" }}</div>
+        <div class="details-value">{{ .Location }}</div>
+    </div>
+    <div class="details-row">
+        <div class="details-label">{{ t "information_ip" }}</div>
+        <div class="details-value">{{ .IPAddress }}</div>
+    </div>
+    <div class="details-row">
+        <div class="details-label">{{ t "information_time" }}</div>
+        <div class="details-value">{{ .Time }}</div>
+    </div>
+</div>
+
+<p>{{ t "additional_info_1" }}</p>
+<p>{{ t "additional_info_2" }}</p>
+
+<a href="{{ .SecureAccountLink }}" class="btn">{{ t "action_text" }}</a>
+{{ end }}

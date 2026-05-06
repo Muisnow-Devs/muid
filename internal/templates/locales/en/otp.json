@@ -1,0 +1,6 @@
+{
+    "subject": "Your One-Time Passcode",
+    "title": "Verify your sign in",
+    "description": "Please use the verification code below to sign in. This code is valid until %s.",
+    "additional_info": "If you didn't request this email, you can safely ignore it."
+}

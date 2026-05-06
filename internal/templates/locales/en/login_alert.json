@@ -1,0 +1,12 @@
+{
+    "subject": "New sign-in detected",
+    "title": "New sign-in detected",
+    "description": "We noticed a new sign-in to your account from a device or location we haven't seen recently.",
+    "information_device": "Device:",
+    "information_location": "Location:",
+    "information_time": "Time:",
+    "information_ip": "IP Address:",
+    "additional_info_1": "If this was you, you can safely ignore this email.",
+    "additional_info_2": "If you don't recognize this activity, please secure your account immediately.",
+    "action_text": "Secure Account"
+}

@@ -1,0 +1,12 @@
+{
+    "subject": "您有新的登入",
+    "title": "您有新的登入",
+    "description": "我們注意到您帳戶從未見過的設備或位置有新的登入。",
+    "information_device": "裝置：",
+    "information_location": "位置：",
+    "information_time": "時間：",
+    "information_ip": "IP 地址：",
+    "additional_info_1": "如果這是您，您可以安全地忽略這封郵件。",
+    "additional_info_2": "如果您不認識此活動，請立即保護您的帳戶。",
+    "action_text": "保護您的帳戶"
+}

@@ -1,0 +1,10 @@
+﻿{{ define "content" }}
+<h1>{{ t "title" }}</h1>
+<p>{{ t "description" .ExpiryTime }}</p>
+
+<div class="otp-container">
+    <div class="otp-code">{{ .OTP }}</div>
+</div>
+
+<p>{{ t "additional_info" }}</p>
+{{ end }}

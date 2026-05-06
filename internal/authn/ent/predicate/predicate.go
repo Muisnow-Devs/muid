@@ -9,6 +9,9 @@ import (
 // OIDCRefreshToken is the predicate function for oidcrefreshtoken builders.
 type OIDCRefreshToken func(*sql.Selector)
 
+// UserFederatedIdentity is the predicate function for userfederatedidentity builders.
+type UserFederatedIdentity func(*sql.Selector)
+
 // UserPasskey is the predicate function for userpasskey builders.
 type UserPasskey func(*sql.Selector)
 

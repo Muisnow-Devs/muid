@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
 	OIDCRefreshToken *OIDCRefreshTokenClient
+	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
+	UserFederatedIdentity *UserFederatedIdentityClient
 	// UserPasskey is the client for interacting with the UserPasskey builders.
 	UserPasskey *UserPasskeyClient
 	// UserRef is the client for interacting with the UserRef builders.
@@ -152,6 +154,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.OIDCRefreshToken = NewOIDCRefreshTokenClient(tx.config)
+	tx.UserFederatedIdentity = NewUserFederatedIdentityClient(tx.config)
 	tx.UserPasskey = NewUserPasskeyClient(tx.config)
 	tx.UserRef = NewUserRefClient(tx.config)
 	tx.UserSession = NewUserSessionClient(tx.config)

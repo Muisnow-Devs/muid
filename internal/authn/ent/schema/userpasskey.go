@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 	"sanzi.io/muid/pkg/shared"
 )
@@ -44,9 +45,20 @@ func (UserPasskey) Fields() []ent.Field {
 	}
 }
 
+func (UserPasskey) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("user_id"),
+	}
+}
+
 // Edges of the UserPasskey.
 func (UserPasskey) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", UserRef.Type).Ref("passkeys").Unique().Field("user_id").Required().Immutable(),
+		edge.From("user", UserRef.Type).
+			Ref("passkeys").
+			Unique().
+			Field("user_id").
+			Required().
+			Immutable(),
 	}
 }

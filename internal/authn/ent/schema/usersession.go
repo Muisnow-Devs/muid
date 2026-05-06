@@ -6,6 +6,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 	"sanzi.io/muid/pkg/shared"
 )
@@ -35,6 +36,13 @@ func (UserSession) Fields() []ent.Field {
 		}),
 
 		field.Time("revoked_at").Optional(),
+	}
+}
+
+func (UserSession) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("selector").Unique(),
+		index.Fields("user_id"),
 	}
 }
 

@@ -17,6 +17,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -29,6 +30,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
 	OIDCRefreshToken *OIDCRefreshTokenClient
+	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
+	UserFederatedIdentity *UserFederatedIdentityClient
 	// UserPasskey is the client for interacting with the UserPasskey builders.
 	UserPasskey *UserPasskeyClient
 	// UserRef is the client for interacting with the UserRef builders.
@@ -47,6 +50,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.OIDCRefreshToken = NewOIDCRefreshTokenClient(c.config)
+	c.UserFederatedIdentity = NewUserFederatedIdentityClient(c.config)
 	c.UserPasskey = NewUserPasskeyClient(c.config)
 	c.UserRef = NewUserRefClient(c.config)
 	c.UserSession = NewUserSessionClient(c.config)
@@ -140,12 +144,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		OIDCRefreshToken: NewOIDCRefreshTokenClient(cfg),
-		UserPasskey:      NewUserPasskeyClient(cfg),
-		UserRef:          NewUserRefClient(cfg),
-		UserSession:      NewUserSessionClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		OIDCRefreshToken:      NewOIDCRefreshTokenClient(cfg),
+		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
+		UserPasskey:           NewUserPasskeyClient(cfg),
+		UserRef:               NewUserRefClient(cfg),
+		UserSession:           NewUserSessionClient(cfg),
 	}, nil
 }
 
@@ -163,12 +168,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		OIDCRefreshToken: NewOIDCRefreshTokenClient(cfg),
-		UserPasskey:      NewUserPasskeyClient(cfg),
-		UserRef:          NewUserRefClient(cfg),
-		UserSession:      NewUserSessionClient(cfg),
+		ctx:                   ctx,
+		config:                cfg,
+		OIDCRefreshToken:      NewOIDCRefreshTokenClient(cfg),
+		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
+		UserPasskey:           NewUserPasskeyClient(cfg),
+		UserRef:               NewUserRefClient(cfg),
+		UserSession:           NewUserSessionClient(cfg),
 	}, nil
 }
 
@@ -198,6 +204,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.OIDCRefreshToken.Use(hooks...)
+	c.UserFederatedIdentity.Use(hooks...)
 	c.UserPasskey.Use(hooks...)
 	c.UserRef.Use(hooks...)
 	c.UserSession.Use(hooks...)
@@ -207,6 +214,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.OIDCRefreshToken.Intercept(interceptors...)
+	c.UserFederatedIdentity.Intercept(interceptors...)
 	c.UserPasskey.Intercept(interceptors...)
 	c.UserRef.Intercept(interceptors...)
 	c.UserSession.Intercept(interceptors...)
@@ -217,6 +225,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *OIDCRefreshTokenMutation:
 		return c.OIDCRefreshToken.mutate(ctx, m)
+	case *UserFederatedIdentityMutation:
+		return c.UserFederatedIdentity.mutate(ctx, m)
 	case *UserPasskeyMutation:
 		return c.UserPasskey.mutate(ctx, m)
 	case *UserRefMutation:
@@ -406,6 +416,139 @@ func (c *OIDCRefreshTokenClient) mutate(ctx context.Context, m *OIDCRefreshToken
 		return (&OIDCRefreshTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OIDCRefreshToken mutation op: %q", m.Op())
+	}
+}
+
+// UserFederatedIdentityClient is a client for the UserFederatedIdentity schema.
+type UserFederatedIdentityClient struct {
+	config
+}
+
+// NewUserFederatedIdentityClient returns a client for the UserFederatedIdentity from the given config.
+func NewUserFederatedIdentityClient(c config) *UserFederatedIdentityClient {
+	return &UserFederatedIdentityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `userfederatedidentity.Hooks(f(g(h())))`.
+func (c *UserFederatedIdentityClient) Use(hooks ...Hook) {
+	c.hooks.UserFederatedIdentity = append(c.hooks.UserFederatedIdentity, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `userfederatedidentity.Intercept(f(g(h())))`.
+func (c *UserFederatedIdentityClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserFederatedIdentity = append(c.inters.UserFederatedIdentity, interceptors...)
+}
+
+// Create returns a builder for creating a UserFederatedIdentity entity.
+func (c *UserFederatedIdentityClient) Create() *UserFederatedIdentityCreate {
+	mutation := newUserFederatedIdentityMutation(c.config, OpCreate)
+	return &UserFederatedIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserFederatedIdentity entities.
+func (c *UserFederatedIdentityClient) CreateBulk(builders ...*UserFederatedIdentityCreate) *UserFederatedIdentityCreateBulk {
+	return &UserFederatedIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserFederatedIdentityClient) MapCreateBulk(slice any, setFunc func(*UserFederatedIdentityCreate, int)) *UserFederatedIdentityCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserFederatedIdentityCreateBulk{err: fmt.Errorf("calling to UserFederatedIdentityClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserFederatedIdentityCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserFederatedIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserFederatedIdentity.
+func (c *UserFederatedIdentityClient) Update() *UserFederatedIdentityUpdate {
+	mutation := newUserFederatedIdentityMutation(c.config, OpUpdate)
+	return &UserFederatedIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserFederatedIdentityClient) UpdateOne(_m *UserFederatedIdentity) *UserFederatedIdentityUpdateOne {
+	mutation := newUserFederatedIdentityMutation(c.config, OpUpdateOne, withUserFederatedIdentity(_m))
+	return &UserFederatedIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserFederatedIdentityClient) UpdateOneID(id int) *UserFederatedIdentityUpdateOne {
+	mutation := newUserFederatedIdentityMutation(c.config, OpUpdateOne, withUserFederatedIdentityID(id))
+	return &UserFederatedIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserFederatedIdentity.
+func (c *UserFederatedIdentityClient) Delete() *UserFederatedIdentityDelete {
+	mutation := newUserFederatedIdentityMutation(c.config, OpDelete)
+	return &UserFederatedIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserFederatedIdentityClient) DeleteOne(_m *UserFederatedIdentity) *UserFederatedIdentityDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserFederatedIdentityClient) DeleteOneID(id int) *UserFederatedIdentityDeleteOne {
+	builder := c.Delete().Where(userfederatedidentity.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserFederatedIdentityDeleteOne{builder}
+}
+
+// Query returns a query builder for UserFederatedIdentity.
+func (c *UserFederatedIdentityClient) Query() *UserFederatedIdentityQuery {
+	return &UserFederatedIdentityQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserFederatedIdentity},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserFederatedIdentity entity by its id.
+func (c *UserFederatedIdentityClient) Get(ctx context.Context, id int) (*UserFederatedIdentity, error) {
+	return c.Query().Where(userfederatedidentity.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserFederatedIdentityClient) GetX(ctx context.Context, id int) *UserFederatedIdentity {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *UserFederatedIdentityClient) Hooks() []Hook {
+	return c.hooks.UserFederatedIdentity
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserFederatedIdentityClient) Interceptors() []Interceptor {
+	return c.inters.UserFederatedIdentity
+}
+
+func (c *UserFederatedIdentityClient) mutate(ctx context.Context, m *UserFederatedIdentityMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserFederatedIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserFederatedIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserFederatedIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserFederatedIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserFederatedIdentity mutation op: %q", m.Op())
 	}
 }
 
@@ -891,9 +1034,11 @@ func (c *UserSessionClient) mutate(ctx context.Context, m *UserSessionMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		OIDCRefreshToken, UserPasskey, UserRef, UserSession []ent.Hook
+		OIDCRefreshToken, UserFederatedIdentity, UserPasskey, UserRef,
+		UserSession []ent.Hook
 	}
 	inters struct {
-		OIDCRefreshToken, UserPasskey, UserRef, UserSession []ent.Interceptor
+		OIDCRefreshToken, UserFederatedIdentity, UserPasskey, UserRef,
+		UserSession []ent.Interceptor
 	}
 )

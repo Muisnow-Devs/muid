@@ -61,6 +61,31 @@ var (
 			},
 		},
 	}
+	// UserFederatedIdentitiesColumns holds the columns for the "user_federated_identities" table.
+	UserFederatedIdentitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "user_id", Type: field.TypeString},
+		{Name: "provider", Type: field.TypeString},
+		{Name: "provider_user_id", Type: field.TypeString},
+	}
+	// UserFederatedIdentitiesTable holds the schema information for the "user_federated_identities" table.
+	UserFederatedIdentitiesTable = &schema.Table{
+		Name:       "user_federated_identities",
+		Columns:    UserFederatedIdentitiesColumns,
+		PrimaryKey: []*schema.Column{UserFederatedIdentitiesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userfederatedidentity_provider_provider_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserFederatedIdentitiesColumns[2], UserFederatedIdentitiesColumns[3]},
+			},
+			{
+				Name:    "userfederatedidentity_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserFederatedIdentitiesColumns[1]},
+			},
+		},
+	}
 	// UserPasskeysColumns holds the columns for the "user_passkeys" table.
 	UserPasskeysColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -91,6 +116,13 @@ var (
 				Columns:    []*schema.Column{UserPasskeysColumns[15]},
 				RefColumns: []*schema.Column{UserRefsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userpasskey_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserPasskeysColumns[15]},
 			},
 		},
 	}
@@ -133,10 +165,23 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "usersession_selector",
+				Unique:  true,
+				Columns: []*schema.Column{UserSessionsColumns[1]},
+			},
+			{
+				Name:    "usersession_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserSessionsColumns[10]},
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		OidcRefreshTokensTable,
+		UserFederatedIdentitiesTable,
 		UserPasskeysTable,
 		UserRefsTable,
 		UserSessionsTable,

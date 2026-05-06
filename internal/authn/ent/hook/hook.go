@@ -21,6 +21,18 @@ func (f OIDCRefreshTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCRefreshTokenMutation", m)
 }
 
+// The UserFederatedIdentityFunc type is an adapter to allow the use of ordinary
+// function as UserFederatedIdentity mutator.
+type UserFederatedIdentityFunc func(context.Context, *ent.UserFederatedIdentityMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserFederatedIdentityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserFederatedIdentityMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserFederatedIdentityMutation", m)
+}
+
 // The UserPasskeyFunc type is an adapter to allow the use of ordinary
 // function as UserPasskey mutator.
 type UserPasskeyFunc func(context.Context, *ent.UserPasskeyMutation) (ent.Value, error)

@@ -31,24 +31,23 @@ message StartAuthSessionRequest {
 }
 
 message StartAuthSessionResponse {
-  string                                session_token = 1;
+  string                                transition_id = 1;
   muid.authn.v1.challenge.AuthChallenge challenge     = 2;
 }
 
 message ContinueAuthSessionRequest {
-  string                        session_token = 1;
+  string                        transition_id = 1;
   muid.authn.v1.proof.AuthProof proof         = 2;
 }
 
 message ContinueAuthSessionResponse {
-  muid.authn.v1.basic.AuthStatus status        = 1;
-  string                         session_token = 2;
+  string                         transition_id = 1;
+  muid.authn.v1.basic.AuthStatus status        = 2;
 
   oneof result {
-    muid.authn.v1.session.ChallengeRequired    challenge_required    = 3;
-    muid.authn.v1.session.RegistrationRequired registration_required = 4;
-    muid.authn.v1.session.AuthSuccess          auth_success          = 5;
-    muid.authn.v1.session.AuthFailure          auth_failure          = 6;
+    muid.authn.v1.session.ChallengeRequired challenge_required = 3;
+    muid.authn.v1.session.AuthSuccess       auth_success       = 4;
+    muid.authn.v1.session.AuthFailure       auth_failure       = 5;
   }
 }
 

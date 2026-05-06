@@ -26,11 +26,11 @@ type KVOTPStore struct {
 	otpSecret []byte
 }
 
-func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte) KVOTPStore {
+func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte) otp.OTPStore {
 	return KVOTPStore{client: kvStore, otpSecret: otpSecret}
 }
 
-func generateKey(session string) string {
+func key(session string) string {
 	sum := sha256.Sum256([]byte(session))
 	return "muid:otp:" + hex.EncodeToString(sum[:])
 }
@@ -65,11 +65,11 @@ func (store KVOTPStore) SetOTP(ctx context.Context, session, code string, expira
 		return err
 	}
 
-	return store.client.Set(ctx, generateKey(session), jsonData, expiration)
+	return store.client.Set(ctx, key(session), jsonData, expiration)
 }
 
 func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) (bool, error) {
-	data, err := store.client.Get(ctx, generateKey(session))
+	data, err := store.client.Get(ctx, key(session))
 	if err == kv.ErrKeyNotFound {
 		return false, nil
 	}
@@ -100,7 +100,7 @@ func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) (bo
 
 		ttl := time.Until(info.ExpireAt)
 		jsonData, _ := json.Marshal(info)
-		store.client.Set(ctx, generateKey(session), jsonData, ttl)
+		store.client.Set(ctx, key(session), jsonData, ttl)
 
 		return false, nil
 	}
@@ -110,9 +110,5 @@ func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) (bo
 }
 
 func (store KVOTPStore) RevokeOTP(ctx context.Context, session string) error {
-	return store.client.Delete(ctx, generateKey(session))
-}
-
-func (store KVOTPStore) Close() error {
-	return store.client.Close()
+	return store.client.Delete(ctx, key(session))
 }

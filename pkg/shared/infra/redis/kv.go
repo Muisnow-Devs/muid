@@ -8,6 +8,10 @@ import (
 	"sanzi.io/muid/pkg/shared/kv"
 )
 
+const (
+	PAYLOAD_SIZE_LIMIT = 64 * 1024 // 64KB
+)
+
 type RedisKVStore struct {
 	client *redis.Client
 }
@@ -58,6 +62,10 @@ func (r *RedisKVStore) Set(ctx context.Context, key string, value []byte, ttl ti
 		return kv.ErrInvalidKey
 	}
 
+	if len(value) > PAYLOAD_SIZE_LIMIT {
+		return kv.ErrPayloadTooLarge
+	}
+
 	result := r.client.Set(key, value, ttl)
 	return result.Err()
 }
@@ -65,6 +73,10 @@ func (r *RedisKVStore) Set(ctx context.Context, key string, value []byte, ttl ti
 func (r *RedisKVStore) SetNX(ctx context.Context, key string, value []byte, ttl time.Duration) (bool, error) {
 	if key == "" {
 		return false, kv.ErrInvalidKey
+	}
+
+	if len(value) > PAYLOAD_SIZE_LIMIT {
+		return false, kv.ErrPayloadTooLarge
 	}
 
 	result := r.client.SetNX(key, value, ttl)

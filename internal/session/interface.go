@@ -13,6 +13,15 @@ type ProviderData struct {
 type AuthSession struct {
 	Id       string
 	Provider string
+
+	Store SessionStore
+
+	CreatedAt int64
+	UpdatedAt int64
+	ExpiresAt int64
+}
+
+type SessionStore struct {
 	Attempts int
 
 	// flow based fields
@@ -22,16 +31,11 @@ type AuthSession struct {
 	Data []byte
 
 	LoginHint string
-
-	CreatedAt int64
-	UpdatedAt int64
-	ExpiresAt int64
 }
 
 type AuthTransitionStore interface {
-	Create(ctx context.Context, session AuthSession) (AuthSession, error)
+	Create(ctx context.Context, provider string, store SessionStore) (AuthSession, error)
 	Get(ctx context.Context, provider, id string) (AuthSession, error)
-	Update(ctx context.Context, session AuthSession) error
+	Update(ctx context.Context, provider, id string, store SessionStore) error
 	Delete(ctx context.Context, provider, id string) error
-	Close()
 }

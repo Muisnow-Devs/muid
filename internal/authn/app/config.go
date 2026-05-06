@@ -1,6 +1,9 @@
 package app
 
 import (
+	"errors"
+	"io"
+
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
@@ -47,8 +50,24 @@ type InfraDependencies struct {
 	IdentityManager *identity.IdentityManager
 }
 
-func (d *InfraDependencies) Close() {
-	d.OTPStore.Close()
-	d.TransitionStore.Close()
-	d.PubSub.Close()
+func closeAll(closers ...any) error {
+	var errs []error
+
+	for i := len(closers) - 1; i >= 0; i-- {
+		if c, ok := closers[i].(io.Closer); ok {
+			if err := c.Close(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
+
+	return errors.Join(errs...)
+}
+
+func (d *InfraDependencies) Close() error {
+	return closeAll(
+		d.OTPStore,
+		d.TransitionStore,
+		d.PubSub,
+	)
 }

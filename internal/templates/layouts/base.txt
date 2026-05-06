@@ -1,0 +1,5 @@
+{{ define "base" }}
+{{ template "content" . }}
+---
+MuID from Muisnow Devs
+{{ end }}

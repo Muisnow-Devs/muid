@@ -1,0 +1,9 @@
+{{ define "content" }}
+{{ t "title" }}
+
+{{ t "description" .ExpiryTime }}
+
+{{ .OTP }}
+
+{{ t "additional_info" }}
+{{ end }}

@@ -1,0 +1,15 @@
+{{ define "content" }}
+{{ t "title" }}
+
+{{ t "description" }}
+
+{{ t "information_device" }} {{ .DeviceInfo }}
+{{ t "information_location" }} {{ .LocationInfo }}
+{{ t "information_ip" }} {{ .IPInfo }}
+{{ t "information_time" }} {{ .TimeInfo }}
+
+{{ t "additional_information_1" }}
+{{ t "additional_information_2" }}
+
+{{ t "action_secure_account" }}: {{ .ActionURL }}
+{{ end }}

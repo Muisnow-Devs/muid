@@ -81,6 +81,11 @@ func UserAgent(v string) predicate.UserSession {
 	return predicate.UserSession(sql.FieldEQ(FieldUserAgent, v))
 }
 
+// DeviceName applies equality check predicate on the "device_name" field. It's identical to DeviceNameEQ.
+func DeviceName(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEQ(FieldDeviceName, v))
+}
+
 // LastActiveAt applies equality check predicate on the "last_active_at" field. It's identical to LastActiveAtEQ.
 func LastActiveAt(v time.Time) predicate.UserSession {
 	return predicate.UserSession(sql.FieldEQ(FieldLastActiveAt, v))
@@ -379,6 +384,81 @@ func UserAgentEqualFold(v string) predicate.UserSession {
 // UserAgentContainsFold applies the ContainsFold predicate on the "user_agent" field.
 func UserAgentContainsFold(v string) predicate.UserSession {
 	return predicate.UserSession(sql.FieldContainsFold(FieldUserAgent, v))
+}
+
+// DeviceNameEQ applies the EQ predicate on the "device_name" field.
+func DeviceNameEQ(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEQ(FieldDeviceName, v))
+}
+
+// DeviceNameNEQ applies the NEQ predicate on the "device_name" field.
+func DeviceNameNEQ(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldNEQ(FieldDeviceName, v))
+}
+
+// DeviceNameIn applies the In predicate on the "device_name" field.
+func DeviceNameIn(vs ...string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldIn(FieldDeviceName, vs...))
+}
+
+// DeviceNameNotIn applies the NotIn predicate on the "device_name" field.
+func DeviceNameNotIn(vs ...string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldNotIn(FieldDeviceName, vs...))
+}
+
+// DeviceNameGT applies the GT predicate on the "device_name" field.
+func DeviceNameGT(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldGT(FieldDeviceName, v))
+}
+
+// DeviceNameGTE applies the GTE predicate on the "device_name" field.
+func DeviceNameGTE(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldGTE(FieldDeviceName, v))
+}
+
+// DeviceNameLT applies the LT predicate on the "device_name" field.
+func DeviceNameLT(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldLT(FieldDeviceName, v))
+}
+
+// DeviceNameLTE applies the LTE predicate on the "device_name" field.
+func DeviceNameLTE(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldLTE(FieldDeviceName, v))
+}
+
+// DeviceNameContains applies the Contains predicate on the "device_name" field.
+func DeviceNameContains(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldContains(FieldDeviceName, v))
+}
+
+// DeviceNameHasPrefix applies the HasPrefix predicate on the "device_name" field.
+func DeviceNameHasPrefix(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldHasPrefix(FieldDeviceName, v))
+}
+
+// DeviceNameHasSuffix applies the HasSuffix predicate on the "device_name" field.
+func DeviceNameHasSuffix(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldHasSuffix(FieldDeviceName, v))
+}
+
+// DeviceNameIsNil applies the IsNil predicate on the "device_name" field.
+func DeviceNameIsNil() predicate.UserSession {
+	return predicate.UserSession(sql.FieldIsNull(FieldDeviceName))
+}
+
+// DeviceNameNotNil applies the NotNil predicate on the "device_name" field.
+func DeviceNameNotNil() predicate.UserSession {
+	return predicate.UserSession(sql.FieldNotNull(FieldDeviceName))
+}
+
+// DeviceNameEqualFold applies the EqualFold predicate on the "device_name" field.
+func DeviceNameEqualFold(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEqualFold(FieldDeviceName, v))
+}
+
+// DeviceNameContainsFold applies the ContainsFold predicate on the "device_name" field.
+func DeviceNameContainsFold(v string) predicate.UserSession {
+	return predicate.UserSession(sql.FieldContainsFold(FieldDeviceName, v))
 }
 
 // LastActiveAtEQ applies the EQ predicate on the "last_active_at" field.

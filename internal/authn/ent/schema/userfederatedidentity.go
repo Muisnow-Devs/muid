@@ -56,6 +56,7 @@ func (UserFederatedIdentity) Edges() []ent.Edge {
 			Ref("federated_identities").
 			Field("user_id").
 			Unique().
-			Required(),
+			Required().
+			Immutable(),
 	}
 }

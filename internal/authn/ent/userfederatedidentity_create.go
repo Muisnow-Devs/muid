@@ -6,10 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
+	"sanzi.io/muid/internal/authn/ent/userref"
 )
 
 // UserFederatedIdentityCreate is the builder for creating a UserFederatedIdentity entity.
@@ -20,7 +23,7 @@ type UserFederatedIdentityCreate struct {
 }
 
 // SetUserID sets the "user_id" field.
-func (_c *UserFederatedIdentityCreate) SetUserID(v string) *UserFederatedIdentityCreate {
+func (_c *UserFederatedIdentityCreate) SetUserID(v uuid.UUID) *UserFederatedIdentityCreate {
 	_c.mutation.SetUserID(v)
 	return _c
 }
@@ -31,10 +34,169 @@ func (_c *UserFederatedIdentityCreate) SetProvider(v string) *UserFederatedIdent
 	return _c
 }
 
-// SetProviderUserID sets the "provider_user_id" field.
-func (_c *UserFederatedIdentityCreate) SetProviderUserID(v string) *UserFederatedIdentityCreate {
-	_c.mutation.SetProviderUserID(v)
+// SetSubject sets the "subject" field.
+func (_c *UserFederatedIdentityCreate) SetSubject(v string) *UserFederatedIdentityCreate {
+	_c.mutation.SetSubject(v)
 	return _c
+}
+
+// SetEmail sets the "email" field.
+func (_c *UserFederatedIdentityCreate) SetEmail(v string) *UserFederatedIdentityCreate {
+	_c.mutation.SetEmail(v)
+	return _c
+}
+
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableEmail(v *string) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetEmail(*v)
+	}
+	return _c
+}
+
+// SetEmailVerified sets the "email_verified" field.
+func (_c *UserFederatedIdentityCreate) SetEmailVerified(v bool) *UserFederatedIdentityCreate {
+	_c.mutation.SetEmailVerified(v)
+	return _c
+}
+
+// SetNillableEmailVerified sets the "email_verified" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableEmailVerified(v *bool) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetEmailVerified(*v)
+	}
+	return _c
+}
+
+// SetDisplayName sets the "display_name" field.
+func (_c *UserFederatedIdentityCreate) SetDisplayName(v string) *UserFederatedIdentityCreate {
+	_c.mutation.SetDisplayName(v)
+	return _c
+}
+
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableDisplayName(v *string) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetDisplayName(*v)
+	}
+	return _c
+}
+
+// SetAvatarURL sets the "avatar_url" field.
+func (_c *UserFederatedIdentityCreate) SetAvatarURL(v string) *UserFederatedIdentityCreate {
+	_c.mutation.SetAvatarURL(v)
+	return _c
+}
+
+// SetNillableAvatarURL sets the "avatar_url" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableAvatarURL(v *string) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetAvatarURL(*v)
+	}
+	return _c
+}
+
+// SetRawProfileEtag sets the "raw_profile_etag" field.
+func (_c *UserFederatedIdentityCreate) SetRawProfileEtag(v string) *UserFederatedIdentityCreate {
+	_c.mutation.SetRawProfileEtag(v)
+	return _c
+}
+
+// SetNillableRawProfileEtag sets the "raw_profile_etag" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableRawProfileEtag(v *string) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetRawProfileEtag(*v)
+	}
+	return _c
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (_c *UserFederatedIdentityCreate) SetLastUsedAt(v time.Time) *UserFederatedIdentityCreate {
+	_c.mutation.SetLastUsedAt(v)
+	return _c
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableLastUsedAt(v *time.Time) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetLastUsedAt(*v)
+	}
+	return _c
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (_c *UserFederatedIdentityCreate) SetCreatedAt(v time.Time) *UserFederatedIdentityCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableCreatedAt(v *time.Time) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
+	}
+	return _c
+}
+
+// SetLinkedAt sets the "linked_at" field.
+func (_c *UserFederatedIdentityCreate) SetLinkedAt(v time.Time) *UserFederatedIdentityCreate {
+	_c.mutation.SetLinkedAt(v)
+	return _c
+}
+
+// SetNillableLinkedAt sets the "linked_at" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableLinkedAt(v *time.Time) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetLinkedAt(*v)
+	}
+	return _c
+}
+
+// SetRevokedAt sets the "revoked_at" field.
+func (_c *UserFederatedIdentityCreate) SetRevokedAt(v time.Time) *UserFederatedIdentityCreate {
+	_c.mutation.SetRevokedAt(v)
+	return _c
+}
+
+// SetNillableRevokedAt sets the "revoked_at" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableRevokedAt(v *time.Time) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetRevokedAt(*v)
+	}
+	return _c
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_c *UserFederatedIdentityCreate) SetUpdatedAt(v time.Time) *UserFederatedIdentityCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableUpdatedAt(v *time.Time) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
+	}
+	return _c
+}
+
+// SetID sets the "id" field.
+func (_c *UserFederatedIdentityCreate) SetID(v uuid.UUID) *UserFederatedIdentityCreate {
+	_c.mutation.SetID(v)
+	return _c
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (_c *UserFederatedIdentityCreate) SetNillableID(v *uuid.UUID) *UserFederatedIdentityCreate {
+	if v != nil {
+		_c.SetID(*v)
+	}
+	return _c
+}
+
+// SetUser sets the "user" edge to the UserRef entity.
+func (_c *UserFederatedIdentityCreate) SetUser(v *UserRef) *UserFederatedIdentityCreate {
+	return _c.SetUserID(v.ID)
 }
 
 // Mutation returns the UserFederatedIdentityMutation object of the builder.
@@ -44,6 +206,7 @@ func (_c *UserFederatedIdentityCreate) Mutation() *UserFederatedIdentityMutation
 
 // Save creates the UserFederatedIdentity in the database.
 func (_c *UserFederatedIdentityCreate) Save(ctx context.Context) (*UserFederatedIdentity, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -69,15 +232,34 @@ func (_c *UserFederatedIdentityCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_c *UserFederatedIdentityCreate) defaults() {
+	if _, ok := _c.mutation.EmailVerified(); !ok {
+		v := userfederatedidentity.DefaultEmailVerified
+		_c.mutation.SetEmailVerified(v)
+	}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		v := userfederatedidentity.DefaultCreatedAt()
+		_c.mutation.SetCreatedAt(v)
+	}
+	if _, ok := _c.mutation.LinkedAt(); !ok {
+		v := userfederatedidentity.DefaultLinkedAt()
+		_c.mutation.SetLinkedAt(v)
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		v := userfederatedidentity.DefaultUpdatedAt()
+		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.ID(); !ok {
+		v := userfederatedidentity.DefaultID()
+		_c.mutation.SetID(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserFederatedIdentityCreate) check() error {
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "UserFederatedIdentity.user_id"`)}
-	}
-	if v, ok := _c.mutation.UserID(); ok {
-		if err := userfederatedidentity.UserIDValidator(v); err != nil {
-			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.user_id": %w`, err)}
-		}
 	}
 	if _, ok := _c.mutation.Provider(); !ok {
 		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "UserFederatedIdentity.provider"`)}
@@ -87,13 +269,43 @@ func (_c *UserFederatedIdentityCreate) check() error {
 			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.provider": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.ProviderUserID(); !ok {
-		return &ValidationError{Name: "provider_user_id", err: errors.New(`ent: missing required field "UserFederatedIdentity.provider_user_id"`)}
+	if _, ok := _c.mutation.Subject(); !ok {
+		return &ValidationError{Name: "subject", err: errors.New(`ent: missing required field "UserFederatedIdentity.subject"`)}
 	}
-	if v, ok := _c.mutation.ProviderUserID(); ok {
-		if err := userfederatedidentity.ProviderUserIDValidator(v); err != nil {
-			return &ValidationError{Name: "provider_user_id", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.provider_user_id": %w`, err)}
+	if v, ok := _c.mutation.Subject(); ok {
+		if err := userfederatedidentity.SubjectValidator(v); err != nil {
+			return &ValidationError{Name: "subject", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.subject": %w`, err)}
 		}
+	}
+	if v, ok := _c.mutation.Email(); ok {
+		if err := userfederatedidentity.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.email": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.EmailVerified(); !ok {
+		return &ValidationError{Name: "email_verified", err: errors.New(`ent: missing required field "UserFederatedIdentity.email_verified"`)}
+	}
+	if v, ok := _c.mutation.DisplayName(); ok {
+		if err := userfederatedidentity.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.display_name": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.RawProfileEtag(); ok {
+		if err := userfederatedidentity.RawProfileEtagValidator(v); err != nil {
+			return &ValidationError{Name: "raw_profile_etag", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.raw_profile_etag": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "UserFederatedIdentity.created_at"`)}
+	}
+	if _, ok := _c.mutation.LinkedAt(); !ok {
+		return &ValidationError{Name: "linked_at", err: errors.New(`ent: missing required field "UserFederatedIdentity.linked_at"`)}
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "UserFederatedIdentity.updated_at"`)}
+	}
+	if len(_c.mutation.UserIDs()) == 0 {
+		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserFederatedIdentity.user"`)}
 	}
 	return nil
 }
@@ -109,8 +321,13 @@ func (_c *UserFederatedIdentityCreate) sqlSave(ctx context.Context) (*UserFedera
 		}
 		return nil, err
 	}
-	id := _spec.ID.Value.(int64)
-	_node.ID = int(id)
+	if _spec.ID.Value != nil {
+		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+			_node.ID = *id
+		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
+			return nil, err
+		}
+	}
 	_c.mutation.id = &_node.ID
 	_c.mutation.done = true
 	return _node, nil
@@ -119,19 +336,76 @@ func (_c *UserFederatedIdentityCreate) sqlSave(ctx context.Context) (*UserFedera
 func (_c *UserFederatedIdentityCreate) createSpec() (*UserFederatedIdentity, *sqlgraph.CreateSpec) {
 	var (
 		_node = &UserFederatedIdentity{config: _c.config}
-		_spec = sqlgraph.NewCreateSpec(userfederatedidentity.Table, sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeInt))
+		_spec = sqlgraph.NewCreateSpec(userfederatedidentity.Table, sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID))
 	)
-	if value, ok := _c.mutation.UserID(); ok {
-		_spec.SetField(userfederatedidentity.FieldUserID, field.TypeString, value)
-		_node.UserID = value
+	if id, ok := _c.mutation.ID(); ok {
+		_node.ID = id
+		_spec.ID.Value = &id
 	}
 	if value, ok := _c.mutation.Provider(); ok {
 		_spec.SetField(userfederatedidentity.FieldProvider, field.TypeString, value)
 		_node.Provider = value
 	}
-	if value, ok := _c.mutation.ProviderUserID(); ok {
-		_spec.SetField(userfederatedidentity.FieldProviderUserID, field.TypeString, value)
-		_node.ProviderUserID = value
+	if value, ok := _c.mutation.Subject(); ok {
+		_spec.SetField(userfederatedidentity.FieldSubject, field.TypeString, value)
+		_node.Subject = value
+	}
+	if value, ok := _c.mutation.Email(); ok {
+		_spec.SetField(userfederatedidentity.FieldEmail, field.TypeString, value)
+		_node.Email = value
+	}
+	if value, ok := _c.mutation.EmailVerified(); ok {
+		_spec.SetField(userfederatedidentity.FieldEmailVerified, field.TypeBool, value)
+		_node.EmailVerified = value
+	}
+	if value, ok := _c.mutation.DisplayName(); ok {
+		_spec.SetField(userfederatedidentity.FieldDisplayName, field.TypeString, value)
+		_node.DisplayName = value
+	}
+	if value, ok := _c.mutation.AvatarURL(); ok {
+		_spec.SetField(userfederatedidentity.FieldAvatarURL, field.TypeString, value)
+		_node.AvatarURL = &value
+	}
+	if value, ok := _c.mutation.RawProfileEtag(); ok {
+		_spec.SetField(userfederatedidentity.FieldRawProfileEtag, field.TypeString, value)
+		_node.RawProfileEtag = value
+	}
+	if value, ok := _c.mutation.LastUsedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldLastUsedAt, field.TypeTime, value)
+		_node.LastUsedAt = value
+	}
+	if value, ok := _c.mutation.CreatedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := _c.mutation.LinkedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldLinkedAt, field.TypeTime, value)
+		_node.LinkedAt = value
+	}
+	if value, ok := _c.mutation.RevokedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldRevokedAt, field.TypeTime, value)
+		_node.RevokedAt = value
+	}
+	if value, ok := _c.mutation.UpdatedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
+	}
+	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   userfederatedidentity.UserTable,
+			Columns: []string{userfederatedidentity.UserColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.UserID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }
@@ -154,6 +428,7 @@ func (_c *UserFederatedIdentityCreateBulk) Save(ctx context.Context) ([]*UserFed
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserFederatedIdentityMutation)
 				if !ok {
@@ -180,10 +455,6 @@ func (_c *UserFederatedIdentityCreateBulk) Save(ctx context.Context) ([]*UserFed
 					return nil, err
 				}
 				mutation.id = &nodes[i].ID
-				if specs[i].ID.Value != nil {
-					id := specs[i].ID.Value.(int64)
-					nodes[i].ID = int(id)
-				}
 				mutation.done = true
 				return nodes[i], nil
 			})

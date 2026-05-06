@@ -29,6 +29,8 @@ type UserSession struct {
 	IPAddress string `json:"ip_address,omitempty"`
 	// UserAgent holds the value of the "user_agent" field.
 	UserAgent string `json:"user_agent,omitempty"`
+	// DeviceName holds the value of the "device_name" field.
+	DeviceName string `json:"device_name,omitempty"`
 	// LastActiveAt holds the value of the "last_active_at" field.
 	LastActiveAt time.Time `json:"last_active_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -72,7 +74,7 @@ func (*UserSession) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case usersession.FieldValidatorHash:
 			values[i] = new([]byte)
-		case usersession.FieldSelector, usersession.FieldIPAddress, usersession.FieldUserAgent:
+		case usersession.FieldSelector, usersession.FieldIPAddress, usersession.FieldUserAgent, usersession.FieldDeviceName:
 			values[i] = new(sql.NullString)
 		case usersession.FieldLastActiveAt, usersession.FieldCreatedAt, usersession.FieldUpdatedAt, usersession.FieldExpiresAt, usersession.FieldRevokedAt:
 			values[i] = new(sql.NullTime)
@@ -128,6 +130,12 @@ func (_m *UserSession) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field user_agent", values[i])
 			} else if value.Valid {
 				_m.UserAgent = value.String
+			}
+		case usersession.FieldDeviceName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field device_name", values[i])
+			} else if value.Valid {
+				_m.DeviceName = value.String
 			}
 		case usersession.FieldLastActiveAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -214,6 +222,9 @@ func (_m *UserSession) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("user_agent=")
 	builder.WriteString(_m.UserAgent)
+	builder.WriteString(", ")
+	builder.WriteString("device_name=")
+	builder.WriteString(_m.DeviceName)
 	builder.WriteString(", ")
 	builder.WriteString("last_active_at=")
 	builder.WriteString(_m.LastActiveAt.Format(time.ANSIC))

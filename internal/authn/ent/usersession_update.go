@@ -149,6 +149,9 @@ func (_u *UserSessionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(usersession.FieldUserAgent, field.TypeString)
 	}
+	if _u.mutation.DeviceNameCleared() {
+		_spec.ClearField(usersession.FieldDeviceName, field.TypeString)
+	}
 	if value, ok := _u.mutation.LastActiveAt(); ok {
 		_spec.SetField(usersession.FieldLastActiveAt, field.TypeTime, value)
 	}
@@ -334,6 +337,9 @@ func (_u *UserSessionUpdateOne) sqlSave(ctx context.Context) (_node *UserSession
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(usersession.FieldUserAgent, field.TypeString)
+	}
+	if _u.mutation.DeviceNameCleared() {
+		_spec.ClearField(usersession.FieldDeviceName, field.TypeString)
 	}
 	if value, ok := _u.mutation.LastActiveAt(); ok {
 		_spec.SetField(usersession.FieldLastActiveAt, field.TypeTime, value)

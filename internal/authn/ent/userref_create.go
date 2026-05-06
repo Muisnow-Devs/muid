@@ -6,11 +6,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -40,6 +42,48 @@ func (_c *UserRefCreate) SetNillableUsername(v *string) *UserRefCreate {
 // SetEmail sets the "email" field.
 func (_c *UserRefCreate) SetEmail(v string) *UserRefCreate {
 	_c.mutation.SetEmail(v)
+	return _c
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (_c *UserRefCreate) SetLastLoginAt(v time.Time) *UserRefCreate {
+	_c.mutation.SetLastLoginAt(v)
+	return _c
+}
+
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_c *UserRefCreate) SetNillableLastLoginAt(v *time.Time) *UserRefCreate {
+	if v != nil {
+		_c.SetLastLoginAt(*v)
+	}
+	return _c
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (_c *UserRefCreate) SetCreatedAt(v time.Time) *UserRefCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
+}
+
+// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
+func (_c *UserRefCreate) SetNillableCreatedAt(v *time.Time) *UserRefCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
+	}
+	return _c
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_c *UserRefCreate) SetUpdatedAt(v time.Time) *UserRefCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
+}
+
+// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
+func (_c *UserRefCreate) SetNillableUpdatedAt(v *time.Time) *UserRefCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
+	}
 	return _c
 }
 
@@ -94,6 +138,21 @@ func (_c *UserRefCreate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefCr
 	return _c.AddOidcRefreshTokenIDs(ids...)
 }
 
+// AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
+func (_c *UserRefCreate) AddFederatedIdentityIDs(ids ...uuid.UUID) *UserRefCreate {
+	_c.mutation.AddFederatedIdentityIDs(ids...)
+	return _c
+}
+
+// AddFederatedIdentities adds the "federated_identities" edges to the UserFederatedIdentity entity.
+func (_c *UserRefCreate) AddFederatedIdentities(v ...*UserFederatedIdentity) *UserRefCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddFederatedIdentityIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_c *UserRefCreate) Mutation() *UserRefMutation {
 	return _c.mutation
@@ -101,6 +160,7 @@ func (_c *UserRefCreate) Mutation() *UserRefMutation {
 
 // Save creates the UserRef in the database.
 func (_c *UserRefCreate) Save(ctx context.Context) (*UserRef, error) {
+	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
@@ -126,6 +186,18 @@ func (_c *UserRefCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_c *UserRefCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		v := userref.DefaultCreatedAt()
+		_c.mutation.SetCreatedAt(v)
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		v := userref.DefaultUpdatedAt()
+		_c.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserRefCreate) check() error {
 	if _, ok := _c.mutation.Email(); !ok {
@@ -135,6 +207,12 @@ func (_c *UserRefCreate) check() error {
 		if err := userref.EmailValidator(v); err != nil {
 			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserRef.email": %w`, err)}
 		}
+	}
+	if _, ok := _c.mutation.CreatedAt(); !ok {
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "UserRef.created_at"`)}
+	}
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "UserRef.updated_at"`)}
 	}
 	return nil
 }
@@ -178,6 +256,18 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(userref.FieldEmail, field.TypeString, value)
 		_node.Email = value
+	}
+	if value, ok := _c.mutation.LastLoginAt(); ok {
+		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
+		_node.LastLoginAt = value
+	}
+	if value, ok := _c.mutation.CreatedAt(); ok {
+		_spec.SetField(userref.FieldCreatedAt, field.TypeTime, value)
+		_node.CreatedAt = value
+	}
+	if value, ok := _c.mutation.UpdatedAt(); ok {
+		_spec.SetField(userref.FieldUpdatedAt, field.TypeTime, value)
+		_node.UpdatedAt = value
 	}
 	if nodes := _c.mutation.SessionsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
@@ -227,6 +317,22 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
+	if nodes := _c.mutation.FederatedIdentitiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
 	return _node, _spec
 }
 
@@ -248,6 +354,7 @@ func (_c *UserRefCreateBulk) Save(ctx context.Context) ([]*UserRef, error) {
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*UserRefMutation)
 				if !ok {

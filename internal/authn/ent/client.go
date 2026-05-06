@@ -480,7 +480,7 @@ func (c *UserFederatedIdentityClient) UpdateOne(_m *UserFederatedIdentity) *User
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *UserFederatedIdentityClient) UpdateOneID(id int) *UserFederatedIdentityUpdateOne {
+func (c *UserFederatedIdentityClient) UpdateOneID(id uuid.UUID) *UserFederatedIdentityUpdateOne {
 	mutation := newUserFederatedIdentityMutation(c.config, OpUpdateOne, withUserFederatedIdentityID(id))
 	return &UserFederatedIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -497,7 +497,7 @@ func (c *UserFederatedIdentityClient) DeleteOne(_m *UserFederatedIdentity) *User
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *UserFederatedIdentityClient) DeleteOneID(id int) *UserFederatedIdentityDeleteOne {
+func (c *UserFederatedIdentityClient) DeleteOneID(id uuid.UUID) *UserFederatedIdentityDeleteOne {
 	builder := c.Delete().Where(userfederatedidentity.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -514,17 +514,33 @@ func (c *UserFederatedIdentityClient) Query() *UserFederatedIdentityQuery {
 }
 
 // Get returns a UserFederatedIdentity entity by its id.
-func (c *UserFederatedIdentityClient) Get(ctx context.Context, id int) (*UserFederatedIdentity, error) {
+func (c *UserFederatedIdentityClient) Get(ctx context.Context, id uuid.UUID) (*UserFederatedIdentity, error) {
 	return c.Query().Where(userfederatedidentity.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *UserFederatedIdentityClient) GetX(ctx context.Context, id int) *UserFederatedIdentity {
+func (c *UserFederatedIdentityClient) GetX(ctx context.Context, id uuid.UUID) *UserFederatedIdentity {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
 	}
 	return obj
+}
+
+// QueryUser queries the user edge of a UserFederatedIdentity.
+func (c *UserFederatedIdentityClient) QueryUser(_m *UserFederatedIdentity) *UserRefQuery {
+	query := (&UserRefClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userfederatedidentity.Table, userfederatedidentity.FieldID, id),
+			sqlgraph.To(userref.Table, userref.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, userfederatedidentity.UserTable, userfederatedidentity.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // Hooks returns the client hooks.
@@ -850,6 +866,22 @@ func (c *UserRefClient) QueryOidcRefreshTokens(_m *UserRef) *OIDCRefreshTokenQue
 			sqlgraph.From(userref.Table, userref.FieldID, id),
 			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcRefreshTokensTable, userref.OidcRefreshTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFederatedIdentities queries the federated_identities edge of a UserRef.
+func (c *UserRefClient) QueryFederatedIdentities(_m *UserRef) *UserFederatedIdentityQuery {
+	query := (&UserFederatedIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, id),
+			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.FederatedIdentitiesTable, userref.FederatedIdentitiesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

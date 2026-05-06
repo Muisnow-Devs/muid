@@ -25,6 +25,8 @@ const (
 	FieldIPAddress = "ip_address"
 	// FieldUserAgent holds the string denoting the user_agent field in the database.
 	FieldUserAgent = "user_agent"
+	// FieldDeviceName holds the string denoting the device_name field in the database.
+	FieldDeviceName = "device_name"
 	// FieldLastActiveAt holds the string denoting the last_active_at field in the database.
 	FieldLastActiveAt = "last_active_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -56,6 +58,7 @@ var Columns = []string{
 	FieldValidatorHash,
 	FieldIPAddress,
 	FieldUserAgent,
+	FieldDeviceName,
 	FieldLastActiveAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -82,6 +85,8 @@ var (
 	IPAddressValidator func(string) error
 	// UserAgentValidator is a validator for the "user_agent" field. It is called by the builders before save.
 	UserAgentValidator func(string) error
+	// DeviceNameValidator is a validator for the "device_name" field. It is called by the builders before save.
+	DeviceNameValidator func(string) error
 	// DefaultLastActiveAt holds the default value on creation for the "last_active_at" field.
 	DefaultLastActiveAt func() time.Time
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -122,6 +127,11 @@ func ByIPAddress(opts ...sql.OrderTermOption) OrderOption {
 // ByUserAgent orders the results by the user_agent field.
 func ByUserAgent(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserAgent, opts...).ToFunc()
+}
+
+// ByDeviceName orders the results by the device_name field.
+func ByDeviceName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDeviceName, opts...).ToFunc()
 }
 
 // ByLastActiveAt orders the results by the last_active_at field.

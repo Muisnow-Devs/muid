@@ -3,6 +3,8 @@
 package userref
 
 import (
+	"time"
+
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 )
@@ -16,12 +18,20 @@ const (
 	FieldUsername = "username"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
+	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
+	FieldLastLoginAt = "last_login_at"
+	// FieldCreatedAt holds the string denoting the created_at field in the database.
+	FieldCreatedAt = "created_at"
+	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
+	FieldUpdatedAt = "updated_at"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
 	// EdgePasskeys holds the string denoting the passkeys edge name in mutations.
 	EdgePasskeys = "passkeys"
 	// EdgeOidcRefreshTokens holds the string denoting the oidc_refresh_tokens edge name in mutations.
 	EdgeOidcRefreshTokens = "oidc_refresh_tokens"
+	// EdgeFederatedIdentities holds the string denoting the federated_identities edge name in mutations.
+	EdgeFederatedIdentities = "federated_identities"
 	// Table holds the table name of the userref in the database.
 	Table = "user_refs"
 	// SessionsTable is the table that holds the sessions relation/edge.
@@ -45,6 +55,13 @@ const (
 	OidcRefreshTokensInverseTable = "oidc_refresh_tokens"
 	// OidcRefreshTokensColumn is the table column denoting the oidc_refresh_tokens relation/edge.
 	OidcRefreshTokensColumn = "user_id"
+	// FederatedIdentitiesTable is the table that holds the federated_identities relation/edge.
+	FederatedIdentitiesTable = "user_federated_identities"
+	// FederatedIdentitiesInverseTable is the table name for the UserFederatedIdentity entity.
+	// It exists in this package in order to avoid circular dependency with the "userfederatedidentity" package.
+	FederatedIdentitiesInverseTable = "user_federated_identities"
+	// FederatedIdentitiesColumn is the table column denoting the federated_identities relation/edge.
+	FederatedIdentitiesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for userref fields.
@@ -52,6 +69,9 @@ var Columns = []string{
 	FieldID,
 	FieldUsername,
 	FieldEmail,
+	FieldLastLoginAt,
+	FieldCreatedAt,
+	FieldUpdatedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -67,6 +87,12 @@ func ValidColumn(column string) bool {
 var (
 	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	EmailValidator func(string) error
+	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
+	DefaultCreatedAt func() time.Time
+	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
+	DefaultUpdatedAt func() time.Time
+	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
+	UpdateDefaultUpdatedAt func() time.Time
 )
 
 // OrderOption defines the ordering options for the UserRef queries.
@@ -85,6 +111,21 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 // ByEmail orders the results by the email field.
 func ByEmail(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+}
+
+// ByLastLoginAt orders the results by the last_login_at field.
+func ByLastLoginAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastLoginAt, opts...).ToFunc()
+}
+
+// ByCreatedAt orders the results by the created_at field.
+func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByUpdatedAt orders the results by the updated_at field.
+func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
 // BySessionsCount orders the results by sessions count.
@@ -128,6 +169,20 @@ func ByOidcRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 		sqlgraph.OrderByNeighborTerms(s, newOidcRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByFederatedIdentitiesCount orders the results by federated_identities count.
+func ByFederatedIdentitiesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newFederatedIdentitiesStep(), opts...)
+	}
+}
+
+// ByFederatedIdentities orders the results by federated_identities terms.
+func ByFederatedIdentities(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newFederatedIdentitiesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newSessionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -147,5 +202,12 @@ func newOidcRefreshTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OidcRefreshTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
+	)
+}
+func newFederatedIdentitiesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(FederatedIdentitiesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, FederatedIdentitiesTable, FederatedIdentitiesColumn),
 	)
 }

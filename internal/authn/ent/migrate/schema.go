@@ -13,8 +13,8 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "client_id", Type: field.TypeString},
 		{Name: "scopes", Type: field.TypeJSON, Nullable: true},
-		{Name: "selector", Type: field.TypeString, Unique: true, Size: 32},
-		{Name: "validation_hash", Type: field.TypeBytes},
+		{Name: "selector", Type: field.TypeString, Unique: true, Size: 16},
+		{Name: "validation_hash", Type: field.TypeBytes, Size: 32},
 		{Name: "family_id", Type: field.TypeUUID},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -63,26 +63,54 @@ var (
 	}
 	// UserFederatedIdentitiesColumns holds the columns for the "user_federated_identities" table.
 	UserFederatedIdentitiesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "user_id", Type: field.TypeString},
-		{Name: "provider", Type: field.TypeString},
-		{Name: "provider_user_id", Type: field.TypeString},
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "provider", Type: field.TypeString, Size: 50},
+		{Name: "subject", Type: field.TypeString, Size: 255},
+		{Name: "email", Type: field.TypeString, Nullable: true, Size: 320},
+		{Name: "email_verified", Type: field.TypeBool, Default: false},
+		{Name: "display_name", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "avatar_url", Type: field.TypeString, Nullable: true},
+		{Name: "raw_profile_etag", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "linked_at", Type: field.TypeTime},
+		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_id", Type: field.TypeUUID},
 	}
 	// UserFederatedIdentitiesTable holds the schema information for the "user_federated_identities" table.
 	UserFederatedIdentitiesTable = &schema.Table{
 		Name:       "user_federated_identities",
 		Columns:    UserFederatedIdentitiesColumns,
 		PrimaryKey: []*schema.Column{UserFederatedIdentitiesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_federated_identities_user_refs_federated_identities",
+				Columns:    []*schema.Column{UserFederatedIdentitiesColumns[13]},
+				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "userfederatedidentity_provider_provider_user_id",
+				Name:    "userfederatedidentity_provider_subject",
 				Unique:  true,
-				Columns: []*schema.Column{UserFederatedIdentitiesColumns[2], UserFederatedIdentitiesColumns[3]},
+				Columns: []*schema.Column{UserFederatedIdentitiesColumns[1], UserFederatedIdentitiesColumns[2]},
 			},
 			{
 				Name:    "userfederatedidentity_user_id",
 				Unique:  false,
+				Columns: []*schema.Column{UserFederatedIdentitiesColumns[13]},
+			},
+			{
+				Name:    "userfederatedidentity_provider",
+				Unique:  false,
 				Columns: []*schema.Column{UserFederatedIdentitiesColumns[1]},
+			},
+			{
+				Name:    "userfederatedidentity_email",
+				Unique:  false,
+				Columns: []*schema.Column{UserFederatedIdentitiesColumns[3]},
 			},
 		},
 	}
@@ -131,20 +159,36 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "username", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "email", Type: field.TypeString, Unique: true},
+		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
 	}
 	// UserRefsTable holds the schema information for the "user_refs" table.
 	UserRefsTable = &schema.Table{
 		Name:       "user_refs",
 		Columns:    UserRefsColumns,
 		PrimaryKey: []*schema.Column{UserRefsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "userref_username",
+				Unique:  false,
+				Columns: []*schema.Column{UserRefsColumns[1]},
+			},
+			{
+				Name:    "userref_email",
+				Unique:  false,
+				Columns: []*schema.Column{UserRefsColumns[2]},
+			},
+		},
 	}
 	// UserSessionsColumns holds the columns for the "user_sessions" table.
 	UserSessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "selector", Type: field.TypeString, Size: 32},
-		{Name: "validator_hash", Type: field.TypeBytes},
+		{Name: "selector", Type: field.TypeString, Size: 16},
+		{Name: "validator_hash", Type: field.TypeBytes, Size: 32},
 		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
 		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 512},
+		{Name: "device_name", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "last_active_at", Type: field.TypeTime},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -160,7 +204,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "user_sessions_user_refs_sessions",
-				Columns:    []*schema.Column{UserSessionsColumns[10]},
+				Columns:    []*schema.Column{UserSessionsColumns[11]},
 				RefColumns: []*schema.Column{UserRefsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -174,7 +218,7 @@ var (
 			{
 				Name:    "usersession_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSessionsColumns[10]},
+				Columns: []*schema.Column{UserSessionsColumns[11]},
 			},
 		},
 	}
@@ -191,6 +235,7 @@ var (
 func init() {
 	OidcRefreshTokensTable.ForeignKeys[0].RefTable = OidcRefreshTokensTable
 	OidcRefreshTokensTable.ForeignKeys[1].RefTable = UserRefsTable
+	UserFederatedIdentitiesTable.ForeignKeys[0].RefTable = UserRefsTable
 	UserPasskeysTable.ForeignKeys[0].RefTable = UserRefsTable
 	UserSessionsTable.ForeignKeys[0].RefTable = UserRefsTable
 }

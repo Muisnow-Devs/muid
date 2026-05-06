@@ -5,6 +5,7 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
@@ -21,6 +22,12 @@ type UserRef struct {
 	Username string `json:"username,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
+	// LastLoginAt holds the value of the "last_login_at" field.
+	LastLoginAt time.Time `json:"last_login_at,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserRefQuery when eager-loading is set.
 	Edges        UserRefEdges `json:"edges"`
@@ -35,9 +42,11 @@ type UserRefEdges struct {
 	Passkeys []*UserPasskey `json:"passkeys,omitempty"`
 	// OidcRefreshTokens holds the value of the oidc_refresh_tokens edge.
 	OidcRefreshTokens []*OIDCRefreshToken `json:"oidc_refresh_tokens,omitempty"`
+	// FederatedIdentities holds the value of the federated_identities edge.
+	FederatedIdentities []*UserFederatedIdentity `json:"federated_identities,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -67,6 +76,15 @@ func (e UserRefEdges) OidcRefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
 	return nil, &NotLoadedError{edge: "oidc_refresh_tokens"}
 }
 
+// FederatedIdentitiesOrErr returns the FederatedIdentities value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserRefEdges) FederatedIdentitiesOrErr() ([]*UserFederatedIdentity, error) {
+	if e.loadedTypes[3] {
+		return e.FederatedIdentities, nil
+	}
+	return nil, &NotLoadedError{edge: "federated_identities"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*UserRef) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -74,6 +92,8 @@ func (*UserRef) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case userref.FieldUsername, userref.FieldEmail:
 			values[i] = new(sql.NullString)
+		case userref.FieldLastLoginAt, userref.FieldCreatedAt, userref.FieldUpdatedAt:
+			values[i] = new(sql.NullTime)
 		case userref.FieldID:
 			values[i] = new(uuid.UUID)
 		default:
@@ -109,6 +129,24 @@ func (_m *UserRef) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Email = value.String
 			}
+		case userref.FieldLastLoginAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_login_at", values[i])
+			} else if value.Valid {
+				_m.LastLoginAt = value.Time
+			}
+		case userref.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = value.Time
+			}
+		case userref.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				_m.UpdatedAt = value.Time
+			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
 		}
@@ -135,6 +173,11 @@ func (_m *UserRef) QueryPasskeys() *UserPasskeyQuery {
 // QueryOidcRefreshTokens queries the "oidc_refresh_tokens" edge of the UserRef entity.
 func (_m *UserRef) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
 	return NewUserRefClient(_m.config).QueryOidcRefreshTokens(_m)
+}
+
+// QueryFederatedIdentities queries the "federated_identities" edge of the UserRef entity.
+func (_m *UserRef) QueryFederatedIdentities() *UserFederatedIdentityQuery {
+	return NewUserRefClient(_m.config).QueryFederatedIdentities(_m)
 }
 
 // Update returns a builder for updating this UserRef.
@@ -165,6 +208,15 @@ func (_m *UserRef) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(_m.Email)
+	builder.WriteString(", ")
+	builder.WriteString("last_login_at=")
+	builder.WriteString(_m.LastLoginAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

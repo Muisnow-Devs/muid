@@ -15,6 +15,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -23,13 +24,14 @@ import (
 // UserRefQuery is the builder for querying UserRef entities.
 type UserRefQuery struct {
 	config
-	ctx                   *QueryContext
-	order                 []userref.OrderOption
-	inters                []Interceptor
-	predicates            []predicate.UserRef
-	withSessions          *UserSessionQuery
-	withPasskeys          *UserPasskeyQuery
-	withOidcRefreshTokens *OIDCRefreshTokenQuery
+	ctx                     *QueryContext
+	order                   []userref.OrderOption
+	inters                  []Interceptor
+	predicates              []predicate.UserRef
+	withSessions            *UserSessionQuery
+	withPasskeys            *UserPasskeyQuery
+	withOidcRefreshTokens   *OIDCRefreshTokenQuery
+	withFederatedIdentities *UserFederatedIdentityQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +127,28 @@ func (_q *UserRefQuery) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
 			sqlgraph.From(userref.Table, userref.FieldID, selector),
 			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcRefreshTokensTable, userref.OidcRefreshTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryFederatedIdentities chains the current query on the "federated_identities" edge.
+func (_q *UserRefQuery) QueryFederatedIdentities() *UserFederatedIdentityQuery {
+	query := (&UserFederatedIdentityClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, selector),
+			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.FederatedIdentitiesTable, userref.FederatedIdentitiesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -319,14 +343,15 @@ func (_q *UserRefQuery) Clone() *UserRefQuery {
 		return nil
 	}
 	return &UserRefQuery{
-		config:                _q.config,
-		ctx:                   _q.ctx.Clone(),
-		order:                 append([]userref.OrderOption{}, _q.order...),
-		inters:                append([]Interceptor{}, _q.inters...),
-		predicates:            append([]predicate.UserRef{}, _q.predicates...),
-		withSessions:          _q.withSessions.Clone(),
-		withPasskeys:          _q.withPasskeys.Clone(),
-		withOidcRefreshTokens: _q.withOidcRefreshTokens.Clone(),
+		config:                  _q.config,
+		ctx:                     _q.ctx.Clone(),
+		order:                   append([]userref.OrderOption{}, _q.order...),
+		inters:                  append([]Interceptor{}, _q.inters...),
+		predicates:              append([]predicate.UserRef{}, _q.predicates...),
+		withSessions:            _q.withSessions.Clone(),
+		withPasskeys:            _q.withPasskeys.Clone(),
+		withOidcRefreshTokens:   _q.withOidcRefreshTokens.Clone(),
+		withFederatedIdentities: _q.withFederatedIdentities.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +388,17 @@ func (_q *UserRefQuery) WithOidcRefreshTokens(opts ...func(*OIDCRefreshTokenQuer
 		opt(query)
 	}
 	_q.withOidcRefreshTokens = query
+	return _q
+}
+
+// WithFederatedIdentities tells the query-builder to eager-load the nodes that are connected to
+// the "federated_identities" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserRefQuery) WithFederatedIdentities(opts ...func(*UserFederatedIdentityQuery)) *UserRefQuery {
+	query := (&UserFederatedIdentityClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withFederatedIdentities = query
 	return _q
 }
 
@@ -444,10 +480,11 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	var (
 		nodes       = []*UserRef{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withSessions != nil,
 			_q.withPasskeys != nil,
 			_q.withOidcRefreshTokens != nil,
+			_q.withFederatedIdentities != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -487,6 +524,15 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 			func(n *UserRef) { n.Edges.OidcRefreshTokens = []*OIDCRefreshToken{} },
 			func(n *UserRef, e *OIDCRefreshToken) {
 				n.Edges.OidcRefreshTokens = append(n.Edges.OidcRefreshTokens, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withFederatedIdentities; query != nil {
+		if err := _q.loadFederatedIdentities(ctx, query, nodes,
+			func(n *UserRef) { n.Edges.FederatedIdentities = []*UserFederatedIdentity{} },
+			func(n *UserRef, e *UserFederatedIdentity) {
+				n.Edges.FederatedIdentities = append(n.Edges.FederatedIdentities, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -569,6 +615,36 @@ func (_q *UserRefQuery) loadOidcRefreshTokens(ctx context.Context, query *OIDCRe
 	}
 	query.Where(predicate.OIDCRefreshToken(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(userref.OidcRefreshTokensColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserRefQuery) loadFederatedIdentities(ctx context.Context, query *UserFederatedIdentityQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *UserFederatedIdentity)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*UserRef)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(userfederatedidentity.FieldUserID)
+	}
+	query.Where(predicate.UserFederatedIdentity(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userref.FederatedIdentitiesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

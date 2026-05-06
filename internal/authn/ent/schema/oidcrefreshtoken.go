@@ -24,8 +24,8 @@ func (OIDCRefreshToken) Fields() []ent.Field {
 		field.String("client_id").NotEmpty().Immutable(),
 		field.Strings("scopes").Optional(),
 
-		field.String("selector").Unique().NotEmpty().Immutable().MaxLen(32),
-		field.Bytes("validation_hash").NotEmpty().Immutable(),
+		field.String("selector").MaxLen(16).Unique().NotEmpty().Immutable(),
+		field.Bytes("validation_hash").MaxLen(32).NotEmpty().Immutable(),
 
 		field.UUID("parent_id", uuid.UUID{}).Optional().Immutable(),
 		field.UUID("family_id", uuid.UUID{}).Immutable(),

@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -13,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -65,6 +67,32 @@ func (_u *UserRefUpdate) SetNillableEmail(v *string) *UserRefUpdate {
 	return _u
 }
 
+// SetLastLoginAt sets the "last_login_at" field.
+func (_u *UserRefUpdate) SetLastLoginAt(v time.Time) *UserRefUpdate {
+	_u.mutation.SetLastLoginAt(v)
+	return _u
+}
+
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_u *UserRefUpdate) SetNillableLastLoginAt(v *time.Time) *UserRefUpdate {
+	if v != nil {
+		_u.SetLastLoginAt(*v)
+	}
+	return _u
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (_u *UserRefUpdate) ClearLastLoginAt() *UserRefUpdate {
+	_u.mutation.ClearLastLoginAt()
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *UserRefUpdate) SetUpdatedAt(v time.Time) *UserRefUpdate {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
 // AddSessionIDs adds the "sessions" edge to the UserSession entity by IDs.
 func (_u *UserRefUpdate) AddSessionIDs(ids ...uuid.UUID) *UserRefUpdate {
 	_u.mutation.AddSessionIDs(ids...)
@@ -108,6 +136,21 @@ func (_u *UserRefUpdate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUp
 		ids[i] = v[i].ID
 	}
 	return _u.AddOidcRefreshTokenIDs(ids...)
+}
+
+// AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
+func (_u *UserRefUpdate) AddFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.AddFederatedIdentityIDs(ids...)
+	return _u
+}
+
+// AddFederatedIdentities adds the "federated_identities" edges to the UserFederatedIdentity entity.
+func (_u *UserRefUpdate) AddFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFederatedIdentityIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -178,8 +221,30 @@ func (_u *UserRefUpdate) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRe
 	return _u.RemoveOidcRefreshTokenIDs(ids...)
 }
 
+// ClearFederatedIdentities clears all "federated_identities" edges to the UserFederatedIdentity entity.
+func (_u *UserRefUpdate) ClearFederatedIdentities() *UserRefUpdate {
+	_u.mutation.ClearFederatedIdentities()
+	return _u
+}
+
+// RemoveFederatedIdentityIDs removes the "federated_identities" edge to UserFederatedIdentity entities by IDs.
+func (_u *UserRefUpdate) RemoveFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.RemoveFederatedIdentityIDs(ids...)
+	return _u
+}
+
+// RemoveFederatedIdentities removes "federated_identities" edges to UserFederatedIdentity entities.
+func (_u *UserRefUpdate) RemoveFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFederatedIdentityIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserRefUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -202,6 +267,14 @@ func (_u *UserRefUpdate) Exec(ctx context.Context) error {
 func (_u *UserRefUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *UserRefUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := userref.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -235,6 +308,15 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(userref.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LastLoginAt(); ok {
+		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastLoginAtCleared() {
+		_spec.ClearField(userref.FieldLastLoginAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(userref.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if _u.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -371,6 +453,51 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.FederatedIdentitiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFederatedIdentitiesIDs(); len(nodes) > 0 && !_u.mutation.FederatedIdentitiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FederatedIdentitiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userref.Label}
@@ -425,6 +552,32 @@ func (_u *UserRefUpdateOne) SetNillableEmail(v *string) *UserRefUpdateOne {
 	return _u
 }
 
+// SetLastLoginAt sets the "last_login_at" field.
+func (_u *UserRefUpdateOne) SetLastLoginAt(v time.Time) *UserRefUpdateOne {
+	_u.mutation.SetLastLoginAt(v)
+	return _u
+}
+
+// SetNillableLastLoginAt sets the "last_login_at" field if the given value is not nil.
+func (_u *UserRefUpdateOne) SetNillableLastLoginAt(v *time.Time) *UserRefUpdateOne {
+	if v != nil {
+		_u.SetLastLoginAt(*v)
+	}
+	return _u
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (_u *UserRefUpdateOne) ClearLastLoginAt() *UserRefUpdateOne {
+	_u.mutation.ClearLastLoginAt()
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *UserRefUpdateOne) SetUpdatedAt(v time.Time) *UserRefUpdateOne {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
+}
+
 // AddSessionIDs adds the "sessions" edge to the UserSession entity by IDs.
 func (_u *UserRefUpdateOne) AddSessionIDs(ids ...uuid.UUID) *UserRefUpdateOne {
 	_u.mutation.AddSessionIDs(ids...)
@@ -468,6 +621,21 @@ func (_u *UserRefUpdateOne) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRe
 		ids[i] = v[i].ID
 	}
 	return _u.AddOidcRefreshTokenIDs(ids...)
+}
+
+// AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
+func (_u *UserRefUpdateOne) AddFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.AddFederatedIdentityIDs(ids...)
+	return _u
+}
+
+// AddFederatedIdentities adds the "federated_identities" edges to the UserFederatedIdentity entity.
+func (_u *UserRefUpdateOne) AddFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddFederatedIdentityIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -538,6 +706,27 @@ func (_u *UserRefUpdateOne) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *Use
 	return _u.RemoveOidcRefreshTokenIDs(ids...)
 }
 
+// ClearFederatedIdentities clears all "federated_identities" edges to the UserFederatedIdentity entity.
+func (_u *UserRefUpdateOne) ClearFederatedIdentities() *UserRefUpdateOne {
+	_u.mutation.ClearFederatedIdentities()
+	return _u
+}
+
+// RemoveFederatedIdentityIDs removes the "federated_identities" edge to UserFederatedIdentity entities by IDs.
+func (_u *UserRefUpdateOne) RemoveFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.RemoveFederatedIdentityIDs(ids...)
+	return _u
+}
+
+// RemoveFederatedIdentities removes "federated_identities" edges to UserFederatedIdentity entities.
+func (_u *UserRefUpdateOne) RemoveFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveFederatedIdentityIDs(ids...)
+}
+
 // Where appends a list predicates to the UserRefUpdate builder.
 func (_u *UserRefUpdateOne) Where(ps ...predicate.UserRef) *UserRefUpdateOne {
 	_u.mutation.Where(ps...)
@@ -553,6 +742,7 @@ func (_u *UserRefUpdateOne) Select(field string, fields ...string) *UserRefUpdat
 
 // Save executes the query and returns the updated UserRef entity.
 func (_u *UserRefUpdateOne) Save(ctx context.Context) (*UserRef, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -575,6 +765,14 @@ func (_u *UserRefUpdateOne) Exec(ctx context.Context) error {
 func (_u *UserRefUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
+	}
+}
+
+// defaults sets the default values of the builder before save.
+func (_u *UserRefUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := userref.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -625,6 +823,15 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(userref.FieldEmail, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.LastLoginAt(); ok {
+		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastLoginAtCleared() {
+		_spec.ClearField(userref.FieldLastLoginAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(userref.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if _u.mutation.SessionsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -754,6 +961,51 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.FederatedIdentitiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedFederatedIdentitiesIDs(); len(nodes) > 0 && !_u.mutation.FederatedIdentitiesCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.FederatedIdentitiesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.FederatedIdentitiesTable,
+			Columns: []string{userref.FederatedIdentitiesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

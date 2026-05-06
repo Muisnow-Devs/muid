@@ -5,24 +5,70 @@ package ent
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
+	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
+	"sanzi.io/muid/internal/authn/ent/userref"
 )
 
 // UserFederatedIdentity is the model entity for the UserFederatedIdentity schema.
 type UserFederatedIdentity struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID int `json:"id,omitempty"`
+	ID uuid.UUID `json:"id,omitempty"`
 	// UserID holds the value of the "user_id" field.
-	UserID string `json:"user_id,omitempty"`
+	UserID uuid.UUID `json:"user_id,omitempty"`
 	// Provider holds the value of the "provider" field.
 	Provider string `json:"provider,omitempty"`
-	// ProviderUserID holds the value of the "provider_user_id" field.
-	ProviderUserID string `json:"provider_user_id,omitempty"`
-	selectValues   sql.SelectValues
+	// Subject holds the value of the "subject" field.
+	Subject string `json:"subject,omitempty"`
+	// Email holds the value of the "email" field.
+	Email string `json:"email,omitempty"`
+	// EmailVerified holds the value of the "email_verified" field.
+	EmailVerified bool `json:"email_verified,omitempty"`
+	// DisplayName holds the value of the "display_name" field.
+	DisplayName string `json:"display_name,omitempty"`
+	// AvatarURL holds the value of the "avatar_url" field.
+	AvatarURL *string `json:"avatar_url,omitempty"`
+	// Used for profile sync/versioning
+	RawProfileEtag string `json:"raw_profile_etag,omitempty"`
+	// LastUsedAt holds the value of the "last_used_at" field.
+	LastUsedAt time.Time `json:"last_used_at,omitempty"`
+	// CreatedAt holds the value of the "created_at" field.
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// LinkedAt holds the value of the "linked_at" field.
+	LinkedAt time.Time `json:"linked_at,omitempty"`
+	// RevokedAt holds the value of the "revoked_at" field.
+	RevokedAt time.Time `json:"revoked_at,omitempty"`
+	// UpdatedAt holds the value of the "updated_at" field.
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the UserFederatedIdentityQuery when eager-loading is set.
+	Edges        UserFederatedIdentityEdges `json:"edges"`
+	selectValues sql.SelectValues
+}
+
+// UserFederatedIdentityEdges holds the relations/edges for other nodes in the graph.
+type UserFederatedIdentityEdges struct {
+	// User holds the value of the user edge.
+	User *UserRef `json:"user,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+}
+
+// UserOrErr returns the User value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserFederatedIdentityEdges) UserOrErr() (*UserRef, error) {
+	if e.User != nil {
+		return e.User, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: userref.Label}
+	}
+	return nil, &NotLoadedError{edge: "user"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -30,10 +76,14 @@ func (*UserFederatedIdentity) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userfederatedidentity.FieldID:
-			values[i] = new(sql.NullInt64)
-		case userfederatedidentity.FieldUserID, userfederatedidentity.FieldProvider, userfederatedidentity.FieldProviderUserID:
+		case userfederatedidentity.FieldEmailVerified:
+			values[i] = new(sql.NullBool)
+		case userfederatedidentity.FieldProvider, userfederatedidentity.FieldSubject, userfederatedidentity.FieldEmail, userfederatedidentity.FieldDisplayName, userfederatedidentity.FieldAvatarURL, userfederatedidentity.FieldRawProfileEtag:
 			values[i] = new(sql.NullString)
+		case userfederatedidentity.FieldLastUsedAt, userfederatedidentity.FieldCreatedAt, userfederatedidentity.FieldLinkedAt, userfederatedidentity.FieldRevokedAt, userfederatedidentity.FieldUpdatedAt:
+			values[i] = new(sql.NullTime)
+		case userfederatedidentity.FieldID, userfederatedidentity.FieldUserID:
+			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -50,16 +100,16 @@ func (_m *UserFederatedIdentity) assignValues(columns []string, values []any) er
 	for i := range columns {
 		switch columns[i] {
 		case userfederatedidentity.FieldID:
-			value, ok := values[i].(*sql.NullInt64)
-			if !ok {
-				return fmt.Errorf("unexpected type %T for field id", value)
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field id", values[i])
+			} else if value != nil {
+				_m.ID = *value
 			}
-			_m.ID = int(value.Int64)
 		case userfederatedidentity.FieldUserID:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field user_id", values[i])
-			} else if value.Valid {
-				_m.UserID = value.String
+			} else if value != nil {
+				_m.UserID = *value
 			}
 		case userfederatedidentity.FieldProvider:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -67,11 +117,72 @@ func (_m *UserFederatedIdentity) assignValues(columns []string, values []any) er
 			} else if value.Valid {
 				_m.Provider = value.String
 			}
-		case userfederatedidentity.FieldProviderUserID:
+		case userfederatedidentity.FieldSubject:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field provider_user_id", values[i])
+				return fmt.Errorf("unexpected type %T for field subject", values[i])
 			} else if value.Valid {
-				_m.ProviderUserID = value.String
+				_m.Subject = value.String
+			}
+		case userfederatedidentity.FieldEmail:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field email", values[i])
+			} else if value.Valid {
+				_m.Email = value.String
+			}
+		case userfederatedidentity.FieldEmailVerified:
+			if value, ok := values[i].(*sql.NullBool); !ok {
+				return fmt.Errorf("unexpected type %T for field email_verified", values[i])
+			} else if value.Valid {
+				_m.EmailVerified = value.Bool
+			}
+		case userfederatedidentity.FieldDisplayName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field display_name", values[i])
+			} else if value.Valid {
+				_m.DisplayName = value.String
+			}
+		case userfederatedidentity.FieldAvatarURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field avatar_url", values[i])
+			} else if value.Valid {
+				_m.AvatarURL = new(string)
+				*_m.AvatarURL = value.String
+			}
+		case userfederatedidentity.FieldRawProfileEtag:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field raw_profile_etag", values[i])
+			} else if value.Valid {
+				_m.RawProfileEtag = value.String
+			}
+		case userfederatedidentity.FieldLastUsedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_used_at", values[i])
+			} else if value.Valid {
+				_m.LastUsedAt = value.Time
+			}
+		case userfederatedidentity.FieldCreatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field created_at", values[i])
+			} else if value.Valid {
+				_m.CreatedAt = value.Time
+			}
+		case userfederatedidentity.FieldLinkedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field linked_at", values[i])
+			} else if value.Valid {
+				_m.LinkedAt = value.Time
+			}
+		case userfederatedidentity.FieldRevokedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field revoked_at", values[i])
+			} else if value.Valid {
+				_m.RevokedAt = value.Time
+			}
+		case userfederatedidentity.FieldUpdatedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
+			} else if value.Valid {
+				_m.UpdatedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -84,6 +195,11 @@ func (_m *UserFederatedIdentity) assignValues(columns []string, values []any) er
 // This includes values selected through modifiers, order, etc.
 func (_m *UserFederatedIdentity) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryUser queries the "user" edge of the UserFederatedIdentity entity.
+func (_m *UserFederatedIdentity) QueryUser() *UserRefQuery {
+	return NewUserFederatedIdentityClient(_m.config).QueryUser(_m)
 }
 
 // Update returns a builder for updating this UserFederatedIdentity.
@@ -110,13 +226,45 @@ func (_m *UserFederatedIdentity) String() string {
 	builder.WriteString("UserFederatedIdentity(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("user_id=")
-	builder.WriteString(_m.UserID)
+	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("provider=")
 	builder.WriteString(_m.Provider)
 	builder.WriteString(", ")
-	builder.WriteString("provider_user_id=")
-	builder.WriteString(_m.ProviderUserID)
+	builder.WriteString("subject=")
+	builder.WriteString(_m.Subject)
+	builder.WriteString(", ")
+	builder.WriteString("email=")
+	builder.WriteString(_m.Email)
+	builder.WriteString(", ")
+	builder.WriteString("email_verified=")
+	builder.WriteString(fmt.Sprintf("%v", _m.EmailVerified))
+	builder.WriteString(", ")
+	builder.WriteString("display_name=")
+	builder.WriteString(_m.DisplayName)
+	builder.WriteString(", ")
+	if v := _m.AvatarURL; v != nil {
+		builder.WriteString("avatar_url=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
+	builder.WriteString("raw_profile_etag=")
+	builder.WriteString(_m.RawProfileEtag)
+	builder.WriteString(", ")
+	builder.WriteString("last_used_at=")
+	builder.WriteString(_m.LastUsedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("created_at=")
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("linked_at=")
+	builder.WriteString(_m.LinkedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("revoked_at=")
+	builder.WriteString(_m.RevokedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("updated_at=")
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

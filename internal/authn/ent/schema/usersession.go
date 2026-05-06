@@ -22,11 +22,12 @@ func (UserSession) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 		field.UUID("user_id", uuid.UUID{}).Immutable(),
 
-		field.String("selector").NotEmpty().Immutable().MaxLen(32),
-		field.Bytes("validator_hash").NotEmpty().Immutable(),
+		field.String("selector").MaxLen(16).NotEmpty().Immutable(),
+		field.Bytes("validator_hash").MaxLen(32).NotEmpty().Immutable(),
 
 		field.String("ip_address").Optional().Immutable().MaxLen(45),
 		field.String("user_agent").Optional().Immutable().MaxLen(512),
+		field.String("device_name").Optional().Immutable().MaxLen(255),
 
 		field.Time("last_active_at").Default(time.Now),
 		field.Time("created_at").Default(time.Now).Immutable(),

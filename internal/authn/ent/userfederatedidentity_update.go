@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -27,45 +28,143 @@ func (_u *UserFederatedIdentityUpdate) Where(ps ...predicate.UserFederatedIdenti
 	return _u
 }
 
-// SetUserID sets the "user_id" field.
-func (_u *UserFederatedIdentityUpdate) SetUserID(v string) *UserFederatedIdentityUpdate {
-	_u.mutation.SetUserID(v)
+// SetEmail sets the "email" field.
+func (_u *UserFederatedIdentityUpdate) SetEmail(v string) *UserFederatedIdentityUpdate {
+	_u.mutation.SetEmail(v)
 	return _u
 }
 
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserFederatedIdentityUpdate) SetNillableUserID(v *string) *UserFederatedIdentityUpdate {
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableEmail(v *string) *UserFederatedIdentityUpdate {
 	if v != nil {
-		_u.SetUserID(*v)
+		_u.SetEmail(*v)
 	}
 	return _u
 }
 
-// SetProvider sets the "provider" field.
-func (_u *UserFederatedIdentityUpdate) SetProvider(v string) *UserFederatedIdentityUpdate {
-	_u.mutation.SetProvider(v)
+// ClearEmail clears the value of the "email" field.
+func (_u *UserFederatedIdentityUpdate) ClearEmail() *UserFederatedIdentityUpdate {
+	_u.mutation.ClearEmail()
 	return _u
 }
 
-// SetNillableProvider sets the "provider" field if the given value is not nil.
-func (_u *UserFederatedIdentityUpdate) SetNillableProvider(v *string) *UserFederatedIdentityUpdate {
+// SetEmailVerified sets the "email_verified" field.
+func (_u *UserFederatedIdentityUpdate) SetEmailVerified(v bool) *UserFederatedIdentityUpdate {
+	_u.mutation.SetEmailVerified(v)
+	return _u
+}
+
+// SetNillableEmailVerified sets the "email_verified" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableEmailVerified(v *bool) *UserFederatedIdentityUpdate {
 	if v != nil {
-		_u.SetProvider(*v)
+		_u.SetEmailVerified(*v)
 	}
 	return _u
 }
 
-// SetProviderUserID sets the "provider_user_id" field.
-func (_u *UserFederatedIdentityUpdate) SetProviderUserID(v string) *UserFederatedIdentityUpdate {
-	_u.mutation.SetProviderUserID(v)
+// SetDisplayName sets the "display_name" field.
+func (_u *UserFederatedIdentityUpdate) SetDisplayName(v string) *UserFederatedIdentityUpdate {
+	_u.mutation.SetDisplayName(v)
 	return _u
 }
 
-// SetNillableProviderUserID sets the "provider_user_id" field if the given value is not nil.
-func (_u *UserFederatedIdentityUpdate) SetNillableProviderUserID(v *string) *UserFederatedIdentityUpdate {
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableDisplayName(v *string) *UserFederatedIdentityUpdate {
 	if v != nil {
-		_u.SetProviderUserID(*v)
+		_u.SetDisplayName(*v)
 	}
+	return _u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (_u *UserFederatedIdentityUpdate) ClearDisplayName() *UserFederatedIdentityUpdate {
+	_u.mutation.ClearDisplayName()
+	return _u
+}
+
+// SetAvatarURL sets the "avatar_url" field.
+func (_u *UserFederatedIdentityUpdate) SetAvatarURL(v string) *UserFederatedIdentityUpdate {
+	_u.mutation.SetAvatarURL(v)
+	return _u
+}
+
+// SetNillableAvatarURL sets the "avatar_url" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableAvatarURL(v *string) *UserFederatedIdentityUpdate {
+	if v != nil {
+		_u.SetAvatarURL(*v)
+	}
+	return _u
+}
+
+// ClearAvatarURL clears the value of the "avatar_url" field.
+func (_u *UserFederatedIdentityUpdate) ClearAvatarURL() *UserFederatedIdentityUpdate {
+	_u.mutation.ClearAvatarURL()
+	return _u
+}
+
+// SetRawProfileEtag sets the "raw_profile_etag" field.
+func (_u *UserFederatedIdentityUpdate) SetRawProfileEtag(v string) *UserFederatedIdentityUpdate {
+	_u.mutation.SetRawProfileEtag(v)
+	return _u
+}
+
+// SetNillableRawProfileEtag sets the "raw_profile_etag" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableRawProfileEtag(v *string) *UserFederatedIdentityUpdate {
+	if v != nil {
+		_u.SetRawProfileEtag(*v)
+	}
+	return _u
+}
+
+// ClearRawProfileEtag clears the value of the "raw_profile_etag" field.
+func (_u *UserFederatedIdentityUpdate) ClearRawProfileEtag() *UserFederatedIdentityUpdate {
+	_u.mutation.ClearRawProfileEtag()
+	return _u
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (_u *UserFederatedIdentityUpdate) SetLastUsedAt(v time.Time) *UserFederatedIdentityUpdate {
+	_u.mutation.SetLastUsedAt(v)
+	return _u
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableLastUsedAt(v *time.Time) *UserFederatedIdentityUpdate {
+	if v != nil {
+		_u.SetLastUsedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (_u *UserFederatedIdentityUpdate) ClearLastUsedAt() *UserFederatedIdentityUpdate {
+	_u.mutation.ClearLastUsedAt()
+	return _u
+}
+
+// SetRevokedAt sets the "revoked_at" field.
+func (_u *UserFederatedIdentityUpdate) SetRevokedAt(v time.Time) *UserFederatedIdentityUpdate {
+	_u.mutation.SetRevokedAt(v)
+	return _u
+}
+
+// SetNillableRevokedAt sets the "revoked_at" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdate) SetNillableRevokedAt(v *time.Time) *UserFederatedIdentityUpdate {
+	if v != nil {
+		_u.SetRevokedAt(*v)
+	}
+	return _u
+}
+
+// ClearRevokedAt clears the value of the "revoked_at" field.
+func (_u *UserFederatedIdentityUpdate) ClearRevokedAt() *UserFederatedIdentityUpdate {
+	_u.mutation.ClearRevokedAt()
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *UserFederatedIdentityUpdate) SetUpdatedAt(v time.Time) *UserFederatedIdentityUpdate {
+	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
@@ -76,6 +175,7 @@ func (_u *UserFederatedIdentityUpdate) Mutation() *UserFederatedIdentityMutation
 
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserFederatedIdentityUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -101,22 +201,33 @@ func (_u *UserFederatedIdentityUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_u *UserFederatedIdentityUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := userfederatedidentity.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserFederatedIdentityUpdate) check() error {
-	if v, ok := _u.mutation.UserID(); ok {
-		if err := userfederatedidentity.UserIDValidator(v); err != nil {
-			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.user_id": %w`, err)}
+	if v, ok := _u.mutation.Email(); ok {
+		if err := userfederatedidentity.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.email": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Provider(); ok {
-		if err := userfederatedidentity.ProviderValidator(v); err != nil {
-			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.provider": %w`, err)}
+	if v, ok := _u.mutation.DisplayName(); ok {
+		if err := userfederatedidentity.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.display_name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ProviderUserID(); ok {
-		if err := userfederatedidentity.ProviderUserIDValidator(v); err != nil {
-			return &ValidationError{Name: "provider_user_id", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.provider_user_id": %w`, err)}
+	if v, ok := _u.mutation.RawProfileEtag(); ok {
+		if err := userfederatedidentity.RawProfileEtagValidator(v); err != nil {
+			return &ValidationError{Name: "raw_profile_etag", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.raw_profile_etag": %w`, err)}
 		}
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "UserFederatedIdentity.user"`)
 	}
 	return nil
 }
@@ -125,7 +236,7 @@ func (_u *UserFederatedIdentityUpdate) sqlSave(ctx context.Context) (_node int, 
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(userfederatedidentity.Table, userfederatedidentity.Columns, sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(userfederatedidentity.Table, userfederatedidentity.Columns, sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -133,14 +244,47 @@ func (_u *UserFederatedIdentityUpdate) sqlSave(ctx context.Context) (_node int, 
 			}
 		}
 	}
-	if value, ok := _u.mutation.UserID(); ok {
-		_spec.SetField(userfederatedidentity.FieldUserID, field.TypeString, value)
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(userfederatedidentity.FieldEmail, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Provider(); ok {
-		_spec.SetField(userfederatedidentity.FieldProvider, field.TypeString, value)
+	if _u.mutation.EmailCleared() {
+		_spec.ClearField(userfederatedidentity.FieldEmail, field.TypeString)
 	}
-	if value, ok := _u.mutation.ProviderUserID(); ok {
-		_spec.SetField(userfederatedidentity.FieldProviderUserID, field.TypeString, value)
+	if value, ok := _u.mutation.EmailVerified(); ok {
+		_spec.SetField(userfederatedidentity.FieldEmailVerified, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DisplayName(); ok {
+		_spec.SetField(userfederatedidentity.FieldDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.DisplayNameCleared() {
+		_spec.ClearField(userfederatedidentity.FieldDisplayName, field.TypeString)
+	}
+	if value, ok := _u.mutation.AvatarURL(); ok {
+		_spec.SetField(userfederatedidentity.FieldAvatarURL, field.TypeString, value)
+	}
+	if _u.mutation.AvatarURLCleared() {
+		_spec.ClearField(userfederatedidentity.FieldAvatarURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.RawProfileEtag(); ok {
+		_spec.SetField(userfederatedidentity.FieldRawProfileEtag, field.TypeString, value)
+	}
+	if _u.mutation.RawProfileEtagCleared() {
+		_spec.ClearField(userfederatedidentity.FieldRawProfileEtag, field.TypeString)
+	}
+	if value, ok := _u.mutation.LastUsedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldLastUsedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastUsedAtCleared() {
+		_spec.ClearField(userfederatedidentity.FieldLastUsedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RevokedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldRevokedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RevokedAtCleared() {
+		_spec.ClearField(userfederatedidentity.FieldRevokedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -162,45 +306,143 @@ type UserFederatedIdentityUpdateOne struct {
 	mutation *UserFederatedIdentityMutation
 }
 
-// SetUserID sets the "user_id" field.
-func (_u *UserFederatedIdentityUpdateOne) SetUserID(v string) *UserFederatedIdentityUpdateOne {
-	_u.mutation.SetUserID(v)
+// SetEmail sets the "email" field.
+func (_u *UserFederatedIdentityUpdateOne) SetEmail(v string) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetEmail(v)
 	return _u
 }
 
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserFederatedIdentityUpdateOne) SetNillableUserID(v *string) *UserFederatedIdentityUpdateOne {
+// SetNillableEmail sets the "email" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableEmail(v *string) *UserFederatedIdentityUpdateOne {
 	if v != nil {
-		_u.SetUserID(*v)
+		_u.SetEmail(*v)
 	}
 	return _u
 }
 
-// SetProvider sets the "provider" field.
-func (_u *UserFederatedIdentityUpdateOne) SetProvider(v string) *UserFederatedIdentityUpdateOne {
-	_u.mutation.SetProvider(v)
+// ClearEmail clears the value of the "email" field.
+func (_u *UserFederatedIdentityUpdateOne) ClearEmail() *UserFederatedIdentityUpdateOne {
+	_u.mutation.ClearEmail()
 	return _u
 }
 
-// SetNillableProvider sets the "provider" field if the given value is not nil.
-func (_u *UserFederatedIdentityUpdateOne) SetNillableProvider(v *string) *UserFederatedIdentityUpdateOne {
+// SetEmailVerified sets the "email_verified" field.
+func (_u *UserFederatedIdentityUpdateOne) SetEmailVerified(v bool) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetEmailVerified(v)
+	return _u
+}
+
+// SetNillableEmailVerified sets the "email_verified" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableEmailVerified(v *bool) *UserFederatedIdentityUpdateOne {
 	if v != nil {
-		_u.SetProvider(*v)
+		_u.SetEmailVerified(*v)
 	}
 	return _u
 }
 
-// SetProviderUserID sets the "provider_user_id" field.
-func (_u *UserFederatedIdentityUpdateOne) SetProviderUserID(v string) *UserFederatedIdentityUpdateOne {
-	_u.mutation.SetProviderUserID(v)
+// SetDisplayName sets the "display_name" field.
+func (_u *UserFederatedIdentityUpdateOne) SetDisplayName(v string) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetDisplayName(v)
 	return _u
 }
 
-// SetNillableProviderUserID sets the "provider_user_id" field if the given value is not nil.
-func (_u *UserFederatedIdentityUpdateOne) SetNillableProviderUserID(v *string) *UserFederatedIdentityUpdateOne {
+// SetNillableDisplayName sets the "display_name" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableDisplayName(v *string) *UserFederatedIdentityUpdateOne {
 	if v != nil {
-		_u.SetProviderUserID(*v)
+		_u.SetDisplayName(*v)
 	}
+	return _u
+}
+
+// ClearDisplayName clears the value of the "display_name" field.
+func (_u *UserFederatedIdentityUpdateOne) ClearDisplayName() *UserFederatedIdentityUpdateOne {
+	_u.mutation.ClearDisplayName()
+	return _u
+}
+
+// SetAvatarURL sets the "avatar_url" field.
+func (_u *UserFederatedIdentityUpdateOne) SetAvatarURL(v string) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetAvatarURL(v)
+	return _u
+}
+
+// SetNillableAvatarURL sets the "avatar_url" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableAvatarURL(v *string) *UserFederatedIdentityUpdateOne {
+	if v != nil {
+		_u.SetAvatarURL(*v)
+	}
+	return _u
+}
+
+// ClearAvatarURL clears the value of the "avatar_url" field.
+func (_u *UserFederatedIdentityUpdateOne) ClearAvatarURL() *UserFederatedIdentityUpdateOne {
+	_u.mutation.ClearAvatarURL()
+	return _u
+}
+
+// SetRawProfileEtag sets the "raw_profile_etag" field.
+func (_u *UserFederatedIdentityUpdateOne) SetRawProfileEtag(v string) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetRawProfileEtag(v)
+	return _u
+}
+
+// SetNillableRawProfileEtag sets the "raw_profile_etag" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableRawProfileEtag(v *string) *UserFederatedIdentityUpdateOne {
+	if v != nil {
+		_u.SetRawProfileEtag(*v)
+	}
+	return _u
+}
+
+// ClearRawProfileEtag clears the value of the "raw_profile_etag" field.
+func (_u *UserFederatedIdentityUpdateOne) ClearRawProfileEtag() *UserFederatedIdentityUpdateOne {
+	_u.mutation.ClearRawProfileEtag()
+	return _u
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (_u *UserFederatedIdentityUpdateOne) SetLastUsedAt(v time.Time) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetLastUsedAt(v)
+	return _u
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableLastUsedAt(v *time.Time) *UserFederatedIdentityUpdateOne {
+	if v != nil {
+		_u.SetLastUsedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (_u *UserFederatedIdentityUpdateOne) ClearLastUsedAt() *UserFederatedIdentityUpdateOne {
+	_u.mutation.ClearLastUsedAt()
+	return _u
+}
+
+// SetRevokedAt sets the "revoked_at" field.
+func (_u *UserFederatedIdentityUpdateOne) SetRevokedAt(v time.Time) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetRevokedAt(v)
+	return _u
+}
+
+// SetNillableRevokedAt sets the "revoked_at" field if the given value is not nil.
+func (_u *UserFederatedIdentityUpdateOne) SetNillableRevokedAt(v *time.Time) *UserFederatedIdentityUpdateOne {
+	if v != nil {
+		_u.SetRevokedAt(*v)
+	}
+	return _u
+}
+
+// ClearRevokedAt clears the value of the "revoked_at" field.
+func (_u *UserFederatedIdentityUpdateOne) ClearRevokedAt() *UserFederatedIdentityUpdateOne {
+	_u.mutation.ClearRevokedAt()
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *UserFederatedIdentityUpdateOne) SetUpdatedAt(v time.Time) *UserFederatedIdentityUpdateOne {
+	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
@@ -224,6 +466,7 @@ func (_u *UserFederatedIdentityUpdateOne) Select(field string, fields ...string)
 
 // Save executes the query and returns the updated UserFederatedIdentity entity.
 func (_u *UserFederatedIdentityUpdateOne) Save(ctx context.Context) (*UserFederatedIdentity, error) {
+	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -249,22 +492,33 @@ func (_u *UserFederatedIdentityUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (_u *UserFederatedIdentityUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
+		v := userfederatedidentity.UpdateDefaultUpdatedAt()
+		_u.mutation.SetUpdatedAt(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserFederatedIdentityUpdateOne) check() error {
-	if v, ok := _u.mutation.UserID(); ok {
-		if err := userfederatedidentity.UserIDValidator(v); err != nil {
-			return &ValidationError{Name: "user_id", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.user_id": %w`, err)}
+	if v, ok := _u.mutation.Email(); ok {
+		if err := userfederatedidentity.EmailValidator(v); err != nil {
+			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.email": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Provider(); ok {
-		if err := userfederatedidentity.ProviderValidator(v); err != nil {
-			return &ValidationError{Name: "provider", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.provider": %w`, err)}
+	if v, ok := _u.mutation.DisplayName(); ok {
+		if err := userfederatedidentity.DisplayNameValidator(v); err != nil {
+			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.display_name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ProviderUserID(); ok {
-		if err := userfederatedidentity.ProviderUserIDValidator(v); err != nil {
-			return &ValidationError{Name: "provider_user_id", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.provider_user_id": %w`, err)}
+	if v, ok := _u.mutation.RawProfileEtag(); ok {
+		if err := userfederatedidentity.RawProfileEtagValidator(v); err != nil {
+			return &ValidationError{Name: "raw_profile_etag", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.raw_profile_etag": %w`, err)}
 		}
+	}
+	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "UserFederatedIdentity.user"`)
 	}
 	return nil
 }
@@ -273,7 +527,7 @@ func (_u *UserFederatedIdentityUpdateOne) sqlSave(ctx context.Context) (_node *U
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(userfederatedidentity.Table, userfederatedidentity.Columns, sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeInt))
+	_spec := sqlgraph.NewUpdateSpec(userfederatedidentity.Table, userfederatedidentity.Columns, sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "UserFederatedIdentity.id" for update`)}
@@ -298,14 +552,47 @@ func (_u *UserFederatedIdentityUpdateOne) sqlSave(ctx context.Context) (_node *U
 			}
 		}
 	}
-	if value, ok := _u.mutation.UserID(); ok {
-		_spec.SetField(userfederatedidentity.FieldUserID, field.TypeString, value)
+	if value, ok := _u.mutation.Email(); ok {
+		_spec.SetField(userfederatedidentity.FieldEmail, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Provider(); ok {
-		_spec.SetField(userfederatedidentity.FieldProvider, field.TypeString, value)
+	if _u.mutation.EmailCleared() {
+		_spec.ClearField(userfederatedidentity.FieldEmail, field.TypeString)
 	}
-	if value, ok := _u.mutation.ProviderUserID(); ok {
-		_spec.SetField(userfederatedidentity.FieldProviderUserID, field.TypeString, value)
+	if value, ok := _u.mutation.EmailVerified(); ok {
+		_spec.SetField(userfederatedidentity.FieldEmailVerified, field.TypeBool, value)
+	}
+	if value, ok := _u.mutation.DisplayName(); ok {
+		_spec.SetField(userfederatedidentity.FieldDisplayName, field.TypeString, value)
+	}
+	if _u.mutation.DisplayNameCleared() {
+		_spec.ClearField(userfederatedidentity.FieldDisplayName, field.TypeString)
+	}
+	if value, ok := _u.mutation.AvatarURL(); ok {
+		_spec.SetField(userfederatedidentity.FieldAvatarURL, field.TypeString, value)
+	}
+	if _u.mutation.AvatarURLCleared() {
+		_spec.ClearField(userfederatedidentity.FieldAvatarURL, field.TypeString)
+	}
+	if value, ok := _u.mutation.RawProfileEtag(); ok {
+		_spec.SetField(userfederatedidentity.FieldRawProfileEtag, field.TypeString, value)
+	}
+	if _u.mutation.RawProfileEtagCleared() {
+		_spec.ClearField(userfederatedidentity.FieldRawProfileEtag, field.TypeString)
+	}
+	if value, ok := _u.mutation.LastUsedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldLastUsedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastUsedAtCleared() {
+		_spec.ClearField(userfederatedidentity.FieldLastUsedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.RevokedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldRevokedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RevokedAtCleared() {
+		_spec.ClearField(userfederatedidentity.FieldRevokedAt, field.TypeTime)
+	}
+	if value, ok := _u.mutation.UpdatedAt(); ok {
+		_spec.SetField(userfederatedidentity.FieldUpdatedAt, field.TypeTime, value)
 	}
 	_node = &UserFederatedIdentity{config: _u.config}
 	_spec.Assign = _node.assignValues

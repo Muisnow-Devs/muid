@@ -68,6 +68,20 @@ func (_c *UserSessionCreate) SetNillableUserAgent(v *string) *UserSessionCreate 
 	return _c
 }
 
+// SetDeviceName sets the "device_name" field.
+func (_c *UserSessionCreate) SetDeviceName(v string) *UserSessionCreate {
+	_c.mutation.SetDeviceName(v)
+	return _c
+}
+
+// SetNillableDeviceName sets the "device_name" field if the given value is not nil.
+func (_c *UserSessionCreate) SetNillableDeviceName(v *string) *UserSessionCreate {
+	if v != nil {
+		_c.SetDeviceName(*v)
+	}
+	return _c
+}
+
 // SetLastActiveAt sets the "last_active_at" field.
 func (_c *UserSessionCreate) SetLastActiveAt(v time.Time) *UserSessionCreate {
 	_c.mutation.SetLastActiveAt(v)
@@ -245,6 +259,11 @@ func (_c *UserSessionCreate) check() error {
 			return &ValidationError{Name: "user_agent", err: fmt.Errorf(`ent: validator failed for field "UserSession.user_agent": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.DeviceName(); ok {
+		if err := usersession.DeviceNameValidator(v); err != nil {
+			return &ValidationError{Name: "device_name", err: fmt.Errorf(`ent: validator failed for field "UserSession.device_name": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.LastActiveAt(); !ok {
 		return &ValidationError{Name: "last_active_at", err: errors.New(`ent: missing required field "UserSession.last_active_at"`)}
 	}
@@ -310,6 +329,10 @@ func (_c *UserSessionCreate) createSpec() (*UserSession, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UserAgent(); ok {
 		_spec.SetField(usersession.FieldUserAgent, field.TypeString, value)
 		_node.UserAgent = value
+	}
+	if value, ok := _c.mutation.DeviceName(); ok {
+		_spec.SetField(usersession.FieldDeviceName, field.TypeString, value)
+		_node.DeviceName = value
 	}
 	if value, ok := _c.mutation.LastActiveAt(); ok {
 		_spec.SetField(usersession.FieldLastActiveAt, field.TypeTime, value)

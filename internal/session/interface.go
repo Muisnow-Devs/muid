@@ -35,7 +35,7 @@ type SessionStore struct {
 
 type AuthTransitionStore interface {
 	Create(ctx context.Context, provider string, store SessionStore) (AuthSession, error)
-	Get(ctx context.Context, provider, id string) (AuthSession, error)
-	Update(ctx context.Context, provider, id string, store SessionStore) error
-	Delete(ctx context.Context, provider, id string) error
+	Get(ctx context.Context, id string) (AuthSession, error)
+	Update(ctx context.Context, id string, store SessionStore) error
+	Delete(ctx context.Context, id string) error
 }

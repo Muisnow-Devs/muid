@@ -70,7 +70,7 @@ func (k KVAuthTransitionStore) Create(ctx context.Context, provider string, stor
 	return sess, nil
 }
 
-func (k KVAuthTransitionStore) Delete(ctx context.Context, provider, id string) error {
+func (k KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
 	key := k.key(id)
 	err := k.client.Delete(ctx, key)
 	if errors.Is(err, kv.ErrKeyNotFound) {
@@ -80,7 +80,7 @@ func (k KVAuthTransitionStore) Delete(ctx context.Context, provider, id string) 
 	return err
 }
 
-func (k KVAuthTransitionStore) Get(ctx context.Context, provider, id string) (session.AuthSession, error) {
+func (k KVAuthTransitionStore) Get(ctx context.Context, id string) (session.AuthSession, error) {
 	key := k.key(id)
 	data, err := k.client.Get(ctx, key)
 	if err != nil {
@@ -103,11 +103,11 @@ func (k KVAuthTransitionStore) Get(ctx context.Context, provider, id string) (se
 	return sess, nil
 }
 
-func (k KVAuthTransitionStore) Update(ctx context.Context, provider, id string, store session.SessionStore) error {
+func (k KVAuthTransitionStore) Update(ctx context.Context, id string, store session.SessionStore) error {
 	key := k.key(id)
 
 	// Ensure the session exists and is not expired before updating
-	existing, err := k.Get(ctx, provider, id)
+	existing, err := k.Get(ctx, id)
 	if err != nil {
 		return err
 	}

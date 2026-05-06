@@ -6,51 +6,11 @@ import (
 	"time"
 
 	"sanzi.io/muid/internal/otp"
-	"sanzi.io/muid/pkg/shared/kv"
+	"sanzi.io/muid/pkg/shared/infra/mocked"
 )
 
-type mockKVStore struct {
-	store map[string][]byte
-}
-
-func newMockKVStore() *mockKVStore {
-	return &mockKVStore{
-		store: make(map[string][]byte),
-	}
-}
-
-func (m *mockKVStore) Get(ctx context.Context, key string) ([]byte, error) {
-	val, ok := m.store[key]
-	if !ok {
-		return nil, kv.ErrKeyNotFound
-	}
-	return val, nil
-}
-
-func (m *mockKVStore) Set(ctx context.Context, key string, value []byte, ttl time.Duration) error {
-	m.store[key] = value
-	return nil
-}
-
-func (m *mockKVStore) SetNX(ctx context.Context, key string, value []byte, ttl time.Duration) (bool, error) {
-	if _, ok := m.store[key]; ok {
-		return false, nil
-	}
-	m.store[key] = value
-	return true, nil
-}
-
-func (m *mockKVStore) Delete(ctx context.Context, key string) error {
-	delete(m.store, key)
-	return nil
-}
-
-func (m *mockKVStore) Close() error {
-	return nil
-}
-
 func TestKVOTPStore_SetAndVerify_Success(t *testing.T) {
-	mockKV := newMockKVStore()
+	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 
@@ -81,7 +41,7 @@ func TestKVOTPStore_SetAndVerify_Success(t *testing.T) {
 }
 
 func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
-	mockKV := newMockKVStore()
+	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 
@@ -100,7 +60,7 @@ func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
 }
 
 func TestKVOTPStore_Verify_NotFound(t *testing.T) {
-	mockKV := newMockKVStore()
+	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 
@@ -114,7 +74,7 @@ func TestKVOTPStore_Verify_NotFound(t *testing.T) {
 }
 
 func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
-	mockKV := newMockKVStore()
+	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 
@@ -160,7 +120,7 @@ func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 }
 
 func TestKVOTPStore_Verify_Expired(t *testing.T) {
-	mockKV := newMockKVStore()
+	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 
@@ -180,7 +140,7 @@ func TestKVOTPStore_Verify_Expired(t *testing.T) {
 }
 
 func TestKVOTPStore_Revoke_Success(t *testing.T) {
-	mockKV := newMockKVStore()
+	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 

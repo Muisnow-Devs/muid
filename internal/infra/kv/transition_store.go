@@ -30,14 +30,14 @@ func decode(data []byte) (session.AuthSession, error) {
 }
 
 func NewKVAuthTransitionStore(kvStore kv.KVStore) session.AuthTransitionStore {
-	return KVAuthTransitionStore{client: kvStore}
+	return &KVAuthTransitionStore{client: kvStore}
 }
 
-func (s KVAuthTransitionStore) key(id string) string {
+func (s *KVAuthTransitionStore) key(id string) string {
 	return "muid:auth:transition:" + id
 }
 
-func (k KVAuthTransitionStore) Create(
+func (k *KVAuthTransitionStore) Create(
 	ctx context.Context,
 	provider string,
 	store session.SessionStore,
@@ -74,7 +74,7 @@ func (k KVAuthTransitionStore) Create(
 	return sess, nil
 }
 
-func (k KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
+func (k *KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
 	key := k.key(id)
 	err := k.client.Delete(ctx, key)
 	if errors.Is(err, kv.ErrKeyNotFound) {
@@ -84,7 +84,7 @@ func (k KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-func (k KVAuthTransitionStore) Get(ctx context.Context, id string) (session.AuthSession, error) {
+func (k *KVAuthTransitionStore) Get(ctx context.Context, id string) (session.AuthSession, error) {
 	key := k.key(id)
 	data, err := k.client.Get(ctx, key)
 	if err != nil {
@@ -107,7 +107,7 @@ func (k KVAuthTransitionStore) Get(ctx context.Context, id string) (session.Auth
 	return sess, nil
 }
 
-func (k KVAuthTransitionStore) Update(
+func (k *KVAuthTransitionStore) Update(
 	ctx context.Context,
 	id string,
 	store session.SessionStore,

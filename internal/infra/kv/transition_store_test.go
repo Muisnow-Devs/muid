@@ -125,7 +125,7 @@ func TestKVAuthTransitionStore_Security_Expired_Get(t *testing.T) {
 	}
 
 	// Manually force expiration by rewriting the stored data
-	key := store.(KVAuthTransitionStore).key(created.Id)
+	key := store.(*KVAuthTransitionStore).key(created.Id)
 	data, _ := mockKV.Get(ctx, key)
 	sess, _ := decode(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600 // Subtract an hour
@@ -156,7 +156,7 @@ func TestKVAuthTransitionStore_Security_Expired_Update(t *testing.T) {
 	created, _ := store.Create(ctx, "password", session.SessionStore{})
 
 	// Manually force expiration safely
-	key := store.(KVAuthTransitionStore).key(created.Id)
+	key := store.(*KVAuthTransitionStore).key(created.Id)
 	data, _ := mockKV.Get(ctx, key)
 	sess, _ := decode(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600

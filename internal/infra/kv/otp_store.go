@@ -32,7 +32,7 @@ type KVOTPStore struct {
 }
 
 func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte) otp.OTPStore {
-	return KVOTPStore{client: kvStore, otpSecret: otpSecret}
+	return &KVOTPStore{client: kvStore, otpSecret: otpSecret}
 }
 
 func key(session string) string {
@@ -40,7 +40,7 @@ func key(session string) string {
 	return "muid:otp:" + hex.EncodeToString(sum[:])
 }
 
-func (store KVOTPStore) hashOTP(otp string, iv []byte) []byte {
+func (store *KVOTPStore) hashOTP(otp string, iv []byte) []byte {
 	mac := hmac.New(sha256.New, store.otpSecret)
 	mac.Write([]byte(otp))
 	mac.Write(iv)
@@ -64,7 +64,7 @@ func generateOTP(length int) (string, error) {
 	return string(otp), nil
 }
 
-func (store KVOTPStore) CreateOTP(
+func (store *KVOTPStore) CreateOTP(
 	ctx context.Context,
 	session string,
 	expiration time.Duration,
@@ -100,7 +100,7 @@ func (store KVOTPStore) CreateOTP(
 	return string(otp), nil
 }
 
-func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) error {
+func (store *KVOTPStore) VerifyOTP(ctx context.Context, session, code string) error {
 	if code == "" || len(code) != OTPLength {
 		return otp.ErrOTPInvalid
 	}
@@ -145,6 +145,6 @@ func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) err
 	return nil
 }
 
-func (store KVOTPStore) RevokeOTP(ctx context.Context, session string) error {
+func (store *KVOTPStore) RevokeOTP(ctx context.Context, session string) error {
 	return store.client.Delete(ctx, key(session))
 }

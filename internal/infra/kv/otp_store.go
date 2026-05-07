@@ -5,8 +5,6 @@ import (
 	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/subtle"
-	"encoding/hex"
 	"encoding/json"
 	"math/big"
 	"time"
@@ -21,7 +19,6 @@ const (
 
 type OTPInformation struct {
 	OTPHash  []byte    `json:"otp_hash"`
-	IV       []byte    `json:"iv"`
 	Attempts int       `json:"attempts"`
 	ExpireAt time.Time `json:"expire_at"`
 }
@@ -35,20 +32,22 @@ func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte) otp.OTPStore {
 	return &KVOTPStore{client: kvStore, otpSecret: otpSecret}
 }
 
-func key(session string) string {
-	sum := sha256.Sum256([]byte(session))
-	return "muid:otp:" + hex.EncodeToString(sum[:])
+func (*KVOTPStore) key(transitionId string) string {
+	return "muid:challenge:otp:" + transitionId
 }
 
-func (store *KVOTPStore) hashOTP(otp string, iv []byte) []byte {
+func (store *KVOTPStore) hashOTP(otp string, transitionId string) []byte {
 	mac := hmac.New(sha256.New, store.otpSecret)
+
 	mac.Write([]byte(otp))
-	mac.Write(iv)
+	mac.Write([]byte{0})
+	mac.Write([]byte(transitionId))
+
 	return mac.Sum(nil)
 }
 
 func equalHashes(a, b []byte) bool {
-	return subtle.ConstantTimeCompare(a, b) == 1
+	return hmac.Equal(a, b)
 }
 
 func generateOTP(length int) (string, error) {
@@ -66,46 +65,47 @@ func generateOTP(length int) (string, error) {
 
 func (store *KVOTPStore) CreateOTP(
 	ctx context.Context,
-	session string,
+	transitionId string,
 	expiration time.Duration,
-) (string, error) {
-	iv := make([]byte, 16)
-	if _, err := rand.Read(iv); err != nil {
-		return "", err
-	}
-
-	otp, err := generateOTP(OTPLength)
+) (otp.OTPChallenge, error) {
+	otpCode, err := generateOTP(OTPLength)
 	if err != nil {
-		return "", err
+		return otp.OTPChallenge{}, err
 	}
 
-	sha := store.hashOTP(string(otp), iv)
+	sha := store.hashOTP(otpCode, transitionId)
+	expiresAt := time.Now().Add(expiration)
 	info := OTPInformation{
 		OTPHash:  sha[:],
-		IV:       iv,
 		Attempts: 0,
-		ExpireAt: time.Now().Add(expiration),
+		ExpireAt: expiresAt,
 	}
 
 	jsonData, err := json.Marshal(info)
 	if err != nil {
-		return "", err
+		return otp.OTPChallenge{}, err
 	}
 
-	err = store.client.Set(ctx, key(session), jsonData, expiration)
+	err = store.client.Set(ctx, store.key(transitionId), jsonData, expiration)
 	if err != nil {
-		return "", err
+		return otp.OTPChallenge{}, err
 	}
 
-	return string(otp), nil
+	return otp.OTPChallenge{
+		OTP:       otpCode,
+		ExpiresAt: expiresAt,
+	}, nil
 }
 
-func (store *KVOTPStore) VerifyOTP(ctx context.Context, session, code string) error {
+func (store *KVOTPStore) VerifyOTP(
+	ctx context.Context,
+	transitionId, code string,
+) error {
 	if code == "" || len(code) != OTPLength {
 		return otp.ErrOTPInvalid
 	}
 
-	data, err := store.client.Get(ctx, key(session))
+	data, err := store.client.Get(ctx, store.key(transitionId))
 	if err == kv.ErrKeyNotFound {
 		return otp.ErrOTPInvalid
 	}
@@ -120,31 +120,31 @@ func (store *KVOTPStore) VerifyOTP(ctx context.Context, session, code string) er
 	}
 
 	if time.Now().After(info.ExpireAt) {
-		store.RevokeOTP(ctx, session)
+		store.RevokeOTP(ctx, transitionId)
 		return otp.ErrOTPExpired
 	}
 
-	sha := store.hashOTP(code, info.IV)
+	sha := store.hashOTP(code, transitionId)
 
 	if !equalHashes(info.OTPHash, sha) {
 		info.Attempts++
 
 		if info.Attempts >= 3 {
-			store.RevokeOTP(ctx, session)
+			store.RevokeOTP(ctx, transitionId)
 			return otp.ErrTooManyAttempts
 		}
 
 		ttl := time.Until(info.ExpireAt)
 		jsonData, _ := json.Marshal(info)
-		store.client.Set(ctx, key(session), jsonData, ttl)
+		store.client.Set(ctx, store.key(transitionId), jsonData, ttl)
 
 		return otp.ErrOTPInvalid
 	}
 
-	store.RevokeOTP(ctx, session)
+	store.RevokeOTP(ctx, transitionId)
 	return nil
 }
 
-func (store *KVOTPStore) RevokeOTP(ctx context.Context, session string) error {
-	return store.client.Delete(ctx, key(session))
+func (store *KVOTPStore) RevokeOTP(ctx context.Context, transitionId string) error {
+	return store.client.Delete(ctx, store.key(transitionId))
 }

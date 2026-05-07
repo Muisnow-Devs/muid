@@ -21,13 +21,13 @@ func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	err = store.VerifyOTP(ctx, session, code)
+	err = store.VerifyOTP(ctx, session, code.OTP)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	// Verify should revoke after success (single-use)
-	err = store.VerifyOTP(ctx, session, code)
+	err = store.VerifyOTP(ctx, session, code.OTP)
 	if err != otp.ErrOTPInvalid {
 		t.Fatalf("expected ErrOTPInvalid after first use, got %v", err)
 	}
@@ -72,7 +72,7 @@ func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error on create, got %v", err)
 	}
-	if code == "000001" || code == "000002" || code == "000003" {
+	if code.OTP == "000001" || code.OTP == "000002" || code.OTP == "000003" {
 		t.Skip("accidentally generated code used in test, skip")
 	}
 
@@ -95,7 +95,7 @@ func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 	}
 
 	// Attempt 4: Should act like Not Found / Already Revoked, even with correct code
-	err = store.VerifyOTP(ctx, session, code)
+	err = store.VerifyOTP(ctx, session, code.OTP)
 	if err != otp.ErrOTPInvalid {
 		t.Fatalf("expected ErrOTPInvalid when not found, got %v", err)
 	}
@@ -114,7 +114,7 @@ func TestKVOTPStore_Verify_Expired(t *testing.T) {
 		t.Fatalf("expected no error on create, got %v", err)
 	}
 
-	err = store.VerifyOTP(ctx, session, code)
+	err = store.VerifyOTP(ctx, session, code.OTP)
 	if err != otp.ErrOTPExpired {
 		t.Fatalf("expected ErrOTPExpired, got %v", err)
 	}
@@ -136,7 +136,7 @@ func TestKVOTPStore_Revoke_Success(t *testing.T) {
 		t.Fatalf("expected no error on revoke, got %v", err)
 	}
 
-	err = store.VerifyOTP(ctx, session, code)
+	err = store.VerifyOTP(ctx, session, code.OTP)
 	if err != otp.ErrOTPInvalid {
 		t.Fatalf("expected ErrOTPInvalid after revocation, got %v", err)
 	}

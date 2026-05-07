@@ -17,6 +17,10 @@ import (
 	"sanzi.io/muid/pkg/shared/topics"
 )
 
+const (
+	OTPLifetime = 5 * time.Minute
+)
+
 type EmailIdentityProvider struct {
 	otpStore        otp.OTPStore
 	transitionStore session.AuthTransitionStore
@@ -128,7 +132,7 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	sessionID string,
 	email string,
 ) error {
-	code, err := p.otpStore.CreateOTP(ctx, sessionID, 5*time.Minute)
+	code, err := p.otpStore.CreateOTP(ctx, sessionID, OTPLifetime)
 	if err != nil {
 		return err
 	}
@@ -136,8 +140,8 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	created_at := time.Now()
 	msg := &mail.SendOTPEmailEvent{
 		Email:     email,
-		Code:      code,
-		ExpiresAt: created_at.Add(5 * time.Minute).Unix(),
+		Code:      code.OTP,
+		ExpiresAt: code.ExpiresAt.Unix(),
 		CreatedAt: created_at.Unix(),
 	}
 

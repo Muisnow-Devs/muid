@@ -9,15 +9,14 @@ import (
 	"sanzi.io/muid/pkg/shared/infra/mocked"
 )
 
-func TestKVOTPStore_SetAndVerify_Success(t *testing.T) {
+func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"))
 	ctx := context.Background()
 
 	session := "session-123"
-	code := "123456"
 
-	err := store.SetOTP(ctx, session, code, 5*time.Minute)
+	code, err := store.CreateOTP(ctx, session, 5*time.Minute)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -46,11 +45,13 @@ func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
 	ctx := context.Background()
 
 	session := "session-123"
-	code := "123456"
 
-	_ = store.SetOTP(ctx, session, code, 5*time.Minute)
+	_, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("expected no error on create, got %v", err)
+	}
 
-	valid, err := store.VerifyOTP(ctx, session, "wrong-code")
+	valid, err := store.VerifyOTP(ctx, session, "000000") // 6 digits wrong code
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -79,8 +80,13 @@ func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 	ctx := context.Background()
 
 	session := "session-123"
-	code := "123456"
-	_ = store.SetOTP(ctx, session, code, 5*time.Minute)
+	code, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("expected no error on create, got %v", err)
+	}
+	if code == "000001" || code == "000002" || code == "000003" {
+		t.Skip("accidentally generated code used in test, skip")
+	}
 
 	// Attempt 1: Fail
 	valid, err := store.VerifyOTP(ctx, session, "000001")
@@ -125,10 +131,12 @@ func TestKVOTPStore_Verify_Expired(t *testing.T) {
 	ctx := context.Background()
 
 	session := "session-123"
-	code := "123456"
 
 	// Set with a negative duration to simulate expiration
-	_ = store.SetOTP(ctx, session, code, -1*time.Minute)
+	code, err := store.CreateOTP(ctx, session, -1*time.Minute)
+	if err != nil {
+		t.Fatalf("expected no error on create, got %v", err)
+	}
 
 	valid, err := store.VerifyOTP(ctx, session, code)
 	if err != nil {
@@ -145,10 +153,12 @@ func TestKVOTPStore_Revoke_Success(t *testing.T) {
 	ctx := context.Background()
 
 	session := "session-123"
-	code := "123456"
-	_ = store.SetOTP(ctx, session, code, 5*time.Minute)
+	code, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("expected no error on create, got %v", err)
+	}
 
-	err := store.RevokeOTP(ctx, session)
+	err = store.RevokeOTP(ctx, session)
 	if err != nil {
 		t.Fatalf("expected no error on revoke, got %v", err)
 	}

@@ -100,32 +100,28 @@ func (store KVOTPStore) CreateOTP(
 	return string(otp), nil
 }
 
-func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) (bool, error) {
-	if code == "" {
-		return false, otp.ErrOTPInvalid
-	}
-
-	if len(code) != OTPLength {
-		return false, otp.ErrOTPMismatchLength
+func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) error {
+	if code == "" || len(code) != OTPLength {
+		return otp.ErrOTPInvalid
 	}
 
 	data, err := store.client.Get(ctx, key(session))
 	if err == kv.ErrKeyNotFound {
-		return false, nil
+		return otp.ErrOTPInvalid
 	}
 
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	var info OTPInformation
 	if err := json.Unmarshal(data, &info); err != nil {
-		return false, err
+		return err
 	}
 
 	if time.Now().After(info.ExpireAt) {
 		store.RevokeOTP(ctx, session)
-		return false, nil
+		return otp.ErrOTPExpired
 	}
 
 	sha := store.hashOTP(code, info.IV)
@@ -135,18 +131,18 @@ func (store KVOTPStore) VerifyOTP(ctx context.Context, session, code string) (bo
 
 		if info.Attempts >= 3 {
 			store.RevokeOTP(ctx, session)
-			return false, otp.ErrTooManyAttempts
+			return otp.ErrTooManyAttempts
 		}
 
 		ttl := time.Until(info.ExpireAt)
 		jsonData, _ := json.Marshal(info)
 		store.client.Set(ctx, key(session), jsonData, ttl)
 
-		return false, nil
+		return otp.ErrOTPInvalid
 	}
 
 	store.RevokeOTP(ctx, session)
-	return true, nil
+	return nil
 }
 
 func (store KVOTPStore) RevokeOTP(ctx context.Context, session string) error {

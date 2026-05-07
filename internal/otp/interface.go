@@ -7,6 +7,6 @@ import (
 
 type OTPStore interface {
 	CreateOTP(ctx context.Context, key string, ttl time.Duration) (string, error)
-	VerifyOTP(ctx context.Context, key, otp string) (bool, error)
+	VerifyOTP(ctx context.Context, key, otp string) error
 	RevokeOTP(ctx context.Context, key string) error
 }

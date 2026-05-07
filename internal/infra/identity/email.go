@@ -55,7 +55,8 @@ func (p *EmailIdentityProvider) Start(
 		return identity.StepResult{}, err
 	}
 
-	if err := p.generateAndSendOTP(ctx, sess.Id, input.Identifier); err != nil {
+	err = p.generateAndSendOTP(ctx, sess.Id, input.Identifier)
+	if err != nil {
 		return identity.StepResult{}, err
 	}
 
@@ -79,7 +80,8 @@ func (p *EmailIdentityProvider) Continue(
 		return identity.StepResult{}, err
 	}
 
-	if err := p.verifyOTP(ctx, sess.Id, code); err != nil {
+	err = p.verifyOTP(ctx, sess.Id, code)
+	if err != nil {
 		return identity.StepResult{}, err
 	}
 
@@ -89,7 +91,7 @@ func (p *EmailIdentityProvider) Continue(
 		return identity.StepResult{}, err
 	}
 
-	_ = p.transitionStore.Delete(ctx, sess.Id)
+	p.transitionStore.Delete(ctx, sess.Id)
 
 	return p.completedResult(userId), nil
 }
@@ -181,20 +183,18 @@ func (p *EmailIdentityProvider) verifyOTP(
 	sessionID string,
 	code string,
 ) error {
-	valid, err := p.otpStore.VerifyOTP(ctx, sessionID, code)
-	if err != nil {
+	err := p.otpStore.VerifyOTP(ctx, sessionID, code)
+	if errors.Is(err, otp.ErrOTPAuthFailed) {
 		return errors.Join(
 			identity.ErrAuthenticationFailed,
-			errors.New("failed to verify otp"),
 			err,
 		)
 	}
-	if !valid {
-		return errors.Join(
-			identity.ErrAuthenticationFailed,
-			errors.New("invalid otp"),
-		)
+
+	if err != nil {
+		return err
 	}
+
 	return nil
 }
 

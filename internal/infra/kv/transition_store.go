@@ -100,7 +100,7 @@ func (k KVAuthTransitionStore) Get(ctx context.Context, id string) (session.Auth
 	}
 
 	if time.Now().Unix() > sess.ExpiresAt {
-		_ = k.client.Delete(ctx, key)
+		k.client.Delete(ctx, key)
 		return session.AuthSession{}, session.ErrSessionExpired
 	}
 
@@ -127,7 +127,7 @@ func (k KVAuthTransitionStore) Update(
 	// Source of truth is KV TTL.
 	ttl := time.Until(time.Unix(existing.ExpiresAt, 0))
 	if ttl <= 0 {
-		_ = k.client.Delete(ctx, key)
+		k.client.Delete(ctx, key)
 		return session.ErrSessionExpired
 	}
 

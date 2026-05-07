@@ -130,7 +130,11 @@ func TestKVAuthTransitionStore_Security_Expired_Get(t *testing.T) {
 	sess, _ := decode(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600 // Subtract an hour
 	expiredData, _ := encode(sess)
-	_ = mockKV.Set(ctx, key, expiredData, 0)
+
+	err = mockKV.Set(ctx, key, expiredData, 0)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
 
 	_, err = store.Get(ctx, created.Id)
 	if err != session.ErrSessionExpired {
@@ -157,9 +161,13 @@ func TestKVAuthTransitionStore_Security_Expired_Update(t *testing.T) {
 	sess, _ := decode(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600
 	expiredData, _ := encode(sess)
-	_ = mockKV.Set(ctx, key, expiredData, 0)
 
-	err := store.Update(ctx, created.Id, session.SessionStore{State: "bypassed"})
+	err := mockKV.Set(ctx, key, expiredData, 0)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	err = store.Update(ctx, created.Id, session.SessionStore{State: "bypassed"})
 	if err != session.ErrSessionExpired && err != session.ErrSessionNotFound {
 		t.Fatalf(
 			"expected ErrSessionExpired during update of an already expired token, got %v",

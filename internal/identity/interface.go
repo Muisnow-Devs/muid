@@ -2,6 +2,8 @@ package identity
 
 import (
 	"context"
+
+	"sanzi.io/muid/api/proto/authn/v1/session"
 )
 
 type StepType string
@@ -14,18 +16,18 @@ const (
 )
 
 type StartInput struct {
-	LoginHint   string
-	RedirectURI string
-	Metadata    map[string]any
+	Provider   string
+	Identifier string
+	Metadata   map[string]any
 }
 
 type ContinueInput struct {
-	TransactionID string
-	Payload       map[string]any
+	TransitionId string
+	Payload      map[string]any
 }
 
 type StepResult struct {
-	TransactionID string
+	TransitionId string
 
 	Type        StepType
 	RedirectURL string // Optional, for OIDC flows
@@ -33,7 +35,7 @@ type StepResult struct {
 	Challenge      any // Optional, for challenge-based flows (e.g. WebAuthn)
 	RequiredFields []string
 
-	// Session *
+	AuthenticatedResult *session.AuthenticatedResult // Optional, for complete steps
 }
 
 type IdentityProvider interface {

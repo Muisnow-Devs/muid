@@ -37,7 +37,11 @@ func (s KVAuthTransitionStore) key(id string) string {
 	return "muid:auth:transition:" + id
 }
 
-func (k KVAuthTransitionStore) Create(ctx context.Context, provider string, store session.SessionStore) (session.AuthSession, error) {
+func (k KVAuthTransitionStore) Create(
+	ctx context.Context,
+	provider string,
+	store session.SessionStore,
+) (session.AuthSession, error) {
 	id := uuid.New().String()
 	now := time.Now()
 	expiresAt := now.Add(TRANSITION_SESSION_TTL)
@@ -103,7 +107,11 @@ func (k KVAuthTransitionStore) Get(ctx context.Context, id string) (session.Auth
 	return sess, nil
 }
 
-func (k KVAuthTransitionStore) Update(ctx context.Context, id string, store session.SessionStore) error {
+func (k KVAuthTransitionStore) Update(
+	ctx context.Context,
+	id string,
+	store session.SessionStore,
+) error {
 	key := k.key(id)
 
 	// Ensure the session exists and is not expired before updating

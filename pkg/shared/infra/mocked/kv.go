@@ -46,7 +46,12 @@ func (m *MockKVStore) Set(ctx context.Context, key string, value []byte, ttl tim
 	return nil
 }
 
-func (m *MockKVStore) SetNX(ctx context.Context, key string, value []byte, ttl time.Duration) (bool, error) {
+func (m *MockKVStore) SetNX(
+	ctx context.Context,
+	key string,
+	value []byte,
+	ttl time.Duration,
+) (bool, error) {
 	item, ok := m.store[key]
 	if ok && (item.expiration.IsZero() || !time.Now().After(item.expiration)) {
 		return false, nil

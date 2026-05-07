@@ -54,7 +54,10 @@ func run() error {
 	return nil
 }
 
-func InitializeInfraService(ctx context.Context, envConfig app.Config) (*app.InfraDependencies, error) {
+func InitializeInfraService(
+	ctx context.Context,
+	envConfig app.Config,
+) (*app.InfraDependencies, error) {
 	redisClient := redis.NewRedisKVStore(envConfig.RedisURL)
 
 	otpSecret, err := hex.DecodeString(envConfig.OTPSecretKey)
@@ -69,7 +72,14 @@ func InitializeInfraService(ctx context.Context, envConfig app.Config) (*app.Inf
 	}
 
 	transitionStore := kv.NewKVAuthTransitionStore(redisClient)
-	ipm, err := app.InitializeIdentityManager(ctx, envConfig, transitionStore, otpStore, pubSub)
+	ipm, err := app.InitializeIdentityManager(
+		ctx,
+		envConfig,
+		transitionStore,
+		otpStore,
+		pubSub,
+		nil,
+	) // passing nil for db placeholder since ent isn't initialized here yet
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize identity manager: %w", err)
 	}

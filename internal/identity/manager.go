@@ -13,7 +13,10 @@ type IdentityManager struct {
 	mu        sync.Mutex
 }
 
-func NewIdentityManager(transitionStore session.AuthTransitionStore, providers ...IdentityProvider) *IdentityManager {
+func NewIdentityManager(
+	transitionStore session.AuthTransitionStore,
+	providers ...IdentityProvider,
+) *IdentityManager {
 	providersMap := make(map[string]IdentityProvider)
 	for _, provider := range providers {
 		providersMap[provider.Name()] = provider

@@ -70,7 +70,12 @@ func (r *RedisKVStore) Set(ctx context.Context, key string, value []byte, ttl ti
 	return result.Err()
 }
 
-func (r *RedisKVStore) SetNX(ctx context.Context, key string, value []byte, ttl time.Duration) (bool, error) {
+func (r *RedisKVStore) SetNX(
+	ctx context.Context,
+	key string,
+	value []byte,
+	ttl time.Duration,
+) (bool, error) {
 	if key == "" {
 		return false, kv.ErrInvalidKey
 	}

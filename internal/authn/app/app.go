@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/identity"
 	implIdentity "sanzi.io/muid/internal/infra/identity"
 	"sanzi.io/muid/internal/otp"
@@ -44,20 +45,39 @@ func InitializeIdentityManager(
 	transitionStore session.AuthTransitionStore,
 	otpStore otp.OTPStore,
 	pubSub pubsub.PubSub,
+	entClient *ent.Client,
 ) (*identity.IdentityManager, error) {
 	providers := []identity.IdentityProvider{
-		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub),
+		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, entClient),
 		implIdentity.NewPasskeyIdentityProvider(transitionStore),
 	}
 
 	oidcProviders := []implIdentity.OIDCProviderConfig{
-		{Name: "google", Issuer: implIdentity.GOOGLE_OIDC_PROVIDER_URL, ClientID: config.GoogleOAuthClientID, ClientSecret: config.GoogleOAuthClientSecret, RedirectURL: config.GoogleRedirectURL},
-		{Name: "github", Issuer: implIdentity.GITHUB_OIDC_PROVIDER_URL, ClientID: config.GithubOAuthClientID, ClientSecret: config.GithubOAuthClientSecret, RedirectURL: config.GithubRedirectURL},
-		{Name: "facebook", Issuer: implIdentity.FACEBOOK_OIDC_PROVIDER_URL, ClientID: config.FacebookOAuthClientID, ClientSecret: config.FacebookOAuthClientSecret, RedirectURL: config.FacebookRedirectURL},
+		{
+			Name:         "google",
+			Issuer:       implIdentity.GOOGLE_OIDC_PROVIDER_URL,
+			ClientID:     config.GoogleOAuthClientID,
+			ClientSecret: config.GoogleOAuthClientSecret,
+			RedirectURL:  config.GoogleRedirectURL,
+		},
+		{
+			Name:         "github",
+			Issuer:       implIdentity.GITHUB_OIDC_PROVIDER_URL,
+			ClientID:     config.GithubOAuthClientID,
+			ClientSecret: config.GithubOAuthClientSecret,
+			RedirectURL:  config.GithubRedirectURL,
+		},
+		{
+			Name:         "facebook",
+			Issuer:       implIdentity.FACEBOOK_OIDC_PROVIDER_URL,
+			ClientID:     config.FacebookOAuthClientID,
+			ClientSecret: config.FacebookOAuthClientSecret,
+			RedirectURL:  config.FacebookRedirectURL,
+		},
 	}
 
 	for _, cfg := range oidcProviders {
-		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore)
+		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore, entClient)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OIDC provider %s: %w", cfg.Name, err)
 		}

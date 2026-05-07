@@ -29,7 +29,10 @@ func (UserFederatedIdentity) Fields() []ent.Field {
 		field.Bool("email_verified").Default(false),
 		field.String("display_name").Optional().MaxLen(255),
 		field.String("avatar_url").Optional().Nillable(),
-		field.String("raw_profile_etag").Optional().MaxLen(255).Comment("Used for profile sync/versioning"),
+		field.String("raw_profile_etag").
+			Optional().
+			MaxLen(255).
+			Comment("Used for profile sync/versioning"),
 
 		field.Time("last_used_at").Optional(),
 

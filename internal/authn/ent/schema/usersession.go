@@ -50,6 +50,11 @@ func (UserSession) Indexes() []ent.Index {
 // Edges of the UserSession.
 func (UserSession) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", UserRef.Type).Ref("sessions").Unique().Field("user_id").Required().Immutable(),
+		edge.From("user", UserRef.Type).
+			Ref("sessions").
+			Unique().
+			Field("user_id").
+			Required().
+			Immutable(),
 	}
 }

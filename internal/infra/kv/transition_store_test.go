@@ -161,7 +161,10 @@ func TestKVAuthTransitionStore_Security_Expired_Update(t *testing.T) {
 
 	err := store.Update(ctx, created.Id, session.SessionStore{State: "bypassed"})
 	if err != session.ErrSessionExpired && err != session.ErrSessionNotFound {
-		t.Fatalf("expected ErrSessionExpired during update of an already expired token, got %v", err)
+		t.Fatalf(
+			"expected ErrSessionExpired during update of an already expired token, got %v",
+			err,
+		)
 	}
 }
 
@@ -175,7 +178,10 @@ func TestKVAuthTransitionStore_Security_UUIDEntropy(t *testing.T) {
 	// With the removal of 'provider' from Get and Update, the store relies purely on the UUID
 	// Check that the returned UUID is sufficiently unguessable (length of at least 32).
 	if len(created.Id) < 32 {
-		t.Fatalf("expected generated session id to be sufficiently long to prevent brute-forcing, got %v", len(created.Id))
+		t.Fatalf(
+			"expected generated session id to be sufficiently long to prevent brute-forcing, got %v",
+			len(created.Id),
+		)
 	}
 
 	// Ensure that while the provider is not a parameter for Get,
@@ -185,6 +191,9 @@ func TestKVAuthTransitionStore_Security_UUIDEntropy(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if fetched.Provider != "password" {
-		t.Fatalf("expected the store to persist the provider state accurately, got %v", fetched.Provider)
+		t.Fatalf(
+			"expected the store to persist the provider state accurately, got %v",
+			fetched.Provider,
+		)
 	}
 }

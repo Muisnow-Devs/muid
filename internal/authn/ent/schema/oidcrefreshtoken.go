@@ -51,8 +51,17 @@ func (OIDCRefreshToken) Indexes() []ent.Index {
 // Edges of the OIDCRefreshToken.
 func (OIDCRefreshToken) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", UserRef.Type).Ref("oidc_refresh_tokens").Unique().Field("user_id").Required().Immutable(),
-		edge.From("parent", OIDCRefreshToken.Type).Ref("children").Unique().Field("parent_id").Immutable(),
+		edge.From("user", UserRef.Type).
+			Ref("oidc_refresh_tokens").
+			Unique().
+			Field("user_id").
+			Required().
+			Immutable(),
+		edge.From("parent", OIDCRefreshToken.Type).
+			Ref("children").
+			Unique().
+			Field("parent_id").
+			Immutable(),
 		edge.To("children", OIDCRefreshToken.Type),
 	}
 }

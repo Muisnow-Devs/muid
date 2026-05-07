@@ -18,9 +18,9 @@ type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 
 	Port        int    `envconfig:"PORT"         default:"5314"`
-	DatabaseURL string `envconfig:"DATABASE_URL" required:"true"`
-	RedisURL    string `envconfig:"REDIS_URL"    required:"true"`
-	NATSURL     string `envconfig:"NATS_URL"     required:"true"`
+	DatabaseURL string `envconfig:"DATABASE_URL"                required:"true"`
+	RedisURL    string `envconfig:"REDIS_URL"                   required:"true"`
+	NATSURL     string `envconfig:"NATS_URL"                    required:"true"`
 
 	OTPSecretKey string `envconfig:"OTP_SECRET_KEY" required:"true"`
 

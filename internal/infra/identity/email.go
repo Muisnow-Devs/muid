@@ -9,12 +9,12 @@ import (
 	pbSession "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/event"
+	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"
+	"sanzi.io/muid/pkg/shared/topics"
 )
 
 type EmailIdentityProvider struct {
@@ -46,53 +46,17 @@ func (p *EmailIdentityProvider) Start(
 	ctx context.Context,
 	input identity.StartInput,
 ) (identity.StepResult, error) {
-	if input.Identifier == "" {
-		return identity.StepResult{}, errors.Join(
-			identity.ErrInvalidInput,
-			errors.New("missing email identifier"),
-		)
+	if err := validateEmailStartInput(input); err != nil {
+		return identity.StepResult{}, err
 	}
 
-	store := session.SessionStore{
-		Step:      "start",
-		LoginHint: input.Identifier, // Use LoginHint to store the email address
-	}
-
-	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
+	sess, err := p.createTransitionSession(ctx, input.Identifier)
 	if err != nil {
-		return identity.StepResult{}, errors.Join(
-			identity.ErrInternal, err)
+		return identity.StepResult{}, err
 	}
 
-	code, err := p.otpStore.CreateOTP(ctx, sess.Id, 5*time.Minute)
-	if err != nil {
-		return identity.StepResult{}, errors.Join(
-			identity.ErrInternal,
-			errors.New("failed to generate request code"),
-		)
-	}
-
-	created_at := time.Now()
-	msg := &mail.SendOTPEmailEvent{
-		Email:     input.Identifier,
-		Code:      code,
-		ExpiresAt: created_at.Add(5 * time.Minute).Unix(),
-		CreatedAt: created_at.Unix(),
-	}
-
-	msgBytes, err := proto.Marshal(msg)
-	if err != nil {
-		return identity.StepResult{}, errors.Join(
-			identity.ErrInternal,
-			errors.New("failed to marshal event"),
-		)
-	}
-
-	if err := p.pubSub.Publish(event.TopicSendOTP, msgBytes); err != nil {
-		return identity.StepResult{}, errors.Join(
-			identity.ErrInternal,
-			errors.New("failed to publish event"),
-		)
+	if err := p.generateAndSendOTP(ctx, sess.Id, input.Identifier); err != nil {
+		return identity.StepResult{}, err
 	}
 
 	return identity.StepResult{
@@ -105,66 +69,162 @@ func (p *EmailIdentityProvider) Continue(
 	ctx context.Context,
 	input identity.ContinueInput,
 ) (identity.StepResult, error) {
-	code, ok := input.Payload["code"].(string)
-	if !ok {
-		return identity.StepResult{}, errors.Join(
+	code, err := p.parseEmailContinuePayload(input.Payload)
+	if err != nil {
+		return identity.StepResult{}, err
+	}
+
+	sess, err := p.validateSession(ctx, input.TransitionId)
+	if err != nil {
+		return identity.StepResult{}, err
+	}
+
+	if err := p.verifyOTP(ctx, sess.Id, code); err != nil {
+		return identity.StepResult{}, err
+	}
+
+	email := sess.Store.LoginHint
+	userId, err := p.findOrCreateUser(ctx, email)
+	if err != nil {
+		return identity.StepResult{}, err
+	}
+
+	_ = p.transitionStore.Delete(ctx, sess.Id)
+
+	return p.completedResult(userId), nil
+}
+
+func validateEmailStartInput(input identity.StartInput) error {
+	if input.Identifier == "" {
+		return errors.Join(
+			identity.ErrInvalidInput,
+			errors.New("missing email identifier"),
+		)
+	}
+	return nil
+}
+
+func (p *EmailIdentityProvider) createTransitionSession(
+	ctx context.Context,
+	email string,
+) (session.AuthSession, error) {
+	store := session.SessionStore{
+		Step:      "start",
+		LoginHint: email, // Use LoginHint to store the email address
+	}
+
+	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
+	if err != nil {
+		return session.AuthSession{}, err
+	}
+
+	return sess, nil
+}
+
+func (p *EmailIdentityProvider) generateAndSendOTP(
+	ctx context.Context,
+	sessionID string,
+	email string,
+) error {
+	code, err := p.otpStore.CreateOTP(ctx, sessionID, 5*time.Minute)
+	if err != nil {
+		return err
+	}
+
+	created_at := time.Now()
+	msg := &mail.SendOTPEmailEvent{
+		Email:     email,
+		Code:      code,
+		ExpiresAt: created_at.Add(5 * time.Minute).Unix(),
+		CreatedAt: created_at.Unix(),
+	}
+
+	msgBytes, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+
+	if err := p.pubSub.Publish(topics.TopicSendOTP, msgBytes); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (*EmailIdentityProvider) parseEmailContinuePayload(payload map[string]any) (string, error) {
+	code, ok := payload["code"].(string)
+	if !ok || code == "" {
+		return "", errors.Join(
 			identity.ErrInvalidInput,
 			errors.New("missing code in payload"),
 		)
 	}
+	return code, nil
+}
 
-	sess, err := p.transitionStore.Get(ctx, input.TransitionId)
+func (p *EmailIdentityProvider) validateSession(
+	ctx context.Context,
+	transitionID string,
+) (session.AuthSession, error) {
+	sess, err := p.transitionStore.Get(ctx, transitionID)
 	if err != nil {
-		return identity.StepResult{}, errors.Join(identity.ErrSessionNotFound, err)
+		return session.AuthSession{}, errors.Join(
+			identity.ErrSessionNotFound,
+			err,
+		)
 	}
+	return sess, nil
+}
 
-	valid, err := p.otpStore.VerifyOTP(ctx, sess.Id, code)
+func (p *EmailIdentityProvider) verifyOTP(
+	ctx context.Context,
+	sessionID string,
+	code string,
+) error {
+	valid, err := p.otpStore.VerifyOTP(ctx, sessionID, code)
 	if err != nil {
-		return identity.StepResult{}, errors.Join(
+		return errors.Join(
 			identity.ErrAuthenticationFailed,
 			errors.New("failed to verify otp"),
+			err,
 		)
 	}
 	if !valid {
-		return identity.StepResult{}, errors.Join(
+		return errors.Join(
 			identity.ErrAuthenticationFailed,
 			errors.New("invalid otp"),
 		)
 	}
+	return nil
+}
 
-	email := sess.Store.LoginHint
-
-	fedId, err := p.db.UserFederatedIdentity.Query().
-		Where(
-			userfederatedidentity.ProviderEQ(p.Name()),
-			userfederatedidentity.SubjectEQ(email),
-		).
+func (p *EmailIdentityProvider) findOrCreateUser(
+	ctx context.Context,
+	email string,
+) (string, error) {
+	fedUser, err := p.db.UserRef.Query().
+		Where(userref.EmailEQ(email)).
 		Only(ctx)
 
-	if err != nil {
-		if ent.IsNotFound(err) {
-			// TODO: Add placeholder for creating a new account using the email
-			// Provide challenge so frontend knows it needs another action before completing
-			return identity.StepResult{
-				Type: identity.StepChallenge,
-				Challenge: map[string]interface{}{
-					"action": "create_account",
-					"email":  email,
-				},
-			}, nil
-		}
-		return identity.StepResult{}, errors.Join(
-			identity.ErrInternal, err)
+	if ent.IsNotFound(err) {
+		//  TODO: Create a new account or link to an existing account based on the claims.
+		//        Maybe replace fedId if user created and linked to the federated identity
+		//        in the same request?
+
+		panic("unimplemented: account provisioning and linking logic for Email identities")
+	} else if err != nil {
+		return "", err
 	}
 
-	// Optionally delete the session after successful completion to avoid replay
-	_ = p.transitionStore.Delete(ctx, sess.Id)
+	return fedUser.ID.String(), nil
+}
 
+func (*EmailIdentityProvider) completedResult(userID string) identity.StepResult {
 	return identity.StepResult{
 		Type: identity.StepComplete,
 		AuthenticatedResult: &pbSession.AuthenticatedResult{
-			UserId:    fedId.UserID.String(),
+			UserId:    userID,
 			AuthLevel: pbSession.AuthLevel_AUTH_LEVEL_MEDIUM,
 		},
-	}, nil
+	}
 }

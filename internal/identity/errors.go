@@ -11,5 +11,4 @@ var (
 	ErrSessionNotFound      = errors.New("authentication session not found")
 	ErrInvalidSessionState  = errors.New("invalid session state")
 	ErrAuthenticationFailed = errors.New("provider authentication failed")
-	ErrInternal             = errors.New("internal error during identity processing")
 )

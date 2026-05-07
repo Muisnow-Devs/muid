@@ -25,8 +25,9 @@ type SessionStore struct {
 	Attempts int
 
 	// flow based fields
-	State string // OAuth state
-	Step  string // Current step in the authentication flow
+	State        string // OAuth state
+	Step         string // Current step in the authentication flow
+	CodeVerifier string // PKCE code verifier
 
 	Data []byte
 

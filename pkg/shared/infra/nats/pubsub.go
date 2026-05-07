@@ -3,6 +3,7 @@ package nats
 import (
 	"github.com/nats-io/nats.go"
 	"sanzi.io/muid/pkg/shared/pubsub"
+	"sanzi.io/muid/pkg/shared/topics"
 )
 
 type NATSPubSub struct {
@@ -18,12 +19,12 @@ func NewNATSPubSub(natsURL string) (pubsub.PubSub, error) {
 	return &NATSPubSub{conn: client}, nil
 }
 
-func (n *NATSPubSub) Publish(topic string, message []byte) error {
-	return n.conn.Publish(topic, message)
+func (n *NATSPubSub) Publish(topic topics.Topic, message []byte) error {
+	return n.conn.Publish(string(topic), message)
 }
 
-func (n *NATSPubSub) Subscribe(topic string, handler func(message []byte)) error {
-	_, err := n.conn.Subscribe(topic, func(msg *nats.Msg) {
+func (n *NATSPubSub) Subscribe(topic topics.Topic, handler func(message []byte)) error {
+	_, err := n.conn.Subscribe(string(topic), func(msg *nats.Msg) {
 		handler(msg.Data)
 	})
 

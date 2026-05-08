@@ -1,11 +1,12 @@
 syntax = "proto3";
 
 package muid.authn.v1.challenge;
+import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/challenge;challenge";
 
 message AuthChallenge {
-  string challenge_id = 1;
+  string challenge_id = 1 [(buf.validate.field).string.uuid = true];
 
   int64 issued_at  = 2;
   int64 expires_at = 3;
@@ -18,13 +19,13 @@ message AuthChallenge {
 }
 
 message EmailChallenge {
-  string email_masked           = 1;
+  string email_masked           = 1 [(buf.validate.field).string.max_len = 256];
   int64  resend_cooldown_millis = 2;
 }
 
 message OAuthChallenge {
-  string provider = 1;
-  string auth_url = 2;
+  string provider = 1 [(buf.validate.field).string.max_len = 16];
+  string auth_url = 2  [(buf.validate.field).string.uri = true];
 }
 
 message PasskeyChallenge {

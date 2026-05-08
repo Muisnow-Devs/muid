@@ -75,7 +75,7 @@ message GetPublicKeysResponse {
 }
 
 message GetSessionRequest {
-  string session_token = 1;
+  muid.authn.v1.session.SessionToken session_token = 1;
 }
 
 message GetSessionResponse {
@@ -84,7 +84,7 @@ message GetSessionResponse {
 }
 
 message RevokeFederatedIdentityRequest {
-  string session_token = 1;
+  muid.authn.v1.session.SessionToken session_token = 1;
   string provider      = 2;
 }
 
@@ -111,7 +111,7 @@ message OIDCIntrospectTokenResponse {
 }
 
 message OIDCGrantConsentRequest {
-  string          session_token = 1;
+  muid.authn.v1.session.SessionToken session_token = 1;
   string          client_id     = 2;
   repeated string scopes        = 3;
 }
@@ -121,7 +121,7 @@ message OIDCGrantConsentResponse {
 }
 
 message OIDCRevokeConsentRequest {
-  string session_token = 1;
+  muid.authn.v1.session.SessionToken session_token = 1;
   string client_id     = 2;
 }
 
@@ -130,7 +130,7 @@ message OIDCRevokeConsentResponse {
 }
 
 message OIDCListGrantedConsentsRequest {
-  string session_token = 1;
+  muid.authn.v1.session.SessionToken session_token = 1;
 }
 
 message OIDCListGrantedConsentsResponse {
@@ -138,7 +138,7 @@ message OIDCListGrantedConsentsResponse {
 }
 
 message RevokeSessionRequest {
-  string session_token = 1;
+  muid.authn.v1.session.SessionToken session_token = 1;
 }
 
 message RevokeSessionResponse {

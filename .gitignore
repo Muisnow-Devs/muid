@@ -32,3 +32,4 @@ go.work.sum
 bin/
 
 .proto_stamp
+.buf-deps

@@ -4,6 +4,8 @@ package muid.authn.v1.session;
 
 import "google/protobuf/timestamp.proto";
 
+import "buf/validate/validate.proto";
+
 import "authn/v1/challenge.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/session;session";
@@ -15,10 +17,20 @@ enum AuthLevel {
   AUTH_LEVEL_HIGH        = 3;
 }
 
-message SessionContext {
-  string session_id = 1;
+message SessionToken {
+  string value = 1 [
+    (buf.validate.field).string = {
+    pattern: "^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$",
+    max_len: 66,
+    min_len: 66
+    }
+  ];
+}
 
-  google.protobuf.Timestamp issued_at = 2;
+message SessionContext {
+  muid.authn.v1.session.SessionToken session_token = 1;
+
+  google.protobuf.Timestamp issued_at  = 2;
   google.protobuf.Timestamp expires_at = 3;
 }
 

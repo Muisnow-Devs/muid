@@ -12,6 +12,7 @@ require (
 
 require (
 	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1 // indirect
+	buf.build/gen/go/bufbuild/registry/connectrpc/go v1.19.2-20260507063250-43b0c5a6cd08.1 // indirect
 	entgo.io/ent v0.14.6 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect

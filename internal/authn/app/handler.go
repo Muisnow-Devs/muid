@@ -20,65 +20,61 @@ func CreateGRPCHandler(infra *InfraDependencies) pb.AuthnServiceServer {
 }
 
 // ContinueAuthSession implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) ContinueAuthSession(
-	context.Context,
-	*pb.ContinueAuthSessionRequest,
-) (*pb.ContinueAuthSessionResponse, error) {
+func (g *GRPCHandler) ContinueAuthSession(context.Context, *pb.ContinueAuthSessionRequest) (*pb.ContinueAuthSessionResponse, error) {
 	panic("unimplemented")
 }
 
 // GetAuthorizedSession implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) GetAuthorizedSession(
-	context.Context,
-	*pb.GetSessionRequest,
-) (*pb.GetSessionResponse, error) {
+func (g *GRPCHandler) GetAuthorizedSession(context.Context, *pb.GetSessionRequest) (*pb.GetSessionResponse, error) {
 	panic("unimplemented")
 }
 
 // GetPublicKeys implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) GetPublicKeys(
-	context.Context,
-	*pb.GetPublicKeysRequest,
-) (*pb.GetPublicKeysResponse, error) {
+func (g *GRPCHandler) GetPublicKeys(context.Context, *pb.GetPublicKeysRequest) (*pb.GetPublicKeysResponse, error) {
 	panic("unimplemented")
 }
 
-// ListAuthorizedClients implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) ListAuthorizedClients(
-	context.Context,
-	*pb.ListAuthorizedClientsRequest,
-) (*pb.ListAuthorizedClientsResponse, error) {
+// OIDCGrantConsent implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) OIDCGrantConsent(context.Context, *pb.OIDCGrantConsentRequest) (*pb.OIDCGrantConsentResponse, error) {
 	panic("unimplemented")
 }
 
-// RefreshToken implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) RefreshToken(
-	context.Context,
-	*pb.RefreshTokenRequest,
-) (*pb.RefreshTokenResponse, error) {
+// OIDCIntrospectToken implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) OIDCIntrospectToken(context.Context, *pb.OIDCIntrospectTokenRequest) (*pb.OIDCIntrospectTokenResponse, error) {
 	panic("unimplemented")
 }
 
-// RevokeAuthorization implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) RevokeAuthorization(
-	context.Context,
-	*pb.RevokeAuthorizationRequest,
-) (*pb.RevokeAuthorizationResponse, error) {
+// OIDCListGrantedConsents implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) OIDCListGrantedConsents(context.Context, *pb.OIDCListGrantedConsentsRequest) (*pb.OIDCListGrantedConsentsResponse, error) {
+	panic("unimplemented")
+}
+
+// OIDCRevokeConsent implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) OIDCRevokeConsent(context.Context, *pb.OIDCRevokeConsentRequest) (*pb.OIDCRevokeConsentResponse, error) {
+	panic("unimplemented")
+}
+
+// OIDCRevokeRefreshToken implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) OIDCRevokeRefreshToken(context.Context, *pb.OIDCRevokeRefreshTokenRequest) (*pb.OIDCRevokeRefreshTokenResponse, error) {
+	panic("unimplemented")
+}
+
+// OIDCRotateAndGetAccessToken implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) OIDCRotateAndGetAccessToken(context.Context, *pb.OIDCRotateAndGetAccessTokenRequest) (*pb.OIDCRotateAndGetAccessTokenResponse, error) {
+	panic("unimplemented")
+}
+
+// RevokeFederatedIdentity implements [authn.AuthnServiceServer].
+func (g *GRPCHandler) RevokeFederatedIdentity(context.Context, *pb.RevokeFederatedIdentityRequest) (*pb.RevokeFederatedIdentityResponse, error) {
 	panic("unimplemented")
 }
 
 // RevokeSession implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) RevokeSession(
-	context.Context,
-	*pb.RevokeSessionRequest,
-) (*pb.RevokeSessionResponse, error) {
+func (g *GRPCHandler) RevokeSession(context.Context, *pb.RevokeSessionRequest) (*pb.RevokeSessionResponse, error) {
 	panic("unimplemented")
 }
 
 // StartAuthSession implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) StartAuthSession(
-	context.Context,
-	*pb.StartAuthSessionRequest,
-) (*pb.StartAuthSessionResponse, error) {
+func (g *GRPCHandler) StartAuthSession(context.Context, *pb.StartAuthSessionRequest) (*pb.StartAuthSessionResponse, error) {
 	panic("unimplemented")
 }

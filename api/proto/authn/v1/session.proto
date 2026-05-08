@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package muid.authn.v1.session;
 
-import "authn/v1/challenge.proto";
+import "v1/challenge.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/session;session";
 

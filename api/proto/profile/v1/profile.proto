@@ -5,12 +5,12 @@ package muid.profile.v1;
 option go_package = "sanzi.io/muid/api/proto/profile/v1;profile";
 
 // service ProfileService {
+//   rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
 //   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
 //   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
 
-//   rpc ListIdentities(ListIdentitiesRequest) returns (ListIdentitiesResponse);
-//   rpc LinkIdentity(LinkIdentityRequest) returns (LinkIdentityResponse);
-//   rpc UnlinkIdentity(UnlinkIdentityRequest) returns (UnlinkIdentityResponse);
+//   rpc StartAvatarUpload(StartAvatarUploadRequest) returns (StartAvatarUploadResponse);
+//   rpc CompleteAvatarUpload(CompleteAvatarUploadRequest) returns (CompleteAvatarUploadResponse);
 
 //   rpc ResolveIdentity(ResolveIdentityRequest) returns (ResolveIdentityResponse);
 // }

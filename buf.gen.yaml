@@ -1,0 +1,11 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: api
+    opt:
+      - module=sanzi.io/muid/api
+
+  - remote: buf.build/grpc/go
+    out: api
+    opt:
+      - module=sanzi.io/muid/api

@@ -1,0 +1,19 @@
+# For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
+version: v2
+modules:
+  - name: muid.sanzi.io/proto/authn
+    path: api/proto/authn
+  - name: muid.sanzi.io/proto/authz
+    path: api/proto/authz
+  - name: muid.sanzi.io/proto/profile
+    path: api/proto/profile
+  - name: muid.sanzi.io/proto/event
+    path: api/proto/event
+  - name: muid.sanzi.io/proto/shared
+    path: api/proto/shared
+lint:
+  use:
+    - STANDARD
+breaking:
+  use:
+    - FILE

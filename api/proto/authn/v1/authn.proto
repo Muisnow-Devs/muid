@@ -2,27 +2,40 @@ syntax = "proto3";
 
 package muid.authn.v1;
 
-import "authn/v1/basic.proto";
-import "authn/v1/certification.proto";
-import "authn/v1/challenge.proto";
-import "authn/v1/client.proto";
-import "authn/v1/proof.proto";
-import "authn/v1/session.proto";
+import "v1/basic.proto";
+import "v1/certification.proto";
+import "v1/challenge.proto";
+import "v1/client.proto";
+import "v1/proof.proto";
+import "v1/session.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
 service AuthnService {
+  /// authentication APIs
   rpc StartAuthSession(StartAuthSessionRequest) returns (StartAuthSessionResponse);
   rpc ContinueAuthSession(ContinueAuthSessionRequest) returns (ContinueAuthSessionResponse);
 
+  /// infrastructure APIs
   rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
+
+  /// user related APIs, for user to manage their sessions.
+  rpc RevokeFederatedIdentity(RevokeFederatedIdentityRequest) returns (RevokeFederatedIdentityResponse);
   rpc GetAuthorizedSession(GetSessionRequest) returns (GetSessionResponse);
-  rpc ListAuthorizedClients(ListAuthorizedClientsRequest) returns (ListAuthorizedClientsResponse);
 
+  // user session management APIs
   rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
-  rpc RevokeAuthorization(RevokeAuthorizationRequest) returns (RevokeAuthorizationResponse);
 
-  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  /// oidc token management APIs
+  // user consent
+  rpc OIDCListGrantedConsents(OIDCListGrantedConsentsRequest) returns (OIDCListGrantedConsentsResponse);
+  rpc OIDCGrantConsent(OIDCGrantConsentRequest) returns (OIDCGrantConsentResponse);
+  rpc OIDCRevokeConsent(OIDCRevokeConsentRequest) returns (OIDCRevokeConsentResponse);
+
+  // token management
+  rpc OIDCIntrospectToken(OIDCIntrospectTokenRequest) returns (OIDCIntrospectTokenResponse);
+  rpc OIDCRevokeRefreshToken(OIDCRevokeRefreshTokenRequest) returns (OIDCRevokeRefreshTokenResponse);
+  rpc OIDCRotateAndGetAccessToken(OIDCRotateAndGetAccessTokenRequest) returns (OIDCRotateAndGetAccessTokenResponse);
 }
 
 message StartAuthSessionRequest {
@@ -66,11 +79,57 @@ message GetSessionResponse {
   muid.authn.v1.session.AuthenticatedResult session = 2;
 }
 
-message ListAuthorizedClientsRequest {
+message RevokeFederatedIdentityRequest {
+  string session_token = 1;
+  string provider      = 2;
+}
+
+message RevokeFederatedIdentityResponse {
+  bool success = 1;
+}
+
+message OIDCIntrospectTokenRequest {
+  string          token = 1;
+  optional string hint  = 2;
+}
+
+message OIDCIntrospectTokenResponse {
+  bool   active    = 1;
+  string user_id   = 2;
+  string client_id = 3;
+  string type      = 4;
+
+  optional string audience = 5;
+  repeated string scopes   = 6;
+
+  int64 created_at = 7;
+  int64 expires_at = 8;
+}
+
+message OIDCGrantConsentRequest {
+  string          session_token = 1;
+  string          client_id     = 2;
+  repeated string scopes        = 3;
+}
+
+message OIDCGrantConsentResponse {
+  bool success = 1;
+}
+
+message OIDCRevokeConsentRequest {
+  string session_token = 1;
+  string client_id     = 2;
+}
+
+message OIDCRevokeConsentResponse {
+  bool success = 1;
+}
+
+message OIDCListGrantedConsentsRequest {
   string session_token = 1;
 }
 
-message ListAuthorizedClientsResponse {
+message OIDCListGrantedConsentsResponse {
   repeated muid.authn.v1.client.AuthorizedClient clients = 1;
 }
 
@@ -82,21 +141,19 @@ message RevokeSessionResponse {
   bool success = 1;
 }
 
-message RevokeAuthorizationRequest {
-  string          session_token = 1;
-  string          client_id     = 2;
-  repeated string scopes        = 3;
-}
-
-message RevokeAuthorizationResponse {
-  bool success = 1;
-}
-
-message RefreshTokenRequest {
+message OIDCRevokeRefreshTokenRequest {
   string refresh_token = 1;
 }
 
-message RefreshTokenResponse {
+message OIDCRevokeRefreshTokenResponse {
+  bool success = 1;
+}
+
+message OIDCRotateAndGetAccessTokenRequest {
+  string refresh_token = 1;
+}
+
+message OIDCRotateAndGetAccessTokenResponse {
   string access_token  = 1;
   string refresh_token = 2;
   int32  expires_at    = 3;

@@ -19,6 +19,12 @@ const (
 	GOOGLE_OIDC_PROVIDER_URL   = "https://accounts.google.com"
 	GITHUB_OIDC_PROVIDER_URL   = "https://token.actions.githubusercontent.com"
 	FACEBOOK_OIDC_PROVIDER_URL = "https://www.facebook.com"
+
+	OIDCPayloadKeyCode    = "code"
+	OIDCPayloadKeyState   = "state"
+	OIDCTokenExtraIDToken = "id_token"
+	OIDCScopeProfile      = "profile"
+	OIDCScopeEmail        = "email"
 )
 
 type OIDCIdentityProvider struct {
@@ -70,7 +76,7 @@ func NewOIDCProvider(
 		ClientSecret: config.ClientSecret,
 		Endpoint:     provider.Endpoint(),
 		RedirectURL:  config.RedirectURL,
-		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
+		Scopes:       []string{oidc.ScopeOpenID, OIDCScopeProfile, OIDCScopeEmail},
 	}
 
 	verifier := provider.Verifier(&oidc.Config{ClientID: config.ClientID})
@@ -99,7 +105,7 @@ func (p *OIDCIdentityProvider) Start(
 
 	store := session.SessionStore{
 		State:        state,
-		Step:         "start",
+		Step:         AuthStepStart,
 		CodeVerifier: verifier,
 	}
 
@@ -162,7 +168,7 @@ type continueRequest struct {
 }
 
 func (*OIDCIdentityProvider) parseContinuePayload(payload map[string]any) (continueRequest, error) {
-	code, ok := payload["code"].(string)
+	code, ok := payload[OIDCPayloadKeyCode].(string)
 	if !ok || code == "" {
 		return continueRequest{}, errors.Join(
 			identity.ErrInvalidInput,
@@ -170,7 +176,7 @@ func (*OIDCIdentityProvider) parseContinuePayload(payload map[string]any) (conti
 		)
 	}
 
-	state, ok := payload["state"].(string)
+	state, ok := payload[OIDCPayloadKeyState].(string)
 	if !ok || state == "" {
 		return continueRequest{}, errors.Join(
 			identity.ErrInvalidInput,
@@ -238,7 +244,7 @@ func (p *OIDCIdentityProvider) exchangeCode(
 }
 
 func (*OIDCIdentityProvider) extractIDToken(token *oauth2.Token) (string, error) {
-	rawIDToken, ok := token.Extra("id_token").(string)
+	rawIDToken, ok := token.Extra(OIDCTokenExtraIDToken).(string)
 	if !ok {
 		return "", errors.New("no id_token field in oauth2 token")
 	}

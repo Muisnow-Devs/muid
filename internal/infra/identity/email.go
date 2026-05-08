@@ -18,7 +18,10 @@ import (
 )
 
 const (
-	OTPLifetime = 5 * time.Minute
+	OTPLifetime       = 5 * time.Minute
+	ProviderNameEmail = "email"
+
+	EmailPayloadKeyCode = "code"
 )
 
 type EmailIdentityProvider struct {
@@ -43,7 +46,7 @@ func NewEmailIdentityProvider(
 }
 
 func (p *EmailIdentityProvider) Name() string {
-	return "email"
+	return ProviderNameEmail
 }
 
 func (p *EmailIdentityProvider) Start(
@@ -115,7 +118,7 @@ func (p *EmailIdentityProvider) createTransitionSession(
 	email string,
 ) (session.AuthSession, error) {
 	store := session.SessionStore{
-		Step:      "start",
+		Step:      AuthStepStart,
 		LoginHint: email, // Use LoginHint to store the email address
 	}
 
@@ -158,7 +161,7 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 }
 
 func (*EmailIdentityProvider) parseEmailContinuePayload(payload map[string]any) (string, error) {
-	code, ok := payload["code"].(string)
+	code, ok := payload[EmailPayloadKeyCode].(string)
 	if !ok || code == "" {
 		return "", errors.Join(
 			identity.ErrInvalidInput,

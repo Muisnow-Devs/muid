@@ -29,7 +29,7 @@ func (_c *UserSessionCreate) SetUserID(v uuid.UUID) *UserSessionCreate {
 }
 
 // SetSelector sets the "selector" field.
-func (_c *UserSessionCreate) SetSelector(v string) *UserSessionCreate {
+func (_c *UserSessionCreate) SetSelector(v []byte) *UserSessionCreate {
 	_c.mutation.SetSelector(v)
 	return _c
 }
@@ -315,7 +315,7 @@ func (_c *UserSessionCreate) createSpec() (*UserSession, *sqlgraph.CreateSpec) {
 		_spec.ID.Value = &id
 	}
 	if value, ok := _c.mutation.Selector(); ok {
-		_spec.SetField(usersession.FieldSelector, field.TypeString, value)
+		_spec.SetField(usersession.FieldSelector, field.TypeBytes, value)
 		_node.Selector = value
 	}
 	if value, ok := _c.mutation.ValidatorHash(); ok {

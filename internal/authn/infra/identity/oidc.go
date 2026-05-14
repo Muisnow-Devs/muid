@@ -8,10 +8,8 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
-	pbSession "sanzi.io/muid/api/proto/authn/v1/session"
-	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/identity"
+	"sanzi.io/muid/internal/authn/infra/account"
+	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )
 
@@ -29,7 +27,7 @@ const (
 
 type OIDCIdentityProvider struct {
 	transitionStore session.AuthTransitionStore
-	db              *ent.Client
+	accounts        *account.Services
 
 	providerName string
 	provider     *oidc.Provider
@@ -64,8 +62,8 @@ func NewOIDCProvider(
 	ctx context.Context,
 	config OIDCProviderConfig,
 	transitionStore session.AuthTransitionStore,
-	db *ent.Client,
-) (identity.IdentityProvider, error) {
+	accounts *account.Services,
+) (idn.IdentityProvider, error) {
 	provider, err := oidc.NewProvider(ctx, config.Issuer)
 	if err != nil {
 		return nil, err
@@ -87,7 +85,7 @@ func NewOIDCProvider(
 		oauth2Config:    oauth2Config,
 		verifier:        verifier,
 		transitionStore: transitionStore,
-		db:              db,
+		accounts:        accounts,
 	}, nil
 }
 
@@ -97,21 +95,23 @@ func (p *OIDCIdentityProvider) Name() string {
 
 func (p *OIDCIdentityProvider) Start(
 	ctx context.Context,
-	input identity.StartInput,
-) (identity.StepResult, error) {
-	// Generate a secure random state for OIDC flow
+	input idn.StartInput,
+) (idn.StepResult, error) {
 	state := p.generateRandomState()
 	verifier := oauth2.GenerateVerifier()
 
 	store := session.SessionStore{
-		State:        state,
-		Step:         AuthStepStart,
-		CodeVerifier: verifier,
+		Flow: session.FlowKindOIDC,
+		Step: AuthStepStart,
+		OIDC: &session.OIDCFlow{
+			OAuthState:       state,
+			PKCECodeVerifier: verifier,
+		},
 	}
 
 	sess, err := p.transitionStore.Create(ctx, p.providerName, store)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
 	authURL := p.oauth2Config.AuthCodeURL(
@@ -120,46 +120,76 @@ func (p *OIDCIdentityProvider) Start(
 		oauth2.S256ChallengeOption(verifier),
 	)
 
-	return identity.StepResult{
+	return idn.StepResult{
 		TransitionId: sess.Id,
-		Type:         identity.StepRedirect,
+		Type:         idn.StepRedirect,
 		RedirectURL:  authURL,
 	}, nil
 }
 
 func (p *OIDCIdentityProvider) Continue(
 	ctx context.Context,
-	input identity.ContinueInput,
-) (identity.StepResult, error) {
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
 	req, err := p.parseContinuePayload(input.Payload)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
 	sess, err := p.validateTransition(ctx, input.TransitionId, req.State)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
+	}
+
+	if sess.Store.Flow != session.FlowKindOIDC || sess.Store.OIDC == nil {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrInvalidSessionState,
+			errors.New("expected oidc transition"),
+		)
 	}
 
 	claims, err := p.exchangeAndVerify(
 		ctx,
 		req.Code,
-		sess.Store.CodeVerifier,
+		sess.Store.OIDC.PKCECodeVerifier,
 	)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
-	userID, err := p.findOrCreateUser(ctx, claims)
+	userID, err := p.accounts.ResolveOIDCLogin(
+		ctx,
+		p.providerName,
+		claims.Subject,
+		claims.Email,
+		claims.EmailVerified,
+		claims.Name,
+		claims.Picture,
+	)
 	if err != nil {
-		return identity.StepResult{}, errors.Join(
-			identity.ErrAuthenticationFailed,
+		if errors.Is(err, idn.ErrOIDCManualAccountLinkingRequired) {
+			return idn.StepResult{}, err
+		}
+		return idn.StepResult{}, errors.Join(
+			idn.ErrAuthenticationFailed,
 			err,
 		)
 	}
 
-	p.transitionStore.Delete(ctx, sess.Id)
-	return p.completedResult(userID), nil
+	authResult, err := p.accounts.IssueAuthenticatedSession(ctx, userID)
+	if err != nil {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrAuthenticationFailed,
+			err,
+		)
+	}
+
+	_ = p.transitionStore.Delete(ctx, sess.Id)
+
+	return idn.StepResult{
+		Type:                 idn.StepComplete,
+		AuthenticatedResult: authResult,
+	}, nil
 }
 
 type continueRequest struct {
@@ -171,7 +201,7 @@ func (*OIDCIdentityProvider) parseContinuePayload(payload map[string]any) (conti
 	code, ok := payload[OIDCPayloadKeyCode].(string)
 	if !ok || code == "" {
 		return continueRequest{}, errors.Join(
-			identity.ErrInvalidInput,
+			idn.ErrInvalidInput,
 			errors.New("missing code"),
 		)
 	}
@@ -179,7 +209,7 @@ func (*OIDCIdentityProvider) parseContinuePayload(payload map[string]any) (conti
 	state, ok := payload[OIDCPayloadKeyState].(string)
 	if !ok || state == "" {
 		return continueRequest{}, errors.Join(
-			identity.ErrInvalidInput,
+			idn.ErrInvalidInput,
 			errors.New("missing state"),
 		)
 	}
@@ -198,14 +228,14 @@ func (p *OIDCIdentityProvider) validateTransition(
 	sess, err := p.transitionStore.Get(ctx, transitionID)
 	if err != nil {
 		return session.AuthSession{}, errors.Join(
-			identity.ErrSessionNotFound,
+			idn.ErrSessionNotFound,
 			err,
 		)
 	}
 
-	if sess.Store.State != state {
+	if sess.Store.OIDC == nil || sess.Store.OIDC.OAuthState != state {
 		return session.AuthSession{}, errors.Join(
-			identity.ErrInvalidSessionState,
+			idn.ErrInvalidSessionState,
 			errors.New("state mismatch"),
 		)
 	}
@@ -266,38 +296,4 @@ func (p *OIDCIdentityProvider) verifyIDToken(
 	}
 
 	return claims, nil
-}
-
-func (p *OIDCIdentityProvider) findOrCreateUser(
-	ctx context.Context,
-	claims OIDCClaims,
-) (string, error) {
-	fedUser, err := p.db.UserFederatedIdentity.Query().
-		Where(
-			userfederatedidentity.ProviderEQ(p.providerName),
-			userfederatedidentity.SubjectEQ(claims.Subject),
-		).
-		Only(ctx)
-
-	if ent.IsNotFound(err) {
-		//  TODO: Create a new account or link to an existing account based on the claims.
-		//        Maybe replace fedId if user created and linked to the federated identity
-		//        in the same request?
-
-		panic("unimplemented: account provisioning and linking logic for OIDC identities")
-	} else if err != nil {
-		return "", err
-	}
-
-	return fedUser.UserID.String(), nil
-}
-
-func (*OIDCIdentityProvider) completedResult(userID string) identity.StepResult {
-	return identity.StepResult{
-		Type: identity.StepComplete,
-		AuthenticatedResult: &pbSession.AuthenticatedResult{
-			UserId:    userID,
-			AuthLevel: pbSession.AuthLevel_AUTH_LEVEL_MEDIUM,
-		},
-	}
 }

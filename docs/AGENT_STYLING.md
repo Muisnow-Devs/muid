@@ -10,6 +10,12 @@
 - **領域實作**：`internal/<領域>/`（例如 `internal/authn`、`internal/profile`、`internal/mailer`）。
 - **基礎設施套件（infra）**：路徑為 **`infra/<後端>/`**（例如 `infra/redis`、`infra/nats`、`infra/smtp`、`infra/r2`、`infra/mocked`）。每個套件內 **`interface.go` 只放對外匯出的型別／介面定義**（例如 `ObjectStore`、`KVStore` 型別別名、設定結構）；**不得**在該檔撰寫具體實作。**具體實作**放在同目錄其他 `.go` 檔（例如 `kvstore.go`、`objectstore.go`、`pubsub.go`、`mailer.go`、`public_url.go`），檔名不可為 `interface.go`。
 - **Authn 專用基建**：與認證流程緊耦合、但仍可單測替換的程式（Redis 上的 OTP／transition session、Email／OIDC／Passkey provider 實作）放在 **`internal/authn/infra/`**（`kv/`、`identity/`）。**不要**把它們混進頂層 `infra/*`（頂層僅通用後端驅動與介面）。
+
+### Authn 流程與 TransitionStore 型別
+
+- **TransitionStore**（`internal/session.AuthTransitionStore` + Redis 實作 `internal/authn/infra/kv`）序列化的 **`session.SessionStore`** 以 **`AuthFlowKind`**（`email_otp`、`oidc`、`passkey`）為 discriminant，並以 **`Email` / `OIDC` / `Passkey`** 三個可為 nil 的結構指標承載各流程專屬欄位（`EmailOTPFlow`、`OIDCFlow`、`PasskeyFlow`），避免以 `map[string]any` 承載關鍵 transition 狀態。
+- **Identity providers**（`internal/authn/infra/identity`）實作 `internal/identity.IdentityProvider`；**`ContinueAuthSession`** 由 `internal/authn/app/handler.go` 依 transition 的 `Provider` 欄位路由並將 `proof` 轉成 `ContinueInput.Payload`。
+- **帳號與 session**：`internal/authn/infra/account` 負責 **`UserRef`／`UserFederatedIdentity`** 寫入、呼叫 Profile **`CreateProfile`**（需設定 **`AUTHN_PROFILE_GRPC_ADDR`**；逾時 **`AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`**，預設 10），以及 **`UserSession`** 簽發（對應 proto `SessionToken` 的 `selector.validator` 格式）。對 Profile 的 gRPC 連線會掛上 **`traceid.UnaryClientInterceptor`**，將目前請求的 trace id 以 **`x-trace-id`** 傳給下游。
 - **工廠函式（`New*`）回傳介面**：若建構出的具體型別滿足專案對外合約介面（例如 Redis 實作 `kv.KVStore`、R2 實作 `r2.ObjectStore`、SMTP 實作 `mailer.Mailer`），**函式簽章應宣告回傳該介面型別**，不要回傳裸的 `*Concrete`，以降低依賴並便於替換實作或測試替身。
 
 ```go

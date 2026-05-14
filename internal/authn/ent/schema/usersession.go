@@ -22,7 +22,9 @@ func (UserSession) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 		field.UUID("user_id", uuid.UUID{}).Immutable(),
 
-		field.String("selector").MaxLen(16).NotEmpty().Immutable(),
+		// Selector should be a random bytes. It is used to look up the session without revealing the actual session ID (which is the validator).
+		// DON'T CHANGE THIS TO HEX. THIS IS NOT THE MAIN POINT.
+		field.Bytes("selector").MaxLen(16).NotEmpty().Immutable(),
 		field.Bytes("validator_hash").MaxLen(32).NotEmpty().Immutable(),
 
 		field.String("ip_address").Optional().Immutable().MaxLen(45),

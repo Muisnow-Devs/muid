@@ -6,11 +6,9 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
-	pbSession "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/api/proto/event/v1/mail"
-	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/ent/userref"
-	"sanzi.io/muid/internal/identity"
+	"sanzi.io/muid/internal/authn/infra/account"
+	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"
@@ -19,7 +17,6 @@ import (
 
 const (
 	OTPLifetime         = 5 * time.Minute
-	ProviderNameEmail   = "email"
 	EmailPayloadKeyCode = "code"
 )
 
@@ -27,85 +24,100 @@ type EmailIdentityProvider struct {
 	otpStore        otp.OTPStore
 	transitionStore session.AuthTransitionStore
 	pubSub          pubsub.PubSub
-	db              *ent.Client
+	accounts        *account.Services
 }
 
 func NewEmailIdentityProvider(
 	otpStore otp.OTPStore,
 	transitionStore session.AuthTransitionStore,
 	pubSub pubsub.PubSub,
-	db *ent.Client,
-) identity.IdentityProvider {
+	accounts *account.Services,
+) idn.IdentityProvider {
 	return &EmailIdentityProvider{
 		otpStore:        otpStore,
 		transitionStore: transitionStore,
 		pubSub:          pubSub,
-		db:              db,
+		accounts:        accounts,
 	}
 }
 
 func (p *EmailIdentityProvider) Name() string {
-	return ProviderNameEmail
+	return "email"
 }
 
 func (p *EmailIdentityProvider) Start(
 	ctx context.Context,
-	input identity.StartInput,
-) (identity.StepResult, error) {
+	input idn.StartInput,
+) (idn.StepResult, error) {
 	if err := validateEmailStartInput(input); err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
 	sess, err := p.createTransitionSession(ctx, input.Identifier)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
 	err = p.generateAndSendOTP(ctx, sess.Id, input.Identifier)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
-	return identity.StepResult{
+	return idn.StepResult{
 		TransitionId: sess.Id,
-		Type:         identity.StepInput,
+		Type:         idn.StepInput,
 	}, nil
 }
 
 func (p *EmailIdentityProvider) Continue(
 	ctx context.Context,
-	input identity.ContinueInput,
-) (identity.StepResult, error) {
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
 	code, err := p.parseEmailContinuePayload(input.Payload)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
 	sess, err := p.validateSession(ctx, input.TransitionId)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
 	err = p.verifyOTP(ctx, sess.Id, code)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
-	email := sess.Store.LoginHint
-	userID, err := p.findOrCreateUser(ctx, email)
+	if sess.Store.Flow != session.FlowKindEmailOTP || sess.Store.Email == nil {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrInvalidSessionState,
+			errors.New("expected email_otp transition"),
+		)
+	}
+
+	email := sess.Store.Email.Email
+	userID, err := p.accounts.ResolveEmailLogin(ctx, email)
 	if err != nil {
-		return identity.StepResult{}, err
+		return idn.StepResult{}, err
 	}
 
-	p.transitionStore.Delete(ctx, sess.Id)
+	authResult, err := p.accounts.IssueAuthenticatedSession(ctx, userID)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
 
-	return p.completedResult(userID), nil
+	_ = p.transitionStore.Delete(ctx, sess.Id)
+
+	return idn.StepResult{
+		Type:                idn.StepComplete,
+		AuthenticatedResult: authResult,
+	}, nil
 }
 
-func validateEmailStartInput(input identity.StartInput) error {
+func validateEmailStartInput(input idn.StartInput) error {
 	if input.Identifier == "" {
 		return errors.Join(
-			identity.ErrInvalidInput,
+			idn.ErrInvalidInput,
 			errors.New("missing email identifier"),
 		)
 	}
@@ -117,8 +129,11 @@ func (p *EmailIdentityProvider) createTransitionSession(
 	email string,
 ) (session.AuthSession, error) {
 	store := session.SessionStore{
-		Step:      AuthStepStart,
-		LoginHint: email, // Use LoginHint to store the email address
+		Flow: session.FlowKindEmailOTP,
+		Step: AuthStepStart,
+		Email: &session.EmailOTPFlow{
+			Email: email,
+		},
 	}
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
@@ -163,7 +178,7 @@ func (*EmailIdentityProvider) parseEmailContinuePayload(payload map[string]any) 
 	code, ok := payload[EmailPayloadKeyCode].(string)
 	if !ok || code == "" {
 		return "", errors.Join(
-			identity.ErrInvalidInput,
+			idn.ErrInvalidInput,
 			errors.New("missing code in payload"),
 		)
 	}
@@ -177,7 +192,7 @@ func (p *EmailIdentityProvider) validateSession(
 	sess, err := p.transitionStore.Get(ctx, transitionID)
 	if err != nil {
 		return session.AuthSession{}, errors.Join(
-			identity.ErrSessionNotFound,
+			idn.ErrSessionNotFound,
 			err,
 		)
 	}
@@ -192,7 +207,7 @@ func (p *EmailIdentityProvider) verifyOTP(
 	err := p.otpStore.VerifyOTP(ctx, sessionID, code)
 	if errors.Is(err, otp.ErrOTPAuthFailed) {
 		return errors.Join(
-			identity.ErrAuthenticationFailed,
+			idn.ErrAuthenticationFailed,
 			err,
 		)
 	}
@@ -202,35 +217,4 @@ func (p *EmailIdentityProvider) verifyOTP(
 	}
 
 	return nil
-}
-
-func (p *EmailIdentityProvider) findOrCreateUser(
-	ctx context.Context,
-	email string,
-) (string, error) {
-	fedUser, err := p.db.UserRef.Query().
-		Where(userref.EmailEQ(email)).
-		Only(ctx)
-
-	if ent.IsNotFound(err) {
-		//  TODO: Create a new account or link to an existing account based on the claims.
-		//        Maybe replace fedId if user created and linked to the federated identity
-		//        in the same request?
-
-		panic("unimplemented: account provisioning and linking logic for Email identities")
-	} else if err != nil {
-		return "", err
-	}
-
-	return fedUser.ID.String(), nil
-}
-
-func (*EmailIdentityProvider) completedResult(userID string) identity.StepResult {
-	return identity.StepResult{
-		Type: identity.StepComplete,
-		AuthenticatedResult: &pbSession.AuthenticatedResult{
-			UserId:    userID,
-			AuthLevel: pbSession.AuthLevel_AUTH_LEVEL_MEDIUM,
-		},
-	}
 }

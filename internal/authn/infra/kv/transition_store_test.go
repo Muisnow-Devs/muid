@@ -14,7 +14,7 @@ func TestKVAuthTransitionStore_CreateAndGet_Success(t *testing.T) {
 	ctx := context.Background()
 
 	storeData := session.SessionStore{
-		State: "init",
+		Step: "init",
 	}
 
 	created, err := store.Create(ctx, "password", storeData)
@@ -29,8 +29,8 @@ func TestKVAuthTransitionStore_CreateAndGet_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if fetched.Store.State != "init" {
-		t.Errorf("expected state 'init', got '%s'", fetched.Store.State)
+	if fetched.Store.Step != "init" {
+		t.Errorf("expected step 'init', got '%s'", fetched.Store.Step)
 	}
 	if fetched.Provider != "password" {
 		t.Errorf("expected provider to be 'password', got '%s'", fetched.Provider)
@@ -54,7 +54,7 @@ func TestKVAuthTransitionStore_Update_Success(t *testing.T) {
 	ctx := context.Background()
 
 	storeData := session.SessionStore{
-		State: "init",
+		Step: "init",
 	}
 
 	created, err := store.Create(ctx, "password", storeData)
@@ -62,15 +62,15 @@ func TestKVAuthTransitionStore_Update_Success(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	storeData.State = "authenticated"
+	storeData.Step = "authenticated"
 	err = store.Update(ctx, created.Id, storeData)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
 	fetched, _ := store.Get(ctx, created.Id)
-	if fetched.Store.State != "authenticated" {
-		t.Errorf("expected state 'authenticated', got '%s'", fetched.Store.State)
+	if fetched.Store.Step != "authenticated" {
+		t.Errorf("expected step 'authenticated', got '%s'", fetched.Store.Step)
 	}
 }
 
@@ -80,7 +80,7 @@ func TestKVAuthTransitionStore_Update_NotFound(t *testing.T) {
 	ctx := context.Background()
 
 	storeData := session.SessionStore{
-		State: "init",
+		Step: "init",
 	}
 
 	err := store.Update(ctx, "session-404", storeData)
@@ -95,7 +95,7 @@ func TestKVAuthTransitionStore_Delete(t *testing.T) {
 	ctx := context.Background()
 
 	storeData := session.SessionStore{
-		State: "init",
+		Step: "init",
 	}
 
 	created, err := store.Create(ctx, "password", storeData)
@@ -167,7 +167,7 @@ func TestKVAuthTransitionStore_Security_Expired_Update(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	err = store.Update(ctx, created.Id, session.SessionStore{State: "bypassed"})
+	err = store.Update(ctx, created.Id, session.SessionStore{Step: "bypassed"})
 	if err != session.ErrSessionExpired && err != session.ErrSessionNotFound {
 		t.Fatalf(
 			"expected ErrSessionExpired during update of an already expired token, got %v",
@@ -181,7 +181,7 @@ func TestKVAuthTransitionStore_Security_UUIDEntropy(t *testing.T) {
 	store := NewKVAuthTransitionStore(mockKV)
 	ctx := context.Background()
 
-	created, _ := store.Create(ctx, "password", session.SessionStore{State: "valid"})
+	created, _ := store.Create(ctx, "password", session.SessionStore{Step: "valid"})
 
 	// With the removal of 'provider' from Get and Update, the store relies purely on the UUID
 	// Check that the returned UUID is sufficiently unguessable (length of at least 32).

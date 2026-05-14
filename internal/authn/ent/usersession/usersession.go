@@ -78,7 +78,7 @@ func ValidColumn(column string) bool {
 
 var (
 	// SelectorValidator is a validator for the "selector" field. It is called by the builders before save.
-	SelectorValidator func(string) error
+	SelectorValidator func([]byte) error
 	// ValidatorHashValidator is a validator for the "validator_hash" field. It is called by the builders before save.
 	ValidatorHashValidator func([]byte) error
 	// IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
@@ -112,11 +112,6 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByUserID orders the results by the user_id field.
 func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserID, opts...).ToFunc()
-}
-
-// BySelector orders the results by the selector field.
-func BySelector(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldSelector, opts...).ToFunc()
 }
 
 // ByIPAddress orders the results by the ip_address field.

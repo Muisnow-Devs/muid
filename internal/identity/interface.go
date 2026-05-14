@@ -35,6 +35,11 @@ type StepResult struct {
 	Challenge      any // Optional, for challenge-based flows (e.g. WebAuthn)
 	RequiredFields []string
 
+	// PasskeyPublicKeyCredentialRequestOptionsJSON is set for passkey [StepChallenge]
+	// with the WebAuthn PublicKeyCredentialRequestOptions JSON payload.
+	PasskeyPublicKeyCredentialRequestOptionsJSON string
+	PasskeyTimeoutMillis                         int64
+
 	AuthenticatedResult *session.AuthenticatedResult // Optional, for complete steps
 }
 

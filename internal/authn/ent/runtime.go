@@ -219,13 +219,13 @@ func init() {
 	// usersessionDescSelector is the schema descriptor for selector field.
 	usersessionDescSelector := usersessionFields[2].Descriptor()
 	// usersession.SelectorValidator is a validator for the "selector" field. It is called by the builders before save.
-	usersession.SelectorValidator = func() func(string) error {
+	usersession.SelectorValidator = func() func([]byte) error {
 		validators := usersessionDescSelector.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
+		fns := [...]func([]byte) error{
+			validators[0].(func([]byte) error),
+			validators[1].(func([]byte) error),
 		}
-		return func(selector string) error {
+		return func(selector []byte) error {
 			for _, fn := range fns {
 				if err := fn(selector); err != nil {
 					return err

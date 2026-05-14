@@ -22,7 +22,7 @@ type UserSession struct {
 	// UserID holds the value of the "user_id" field.
 	UserID uuid.UUID `json:"user_id,omitempty"`
 	// Selector holds the value of the "selector" field.
-	Selector string `json:"selector,omitempty"`
+	Selector []byte `json:"selector,omitempty"`
 	// ValidatorHash holds the value of the "validator_hash" field.
 	ValidatorHash []byte `json:"validator_hash,omitempty"`
 	// IPAddress holds the value of the "ip_address" field.
@@ -72,9 +72,9 @@ func (*UserSession) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usersession.FieldValidatorHash:
+		case usersession.FieldSelector, usersession.FieldValidatorHash:
 			values[i] = new([]byte)
-		case usersession.FieldSelector, usersession.FieldIPAddress, usersession.FieldUserAgent, usersession.FieldDeviceName:
+		case usersession.FieldIPAddress, usersession.FieldUserAgent, usersession.FieldDeviceName:
 			values[i] = new(sql.NullString)
 		case usersession.FieldLastActiveAt, usersession.FieldCreatedAt, usersession.FieldUpdatedAt, usersession.FieldExpiresAt, usersession.FieldRevokedAt:
 			values[i] = new(sql.NullTime)
@@ -108,10 +108,10 @@ func (_m *UserSession) assignValues(columns []string, values []any) error {
 				_m.UserID = *value
 			}
 		case usersession.FieldSelector:
-			if value, ok := values[i].(*sql.NullString); !ok {
+			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field selector", values[i])
-			} else if value.Valid {
-				_m.Selector = value.String
+			} else if value != nil {
+				_m.Selector = *value
 			}
 		case usersession.FieldValidatorHash:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -212,7 +212,7 @@ func (_m *UserSession) String() string {
 	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("selector=")
-	builder.WriteString(_m.Selector)
+	builder.WriteString(fmt.Sprintf("%v", _m.Selector))
 	builder.WriteString(", ")
 	builder.WriteString("validator_hash=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ValidatorHash))

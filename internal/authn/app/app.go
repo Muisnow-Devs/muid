@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 
-	"sanzi.io/muid/internal/authn/ent"
 	implIdentity "sanzi.io/muid/internal/authn/infra/identity"
+	"sanzi.io/muid/internal/authn/infra/account"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
@@ -44,11 +44,11 @@ func InitializeIdentityManager(
 	transitionStore session.AuthTransitionStore,
 	otpStore otp.OTPStore,
 	pubSub pubsub.PubSub,
-	entClient *ent.Client,
+	accounts *account.Services,
 ) (*identity.IdentityManager, error) {
 	providers := []identity.IdentityProvider{
-		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, entClient),
-		implIdentity.NewPasskeyIdentityProvider(transitionStore),
+		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, accounts),
+		implIdentity.NewPasskeyIdentityProvider(transitionStore, accounts),
 	}
 
 	oidcProviders := []implIdentity.OIDCProviderConfig{
@@ -76,7 +76,7 @@ func InitializeIdentityManager(
 	}
 
 	for _, cfg := range oidcProviders {
-		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore, entClient)
+		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore, accounts)
 		if err != nil {
 			return nil, &OIDCProviderInitError{Name: cfg.Name, Err: err}
 		}

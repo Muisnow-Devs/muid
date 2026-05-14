@@ -62,7 +62,7 @@ func UserID(v uuid.UUID) predicate.UserSession {
 }
 
 // Selector applies equality check predicate on the "selector" field. It's identical to SelectorEQ.
-func Selector(v string) predicate.UserSession {
+func Selector(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldEQ(FieldSelector, v))
 }
 
@@ -132,68 +132,43 @@ func UserIDNotIn(vs ...uuid.UUID) predicate.UserSession {
 }
 
 // SelectorEQ applies the EQ predicate on the "selector" field.
-func SelectorEQ(v string) predicate.UserSession {
+func SelectorEQ(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldEQ(FieldSelector, v))
 }
 
 // SelectorNEQ applies the NEQ predicate on the "selector" field.
-func SelectorNEQ(v string) predicate.UserSession {
+func SelectorNEQ(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldNEQ(FieldSelector, v))
 }
 
 // SelectorIn applies the In predicate on the "selector" field.
-func SelectorIn(vs ...string) predicate.UserSession {
+func SelectorIn(vs ...[]byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldIn(FieldSelector, vs...))
 }
 
 // SelectorNotIn applies the NotIn predicate on the "selector" field.
-func SelectorNotIn(vs ...string) predicate.UserSession {
+func SelectorNotIn(vs ...[]byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldNotIn(FieldSelector, vs...))
 }
 
 // SelectorGT applies the GT predicate on the "selector" field.
-func SelectorGT(v string) predicate.UserSession {
+func SelectorGT(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldGT(FieldSelector, v))
 }
 
 // SelectorGTE applies the GTE predicate on the "selector" field.
-func SelectorGTE(v string) predicate.UserSession {
+func SelectorGTE(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldGTE(FieldSelector, v))
 }
 
 // SelectorLT applies the LT predicate on the "selector" field.
-func SelectorLT(v string) predicate.UserSession {
+func SelectorLT(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldLT(FieldSelector, v))
 }
 
 // SelectorLTE applies the LTE predicate on the "selector" field.
-func SelectorLTE(v string) predicate.UserSession {
+func SelectorLTE(v []byte) predicate.UserSession {
 	return predicate.UserSession(sql.FieldLTE(FieldSelector, v))
-}
-
-// SelectorContains applies the Contains predicate on the "selector" field.
-func SelectorContains(v string) predicate.UserSession {
-	return predicate.UserSession(sql.FieldContains(FieldSelector, v))
-}
-
-// SelectorHasPrefix applies the HasPrefix predicate on the "selector" field.
-func SelectorHasPrefix(v string) predicate.UserSession {
-	return predicate.UserSession(sql.FieldHasPrefix(FieldSelector, v))
-}
-
-// SelectorHasSuffix applies the HasSuffix predicate on the "selector" field.
-func SelectorHasSuffix(v string) predicate.UserSession {
-	return predicate.UserSession(sql.FieldHasSuffix(FieldSelector, v))
-}
-
-// SelectorEqualFold applies the EqualFold predicate on the "selector" field.
-func SelectorEqualFold(v string) predicate.UserSession {
-	return predicate.UserSession(sql.FieldEqualFold(FieldSelector, v))
-}
-
-// SelectorContainsFold applies the ContainsFold predicate on the "selector" field.
-func SelectorContainsFold(v string) predicate.UserSession {
-	return predicate.UserSession(sql.FieldContainsFold(FieldSelector, v))
 }
 
 // ValidatorHashEQ applies the EQ predicate on the "validator_hash" field.

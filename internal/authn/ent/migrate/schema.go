@@ -184,7 +184,7 @@ var (
 	// UserSessionsColumns holds the columns for the "user_sessions" table.
 	UserSessionsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "selector", Type: field.TypeString, Size: 16},
+		{Name: "selector", Type: field.TypeBytes, Size: 16},
 		{Name: "validator_hash", Type: field.TypeBytes, Size: 32},
 		{Name: "ip_address", Type: field.TypeString, Nullable: true, Size: 45},
 		{Name: "user_agent", Type: field.TypeString, Nullable: true, Size: 512},

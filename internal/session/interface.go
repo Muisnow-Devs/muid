@@ -21,17 +21,43 @@ type AuthSession struct {
 	ExpiresAt int64
 }
 
+// AuthFlowKind discriminates which flow payload is active in [SessionStore].
+// Only one of Email, OIDC, or Passkey should be non-nil for a given session.
+type AuthFlowKind string
+
+const (
+	FlowKindUnspecified AuthFlowKind = ""
+	FlowKindEmailOTP    AuthFlowKind = "email_otp"
+	FlowKindOIDC        AuthFlowKind = "oidc"
+	FlowKindPasskey     AuthFlowKind = "passkey"
+)
+
+// EmailOTPFlow holds email OTP transition state.
+type EmailOTPFlow struct {
+	Email string `json:"email"`
+}
+
+// OIDCFlow holds OIDC/PKCE transition state.
+type OIDCFlow struct {
+	OAuthState       string `json:"oauth_state"`
+	PKCECodeVerifier string `json:"pkce_code_verifier"`
+}
+
+// PasskeyFlow holds WebAuthn ceremony state for the passkey login transition.
+type PasskeyFlow struct {
+	ChallengeB64 string `json:"challenge_b64"`
+	RPID         string `json:"rp_id"`
+}
+
 type SessionStore struct {
-	Attempts int
+	Attempts int    `json:"attempts"`
+	Step     string `json:"step"`
 
-	// flow based fields
-	State        string // OAuth state
-	Step         string // Current step in the authentication flow
-	CodeVerifier string // PKCE code verifier
+	Flow AuthFlowKind `json:"flow"`
 
-	Data []byte
-
-	LoginHint string
+	Email   *EmailOTPFlow `json:"email,omitempty"`
+	OIDC    *OIDCFlow     `json:"oidc,omitempty"`
+	Passkey *PasskeyFlow  `json:"passkey,omitempty"`
 }
 
 type AuthTransitionStore interface {

@@ -1,4 +1,4 @@
-package app
+package subscriber
 
 import "errors"
 

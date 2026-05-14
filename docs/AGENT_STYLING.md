@@ -82,6 +82,7 @@ func (e *InvalidSegmentError) Detail() string { return e.Field + "=" + e.Value }
 
 ### Handler 與 gRPC 回應
 
+- **大型 gRPC handler**：依關切點與檔案大小將 RPC 實作拆成同套件多檔（例如 CRUD、頭像、訂閱、內部錯誤輔助），維持單一 **`GRPCHandler`**／**`New*Handler`** 對外註冊面；避免單檔堆疊所有方法。
 - Profile 等 gRPC handler 對非預期錯誤應透過 **`grpcutils.GRPCInternalError()`**（或等價）回傳 **`codes.Internal`** 與固定英文 **`internal error`**，與 **`RecoveryInterceptor`** 對 panic 的客戶端回應一致。
 - Mailer 主題處理：`internal/mailer/handlers` 內 **`ErrMalformedMailEventPayload`** 等為預期錯誤根因（常與底層 `proto.Unmarshal` 以 **`errors.Join`** 合併）；SMTP 非驗證類失敗以 **`errors.Join(mailer.ErrEmailSendFailed, err)`** 保留語意並由基礎設施層 log。
 
@@ -150,7 +151,7 @@ NATS 事件 payload 亦使用上述 Protobuf 訊息定義（例如 `api/proto/ev
 ## 與本文件一起參考的程式入口
 
 - Profile gRPC 註冊：`internal/profile/app/service.go`
-- Profile 業務邏輯：`internal/profile/app/handler.go`
+- Profile：`internal/profile/grpc`（套件 `profilegrpc`，gRPC RPC 與 gRPC 專用輔助）；`internal/profile/subscriber`（NATS 訂閱）；其餘組態／啟動／gRPC 伺服器包裝於 `internal/profile/app`。
 - Profile 啟動／基礎設施：`internal/profile/app/bootstrap.go`、`cmd/profile/main.go`
 - Authn 啟動／基礎設施：`internal/authn/app/bootstrap.go`、`cmd/authn/main.go`
 - Authn 內部基建（OTP／transition／identity providers）：`internal/authn/infra/kv`、`internal/authn/infra/identity`

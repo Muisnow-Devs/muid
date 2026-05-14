@@ -1,4 +1,4 @@
-package app
+package profilegrpc
 
 import (
 	"crypto/rand"

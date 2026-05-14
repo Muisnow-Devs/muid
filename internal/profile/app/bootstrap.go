@@ -8,6 +8,8 @@ import (
 	"strings"
 
 	"sanzi.io/muid/internal/media"
+	"sanzi.io/muid/internal/profile/grpc"
+	"sanzi.io/muid/internal/profile/subscriber"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/r2"
@@ -36,7 +38,7 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 		}
 	}
 
-	var avatars *AvatarMedia
+	var avatars *profilegrpc.AvatarMedia
 	if cfg.R2AccountID != "" || cfg.R2AccessKeyID != "" || cfg.R2SecretAccessKey != "" || cfg.R2UploadBucket != "" || cfg.R2AssetsBucket != "" {
 		if cfg.R2AccountID == "" || cfg.R2AccessKeyID == "" || cfg.R2SecretAccessKey == "" || cfg.R2UploadBucket == "" || cfg.R2AssetsBucket == "" {
 			_ = client.Close()
@@ -54,7 +56,7 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 			closeIfCloser(pubSub)
 			return nil, fmt.Errorf("r2: %w", err)
 		}
-		avatars = &AvatarMedia{
+		avatars = &profilegrpc.AvatarMedia{
 			Store:          store,
 			UploadBucket:   cfg.R2UploadBucket,
 			AssetsBucket:   cfg.R2AssetsBucket,
@@ -82,7 +84,7 @@ type ProfileApp struct {
 }
 
 func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
-	h := NewGRPCHandler(infra.Ent, infra.PubSub, infra.Avatars, media.NewWebPRasterAvatarProcessor())
+	h := profilegrpc.NewGRPCHandler(infra.Ent, infra.PubSub, infra.Avatars, media.NewWebPRasterAvatarProcessor())
 	svc, err := NewProfileGRPC(infra.GlobalConfig, h)
 	if err != nil {
 		return nil, err
@@ -95,7 +97,7 @@ func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
 
 func (a *ProfileApp) Start(ctx context.Context) error {
 	go func() {
-		if err := RunProfileSubscriber(context.Background(), a.infra.PubSub); err != nil {
+		if err := subscriber.RunProfileSubscriber(context.Background(), a.infra.PubSub); err != nil {
 			log.Printf("profile subscriber: %v", err)
 		}
 	}()

@@ -1,4 +1,4 @@
-package app
+package profilegrpc
 
 import "sanzi.io/muid/infra/r2"
 

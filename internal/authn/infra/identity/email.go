@@ -106,7 +106,7 @@ func (p *EmailIdentityProvider) Continue(
 		return idn.StepResult{}, err
 	}
 
-	_ = p.transitionStore.Delete(ctx, sess.Id)
+	p.transitionStore.Delete(ctx, sess.Id)
 
 	return idn.StepResult{
 		Type:                idn.StepComplete,

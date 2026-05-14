@@ -10,7 +10,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -71,11 +70,6 @@ func (x AuthMethod) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use AuthMethod.Descriptor instead.
-func (AuthMethod) EnumDescriptor() ([]byte, []int) {
-	return file_authn_v1_basic_proto_rawDescGZIP(), []int{0}
-}
-
 type AuthStatus int32
 
 const (
@@ -126,11 +120,6 @@ func (x AuthStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use AuthStatus.Descriptor instead.
-func (AuthStatus) EnumDescriptor() ([]byte, []int) {
-	return file_authn_v1_basic_proto_rawDescGZIP(), []int{1}
-}
-
 type AuthIntent int32
 
 const (
@@ -178,11 +167,6 @@ func (x AuthIntent) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use AuthIntent.Descriptor instead.
-func (AuthIntent) EnumDescriptor() ([]byte, []int) {
-	return file_authn_v1_basic_proto_rawDescGZIP(), []int{2}
-}
-
 var File_authn_v1_basic_proto protoreflect.FileDescriptor
 
 const file_authn_v1_basic_proto_rawDesc = "" +
@@ -210,18 +194,6 @@ const file_authn_v1_basic_proto_rawDesc = "" +
 	"\x1aAUTH_INTENT_REAUTHENTICATE\x10\x03B\xc3\x01\n" +
 	"\x17com.muid.authn.v1.basicB\n" +
 	"BasicProtoP\x01Z,sanzi.io/muid/api/proto/authn/v1/basic;basic\xa2\x02\x04MAVB\xaa\x02\x13Muid.Authn.V1.Basic\xca\x02\x13Muid\\Authn\\V1\\Basic\xe2\x02\x1fMuid\\Authn\\V1\\Basic\\GPBMetadata\xea\x02\x16Muid::Authn::V1::Basicb\x06proto3"
-
-var (
-	file_authn_v1_basic_proto_rawDescOnce sync.Once
-	file_authn_v1_basic_proto_rawDescData []byte
-)
-
-func file_authn_v1_basic_proto_rawDescGZIP() []byte {
-	file_authn_v1_basic_proto_rawDescOnce.Do(func() {
-		file_authn_v1_basic_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_basic_proto_rawDesc), len(file_authn_v1_basic_proto_rawDesc)))
-	})
-	return file_authn_v1_basic_proto_rawDescData
-}
 
 var file_authn_v1_basic_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
 var file_authn_v1_basic_proto_goTypes = []any{

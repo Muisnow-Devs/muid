@@ -18,7 +18,6 @@ import (
 	client "sanzi.io/muid/api/proto/authn/v1/client"
 	proof "sanzi.io/muid/api/proto/authn/v1/proof"
 	session "sanzi.io/muid/api/proto/authn/v1/session"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -30,11 +29,11 @@ const (
 )
 
 type StartAuthSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Method        basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod" json:"method,omitempty"`
-	Identifier    string                 `protobuf:"bytes,2,opt,name=identifier,proto3" json:"identifier,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Method     basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod"`
+	xxx_hidden_Identifier string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *StartAuthSessionRequest) Reset() {
@@ -62,31 +61,50 @@ func (x *StartAuthSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartAuthSessionRequest.ProtoReflect.Descriptor instead.
-func (*StartAuthSessionRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *StartAuthSessionRequest) GetMethod() basic.AuthMethod {
 	if x != nil {
-		return x.Method
+		return x.xxx_hidden_Method
 	}
 	return basic.AuthMethod(0)
 }
 
 func (x *StartAuthSessionRequest) GetIdentifier() string {
 	if x != nil {
-		return x.Identifier
+		return x.xxx_hidden_Identifier
 	}
 	return ""
 }
 
+func (x *StartAuthSessionRequest) SetMethod(v basic.AuthMethod) {
+	x.xxx_hidden_Method = v
+}
+
+func (x *StartAuthSessionRequest) SetIdentifier(v string) {
+	x.xxx_hidden_Identifier = v
+}
+
+type StartAuthSessionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Method     basic.AuthMethod
+	Identifier string
+}
+
+func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
+	m0 := &StartAuthSessionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Method = b.Method
+	x.xxx_hidden_Identifier = b.Identifier
+	return m0
+}
+
 type StartAuthSessionResponse struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	TransitionId  string                   `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3" json:"transition_id,omitempty"`
-	Challenge     *challenge.AuthChallenge `protobuf:"bytes,2,opt,name=challenge,proto3" json:"challenge,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_TransitionId string                   `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
+	xxx_hidden_Challenge    *challenge.AuthChallenge `protobuf:"bytes,2,opt,name=challenge,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *StartAuthSessionResponse) Reset() {
@@ -114,31 +132,61 @@ func (x *StartAuthSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartAuthSessionResponse.ProtoReflect.Descriptor instead.
-func (*StartAuthSessionResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *StartAuthSessionResponse) GetTransitionId() string {
 	if x != nil {
-		return x.TransitionId
+		return x.xxx_hidden_TransitionId
 	}
 	return ""
 }
 
 func (x *StartAuthSessionResponse) GetChallenge() *challenge.AuthChallenge {
 	if x != nil {
-		return x.Challenge
+		return x.xxx_hidden_Challenge
 	}
 	return nil
 }
 
+func (x *StartAuthSessionResponse) SetTransitionId(v string) {
+	x.xxx_hidden_TransitionId = v
+}
+
+func (x *StartAuthSessionResponse) SetChallenge(v *challenge.AuthChallenge) {
+	x.xxx_hidden_Challenge = v
+}
+
+func (x *StartAuthSessionResponse) HasChallenge() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Challenge != nil
+}
+
+func (x *StartAuthSessionResponse) ClearChallenge() {
+	x.xxx_hidden_Challenge = nil
+}
+
+type StartAuthSessionResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	TransitionId string
+	Challenge    *challenge.AuthChallenge
+}
+
+func (b0 StartAuthSessionResponse_builder) Build() *StartAuthSessionResponse {
+	m0 := &StartAuthSessionResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_TransitionId = b.TransitionId
+	x.xxx_hidden_Challenge = b.Challenge
+	return m0
+}
+
 type ContinueAuthSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	TransitionId  string                 `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3" json:"transition_id,omitempty"`
-	Proof         *proof.AuthProof       `protobuf:"bytes,2,opt,name=proof,proto3" json:"proof,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_TransitionId string                 `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
+	xxx_hidden_Proof        *proof.AuthProof       `protobuf:"bytes,2,opt,name=proof,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ContinueAuthSessionRequest) Reset() {
@@ -166,37 +214,62 @@ func (x *ContinueAuthSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ContinueAuthSessionRequest.ProtoReflect.Descriptor instead.
-func (*ContinueAuthSessionRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *ContinueAuthSessionRequest) GetTransitionId() string {
 	if x != nil {
-		return x.TransitionId
+		return x.xxx_hidden_TransitionId
 	}
 	return ""
 }
 
 func (x *ContinueAuthSessionRequest) GetProof() *proof.AuthProof {
 	if x != nil {
-		return x.Proof
+		return x.xxx_hidden_Proof
 	}
 	return nil
 }
 
+func (x *ContinueAuthSessionRequest) SetTransitionId(v string) {
+	x.xxx_hidden_TransitionId = v
+}
+
+func (x *ContinueAuthSessionRequest) SetProof(v *proof.AuthProof) {
+	x.xxx_hidden_Proof = v
+}
+
+func (x *ContinueAuthSessionRequest) HasProof() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Proof != nil
+}
+
+func (x *ContinueAuthSessionRequest) ClearProof() {
+	x.xxx_hidden_Proof = nil
+}
+
+type ContinueAuthSessionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	TransitionId string
+	Proof        *proof.AuthProof
+}
+
+func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest {
+	m0 := &ContinueAuthSessionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_TransitionId = b.TransitionId
+	x.xxx_hidden_Proof = b.Proof
+	return m0
+}
+
 type ContinueAuthSessionResponse struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	TransitionId string                 `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3" json:"transition_id,omitempty"`
-	Status       basic.AuthStatus       `protobuf:"varint,2,opt,name=status,proto3,enum=muid.authn.v1.basic.AuthStatus" json:"status,omitempty"`
-	// Types that are valid to be assigned to Result:
-	//
-	//	*ContinueAuthSessionResponse_ChallengeRequired
-	//	*ContinueAuthSessionResponse_AuthSuccess
-	//	*ContinueAuthSessionResponse_AuthFailure
-	Result        isContinueAuthSessionResponse_Result `protobuf_oneof:"result"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState               `protogen:"opaque.v1"`
+	xxx_hidden_TransitionId string                               `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
+	xxx_hidden_Status       basic.AuthStatus                     `protobuf:"varint,2,opt,name=status,proto3,enum=muid.authn.v1.basic.AuthStatus"`
+	xxx_hidden_Result       isContinueAuthSessionResponse_Result `protobuf_oneof:"result"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *ContinueAuthSessionResponse) Reset() {
@@ -224,35 +297,23 @@ func (x *ContinueAuthSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ContinueAuthSessionResponse.ProtoReflect.Descriptor instead.
-func (*ContinueAuthSessionResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *ContinueAuthSessionResponse) GetTransitionId() string {
 	if x != nil {
-		return x.TransitionId
+		return x.xxx_hidden_TransitionId
 	}
 	return ""
 }
 
 func (x *ContinueAuthSessionResponse) GetStatus() basic.AuthStatus {
 	if x != nil {
-		return x.Status
+		return x.xxx_hidden_Status
 	}
 	return basic.AuthStatus(0)
 }
 
-func (x *ContinueAuthSessionResponse) GetResult() isContinueAuthSessionResponse_Result {
-	if x != nil {
-		return x.Result
-	}
-	return nil
-}
-
 func (x *ContinueAuthSessionResponse) GetChallengeRequired() *session.ChallengeRequired {
 	if x != nil {
-		if x, ok := x.Result.(*ContinueAuthSessionResponse_ChallengeRequired); ok {
+		if x, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_ChallengeRequired); ok {
 			return x.ChallengeRequired
 		}
 	}
@@ -261,7 +322,7 @@ func (x *ContinueAuthSessionResponse) GetChallengeRequired() *session.ChallengeR
 
 func (x *ContinueAuthSessionResponse) GetAuthSuccess() *session.AuthSuccess {
 	if x != nil {
-		if x, ok := x.Result.(*ContinueAuthSessionResponse_AuthSuccess); ok {
+		if x, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthSuccess); ok {
 			return x.AuthSuccess
 		}
 	}
@@ -270,37 +331,183 @@ func (x *ContinueAuthSessionResponse) GetAuthSuccess() *session.AuthSuccess {
 
 func (x *ContinueAuthSessionResponse) GetAuthFailure() *session.AuthFailure {
 	if x != nil {
-		if x, ok := x.Result.(*ContinueAuthSessionResponse_AuthFailure); ok {
+		if x, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthFailure); ok {
 			return x.AuthFailure
 		}
 	}
 	return nil
 }
 
+func (x *ContinueAuthSessionResponse) SetTransitionId(v string) {
+	x.xxx_hidden_TransitionId = v
+}
+
+func (x *ContinueAuthSessionResponse) SetStatus(v basic.AuthStatus) {
+	x.xxx_hidden_Status = v
+}
+
+func (x *ContinueAuthSessionResponse) SetChallengeRequired(v *session.ChallengeRequired) {
+	if v == nil {
+		x.xxx_hidden_Result = nil
+		return
+	}
+	x.xxx_hidden_Result = &continueAuthSessionResponse_ChallengeRequired{v}
+}
+
+func (x *ContinueAuthSessionResponse) SetAuthSuccess(v *session.AuthSuccess) {
+	if v == nil {
+		x.xxx_hidden_Result = nil
+		return
+	}
+	x.xxx_hidden_Result = &continueAuthSessionResponse_AuthSuccess{v}
+}
+
+func (x *ContinueAuthSessionResponse) SetAuthFailure(v *session.AuthFailure) {
+	if v == nil {
+		x.xxx_hidden_Result = nil
+		return
+	}
+	x.xxx_hidden_Result = &continueAuthSessionResponse_AuthFailure{v}
+}
+
+func (x *ContinueAuthSessionResponse) HasResult() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Result != nil
+}
+
+func (x *ContinueAuthSessionResponse) HasChallengeRequired() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_ChallengeRequired)
+	return ok
+}
+
+func (x *ContinueAuthSessionResponse) HasAuthSuccess() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthSuccess)
+	return ok
+}
+
+func (x *ContinueAuthSessionResponse) HasAuthFailure() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthFailure)
+	return ok
+}
+
+func (x *ContinueAuthSessionResponse) ClearResult() {
+	x.xxx_hidden_Result = nil
+}
+
+func (x *ContinueAuthSessionResponse) ClearChallengeRequired() {
+	if _, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_ChallengeRequired); ok {
+		x.xxx_hidden_Result = nil
+	}
+}
+
+func (x *ContinueAuthSessionResponse) ClearAuthSuccess() {
+	if _, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthSuccess); ok {
+		x.xxx_hidden_Result = nil
+	}
+}
+
+func (x *ContinueAuthSessionResponse) ClearAuthFailure() {
+	if _, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthFailure); ok {
+		x.xxx_hidden_Result = nil
+	}
+}
+
+const ContinueAuthSessionResponse_Result_not_set_case case_ContinueAuthSessionResponse_Result = 0
+const ContinueAuthSessionResponse_ChallengeRequired_case case_ContinueAuthSessionResponse_Result = 3
+const ContinueAuthSessionResponse_AuthSuccess_case case_ContinueAuthSessionResponse_Result = 4
+const ContinueAuthSessionResponse_AuthFailure_case case_ContinueAuthSessionResponse_Result = 5
+
+func (x *ContinueAuthSessionResponse) WhichResult() case_ContinueAuthSessionResponse_Result {
+	if x == nil {
+		return ContinueAuthSessionResponse_Result_not_set_case
+	}
+	switch x.xxx_hidden_Result.(type) {
+	case *continueAuthSessionResponse_ChallengeRequired:
+		return ContinueAuthSessionResponse_ChallengeRequired_case
+	case *continueAuthSessionResponse_AuthSuccess:
+		return ContinueAuthSessionResponse_AuthSuccess_case
+	case *continueAuthSessionResponse_AuthFailure:
+		return ContinueAuthSessionResponse_AuthFailure_case
+	default:
+		return ContinueAuthSessionResponse_Result_not_set_case
+	}
+}
+
+type ContinueAuthSessionResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	TransitionId string
+	Status       basic.AuthStatus
+	// Fields of oneof xxx_hidden_Result:
+	ChallengeRequired *session.ChallengeRequired
+	AuthSuccess       *session.AuthSuccess
+	AuthFailure       *session.AuthFailure
+	// -- end of xxx_hidden_Result
+}
+
+func (b0 ContinueAuthSessionResponse_builder) Build() *ContinueAuthSessionResponse {
+	m0 := &ContinueAuthSessionResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_TransitionId = b.TransitionId
+	x.xxx_hidden_Status = b.Status
+	if b.ChallengeRequired != nil {
+		x.xxx_hidden_Result = &continueAuthSessionResponse_ChallengeRequired{b.ChallengeRequired}
+	}
+	if b.AuthSuccess != nil {
+		x.xxx_hidden_Result = &continueAuthSessionResponse_AuthSuccess{b.AuthSuccess}
+	}
+	if b.AuthFailure != nil {
+		x.xxx_hidden_Result = &continueAuthSessionResponse_AuthFailure{b.AuthFailure}
+	}
+	return m0
+}
+
+type case_ContinueAuthSessionResponse_Result protoreflect.FieldNumber
+
+func (x case_ContinueAuthSessionResponse_Result) String() string {
+	md := file_authn_v1_authn_proto_msgTypes[3].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isContinueAuthSessionResponse_Result interface {
 	isContinueAuthSessionResponse_Result()
 }
 
-type ContinueAuthSessionResponse_ChallengeRequired struct {
+type continueAuthSessionResponse_ChallengeRequired struct {
 	ChallengeRequired *session.ChallengeRequired `protobuf:"bytes,3,opt,name=challenge_required,json=challengeRequired,proto3,oneof"`
 }
 
-type ContinueAuthSessionResponse_AuthSuccess struct {
+type continueAuthSessionResponse_AuthSuccess struct {
 	AuthSuccess *session.AuthSuccess `protobuf:"bytes,4,opt,name=auth_success,json=authSuccess,proto3,oneof"`
 }
 
-type ContinueAuthSessionResponse_AuthFailure struct {
+type continueAuthSessionResponse_AuthFailure struct {
 	AuthFailure *session.AuthFailure `protobuf:"bytes,5,opt,name=auth_failure,json=authFailure,proto3,oneof"`
 }
 
-func (*ContinueAuthSessionResponse_ChallengeRequired) isContinueAuthSessionResponse_Result() {}
+func (*continueAuthSessionResponse_ChallengeRequired) isContinueAuthSessionResponse_Result() {}
 
-func (*ContinueAuthSessionResponse_AuthSuccess) isContinueAuthSessionResponse_Result() {}
+func (*continueAuthSessionResponse_AuthSuccess) isContinueAuthSessionResponse_Result() {}
 
-func (*ContinueAuthSessionResponse_AuthFailure) isContinueAuthSessionResponse_Result() {}
+func (*continueAuthSessionResponse_AuthFailure) isContinueAuthSessionResponse_Result() {}
 
 type GetPublicKeysRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -330,16 +537,23 @@ func (x *GetPublicKeysRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetPublicKeysRequest.ProtoReflect.Descriptor instead.
-func (*GetPublicKeysRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{4}
+type GetPublicKeysRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 GetPublicKeysRequest_builder) Build() *GetPublicKeysRequest {
+	m0 := &GetPublicKeysRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
 }
 
 type GetPublicKeysResponse struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	PublicKeys    []*certification.PublicKey `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3" json:"public_keys,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_PublicKeys *[]*certification.PublicKey `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *GetPublicKeysResponse) Reset() {
@@ -367,23 +581,38 @@ func (x *GetPublicKeysResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetPublicKeysResponse.ProtoReflect.Descriptor instead.
-func (*GetPublicKeysResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *GetPublicKeysResponse) GetPublicKeys() []*certification.PublicKey {
 	if x != nil {
-		return x.PublicKeys
+		if x.xxx_hidden_PublicKeys != nil {
+			return *x.xxx_hidden_PublicKeys
+		}
 	}
 	return nil
 }
 
+func (x *GetPublicKeysResponse) SetPublicKeys(v []*certification.PublicKey) {
+	x.xxx_hidden_PublicKeys = &v
+}
+
+type GetPublicKeysResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	PublicKeys []*certification.PublicKey
+}
+
+func (b0 GetPublicKeysResponse_builder) Build() *GetPublicKeysResponse {
+	m0 := &GetPublicKeysResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_PublicKeys = &b.PublicKeys
+	return m0
+}
+
 type GetSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *GetSessionRequest) Reset() {
@@ -411,24 +640,48 @@ func (x *GetSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSessionRequest.ProtoReflect.Descriptor instead.
-func (*GetSessionRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *GetSessionRequest) GetSessionToken() *session.SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
+func (x *GetSessionRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *GetSessionRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *GetSessionRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type GetSessionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+}
+
+func (b0 GetSessionRequest_builder) Build() *GetSessionRequest {
+	m0 := &GetSessionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	return m0
+}
+
 type GetSessionResponse struct {
-	state         protoimpl.MessageState       `protogen:"open.v1"`
-	Valid         bool                         `protobuf:"varint,1,opt,name=valid,proto3" json:"valid,omitempty"`
-	Session       *session.AuthenticatedResult `protobuf:"bytes,2,opt,name=session,proto3" json:"session,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState       `protogen:"opaque.v1"`
+	xxx_hidden_Valid   bool                         `protobuf:"varint,1,opt,name=valid,proto3"`
+	xxx_hidden_Session *session.AuthenticatedResult `protobuf:"bytes,2,opt,name=session,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *GetSessionResponse) Reset() {
@@ -456,31 +709,61 @@ func (x *GetSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetSessionResponse.ProtoReflect.Descriptor instead.
-func (*GetSessionResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *GetSessionResponse) GetValid() bool {
 	if x != nil {
-		return x.Valid
+		return x.xxx_hidden_Valid
 	}
 	return false
 }
 
 func (x *GetSessionResponse) GetSession() *session.AuthenticatedResult {
 	if x != nil {
-		return x.Session
+		return x.xxx_hidden_Session
 	}
 	return nil
 }
 
+func (x *GetSessionResponse) SetValid(v bool) {
+	x.xxx_hidden_Valid = v
+}
+
+func (x *GetSessionResponse) SetSession(v *session.AuthenticatedResult) {
+	x.xxx_hidden_Session = v
+}
+
+func (x *GetSessionResponse) HasSession() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Session != nil
+}
+
+func (x *GetSessionResponse) ClearSession() {
+	x.xxx_hidden_Session = nil
+}
+
+type GetSessionResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Valid   bool
+	Session *session.AuthenticatedResult
+}
+
+func (b0 GetSessionResponse_builder) Build() *GetSessionResponse {
+	m0 := &GetSessionResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Valid = b.Valid
+	x.xxx_hidden_Session = b.Session
+	return m0
+}
+
 type RevokeFederatedIdentityRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	Provider      string                 `protobuf:"bytes,2,opt,name=provider,proto3" json:"provider,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	xxx_hidden_Provider     string                 `protobuf:"bytes,2,opt,name=provider,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RevokeFederatedIdentityRequest) Reset() {
@@ -508,30 +791,60 @@ func (x *RevokeFederatedIdentityRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RevokeFederatedIdentityRequest.ProtoReflect.Descriptor instead.
-func (*RevokeFederatedIdentityRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *RevokeFederatedIdentityRequest) GetSessionToken() *session.SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
 func (x *RevokeFederatedIdentityRequest) GetProvider() string {
 	if x != nil {
-		return x.Provider
+		return x.xxx_hidden_Provider
 	}
 	return ""
 }
 
+func (x *RevokeFederatedIdentityRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *RevokeFederatedIdentityRequest) SetProvider(v string) {
+	x.xxx_hidden_Provider = v
+}
+
+func (x *RevokeFederatedIdentityRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *RevokeFederatedIdentityRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type RevokeFederatedIdentityRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+	Provider     string
+}
+
+func (b0 RevokeFederatedIdentityRequest_builder) Build() *RevokeFederatedIdentityRequest {
+	m0 := &RevokeFederatedIdentityRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	x.xxx_hidden_Provider = b.Provider
+	return m0
+}
+
 type RevokeFederatedIdentityResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *RevokeFederatedIdentityResponse) Reset() {
@@ -559,24 +872,39 @@ func (x *RevokeFederatedIdentityResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RevokeFederatedIdentityResponse.ProtoReflect.Descriptor instead.
-func (*RevokeFederatedIdentityResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{9}
-}
-
 func (x *RevokeFederatedIdentityResponse) GetSuccess() bool {
 	if x != nil {
-		return x.Success
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
+func (x *RevokeFederatedIdentityResponse) SetSuccess(v bool) {
+	x.xxx_hidden_Success = v
+}
+
+type RevokeFederatedIdentityResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Success bool
+}
+
+func (b0 RevokeFederatedIdentityResponse_builder) Build() *RevokeFederatedIdentityResponse {
+	m0 := &RevokeFederatedIdentityResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Success = b.Success
+	return m0
+}
+
 type OIDCIntrospectTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Token         string                 `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	Hint          *string                `protobuf:"bytes,2,opt,name=hint,proto3,oneof" json:"hint,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Token       string                 `protobuf:"bytes,1,opt,name=token,proto3"`
+	xxx_hidden_Hint        *string                `protobuf:"bytes,2,opt,name=hint,proto3,oneof"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *OIDCIntrospectTokenRequest) Reset() {
@@ -604,37 +932,77 @@ func (x *OIDCIntrospectTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCIntrospectTokenRequest.ProtoReflect.Descriptor instead.
-func (*OIDCIntrospectTokenRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{10}
-}
-
 func (x *OIDCIntrospectTokenRequest) GetToken() string {
 	if x != nil {
-		return x.Token
+		return x.xxx_hidden_Token
 	}
 	return ""
 }
 
 func (x *OIDCIntrospectTokenRequest) GetHint() string {
-	if x != nil && x.Hint != nil {
-		return *x.Hint
+	if x != nil {
+		if x.xxx_hidden_Hint != nil {
+			return *x.xxx_hidden_Hint
+		}
+		return ""
 	}
 	return ""
 }
 
+func (x *OIDCIntrospectTokenRequest) SetToken(v string) {
+	x.xxx_hidden_Token = v
+}
+
+func (x *OIDCIntrospectTokenRequest) SetHint(v string) {
+	x.xxx_hidden_Hint = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
+}
+
+func (x *OIDCIntrospectTokenRequest) HasHint() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *OIDCIntrospectTokenRequest) ClearHint() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Hint = nil
+}
+
+type OIDCIntrospectTokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Token string
+	Hint  *string
+}
+
+func (b0 OIDCIntrospectTokenRequest_builder) Build() *OIDCIntrospectTokenRequest {
+	m0 := &OIDCIntrospectTokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Token = b.Token
+	if b.Hint != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
+		x.xxx_hidden_Hint = b.Hint
+	}
+	return m0
+}
+
 type OIDCIntrospectTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Active        bool                   `protobuf:"varint,1,opt,name=active,proto3" json:"active,omitempty"`
-	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ClientId      string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	Type          string                 `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Audience      *string                `protobuf:"bytes,5,opt,name=audience,proto3,oneof" json:"audience,omitempty"`
-	Scopes        []string               `protobuf:"bytes,6,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Active      bool                   `protobuf:"varint,1,opt,name=active,proto3"`
+	xxx_hidden_UserId      string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_ClientId    string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3"`
+	xxx_hidden_Type        string                 `protobuf:"bytes,4,opt,name=type,proto3"`
+	xxx_hidden_Audience    *string                `protobuf:"bytes,5,opt,name=audience,proto3,oneof"`
+	xxx_hidden_Scopes      []string               `protobuf:"bytes,6,rep,name=scopes,proto3"`
+	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_ExpiresAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *OIDCIntrospectTokenResponse) Reset() {
@@ -662,74 +1030,170 @@ func (x *OIDCIntrospectTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCIntrospectTokenResponse.ProtoReflect.Descriptor instead.
-func (*OIDCIntrospectTokenResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{11}
-}
-
 func (x *OIDCIntrospectTokenResponse) GetActive() bool {
 	if x != nil {
-		return x.Active
+		return x.xxx_hidden_Active
 	}
 	return false
 }
 
 func (x *OIDCIntrospectTokenResponse) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *OIDCIntrospectTokenResponse) GetClientId() string {
 	if x != nil {
-		return x.ClientId
+		return x.xxx_hidden_ClientId
 	}
 	return ""
 }
 
 func (x *OIDCIntrospectTokenResponse) GetType() string {
 	if x != nil {
-		return x.Type
+		return x.xxx_hidden_Type
 	}
 	return ""
 }
 
 func (x *OIDCIntrospectTokenResponse) GetAudience() string {
-	if x != nil && x.Audience != nil {
-		return *x.Audience
+	if x != nil {
+		if x.xxx_hidden_Audience != nil {
+			return *x.xxx_hidden_Audience
+		}
+		return ""
 	}
 	return ""
 }
 
 func (x *OIDCIntrospectTokenResponse) GetScopes() []string {
 	if x != nil {
-		return x.Scopes
+		return x.xxx_hidden_Scopes
 	}
 	return nil
 }
 
 func (x *OIDCIntrospectTokenResponse) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return nil
 }
 
 func (x *OIDCIntrospectTokenResponse) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return nil
 }
 
+func (x *OIDCIntrospectTokenResponse) SetActive(v bool) {
+	x.xxx_hidden_Active = v
+}
+
+func (x *OIDCIntrospectTokenResponse) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *OIDCIntrospectTokenResponse) SetClientId(v string) {
+	x.xxx_hidden_ClientId = v
+}
+
+func (x *OIDCIntrospectTokenResponse) SetType(v string) {
+	x.xxx_hidden_Type = v
+}
+
+func (x *OIDCIntrospectTokenResponse) SetAudience(v string) {
+	x.xxx_hidden_Audience = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+}
+
+func (x *OIDCIntrospectTokenResponse) SetScopes(v []string) {
+	x.xxx_hidden_Scopes = v
+}
+
+func (x *OIDCIntrospectTokenResponse) SetCreatedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *OIDCIntrospectTokenResponse) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *OIDCIntrospectTokenResponse) HasAudience() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+}
+
+func (x *OIDCIntrospectTokenResponse) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *OIDCIntrospectTokenResponse) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *OIDCIntrospectTokenResponse) ClearAudience() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Audience = nil
+}
+
+func (x *OIDCIntrospectTokenResponse) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
+}
+
+func (x *OIDCIntrospectTokenResponse) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+type OIDCIntrospectTokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Active    bool
+	UserId    string
+	ClientId  string
+	Type      string
+	Audience  *string
+	Scopes    []string
+	CreatedAt *timestamppb.Timestamp
+	ExpiresAt *timestamppb.Timestamp
+}
+
+func (b0 OIDCIntrospectTokenResponse_builder) Build() *OIDCIntrospectTokenResponse {
+	m0 := &OIDCIntrospectTokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Active = b.Active
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_ClientId = b.ClientId
+	x.xxx_hidden_Type = b.Type
+	if b.Audience != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		x.xxx_hidden_Audience = b.Audience
+	}
+	x.xxx_hidden_Scopes = b.Scopes
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	return m0
+}
+
 type OIDCGrantConsentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	Scopes        []string               `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	xxx_hidden_ClientId     string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3"`
+	xxx_hidden_Scopes       []string               `protobuf:"bytes,3,rep,name=scopes,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OIDCGrantConsentRequest) Reset() {
@@ -757,37 +1221,73 @@ func (x *OIDCGrantConsentRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCGrantConsentRequest.ProtoReflect.Descriptor instead.
-func (*OIDCGrantConsentRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{12}
-}
-
 func (x *OIDCGrantConsentRequest) GetSessionToken() *session.SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
 func (x *OIDCGrantConsentRequest) GetClientId() string {
 	if x != nil {
-		return x.ClientId
+		return x.xxx_hidden_ClientId
 	}
 	return ""
 }
 
 func (x *OIDCGrantConsentRequest) GetScopes() []string {
 	if x != nil {
-		return x.Scopes
+		return x.xxx_hidden_Scopes
 	}
 	return nil
 }
 
+func (x *OIDCGrantConsentRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *OIDCGrantConsentRequest) SetClientId(v string) {
+	x.xxx_hidden_ClientId = v
+}
+
+func (x *OIDCGrantConsentRequest) SetScopes(v []string) {
+	x.xxx_hidden_Scopes = v
+}
+
+func (x *OIDCGrantConsentRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *OIDCGrantConsentRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type OIDCGrantConsentRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+	ClientId     string
+	Scopes       []string
+}
+
+func (b0 OIDCGrantConsentRequest_builder) Build() *OIDCGrantConsentRequest {
+	m0 := &OIDCGrantConsentRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	x.xxx_hidden_ClientId = b.ClientId
+	x.xxx_hidden_Scopes = b.Scopes
+	return m0
+}
+
 type OIDCGrantConsentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *OIDCGrantConsentResponse) Reset() {
@@ -815,24 +1315,37 @@ func (x *OIDCGrantConsentResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCGrantConsentResponse.ProtoReflect.Descriptor instead.
-func (*OIDCGrantConsentResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{13}
-}
-
 func (x *OIDCGrantConsentResponse) GetSuccess() bool {
 	if x != nil {
-		return x.Success
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
+func (x *OIDCGrantConsentResponse) SetSuccess(v bool) {
+	x.xxx_hidden_Success = v
+}
+
+type OIDCGrantConsentResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Success bool
+}
+
+func (b0 OIDCGrantConsentResponse_builder) Build() *OIDCGrantConsentResponse {
+	m0 := &OIDCGrantConsentResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Success = b.Success
+	return m0
+}
+
 type OIDCRevokeConsentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	ClientId      string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	xxx_hidden_ClientId     string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OIDCRevokeConsentRequest) Reset() {
@@ -860,30 +1373,60 @@ func (x *OIDCRevokeConsentRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCRevokeConsentRequest.ProtoReflect.Descriptor instead.
-func (*OIDCRevokeConsentRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{14}
-}
-
 func (x *OIDCRevokeConsentRequest) GetSessionToken() *session.SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
 func (x *OIDCRevokeConsentRequest) GetClientId() string {
 	if x != nil {
-		return x.ClientId
+		return x.xxx_hidden_ClientId
 	}
 	return ""
 }
 
+func (x *OIDCRevokeConsentRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *OIDCRevokeConsentRequest) SetClientId(v string) {
+	x.xxx_hidden_ClientId = v
+}
+
+func (x *OIDCRevokeConsentRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *OIDCRevokeConsentRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type OIDCRevokeConsentRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+	ClientId     string
+}
+
+func (b0 OIDCRevokeConsentRequest_builder) Build() *OIDCRevokeConsentRequest {
+	m0 := &OIDCRevokeConsentRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	x.xxx_hidden_ClientId = b.ClientId
+	return m0
+}
+
 type OIDCRevokeConsentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *OIDCRevokeConsentResponse) Reset() {
@@ -911,23 +1454,36 @@ func (x *OIDCRevokeConsentResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCRevokeConsentResponse.ProtoReflect.Descriptor instead.
-func (*OIDCRevokeConsentResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{15}
-}
-
 func (x *OIDCRevokeConsentResponse) GetSuccess() bool {
 	if x != nil {
-		return x.Success
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
+func (x *OIDCRevokeConsentResponse) SetSuccess(v bool) {
+	x.xxx_hidden_Success = v
+}
+
+type OIDCRevokeConsentResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Success bool
+}
+
+func (b0 OIDCRevokeConsentResponse_builder) Build() *OIDCRevokeConsentResponse {
+	m0 := &OIDCRevokeConsentResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Success = b.Success
+	return m0
+}
+
 type OIDCListGrantedConsentsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OIDCListGrantedConsentsRequest) Reset() {
@@ -955,23 +1511,47 @@ func (x *OIDCListGrantedConsentsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCListGrantedConsentsRequest.ProtoReflect.Descriptor instead.
-func (*OIDCListGrantedConsentsRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{16}
-}
-
 func (x *OIDCListGrantedConsentsRequest) GetSessionToken() *session.SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
+func (x *OIDCListGrantedConsentsRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *OIDCListGrantedConsentsRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *OIDCListGrantedConsentsRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type OIDCListGrantedConsentsRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+}
+
+func (b0 OIDCListGrantedConsentsRequest_builder) Build() *OIDCListGrantedConsentsRequest {
+	m0 := &OIDCListGrantedConsentsRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	return m0
+}
+
 type OIDCListGrantedConsentsResponse struct {
-	state         protoimpl.MessageState     `protogen:"open.v1"`
-	Clients       []*client.AuthorizedClient `protobuf:"bytes,1,rep,name=clients,proto3" json:"clients,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Clients *[]*client.AuthorizedClient `protobuf:"bytes,1,rep,name=clients,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *OIDCListGrantedConsentsResponse) Reset() {
@@ -999,23 +1579,38 @@ func (x *OIDCListGrantedConsentsResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCListGrantedConsentsResponse.ProtoReflect.Descriptor instead.
-func (*OIDCListGrantedConsentsResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{17}
-}
-
 func (x *OIDCListGrantedConsentsResponse) GetClients() []*client.AuthorizedClient {
 	if x != nil {
-		return x.Clients
+		if x.xxx_hidden_Clients != nil {
+			return *x.xxx_hidden_Clients
+		}
 	}
 	return nil
 }
 
+func (x *OIDCListGrantedConsentsResponse) SetClients(v []*client.AuthorizedClient) {
+	x.xxx_hidden_Clients = &v
+}
+
+type OIDCListGrantedConsentsResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Clients []*client.AuthorizedClient
+}
+
+func (b0 OIDCListGrantedConsentsResponse_builder) Build() *OIDCListGrantedConsentsResponse {
+	m0 := &OIDCListGrantedConsentsResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Clients = &b.Clients
+	return m0
+}
+
 type RevokeSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *RevokeSessionRequest) Reset() {
@@ -1043,23 +1638,47 @@ func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RevokeSessionRequest.ProtoReflect.Descriptor instead.
-func (*RevokeSessionRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{18}
-}
-
 func (x *RevokeSessionRequest) GetSessionToken() *session.SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
+func (x *RevokeSessionRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *RevokeSessionRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *RevokeSessionRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type RevokeSessionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+}
+
+func (b0 RevokeSessionRequest_builder) Build() *RevokeSessionRequest {
+	m0 := &RevokeSessionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	return m0
+}
+
 type RevokeSessionResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *RevokeSessionResponse) Reset() {
@@ -1087,23 +1706,36 @@ func (x *RevokeSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use RevokeSessionResponse.ProtoReflect.Descriptor instead.
-func (*RevokeSessionResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{19}
-}
-
 func (x *RevokeSessionResponse) GetSuccess() bool {
 	if x != nil {
-		return x.Success
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
+func (x *RevokeSessionResponse) SetSuccess(v bool) {
+	x.xxx_hidden_Success = v
+}
+
+type RevokeSessionResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Success bool
+}
+
+func (b0 RevokeSessionResponse_builder) Build() *RevokeSessionResponse {
+	m0 := &RevokeSessionResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Success = b.Success
+	return m0
+}
+
 type OIDCRevokeRefreshTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RefreshToken string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OIDCRevokeRefreshTokenRequest) Reset() {
@@ -1131,23 +1763,36 @@ func (x *OIDCRevokeRefreshTokenRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCRevokeRefreshTokenRequest.ProtoReflect.Descriptor instead.
-func (*OIDCRevokeRefreshTokenRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{20}
-}
-
 func (x *OIDCRevokeRefreshTokenRequest) GetRefreshToken() string {
 	if x != nil {
-		return x.RefreshToken
+		return x.xxx_hidden_RefreshToken
 	}
 	return ""
 }
 
+func (x *OIDCRevokeRefreshTokenRequest) SetRefreshToken(v string) {
+	x.xxx_hidden_RefreshToken = v
+}
+
+type OIDCRevokeRefreshTokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RefreshToken string
+}
+
+func (b0 OIDCRevokeRefreshTokenRequest_builder) Build() *OIDCRevokeRefreshTokenRequest {
+	m0 := &OIDCRevokeRefreshTokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RefreshToken = b.RefreshToken
+	return m0
+}
+
 type OIDCRevokeRefreshTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Success       bool                   `protobuf:"varint,1,opt,name=success,proto3" json:"success,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *OIDCRevokeRefreshTokenResponse) Reset() {
@@ -1175,23 +1820,36 @@ func (x *OIDCRevokeRefreshTokenResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCRevokeRefreshTokenResponse.ProtoReflect.Descriptor instead.
-func (*OIDCRevokeRefreshTokenResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{21}
-}
-
 func (x *OIDCRevokeRefreshTokenResponse) GetSuccess() bool {
 	if x != nil {
-		return x.Success
+		return x.xxx_hidden_Success
 	}
 	return false
 }
 
+func (x *OIDCRevokeRefreshTokenResponse) SetSuccess(v bool) {
+	x.xxx_hidden_Success = v
+}
+
+type OIDCRevokeRefreshTokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Success bool
+}
+
+func (b0 OIDCRevokeRefreshTokenResponse_builder) Build() *OIDCRevokeRefreshTokenResponse {
+	m0 := &OIDCRevokeRefreshTokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Success = b.Success
+	return m0
+}
+
 type OIDCRotateAndGetAccessTokenRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RefreshToken  string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_RefreshToken string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OIDCRotateAndGetAccessTokenRequest) Reset() {
@@ -1219,25 +1877,38 @@ func (x *OIDCRotateAndGetAccessTokenRequest) ProtoReflect() protoreflect.Message
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCRotateAndGetAccessTokenRequest.ProtoReflect.Descriptor instead.
-func (*OIDCRotateAndGetAccessTokenRequest) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{22}
-}
-
 func (x *OIDCRotateAndGetAccessTokenRequest) GetRefreshToken() string {
 	if x != nil {
-		return x.RefreshToken
+		return x.xxx_hidden_RefreshToken
 	}
 	return ""
 }
 
+func (x *OIDCRotateAndGetAccessTokenRequest) SetRefreshToken(v string) {
+	x.xxx_hidden_RefreshToken = v
+}
+
+type OIDCRotateAndGetAccessTokenRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	RefreshToken string
+}
+
+func (b0 OIDCRotateAndGetAccessTokenRequest_builder) Build() *OIDCRotateAndGetAccessTokenRequest {
+	m0 := &OIDCRotateAndGetAccessTokenRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_RefreshToken = b.RefreshToken
+	return m0
+}
+
 type OIDCRotateAndGetAccessTokenResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AccessToken   string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
-	RefreshToken  string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AccessToken  string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3"`
+	xxx_hidden_RefreshToken string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3"`
+	xxx_hidden_ExpiresAt    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *OIDCRotateAndGetAccessTokenResponse) Reset() {
@@ -1265,30 +1936,66 @@ func (x *OIDCRotateAndGetAccessTokenResponse) ProtoReflect() protoreflect.Messag
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OIDCRotateAndGetAccessTokenResponse.ProtoReflect.Descriptor instead.
-func (*OIDCRotateAndGetAccessTokenResponse) Descriptor() ([]byte, []int) {
-	return file_authn_v1_authn_proto_rawDescGZIP(), []int{23}
-}
-
 func (x *OIDCRotateAndGetAccessTokenResponse) GetAccessToken() string {
 	if x != nil {
-		return x.AccessToken
+		return x.xxx_hidden_AccessToken
 	}
 	return ""
 }
 
 func (x *OIDCRotateAndGetAccessTokenResponse) GetRefreshToken() string {
 	if x != nil {
-		return x.RefreshToken
+		return x.xxx_hidden_RefreshToken
 	}
 	return ""
 }
 
 func (x *OIDCRotateAndGetAccessTokenResponse) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return nil
+}
+
+func (x *OIDCRotateAndGetAccessTokenResponse) SetAccessToken(v string) {
+	x.xxx_hidden_AccessToken = v
+}
+
+func (x *OIDCRotateAndGetAccessTokenResponse) SetRefreshToken(v string) {
+	x.xxx_hidden_RefreshToken = v
+}
+
+func (x *OIDCRotateAndGetAccessTokenResponse) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *OIDCRotateAndGetAccessTokenResponse) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *OIDCRotateAndGetAccessTokenResponse) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+type OIDCRotateAndGetAccessTokenResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	AccessToken  string
+	RefreshToken string
+	ExpiresAt    *timestamppb.Timestamp
+}
+
+func (b0 OIDCRotateAndGetAccessTokenResponse_builder) Build() *OIDCRotateAndGetAccessTokenResponse {
+	m0 := &OIDCRotateAndGetAccessTokenResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_AccessToken = b.AccessToken
+	x.xxx_hidden_RefreshToken = b.RefreshToken
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	return m0
 }
 
 var File_authn_v1_authn_proto protoreflect.FileDescriptor
@@ -1391,18 +2098,6 @@ const file_authn_v1_authn_proto_rawDesc = "" +
 	"\x11com.muid.authn.v1B\n" +
 	"AuthnProtoP\x01Z&sanzi.io/muid/api/proto/authn/v1;authn\xa2\x02\x03MAX\xaa\x02\rMuid.Authn.V1\xca\x02\rMuid\\Authn\\V1\xe2\x02\x19Muid\\Authn\\V1\\GPBMetadata\xea\x02\x0fMuid::Authn::V1b\x06proto3"
 
-var (
-	file_authn_v1_authn_proto_rawDescOnce sync.Once
-	file_authn_v1_authn_proto_rawDescData []byte
-)
-
-func file_authn_v1_authn_proto_rawDescGZIP() []byte {
-	file_authn_v1_authn_proto_rawDescOnce.Do(func() {
-		file_authn_v1_authn_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_authn_proto_rawDesc), len(file_authn_v1_authn_proto_rawDesc)))
-	})
-	return file_authn_v1_authn_proto_rawDescData
-}
-
 var file_authn_v1_authn_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
 var file_authn_v1_authn_proto_goTypes = []any{
 	(*StartAuthSessionRequest)(nil),             // 0: muid.authn.v1.StartAuthSessionRequest
@@ -1499,9 +2194,9 @@ func file_authn_v1_authn_proto_init() {
 		return
 	}
 	file_authn_v1_authn_proto_msgTypes[3].OneofWrappers = []any{
-		(*ContinueAuthSessionResponse_ChallengeRequired)(nil),
-		(*ContinueAuthSessionResponse_AuthSuccess)(nil),
-		(*ContinueAuthSessionResponse_AuthFailure)(nil),
+		(*continueAuthSessionResponse_ChallengeRequired)(nil),
+		(*continueAuthSessionResponse_AuthSuccess)(nil),
+		(*continueAuthSessionResponse_AuthFailure)(nil),
 	}
 	file_authn_v1_authn_proto_msgTypes[10].OneofWrappers = []any{}
 	file_authn_v1_authn_proto_msgTypes[11].OneofWrappers = []any{}

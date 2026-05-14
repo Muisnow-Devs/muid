@@ -5,7 +5,7 @@
 ## 模組與目錄
 
 - **Go module**：`sanzi.io/muid`；產生的 API stub 在 **`sanzi.io/muid/api`**（以 `replace` 指向本倉 `./api`）。
-- **Protobuf**：集中在 `api/proto/`，以 [Buf](https://buf.build) 管理（`buf.yaml`、`buf.gen.yaml`）。
+- **Protobuf**：集中在 `api/proto/`，以 [Buf](https://buf.build) 管理（`buf.yaml`、`buf.gen.yaml`）；Go 產物以 **Opaque API** 產生（見 [`buf.gen.yaml`](../buf.gen.yaml) 內 `protocolbuffers/go` 外掛選項）。**組裝訊息**時優先使用 **`&T{}` + `Set*`／`Get*`／`Has*`**（含 oneof 的 `SetFoo`、巢狀子訊息用 **`&Child{}`** 再 `Set`）；**不要**用 **`new(T)`** 建立產生之訊息型別；**避免**依賴產生碼的 `*_builder{…}.Build()` 模式（與 opaque 慣用寫法一致、也較易與既有 handler 風格對齊）。
 - **服務進入點**：`cmd/<服務名>/main.go`（例如 `cmd/authn`、`cmd/profile`、`cmd/mailer`）。
 - **領域實作**：`internal/<領域>/`（例如 `internal/authn`、`internal/profile`、`internal/mailer`）。
 - **基礎設施套件（infra）**：路徑為 **`infra/<後端>/`**（例如 `infra/redis`、`infra/nats`、`infra/smtp`、`infra/r2`、`infra/mocked`）。每個套件內 **`interface.go` 只放對外匯出的型別／介面定義**（例如 `ObjectStore`、`KVStore` 型別別名、設定結構）；**不得**在該檔撰寫具體實作。**具體實作**放在同目錄其他 `.go` 檔（例如 `kvstore.go`、`objectstore.go`、`pubsub.go`、`mailer.go`、`public_url.go`），檔名不可為 `interface.go`。

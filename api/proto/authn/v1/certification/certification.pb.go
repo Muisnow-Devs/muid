@@ -12,7 +12,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -24,22 +23,20 @@ const (
 )
 
 type PublicKey struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Kid   string                 `protobuf:"bytes,1,opt,name=kid,proto3" json:"kid,omitempty"` // key id
-	Kty   string                 `protobuf:"bytes,2,opt,name=kty,proto3" json:"kty,omitempty"` // "RSA", "EC"
-	Alg   string                 `protobuf:"bytes,3,opt,name=alg,proto3" json:"alg,omitempty"` // "RS256", "ES256"
-	Use   string                 `protobuf:"bytes,4,opt,name=use,proto3" json:"use,omitempty"` // "sig"
-	// RSA
-	N string `protobuf:"bytes,10,opt,name=n,proto3" json:"n,omitempty"` // base64url modulus
-	E string `protobuf:"bytes,11,opt,name=e,proto3" json:"e,omitempty"` // base64url exponent
-	// EC
-	Crv           string                 `protobuf:"bytes,20,opt,name=crv,proto3" json:"crv,omitempty"` // "P-256"
-	X             string                 `protobuf:"bytes,21,opt,name=x,proto3" json:"x,omitempty"`     // base64url
-	Y             string                 `protobuf:"bytes,22,opt,name=y,proto3" json:"y,omitempty"`     // base64url
-	NotBefore     *timestamppb.Timestamp `protobuf:"bytes,30,opt,name=not_before,json=notBefore,proto3" json:"not_before,omitempty"`
-	NotAfter      *timestamppb.Timestamp `protobuf:"bytes,31,opt,name=not_after,json=notAfter,proto3" json:"not_after,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Kid       string                 `protobuf:"bytes,1,opt,name=kid,proto3"`
+	xxx_hidden_Kty       string                 `protobuf:"bytes,2,opt,name=kty,proto3"`
+	xxx_hidden_Alg       string                 `protobuf:"bytes,3,opt,name=alg,proto3"`
+	xxx_hidden_Use       string                 `protobuf:"bytes,4,opt,name=use,proto3"`
+	xxx_hidden_N         string                 `protobuf:"bytes,10,opt,name=n,proto3"`
+	xxx_hidden_E         string                 `protobuf:"bytes,11,opt,name=e,proto3"`
+	xxx_hidden_Crv       string                 `protobuf:"bytes,20,opt,name=crv,proto3"`
+	xxx_hidden_X         string                 `protobuf:"bytes,21,opt,name=x,proto3"`
+	xxx_hidden_Y         string                 `protobuf:"bytes,22,opt,name=y,proto3"`
+	xxx_hidden_NotBefore *timestamppb.Timestamp `protobuf:"bytes,30,opt,name=not_before,json=notBefore,proto3"`
+	xxx_hidden_NotAfter  *timestamppb.Timestamp `protobuf:"bytes,31,opt,name=not_after,json=notAfter,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *PublicKey) Reset() {
@@ -67,86 +64,183 @@ func (x *PublicKey) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PublicKey.ProtoReflect.Descriptor instead.
-func (*PublicKey) Descriptor() ([]byte, []int) {
-	return file_authn_v1_certification_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *PublicKey) GetKid() string {
 	if x != nil {
-		return x.Kid
+		return x.xxx_hidden_Kid
 	}
 	return ""
 }
 
 func (x *PublicKey) GetKty() string {
 	if x != nil {
-		return x.Kty
+		return x.xxx_hidden_Kty
 	}
 	return ""
 }
 
 func (x *PublicKey) GetAlg() string {
 	if x != nil {
-		return x.Alg
+		return x.xxx_hidden_Alg
 	}
 	return ""
 }
 
 func (x *PublicKey) GetUse() string {
 	if x != nil {
-		return x.Use
+		return x.xxx_hidden_Use
 	}
 	return ""
 }
 
 func (x *PublicKey) GetN() string {
 	if x != nil {
-		return x.N
+		return x.xxx_hidden_N
 	}
 	return ""
 }
 
 func (x *PublicKey) GetE() string {
 	if x != nil {
-		return x.E
+		return x.xxx_hidden_E
 	}
 	return ""
 }
 
 func (x *PublicKey) GetCrv() string {
 	if x != nil {
-		return x.Crv
+		return x.xxx_hidden_Crv
 	}
 	return ""
 }
 
 func (x *PublicKey) GetX() string {
 	if x != nil {
-		return x.X
+		return x.xxx_hidden_X
 	}
 	return ""
 }
 
 func (x *PublicKey) GetY() string {
 	if x != nil {
-		return x.Y
+		return x.xxx_hidden_Y
 	}
 	return ""
 }
 
 func (x *PublicKey) GetNotBefore() *timestamppb.Timestamp {
 	if x != nil {
-		return x.NotBefore
+		return x.xxx_hidden_NotBefore
 	}
 	return nil
 }
 
 func (x *PublicKey) GetNotAfter() *timestamppb.Timestamp {
 	if x != nil {
-		return x.NotAfter
+		return x.xxx_hidden_NotAfter
 	}
 	return nil
+}
+
+func (x *PublicKey) SetKid(v string) {
+	x.xxx_hidden_Kid = v
+}
+
+func (x *PublicKey) SetKty(v string) {
+	x.xxx_hidden_Kty = v
+}
+
+func (x *PublicKey) SetAlg(v string) {
+	x.xxx_hidden_Alg = v
+}
+
+func (x *PublicKey) SetUse(v string) {
+	x.xxx_hidden_Use = v
+}
+
+func (x *PublicKey) SetN(v string) {
+	x.xxx_hidden_N = v
+}
+
+func (x *PublicKey) SetE(v string) {
+	x.xxx_hidden_E = v
+}
+
+func (x *PublicKey) SetCrv(v string) {
+	x.xxx_hidden_Crv = v
+}
+
+func (x *PublicKey) SetX(v string) {
+	x.xxx_hidden_X = v
+}
+
+func (x *PublicKey) SetY(v string) {
+	x.xxx_hidden_Y = v
+}
+
+func (x *PublicKey) SetNotBefore(v *timestamppb.Timestamp) {
+	x.xxx_hidden_NotBefore = v
+}
+
+func (x *PublicKey) SetNotAfter(v *timestamppb.Timestamp) {
+	x.xxx_hidden_NotAfter = v
+}
+
+func (x *PublicKey) HasNotBefore() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_NotBefore != nil
+}
+
+func (x *PublicKey) HasNotAfter() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_NotAfter != nil
+}
+
+func (x *PublicKey) ClearNotBefore() {
+	x.xxx_hidden_NotBefore = nil
+}
+
+func (x *PublicKey) ClearNotAfter() {
+	x.xxx_hidden_NotAfter = nil
+}
+
+type PublicKey_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Kid string
+	Kty string
+	Alg string
+	Use string
+	// RSA
+	N string
+	E string
+	// EC
+	Crv       string
+	X         string
+	Y         string
+	NotBefore *timestamppb.Timestamp
+	NotAfter  *timestamppb.Timestamp
+}
+
+func (b0 PublicKey_builder) Build() *PublicKey {
+	m0 := &PublicKey{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Kid = b.Kid
+	x.xxx_hidden_Kty = b.Kty
+	x.xxx_hidden_Alg = b.Alg
+	x.xxx_hidden_Use = b.Use
+	x.xxx_hidden_N = b.N
+	x.xxx_hidden_E = b.E
+	x.xxx_hidden_Crv = b.Crv
+	x.xxx_hidden_X = b.X
+	x.xxx_hidden_Y = b.Y
+	x.xxx_hidden_NotBefore = b.NotBefore
+	x.xxx_hidden_NotAfter = b.NotAfter
+	return m0
 }
 
 var File_authn_v1_certification_proto protoreflect.FileDescriptor
@@ -169,18 +263,6 @@ const file_authn_v1_certification_proto_rawDesc = "" +
 	"not_before\x18\x1e \x01(\v2\x1a.google.protobuf.TimestampR\tnotBefore\x127\n" +
 	"\tnot_after\x18\x1f \x01(\v2\x1a.google.protobuf.TimestampR\bnotAfterB\x83\x02\n" +
 	"\x1fcom.muid.authn.v1.certificationB\x12CertificationProtoP\x01Z<sanzi.io/muid/api/proto/authn/v1/certification;certification\xa2\x02\x04MAVC\xaa\x02\x1bMuid.Authn.V1.Certification\xca\x02\x1bMuid\\Authn\\V1\\Certification\xe2\x02'Muid\\Authn\\V1\\Certification\\GPBMetadata\xea\x02\x1eMuid::Authn::V1::Certificationb\x06proto3"
-
-var (
-	file_authn_v1_certification_proto_rawDescOnce sync.Once
-	file_authn_v1_certification_proto_rawDescData []byte
-)
-
-func file_authn_v1_certification_proto_rawDescGZIP() []byte {
-	file_authn_v1_certification_proto_rawDescOnce.Do(func() {
-		file_authn_v1_certification_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_certification_proto_rawDesc), len(file_authn_v1_certification_proto_rawDesc)))
-	})
-	return file_authn_v1_certification_proto_rawDescData
-}
 
 var file_authn_v1_certification_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_authn_v1_certification_proto_goTypes = []any{

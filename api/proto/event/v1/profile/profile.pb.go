@@ -10,7 +10,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -68,20 +67,15 @@ func (x ProfileChangedEvent_ChangeType) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use ProfileChangedEvent_ChangeType.Descriptor instead.
-func (ProfileChangedEvent_ChangeType) EnumDescriptor() ([]byte, []int) {
-	return file_event_v1_profile_proto_rawDescGZIP(), []int{0, 0}
-}
-
 // ProfileChangedEvent is published on NATS topic profile.change (see pkg/shared/topics).
 type ProfileChangedEvent struct {
-	state          protoimpl.MessageState         `protogen:"open.v1"`
-	UserId         string                         `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Email          string                         `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	ChangeType     ProfileChangedEvent_ChangeType `protobuf:"varint,3,opt,name=change_type,json=changeType,proto3,enum=muid.event.v1.profile.ProfileChangedEvent_ChangeType" json:"change_type,omitempty"`
-	OccurredAtUnix int64                          `protobuf:"varint,4,opt,name=occurred_at_unix,json=occurredAtUnix,proto3" json:"occurred_at_unix,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_UserId         string                         `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_Email          string                         `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_ChangeType     ProfileChangedEvent_ChangeType `protobuf:"varint,3,opt,name=change_type,json=changeType,proto3,enum=muid.event.v1.profile.ProfileChangedEvent_ChangeType"`
+	xxx_hidden_OccurredAtUnix int64                          `protobuf:"varint,4,opt,name=occurred_at_unix,json=occurredAtUnix,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *ProfileChangedEvent) Reset() {
@@ -109,37 +103,68 @@ func (x *ProfileChangedEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ProfileChangedEvent.ProtoReflect.Descriptor instead.
-func (*ProfileChangedEvent) Descriptor() ([]byte, []int) {
-	return file_event_v1_profile_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *ProfileChangedEvent) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *ProfileChangedEvent) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *ProfileChangedEvent) GetChangeType() ProfileChangedEvent_ChangeType {
 	if x != nil {
-		return x.ChangeType
+		return x.xxx_hidden_ChangeType
 	}
 	return ProfileChangedEvent_CHANGE_TYPE_UNSPECIFIED
 }
 
 func (x *ProfileChangedEvent) GetOccurredAtUnix() int64 {
 	if x != nil {
-		return x.OccurredAtUnix
+		return x.xxx_hidden_OccurredAtUnix
 	}
 	return 0
+}
+
+func (x *ProfileChangedEvent) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *ProfileChangedEvent) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *ProfileChangedEvent) SetChangeType(v ProfileChangedEvent_ChangeType) {
+	x.xxx_hidden_ChangeType = v
+}
+
+func (x *ProfileChangedEvent) SetOccurredAtUnix(v int64) {
+	x.xxx_hidden_OccurredAtUnix = v
+}
+
+type ProfileChangedEvent_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId         string
+	Email          string
+	ChangeType     ProfileChangedEvent_ChangeType
+	OccurredAtUnix int64
+}
+
+func (b0 ProfileChangedEvent_builder) Build() *ProfileChangedEvent {
+	m0 := &ProfileChangedEvent{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_ChangeType = b.ChangeType
+	x.xxx_hidden_OccurredAtUnix = b.OccurredAtUnix
+	return m0
 }
 
 var File_event_v1_profile_proto protoreflect.FileDescriptor
@@ -160,18 +185,6 @@ const file_event_v1_profile_proto_rawDesc = "" +
 	"\x13CHANGE_TYPE_UPDATED\x10\x02\x12\x1e\n" +
 	"\x1aCHANGE_TYPE_AVATAR_UPDATED\x10\x03B\xd8\x01\n" +
 	"\x19com.muid.event.v1.profileB\fProfileProtoP\x01Z5sanzi.io/muid/api/proto/event/v1/profile;profileevent\xa2\x02\x04MEVP\xaa\x02\x15Muid.Event.V1.Profile\xca\x02\x15Muid\\Event\\V1\\Profile\xe2\x02!Muid\\Event\\V1\\Profile\\GPBMetadata\xea\x02\x18Muid::Event::V1::Profileb\x06proto3"
-
-var (
-	file_event_v1_profile_proto_rawDescOnce sync.Once
-	file_event_v1_profile_proto_rawDescData []byte
-)
-
-func file_event_v1_profile_proto_rawDescGZIP() []byte {
-	file_event_v1_profile_proto_rawDescOnce.Do(func() {
-		file_event_v1_profile_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_event_v1_profile_proto_rawDesc), len(file_event_v1_profile_proto_rawDesc)))
-	})
-	return file_event_v1_profile_proto_rawDescData
-}
 
 var file_event_v1_profile_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_event_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 1)

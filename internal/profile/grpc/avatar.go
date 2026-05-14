@@ -95,11 +95,11 @@ func (g *GRPCHandler) StartAvatarUpload(
 		)
 	}
 
-	return &pb.StartAvatarUploadResponse{
-		UploadUrl:     url,
-		ObjectKey:     objectKey,
-		ExpiresAtUnix: expTime.Unix(),
-	}, nil
+	resp := &pb.StartAvatarUploadResponse{}
+	resp.SetUploadUrl(url)
+	resp.SetObjectKey(objectKey)
+	resp.SetExpiresAtUnix(expTime.Unix())
+	return resp, nil
 }
 
 func (g *GRPCHandler) CompleteAvatarUpload(
@@ -338,7 +338,9 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		)
 	}
 
-	return &pb.CompleteAvatarUploadResponse{AvatarUrl: publicURL}, nil
+	resp := &pb.CompleteAvatarUploadResponse{}
+	resp.SetAvatarUrl(publicURL)
+	return resp, nil
 }
 
 func readAllLimited(r io.Reader, limit int64) ([]byte, error) {

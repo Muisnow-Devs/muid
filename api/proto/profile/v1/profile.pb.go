@@ -13,7 +13,6 @@ import (
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	reflect "reflect"
 	claims "sanzi.io/muid/api/proto/shared/v1/claims"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -25,12 +24,11 @@ const (
 )
 
 type CreateProfileRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Email string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	// When absent or empty, the service assigns random display name, username, and a deterministic synthetic avatar (goavatar).
-	Claims        *claims.IdentityClaims `protobuf:"bytes,2,opt,name=claims,proto3,oneof" json:"claims,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Email  string                 `protobuf:"bytes,1,opt,name=email,proto3"`
+	xxx_hidden_Claims *claims.IdentityClaims `protobuf:"bytes,2,opt,name=claims,proto3,oneof"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *CreateProfileRequest) Reset() {
@@ -58,28 +56,59 @@ func (x *CreateProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateProfileRequest.ProtoReflect.Descriptor instead.
-func (*CreateProfileRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *CreateProfileRequest) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *CreateProfileRequest) GetClaims() *claims.IdentityClaims {
 	if x != nil {
-		return x.Claims
+		return x.xxx_hidden_Claims
 	}
 	return nil
 }
 
+func (x *CreateProfileRequest) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *CreateProfileRequest) SetClaims(v *claims.IdentityClaims) {
+	x.xxx_hidden_Claims = v
+}
+
+func (x *CreateProfileRequest) HasClaims() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Claims != nil
+}
+
+func (x *CreateProfileRequest) ClearClaims() {
+	x.xxx_hidden_Claims = nil
+}
+
+type CreateProfileRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Email string
+	// When absent or empty, the service assigns random display name, username, and a deterministic synthetic avatar (goavatar).
+	Claims *claims.IdentityClaims
+}
+
+func (b0 CreateProfileRequest_builder) Build() *CreateProfileRequest {
+	m0 := &CreateProfileRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_Claims = b.Claims
+	return m0
+}
+
 type CreateProfileResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -109,21 +138,34 @@ func (x *CreateProfileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateProfileResponse.ProtoReflect.Descriptor instead.
-func (*CreateProfileResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *CreateProfileResponse) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
+func (x *CreateProfileResponse) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+type CreateProfileResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id string
+}
+
+func (b0 CreateProfileResponse_builder) Build() *CreateProfileResponse {
+	m0 := &CreateProfileResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
 type GetProfileRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -153,29 +195,42 @@ func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetProfileRequest.ProtoReflect.Descriptor instead.
-func (*GetProfileRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *GetProfileRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
+func (x *GetProfileRequest) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+type GetProfileRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id string
+}
+
+func (b0 GetProfileRequest_builder) Build() *GetProfileRequest {
+	m0 := &GetProfileRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
 type GetProfileResponse struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Email           string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	DisplayName     string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Username        string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
-	AvatarUrl       string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
-	Locale          string                 `protobuf:"bytes,6,opt,name=locale,proto3" json:"locale,omitempty"`
-	AvatarObjectKey string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3" json:"avatar_object_key,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	state                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id              string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Email           string                 `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_DisplayName     string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Username        string                 `protobuf:"bytes,4,opt,name=username,proto3"`
+	xxx_hidden_AvatarUrl       string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3"`
+	xxx_hidden_Locale          string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
+	xxx_hidden_AvatarObjectKey string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3"`
+	unknownFields              protoimpl.UnknownFields
+	sizeCache                  protoimpl.SizeCache
 }
 
 func (x *GetProfileResponse) Reset() {
@@ -203,70 +258,119 @@ func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetProfileResponse.ProtoReflect.Descriptor instead.
-func (*GetProfileResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *GetProfileResponse) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *GetProfileResponse) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *GetProfileResponse) GetDisplayName() string {
 	if x != nil {
-		return x.DisplayName
+		return x.xxx_hidden_DisplayName
 	}
 	return ""
 }
 
 func (x *GetProfileResponse) GetUsername() string {
 	if x != nil {
-		return x.Username
+		return x.xxx_hidden_Username
 	}
 	return ""
 }
 
 func (x *GetProfileResponse) GetAvatarUrl() string {
 	if x != nil {
-		return x.AvatarUrl
+		return x.xxx_hidden_AvatarUrl
 	}
 	return ""
 }
 
 func (x *GetProfileResponse) GetLocale() string {
 	if x != nil {
-		return x.Locale
+		return x.xxx_hidden_Locale
 	}
 	return ""
 }
 
 func (x *GetProfileResponse) GetAvatarObjectKey() string {
 	if x != nil {
-		return x.AvatarObjectKey
+		return x.xxx_hidden_AvatarObjectKey
 	}
 	return ""
+}
+
+func (x *GetProfileResponse) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *GetProfileResponse) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *GetProfileResponse) SetDisplayName(v string) {
+	x.xxx_hidden_DisplayName = v
+}
+
+func (x *GetProfileResponse) SetUsername(v string) {
+	x.xxx_hidden_Username = v
+}
+
+func (x *GetProfileResponse) SetAvatarUrl(v string) {
+	x.xxx_hidden_AvatarUrl = v
+}
+
+func (x *GetProfileResponse) SetLocale(v string) {
+	x.xxx_hidden_Locale = v
+}
+
+func (x *GetProfileResponse) SetAvatarObjectKey(v string) {
+	x.xxx_hidden_AvatarObjectKey = v
+}
+
+type GetProfileResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id              string
+	Email           string
+	DisplayName     string
+	Username        string
+	AvatarUrl       string
+	Locale          string
+	AvatarObjectKey string
+}
+
+func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
+	m0 := &GetProfileResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_DisplayName = b.DisplayName
+	x.xxx_hidden_Username = b.Username
+	x.xxx_hidden_AvatarUrl = b.AvatarUrl
+	x.xxx_hidden_Locale = b.Locale
+	x.xxx_hidden_AvatarObjectKey = b.AvatarObjectKey
+	return m0
 }
 
 // Scalar profile fields that may be partially updated. Only fields listed in
 // `update_mask` are applied; mask paths are relative to UpdateProfileRequest
 // (e.g. "profile.display_name"). See server docs / AGENT_STYLING.md.
 type UpdateProfileFields struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
-	Locale        string                 `protobuf:"bytes,3,opt,name=locale,proto3" json:"locale,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Username    string                 `protobuf:"bytes,1,opt,name=username,proto3"`
+	xxx_hidden_DisplayName string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Locale      string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *UpdateProfileFields) Reset() {
@@ -294,41 +398,64 @@ func (x *UpdateProfileFields) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateProfileFields.ProtoReflect.Descriptor instead.
-func (*UpdateProfileFields) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *UpdateProfileFields) GetUsername() string {
 	if x != nil {
-		return x.Username
+		return x.xxx_hidden_Username
 	}
 	return ""
 }
 
 func (x *UpdateProfileFields) GetDisplayName() string {
 	if x != nil {
-		return x.DisplayName
+		return x.xxx_hidden_DisplayName
 	}
 	return ""
 }
 
 func (x *UpdateProfileFields) GetLocale() string {
 	if x != nil {
-		return x.Locale
+		return x.xxx_hidden_Locale
 	}
 	return ""
 }
 
+func (x *UpdateProfileFields) SetUsername(v string) {
+	x.xxx_hidden_Username = v
+}
+
+func (x *UpdateProfileFields) SetDisplayName(v string) {
+	x.xxx_hidden_DisplayName = v
+}
+
+func (x *UpdateProfileFields) SetLocale(v string) {
+	x.xxx_hidden_Locale = v
+}
+
+type UpdateProfileFields_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Username    string
+	DisplayName string
+	Locale      string
+}
+
+func (b0 UpdateProfileFields_builder) Build() *UpdateProfileFields {
+	m0 := &UpdateProfileFields{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Username = b.Username
+	x.xxx_hidden_DisplayName = b.DisplayName
+	x.xxx_hidden_Locale = b.Locale
+	return m0
+}
+
 type UpdateProfileRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	// Paths use proto snake_case under `profile`, e.g. "profile.username".
-	// JSON clients may send camelCase segments ("profile.displayName"); the server normalizes.
-	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
-	Profile       *UpdateProfileFields   `protobuf:"bytes,3,opt,name=profile,proto3" json:"profile,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3"`
+	xxx_hidden_Profile    *UpdateProfileFields   `protobuf:"bytes,3,opt,name=profile,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *UpdateProfileRequest) Reset() {
@@ -356,35 +483,84 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
-func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *UpdateProfileRequest) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *UpdateProfileRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	if x != nil {
-		return x.UpdateMask
+		return x.xxx_hidden_UpdateMask
 	}
 	return nil
 }
 
 func (x *UpdateProfileRequest) GetProfile() *UpdateProfileFields {
 	if x != nil {
-		return x.Profile
+		return x.xxx_hidden_Profile
 	}
 	return nil
 }
 
+func (x *UpdateProfileRequest) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *UpdateProfileRequest) SetUpdateMask(v *fieldmaskpb.FieldMask) {
+	x.xxx_hidden_UpdateMask = v
+}
+
+func (x *UpdateProfileRequest) SetProfile(v *UpdateProfileFields) {
+	x.xxx_hidden_Profile = v
+}
+
+func (x *UpdateProfileRequest) HasUpdateMask() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_UpdateMask != nil
+}
+
+func (x *UpdateProfileRequest) HasProfile() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Profile != nil
+}
+
+func (x *UpdateProfileRequest) ClearUpdateMask() {
+	x.xxx_hidden_UpdateMask = nil
+}
+
+func (x *UpdateProfileRequest) ClearProfile() {
+	x.xxx_hidden_Profile = nil
+}
+
+type UpdateProfileRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id string
+	// Paths use proto snake_case under `profile`, e.g. "profile.username".
+	// JSON clients may send camelCase segments ("profile.displayName"); the server normalizes.
+	UpdateMask *fieldmaskpb.FieldMask
+	Profile    *UpdateProfileFields
+}
+
+func (b0 UpdateProfileRequest_builder) Build() *UpdateProfileRequest {
+	m0 := &UpdateProfileRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_UpdateMask = b.UpdateMask
+	x.xxx_hidden_Profile = b.Profile
+	return m0
+}
+
 type UpdateProfileResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id string                 `protobuf:"bytes,1,opt,name=id,proto3"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -414,24 +590,37 @@ func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use UpdateProfileResponse.ProtoReflect.Descriptor instead.
-func (*UpdateProfileResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{6}
-}
-
 func (x *UpdateProfileResponse) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
+func (x *UpdateProfileResponse) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+type UpdateProfileResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id string
+}
+
+func (b0 UpdateProfileResponse_builder) Build() *UpdateProfileResponse {
+	m0 := &UpdateProfileResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	return m0
+}
+
 type StartAvatarUploadRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ContentType   string                 `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId      string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_ContentType string                 `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *StartAvatarUploadRequest) Reset() {
@@ -459,32 +648,51 @@ func (x *StartAvatarUploadRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartAvatarUploadRequest.ProtoReflect.Descriptor instead.
-func (*StartAvatarUploadRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{7}
-}
-
 func (x *StartAvatarUploadRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *StartAvatarUploadRequest) GetContentType() string {
 	if x != nil {
-		return x.ContentType
+		return x.xxx_hidden_ContentType
 	}
 	return ""
 }
 
+func (x *StartAvatarUploadRequest) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *StartAvatarUploadRequest) SetContentType(v string) {
+	x.xxx_hidden_ContentType = v
+}
+
+type StartAvatarUploadRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId      string
+	ContentType string
+}
+
+func (b0 StartAvatarUploadRequest_builder) Build() *StartAvatarUploadRequest {
+	m0 := &StartAvatarUploadRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_ContentType = b.ContentType
+	return m0
+}
+
 type StartAvatarUploadResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
-	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
-	ExpiresAtUnix int64                  `protobuf:"varint,3,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                    protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3"`
+	xxx_hidden_ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3"`
+	xxx_hidden_ExpiresAtUnix int64                  `protobuf:"varint,3,opt,name=expires_at_unix,json=expiresAtUnix,proto3"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *StartAvatarUploadResponse) Reset() {
@@ -512,39 +720,64 @@ func (x *StartAvatarUploadResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use StartAvatarUploadResponse.ProtoReflect.Descriptor instead.
-func (*StartAvatarUploadResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{8}
-}
-
 func (x *StartAvatarUploadResponse) GetUploadUrl() string {
 	if x != nil {
-		return x.UploadUrl
+		return x.xxx_hidden_UploadUrl
 	}
 	return ""
 }
 
 func (x *StartAvatarUploadResponse) GetObjectKey() string {
 	if x != nil {
-		return x.ObjectKey
+		return x.xxx_hidden_ObjectKey
 	}
 	return ""
 }
 
 func (x *StartAvatarUploadResponse) GetExpiresAtUnix() int64 {
 	if x != nil {
-		return x.ExpiresAtUnix
+		return x.xxx_hidden_ExpiresAtUnix
 	}
 	return 0
 }
 
+func (x *StartAvatarUploadResponse) SetUploadUrl(v string) {
+	x.xxx_hidden_UploadUrl = v
+}
+
+func (x *StartAvatarUploadResponse) SetObjectKey(v string) {
+	x.xxx_hidden_ObjectKey = v
+}
+
+func (x *StartAvatarUploadResponse) SetExpiresAtUnix(v int64) {
+	x.xxx_hidden_ExpiresAtUnix = v
+}
+
+type StartAvatarUploadResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UploadUrl     string
+	ObjectKey     string
+	ExpiresAtUnix int64
+}
+
+func (b0 StartAvatarUploadResponse_builder) Build() *StartAvatarUploadResponse {
+	m0 := &StartAvatarUploadResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UploadUrl = b.UploadUrl
+	x.xxx_hidden_ObjectKey = b.ObjectKey
+	x.xxx_hidden_ExpiresAtUnix = b.ExpiresAtUnix
+	return m0
+}
+
 type CompleteAvatarUploadRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
-	ByteSize      int64                  `protobuf:"varint,3,opt,name=byte_size,json=byteSize,proto3" json:"byte_size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_ObjectKey string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3"`
+	xxx_hidden_ByteSize  int64                  `protobuf:"varint,3,opt,name=byte_size,json=byteSize,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CompleteAvatarUploadRequest) Reset() {
@@ -572,37 +805,62 @@ func (x *CompleteAvatarUploadRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompleteAvatarUploadRequest.ProtoReflect.Descriptor instead.
-func (*CompleteAvatarUploadRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{9}
-}
-
 func (x *CompleteAvatarUploadRequest) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *CompleteAvatarUploadRequest) GetObjectKey() string {
 	if x != nil {
-		return x.ObjectKey
+		return x.xxx_hidden_ObjectKey
 	}
 	return ""
 }
 
 func (x *CompleteAvatarUploadRequest) GetByteSize() int64 {
 	if x != nil {
-		return x.ByteSize
+		return x.xxx_hidden_ByteSize
 	}
 	return 0
 }
 
+func (x *CompleteAvatarUploadRequest) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *CompleteAvatarUploadRequest) SetObjectKey(v string) {
+	x.xxx_hidden_ObjectKey = v
+}
+
+func (x *CompleteAvatarUploadRequest) SetByteSize(v int64) {
+	x.xxx_hidden_ByteSize = v
+}
+
+type CompleteAvatarUploadRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId    string
+	ObjectKey string
+	ByteSize  int64
+}
+
+func (b0 CompleteAvatarUploadRequest_builder) Build() *CompleteAvatarUploadRequest {
+	m0 := &CompleteAvatarUploadRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_ObjectKey = b.ObjectKey
+	x.xxx_hidden_ByteSize = b.ByteSize
+	return m0
+}
+
 type CompleteAvatarUploadResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	AvatarUrl     string                 `protobuf:"bytes,1,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_AvatarUrl string                 `protobuf:"bytes,1,opt,name=avatar_url,json=avatarUrl,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *CompleteAvatarUploadResponse) Reset() {
@@ -630,16 +888,29 @@ func (x *CompleteAvatarUploadResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CompleteAvatarUploadResponse.ProtoReflect.Descriptor instead.
-func (*CompleteAvatarUploadResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{10}
-}
-
 func (x *CompleteAvatarUploadResponse) GetAvatarUrl() string {
 	if x != nil {
-		return x.AvatarUrl
+		return x.xxx_hidden_AvatarUrl
 	}
 	return ""
+}
+
+func (x *CompleteAvatarUploadResponse) SetAvatarUrl(v string) {
+	x.xxx_hidden_AvatarUrl = v
+}
+
+type CompleteAvatarUploadResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	AvatarUrl string
+}
+
+func (b0 CompleteAvatarUploadResponse_builder) Build() *CompleteAvatarUploadResponse {
+	m0 := &CompleteAvatarUploadResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_AvatarUrl = b.AvatarUrl
+	return m0
 }
 
 var File_profile_v1_profile_proto protoreflect.FileDescriptor
@@ -703,18 +974,6 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x11StartAvatarUpload\x12).muid.profile.v1.StartAvatarUploadRequest\x1a*.muid.profile.v1.StartAvatarUploadResponse\x12s\n" +
 	"\x14CompleteAvatarUpload\x12,.muid.profile.v1.CompleteAvatarUploadRequest\x1a-.muid.profile.v1.CompleteAvatarUploadResponseB\xad\x01\n" +
 	"\x13com.muid.profile.v1B\fProfileProtoP\x01Z*sanzi.io/muid/api/proto/profile/v1;profile\xa2\x02\x03MPX\xaa\x02\x0fMuid.Profile.V1\xca\x02\x0fMuid\\Profile\\V1\xe2\x02\x1bMuid\\Profile\\V1\\GPBMetadata\xea\x02\x11Muid::Profile::V1b\x06proto3"
-
-var (
-	file_profile_v1_profile_proto_rawDescOnce sync.Once
-	file_profile_v1_profile_proto_rawDescData []byte
-)
-
-func file_profile_v1_profile_proto_rawDescGZIP() []byte {
-	file_profile_v1_profile_proto_rawDescOnce.Do(func() {
-		file_profile_v1_profile_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_profile_v1_profile_proto_rawDesc), len(file_profile_v1_profile_proto_rawDesc)))
-	})
-	return file_profile_v1_profile_proto_rawDescData
-}
 
 var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_profile_v1_profile_proto_goTypes = []any{

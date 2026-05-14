@@ -146,7 +146,9 @@ func (g *GRPCHandler) CreateProfile(
 		)
 	}
 
-	return &pb.CreateProfileResponse{Id: userID.String()}, nil
+	resp := &pb.CreateProfileResponse{}
+	resp.SetId(userID.String())
+	return resp, nil
 }
 
 func (g *GRPCHandler) GetProfile(
@@ -190,15 +192,15 @@ func (g *GRPCHandler) GetProfile(
 		)
 	}
 
-	return &pb.GetProfileResponse{
-		Id:              p.ID.String(),
-		Email:           p.EmailRef,
-		DisplayName:     p.DisplayName,
-		Username:        p.Username,
-		AvatarUrl:       avatarURL,
-		Locale:          locale,
-		AvatarObjectKey: objectKey,
-	}, nil
+	resp := &pb.GetProfileResponse{}
+	resp.SetId(p.ID.String())
+	resp.SetEmail(p.EmailRef)
+	resp.SetDisplayName(p.DisplayName)
+	resp.SetUsername(p.Username)
+	resp.SetAvatarUrl(avatarURL)
+	resp.SetLocale(locale)
+	resp.SetAvatarObjectKey(objectKey)
+	return resp, nil
 }
 
 func (g *GRPCHandler) UpdateProfile(
@@ -285,7 +287,9 @@ func (g *GRPCHandler) UpdateProfile(
 		)
 	}
 
-	return &pb.UpdateProfileResponse{Id: id.String()}, nil
+	resp := &pb.UpdateProfileResponse{}
+	resp.SetId(id.String())
+	return resp, nil
 }
 
 func (g *GRPCHandler) allocateUsername(ctx context.Context, base string) (string, error) {
@@ -329,12 +333,11 @@ func (g *GRPCHandler) publishChange(
 	userID, email string,
 	ct profileevent.ProfileChangedEvent_ChangeType,
 ) error {
-	msg := &profileevent.ProfileChangedEvent{
-		UserId:         userID,
-		Email:          email,
-		ChangeType:     ct,
-		OccurredAtUnix: time.Now().Unix(),
-	}
+	msg := &profileevent.ProfileChangedEvent{}
+	msg.SetUserId(userID)
+	msg.SetEmail(email)
+	msg.SetChangeType(ct)
+	msg.SetOccurredAtUnix(time.Now().Unix())
 	b, err := proto.Marshal(msg)
 	if err != nil {
 		return err

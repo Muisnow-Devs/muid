@@ -9,6 +9,7 @@ plugins:
     out: api
     opt:
       - module=sanzi.io/muid/api
+      - default_api_level=API_OPAQUE
 
   - remote: buf.build/grpc/go
     out: api

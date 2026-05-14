@@ -10,7 +10,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -22,11 +21,11 @@ const (
 )
 
 type EmailAddress struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Email string                 `protobuf:"bytes,1,opt,name=email,proto3"`
+	xxx_hidden_Name  string                 `protobuf:"bytes,2,opt,name=name,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *EmailAddress) Reset() {
@@ -54,36 +53,55 @@ func (x *EmailAddress) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EmailAddress.ProtoReflect.Descriptor instead.
-func (*EmailAddress) Descriptor() ([]byte, []int) {
-	return file_event_v1_mail_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *EmailAddress) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *EmailAddress) GetName() string {
 	if x != nil {
-		return x.Name
+		return x.xxx_hidden_Name
 	}
 	return ""
 }
 
+func (x *EmailAddress) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *EmailAddress) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+type EmailAddress_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Email string
+	Name  string
+}
+
+func (b0 EmailAddress_builder) Build() *EmailAddress {
+	m0 := &EmailAddress{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_Name = b.Name
+	return m0
+}
+
 type EmailMessage struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	To            []*EmailAddress        `protobuf:"bytes,3,rep,name=to,proto3" json:"to,omitempty"`
-	Subject       string                 `protobuf:"bytes,4,opt,name=subject,proto3" json:"subject,omitempty"`
-	Template      string                 `protobuf:"bytes,5,opt,name=template,proto3" json:"template,omitempty"`
-	Locale        string                 `protobuf:"bytes,6,opt,name=locale,proto3" json:"locale,omitempty"`
-	Data          map[string]string      `protobuf:"bytes,7,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	CreatedAt     int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_To        *[]*EmailAddress       `protobuf:"bytes,3,rep,name=to,proto3"`
+	xxx_hidden_Subject   string                 `protobuf:"bytes,4,opt,name=subject,proto3"`
+	xxx_hidden_Template  string                 `protobuf:"bytes,5,opt,name=template,proto3"`
+	xxx_hidden_Locale    string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
+	xxx_hidden_Data      map[string]string      `protobuf:"bytes,7,rep,name=data,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_CreatedAt int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *EmailMessage) Reset() {
@@ -111,71 +129,122 @@ func (x *EmailMessage) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EmailMessage.ProtoReflect.Descriptor instead.
-func (*EmailMessage) Descriptor() ([]byte, []int) {
-	return file_event_v1_mail_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *EmailMessage) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *EmailMessage) GetTo() []*EmailAddress {
 	if x != nil {
-		return x.To
+		if x.xxx_hidden_To != nil {
+			return *x.xxx_hidden_To
+		}
 	}
 	return nil
 }
 
 func (x *EmailMessage) GetSubject() string {
 	if x != nil {
-		return x.Subject
+		return x.xxx_hidden_Subject
 	}
 	return ""
 }
 
 func (x *EmailMessage) GetTemplate() string {
 	if x != nil {
-		return x.Template
+		return x.xxx_hidden_Template
 	}
 	return ""
 }
 
 func (x *EmailMessage) GetLocale() string {
 	if x != nil {
-		return x.Locale
+		return x.xxx_hidden_Locale
 	}
 	return ""
 }
 
 func (x *EmailMessage) GetData() map[string]string {
 	if x != nil {
-		return x.Data
+		return x.xxx_hidden_Data
 	}
 	return nil
 }
 
 func (x *EmailMessage) GetCreatedAt() int64 {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return 0
 }
 
+func (x *EmailMessage) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *EmailMessage) SetTo(v []*EmailAddress) {
+	x.xxx_hidden_To = &v
+}
+
+func (x *EmailMessage) SetSubject(v string) {
+	x.xxx_hidden_Subject = v
+}
+
+func (x *EmailMessage) SetTemplate(v string) {
+	x.xxx_hidden_Template = v
+}
+
+func (x *EmailMessage) SetLocale(v string) {
+	x.xxx_hidden_Locale = v
+}
+
+func (x *EmailMessage) SetData(v map[string]string) {
+	x.xxx_hidden_Data = v
+}
+
+func (x *EmailMessage) SetCreatedAt(v int64) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+type EmailMessage_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id        string
+	To        []*EmailAddress
+	Subject   string
+	Template  string
+	Locale    string
+	Data      map[string]string
+	CreatedAt int64
+}
+
+func (b0 EmailMessage_builder) Build() *EmailMessage {
+	m0 := &EmailMessage{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_To = &b.To
+	x.xxx_hidden_Subject = b.Subject
+	x.xxx_hidden_Template = b.Template
+	x.xxx_hidden_Locale = b.Locale
+	x.xxx_hidden_Data = b.Data
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	return m0
+}
+
 type SendOTPEmailEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Locale        string                 `protobuf:"bytes,3,opt,name=locale,proto3" json:"locale,omitempty"`
-	Code          string                 `protobuf:"bytes,4,opt,name=code,proto3" json:"code,omitempty"`
-	ExpiresAt     int64                  `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	ProductName   string                 `protobuf:"bytes,6,opt,name=product_name,json=productName,proto3" json:"product_name,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id          string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Email       string                 `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_Locale      string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
+	xxx_hidden_Code        string                 `protobuf:"bytes,4,opt,name=code,proto3"`
+	xxx_hidden_ExpiresAt   int64                  `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_ProductName string                 `protobuf:"bytes,6,opt,name=product_name,json=productName,proto3"`
+	xxx_hidden_CreatedAt   int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *SendOTPEmailEvent) Reset() {
@@ -203,72 +272,121 @@ func (x *SendOTPEmailEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendOTPEmailEvent.ProtoReflect.Descriptor instead.
-func (*SendOTPEmailEvent) Descriptor() ([]byte, []int) {
-	return file_event_v1_mail_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *SendOTPEmailEvent) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *SendOTPEmailEvent) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *SendOTPEmailEvent) GetLocale() string {
 	if x != nil {
-		return x.Locale
+		return x.xxx_hidden_Locale
 	}
 	return ""
 }
 
 func (x *SendOTPEmailEvent) GetCode() string {
 	if x != nil {
-		return x.Code
+		return x.xxx_hidden_Code
 	}
 	return ""
 }
 
 func (x *SendOTPEmailEvent) GetExpiresAt() int64 {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return 0
 }
 
 func (x *SendOTPEmailEvent) GetProductName() string {
 	if x != nil {
-		return x.ProductName
+		return x.xxx_hidden_ProductName
 	}
 	return ""
 }
 
 func (x *SendOTPEmailEvent) GetCreatedAt() int64 {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return 0
 }
 
+func (x *SendOTPEmailEvent) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *SendOTPEmailEvent) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *SendOTPEmailEvent) SetLocale(v string) {
+	x.xxx_hidden_Locale = v
+}
+
+func (x *SendOTPEmailEvent) SetCode(v string) {
+	x.xxx_hidden_Code = v
+}
+
+func (x *SendOTPEmailEvent) SetExpiresAt(v int64) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *SendOTPEmailEvent) SetProductName(v string) {
+	x.xxx_hidden_ProductName = v
+}
+
+func (x *SendOTPEmailEvent) SetCreatedAt(v int64) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+type SendOTPEmailEvent_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id          string
+	Email       string
+	Locale      string
+	Code        string
+	ExpiresAt   int64
+	ProductName string
+	CreatedAt   int64
+}
+
+func (b0 SendOTPEmailEvent_builder) Build() *SendOTPEmailEvent {
+	m0 := &SendOTPEmailEvent{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_Locale = b.Locale
+	x.xxx_hidden_Code = b.Code
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	x.xxx_hidden_ProductName = b.ProductName
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	return m0
+}
+
 type SendLoginAlertEmailEvent struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	Locale        string                 `protobuf:"bytes,3,opt,name=locale,proto3" json:"locale,omitempty"`
-	IpAddress     string                 `protobuf:"bytes,4,opt,name=ip_address,json=ipAddress,proto3" json:"ip_address,omitempty"`
-	Location      string                 `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
-	Device        string                 `protobuf:"bytes,6,opt,name=device,proto3" json:"device,omitempty"`
-	OccurredAt    int64                  `protobuf:"varint,7,opt,name=occurred_at,json=occurredAt,proto3" json:"occurred_at,omitempty"`
-	CreatedAt     int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Email      string                 `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_Locale     string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
+	xxx_hidden_IpAddress  string                 `protobuf:"bytes,4,opt,name=ip_address,json=ipAddress,proto3"`
+	xxx_hidden_Location   string                 `protobuf:"bytes,5,opt,name=location,proto3"`
+	xxx_hidden_Device     string                 `protobuf:"bytes,6,opt,name=device,proto3"`
+	xxx_hidden_OccurredAt int64                  `protobuf:"varint,7,opt,name=occurred_at,json=occurredAt,proto3"`
+	xxx_hidden_CreatedAt  int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *SendLoginAlertEmailEvent) Reset() {
@@ -296,65 +414,120 @@ func (x *SendLoginAlertEmailEvent) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SendLoginAlertEmailEvent.ProtoReflect.Descriptor instead.
-func (*SendLoginAlertEmailEvent) Descriptor() ([]byte, []int) {
-	return file_event_v1_mail_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *SendLoginAlertEmailEvent) GetId() string {
 	if x != nil {
-		return x.Id
+		return x.xxx_hidden_Id
 	}
 	return ""
 }
 
 func (x *SendLoginAlertEmailEvent) GetEmail() string {
 	if x != nil {
-		return x.Email
+		return x.xxx_hidden_Email
 	}
 	return ""
 }
 
 func (x *SendLoginAlertEmailEvent) GetLocale() string {
 	if x != nil {
-		return x.Locale
+		return x.xxx_hidden_Locale
 	}
 	return ""
 }
 
 func (x *SendLoginAlertEmailEvent) GetIpAddress() string {
 	if x != nil {
-		return x.IpAddress
+		return x.xxx_hidden_IpAddress
 	}
 	return ""
 }
 
 func (x *SendLoginAlertEmailEvent) GetLocation() string {
 	if x != nil {
-		return x.Location
+		return x.xxx_hidden_Location
 	}
 	return ""
 }
 
 func (x *SendLoginAlertEmailEvent) GetDevice() string {
 	if x != nil {
-		return x.Device
+		return x.xxx_hidden_Device
 	}
 	return ""
 }
 
 func (x *SendLoginAlertEmailEvent) GetOccurredAt() int64 {
 	if x != nil {
-		return x.OccurredAt
+		return x.xxx_hidden_OccurredAt
 	}
 	return 0
 }
 
 func (x *SendLoginAlertEmailEvent) GetCreatedAt() int64 {
 	if x != nil {
-		return x.CreatedAt
+		return x.xxx_hidden_CreatedAt
 	}
 	return 0
+}
+
+func (x *SendLoginAlertEmailEvent) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetLocale(v string) {
+	x.xxx_hidden_Locale = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetIpAddress(v string) {
+	x.xxx_hidden_IpAddress = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetLocation(v string) {
+	x.xxx_hidden_Location = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetDevice(v string) {
+	x.xxx_hidden_Device = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetOccurredAt(v int64) {
+	x.xxx_hidden_OccurredAt = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetCreatedAt(v int64) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+type SendLoginAlertEmailEvent_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id         string
+	Email      string
+	Locale     string
+	IpAddress  string
+	Location   string
+	Device     string
+	OccurredAt int64
+	CreatedAt  int64
+}
+
+func (b0 SendLoginAlertEmailEvent_builder) Build() *SendLoginAlertEmailEvent {
+	m0 := &SendLoginAlertEmailEvent{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_Locale = b.Locale
+	x.xxx_hidden_IpAddress = b.IpAddress
+	x.xxx_hidden_Location = b.Location
+	x.xxx_hidden_Device = b.Device
+	x.xxx_hidden_OccurredAt = b.OccurredAt
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	return m0
 }
 
 var File_event_v1_mail_proto protoreflect.FileDescriptor
@@ -400,18 +573,6 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\b \x01(\x03R\tcreatedAtB\xbb\x01\n" +
 	"\x16com.muid.event.v1.mailB\tMailProtoP\x01Z*sanzi.io/muid/api/proto/event/v1/mail;mail\xa2\x02\x04MEVM\xaa\x02\x12Muid.Event.V1.Mail\xca\x02\x12Muid\\Event\\V1\\Mail\xe2\x02\x1eMuid\\Event\\V1\\Mail\\GPBMetadata\xea\x02\x15Muid::Event::V1::Mailb\x06proto3"
-
-var (
-	file_event_v1_mail_proto_rawDescOnce sync.Once
-	file_event_v1_mail_proto_rawDescData []byte
-)
-
-func file_event_v1_mail_proto_rawDescGZIP() []byte {
-	file_event_v1_mail_proto_rawDescOnce.Do(func() {
-		file_event_v1_mail_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_event_v1_mail_proto_rawDesc), len(file_event_v1_mail_proto_rawDesc)))
-	})
-	return file_event_v1_mail_proto_rawDescData
-}
 
 var file_event_v1_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_event_v1_mail_proto_goTypes = []any{

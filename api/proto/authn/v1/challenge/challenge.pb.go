@@ -11,7 +11,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -23,18 +22,13 @@ const (
 )
 
 type AuthChallenge struct {
-	state       protoimpl.MessageState `protogen:"open.v1"`
-	ChallengeId string                 `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3" json:"challenge_id,omitempty"`
-	IssuedAt    int64                  `protobuf:"varint,2,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
-	ExpiresAt   int64                  `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	// Types that are valid to be assigned to Challenge:
-	//
-	//	*AuthChallenge_EmailChallenge
-	//	*AuthChallenge_OauthChallenge
-	//	*AuthChallenge_PasskeyChallenge
-	Challenge     isAuthChallenge_Challenge `protobuf_oneof:"challenge"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
+	xxx_hidden_ChallengeId string                    `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3"`
+	xxx_hidden_IssuedAt    int64                     `protobuf:"varint,2,opt,name=issued_at,json=issuedAt,proto3"`
+	xxx_hidden_ExpiresAt   int64                     `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_Challenge   isAuthChallenge_Challenge `protobuf_oneof:"challenge"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
 }
 
 func (x *AuthChallenge) Reset() {
@@ -62,42 +56,30 @@ func (x *AuthChallenge) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthChallenge.ProtoReflect.Descriptor instead.
-func (*AuthChallenge) Descriptor() ([]byte, []int) {
-	return file_authn_v1_challenge_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *AuthChallenge) GetChallengeId() string {
 	if x != nil {
-		return x.ChallengeId
+		return x.xxx_hidden_ChallengeId
 	}
 	return ""
 }
 
 func (x *AuthChallenge) GetIssuedAt() int64 {
 	if x != nil {
-		return x.IssuedAt
+		return x.xxx_hidden_IssuedAt
 	}
 	return 0
 }
 
 func (x *AuthChallenge) GetExpiresAt() int64 {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return 0
 }
 
-func (x *AuthChallenge) GetChallenge() isAuthChallenge_Challenge {
-	if x != nil {
-		return x.Challenge
-	}
-	return nil
-}
-
 func (x *AuthChallenge) GetEmailChallenge() *EmailChallenge {
 	if x != nil {
-		if x, ok := x.Challenge.(*AuthChallenge_EmailChallenge); ok {
+		if x, ok := x.xxx_hidden_Challenge.(*authChallenge_EmailChallenge); ok {
 			return x.EmailChallenge
 		}
 	}
@@ -106,7 +88,7 @@ func (x *AuthChallenge) GetEmailChallenge() *EmailChallenge {
 
 func (x *AuthChallenge) GetOauthChallenge() *OAuthChallenge {
 	if x != nil {
-		if x, ok := x.Challenge.(*AuthChallenge_OauthChallenge); ok {
+		if x, ok := x.xxx_hidden_Challenge.(*authChallenge_OauthChallenge); ok {
 			return x.OauthChallenge
 		}
 	}
@@ -115,41 +97,193 @@ func (x *AuthChallenge) GetOauthChallenge() *OAuthChallenge {
 
 func (x *AuthChallenge) GetPasskeyChallenge() *PasskeyChallenge {
 	if x != nil {
-		if x, ok := x.Challenge.(*AuthChallenge_PasskeyChallenge); ok {
+		if x, ok := x.xxx_hidden_Challenge.(*authChallenge_PasskeyChallenge); ok {
 			return x.PasskeyChallenge
 		}
 	}
 	return nil
 }
 
+func (x *AuthChallenge) SetChallengeId(v string) {
+	x.xxx_hidden_ChallengeId = v
+}
+
+func (x *AuthChallenge) SetIssuedAt(v int64) {
+	x.xxx_hidden_IssuedAt = v
+}
+
+func (x *AuthChallenge) SetExpiresAt(v int64) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *AuthChallenge) SetEmailChallenge(v *EmailChallenge) {
+	if v == nil {
+		x.xxx_hidden_Challenge = nil
+		return
+	}
+	x.xxx_hidden_Challenge = &authChallenge_EmailChallenge{v}
+}
+
+func (x *AuthChallenge) SetOauthChallenge(v *OAuthChallenge) {
+	if v == nil {
+		x.xxx_hidden_Challenge = nil
+		return
+	}
+	x.xxx_hidden_Challenge = &authChallenge_OauthChallenge{v}
+}
+
+func (x *AuthChallenge) SetPasskeyChallenge(v *PasskeyChallenge) {
+	if v == nil {
+		x.xxx_hidden_Challenge = nil
+		return
+	}
+	x.xxx_hidden_Challenge = &authChallenge_PasskeyChallenge{v}
+}
+
+func (x *AuthChallenge) HasChallenge() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Challenge != nil
+}
+
+func (x *AuthChallenge) HasEmailChallenge() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Challenge.(*authChallenge_EmailChallenge)
+	return ok
+}
+
+func (x *AuthChallenge) HasOauthChallenge() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Challenge.(*authChallenge_OauthChallenge)
+	return ok
+}
+
+func (x *AuthChallenge) HasPasskeyChallenge() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Challenge.(*authChallenge_PasskeyChallenge)
+	return ok
+}
+
+func (x *AuthChallenge) ClearChallenge() {
+	x.xxx_hidden_Challenge = nil
+}
+
+func (x *AuthChallenge) ClearEmailChallenge() {
+	if _, ok := x.xxx_hidden_Challenge.(*authChallenge_EmailChallenge); ok {
+		x.xxx_hidden_Challenge = nil
+	}
+}
+
+func (x *AuthChallenge) ClearOauthChallenge() {
+	if _, ok := x.xxx_hidden_Challenge.(*authChallenge_OauthChallenge); ok {
+		x.xxx_hidden_Challenge = nil
+	}
+}
+
+func (x *AuthChallenge) ClearPasskeyChallenge() {
+	if _, ok := x.xxx_hidden_Challenge.(*authChallenge_PasskeyChallenge); ok {
+		x.xxx_hidden_Challenge = nil
+	}
+}
+
+const AuthChallenge_Challenge_not_set_case case_AuthChallenge_Challenge = 0
+const AuthChallenge_EmailChallenge_case case_AuthChallenge_Challenge = 4
+const AuthChallenge_OauthChallenge_case case_AuthChallenge_Challenge = 5
+const AuthChallenge_PasskeyChallenge_case case_AuthChallenge_Challenge = 6
+
+func (x *AuthChallenge) WhichChallenge() case_AuthChallenge_Challenge {
+	if x == nil {
+		return AuthChallenge_Challenge_not_set_case
+	}
+	switch x.xxx_hidden_Challenge.(type) {
+	case *authChallenge_EmailChallenge:
+		return AuthChallenge_EmailChallenge_case
+	case *authChallenge_OauthChallenge:
+		return AuthChallenge_OauthChallenge_case
+	case *authChallenge_PasskeyChallenge:
+		return AuthChallenge_PasskeyChallenge_case
+	default:
+		return AuthChallenge_Challenge_not_set_case
+	}
+}
+
+type AuthChallenge_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ChallengeId string
+	IssuedAt    int64
+	ExpiresAt   int64
+	// Fields of oneof xxx_hidden_Challenge:
+	EmailChallenge   *EmailChallenge
+	OauthChallenge   *OAuthChallenge
+	PasskeyChallenge *PasskeyChallenge
+	// -- end of xxx_hidden_Challenge
+}
+
+func (b0 AuthChallenge_builder) Build() *AuthChallenge {
+	m0 := &AuthChallenge{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ChallengeId = b.ChallengeId
+	x.xxx_hidden_IssuedAt = b.IssuedAt
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	if b.EmailChallenge != nil {
+		x.xxx_hidden_Challenge = &authChallenge_EmailChallenge{b.EmailChallenge}
+	}
+	if b.OauthChallenge != nil {
+		x.xxx_hidden_Challenge = &authChallenge_OauthChallenge{b.OauthChallenge}
+	}
+	if b.PasskeyChallenge != nil {
+		x.xxx_hidden_Challenge = &authChallenge_PasskeyChallenge{b.PasskeyChallenge}
+	}
+	return m0
+}
+
+type case_AuthChallenge_Challenge protoreflect.FieldNumber
+
+func (x case_AuthChallenge_Challenge) String() string {
+	md := file_authn_v1_challenge_proto_msgTypes[0].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isAuthChallenge_Challenge interface {
 	isAuthChallenge_Challenge()
 }
 
-type AuthChallenge_EmailChallenge struct {
+type authChallenge_EmailChallenge struct {
 	EmailChallenge *EmailChallenge `protobuf:"bytes,4,opt,name=email_challenge,json=emailChallenge,proto3,oneof"`
 }
 
-type AuthChallenge_OauthChallenge struct {
+type authChallenge_OauthChallenge struct {
 	OauthChallenge *OAuthChallenge `protobuf:"bytes,5,opt,name=oauth_challenge,json=oauthChallenge,proto3,oneof"`
 }
 
-type AuthChallenge_PasskeyChallenge struct {
+type authChallenge_PasskeyChallenge struct {
 	PasskeyChallenge *PasskeyChallenge `protobuf:"bytes,6,opt,name=passkey_challenge,json=passkeyChallenge,proto3,oneof"`
 }
 
-func (*AuthChallenge_EmailChallenge) isAuthChallenge_Challenge() {}
+func (*authChallenge_EmailChallenge) isAuthChallenge_Challenge() {}
 
-func (*AuthChallenge_OauthChallenge) isAuthChallenge_Challenge() {}
+func (*authChallenge_OauthChallenge) isAuthChallenge_Challenge() {}
 
-func (*AuthChallenge_PasskeyChallenge) isAuthChallenge_Challenge() {}
+func (*authChallenge_PasskeyChallenge) isAuthChallenge_Challenge() {}
 
 type EmailChallenge struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	EmailMasked          string                 `protobuf:"bytes,1,opt,name=email_masked,json=emailMasked,proto3" json:"email_masked,omitempty"`
-	ResendCooldownMillis int64                  `protobuf:"varint,2,opt,name=resend_cooldown_millis,json=resendCooldownMillis,proto3" json:"resend_cooldown_millis,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state                           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_EmailMasked          string                 `protobuf:"bytes,1,opt,name=email_masked,json=emailMasked,proto3"`
+	xxx_hidden_ResendCooldownMillis int64                  `protobuf:"varint,2,opt,name=resend_cooldown_millis,json=resendCooldownMillis,proto3"`
+	unknownFields                   protoimpl.UnknownFields
+	sizeCache                       protoimpl.SizeCache
 }
 
 func (x *EmailChallenge) Reset() {
@@ -177,31 +311,50 @@ func (x *EmailChallenge) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EmailChallenge.ProtoReflect.Descriptor instead.
-func (*EmailChallenge) Descriptor() ([]byte, []int) {
-	return file_authn_v1_challenge_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *EmailChallenge) GetEmailMasked() string {
 	if x != nil {
-		return x.EmailMasked
+		return x.xxx_hidden_EmailMasked
 	}
 	return ""
 }
 
 func (x *EmailChallenge) GetResendCooldownMillis() int64 {
 	if x != nil {
-		return x.ResendCooldownMillis
+		return x.xxx_hidden_ResendCooldownMillis
 	}
 	return 0
 }
 
+func (x *EmailChallenge) SetEmailMasked(v string) {
+	x.xxx_hidden_EmailMasked = v
+}
+
+func (x *EmailChallenge) SetResendCooldownMillis(v int64) {
+	x.xxx_hidden_ResendCooldownMillis = v
+}
+
+type EmailChallenge_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	EmailMasked          string
+	ResendCooldownMillis int64
+}
+
+func (b0 EmailChallenge_builder) Build() *EmailChallenge {
+	m0 := &EmailChallenge{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_EmailMasked = b.EmailMasked
+	x.xxx_hidden_ResendCooldownMillis = b.ResendCooldownMillis
+	return m0
+}
+
 type OAuthChallenge struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Provider      string                 `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
-	AuthUrl       string                 `protobuf:"bytes,2,opt,name=auth_url,json=authUrl,proto3" json:"auth_url,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Provider string                 `protobuf:"bytes,1,opt,name=provider,proto3"`
+	xxx_hidden_AuthUrl  string                 `protobuf:"bytes,2,opt,name=auth_url,json=authUrl,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *OAuthChallenge) Reset() {
@@ -229,32 +382,51 @@ func (x *OAuthChallenge) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OAuthChallenge.ProtoReflect.Descriptor instead.
-func (*OAuthChallenge) Descriptor() ([]byte, []int) {
-	return file_authn_v1_challenge_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *OAuthChallenge) GetProvider() string {
 	if x != nil {
-		return x.Provider
+		return x.xxx_hidden_Provider
 	}
 	return ""
 }
 
 func (x *OAuthChallenge) GetAuthUrl() string {
 	if x != nil {
-		return x.AuthUrl
+		return x.xxx_hidden_AuthUrl
 	}
 	return ""
 }
 
+func (x *OAuthChallenge) SetProvider(v string) {
+	x.xxx_hidden_Provider = v
+}
+
+func (x *OAuthChallenge) SetAuthUrl(v string) {
+	x.xxx_hidden_AuthUrl = v
+}
+
+type OAuthChallenge_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Provider string
+	AuthUrl  string
+}
+
+func (b0 OAuthChallenge_builder) Build() *OAuthChallenge {
+	m0 := &OAuthChallenge{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Provider = b.Provider
+	x.xxx_hidden_AuthUrl = b.AuthUrl
+	return m0
+}
+
 type PasskeyChallenge struct {
-	state                                 protoimpl.MessageState `protogen:"open.v1"`
-	State                                 string                 `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	PublicKeyCredentialRequestOptionsJson string                 `protobuf:"bytes,2,opt,name=public_key_credential_request_options_json,json=publicKeyCredentialRequestOptionsJson,proto3" json:"public_key_credential_request_options_json,omitempty"`
-	TimeoutMillis                         int64                  `protobuf:"varint,3,opt,name=timeout_millis,json=timeoutMillis,proto3" json:"timeout_millis,omitempty"`
-	unknownFields                         protoimpl.UnknownFields
-	sizeCache                             protoimpl.SizeCache
+	state                                            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_State                                 string                 `protobuf:"bytes,1,opt,name=state,proto3"`
+	xxx_hidden_PublicKeyCredentialRequestOptionsJson string                 `protobuf:"bytes,2,opt,name=public_key_credential_request_options_json,json=publicKeyCredentialRequestOptionsJson,proto3"`
+	xxx_hidden_TimeoutMillis                         int64                  `protobuf:"varint,3,opt,name=timeout_millis,json=timeoutMillis,proto3"`
+	unknownFields                                    protoimpl.UnknownFields
+	sizeCache                                        protoimpl.SizeCache
 }
 
 func (x *PasskeyChallenge) Reset() {
@@ -282,30 +454,55 @@ func (x *PasskeyChallenge) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PasskeyChallenge.ProtoReflect.Descriptor instead.
-func (*PasskeyChallenge) Descriptor() ([]byte, []int) {
-	return file_authn_v1_challenge_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *PasskeyChallenge) GetState() string {
 	if x != nil {
-		return x.State
+		return x.xxx_hidden_State
 	}
 	return ""
 }
 
 func (x *PasskeyChallenge) GetPublicKeyCredentialRequestOptionsJson() string {
 	if x != nil {
-		return x.PublicKeyCredentialRequestOptionsJson
+		return x.xxx_hidden_PublicKeyCredentialRequestOptionsJson
 	}
 	return ""
 }
 
 func (x *PasskeyChallenge) GetTimeoutMillis() int64 {
 	if x != nil {
-		return x.TimeoutMillis
+		return x.xxx_hidden_TimeoutMillis
 	}
 	return 0
+}
+
+func (x *PasskeyChallenge) SetState(v string) {
+	x.xxx_hidden_State = v
+}
+
+func (x *PasskeyChallenge) SetPublicKeyCredentialRequestOptionsJson(v string) {
+	x.xxx_hidden_PublicKeyCredentialRequestOptionsJson = v
+}
+
+func (x *PasskeyChallenge) SetTimeoutMillis(v int64) {
+	x.xxx_hidden_TimeoutMillis = v
+}
+
+type PasskeyChallenge_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	State                                 string
+	PublicKeyCredentialRequestOptionsJson string
+	TimeoutMillis                         int64
+}
+
+func (b0 PasskeyChallenge_builder) Build() *PasskeyChallenge {
+	m0 := &PasskeyChallenge{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_State = b.State
+	x.xxx_hidden_PublicKeyCredentialRequestOptionsJson = b.PublicKeyCredentialRequestOptionsJson
+	x.xxx_hidden_TimeoutMillis = b.TimeoutMillis
+	return m0
 }
 
 var File_authn_v1_challenge_proto protoreflect.FileDescriptor
@@ -334,18 +531,6 @@ const file_authn_v1_challenge_proto_rawDesc = "" +
 	"\x0etimeout_millis\x18\x03 \x01(\x03R\rtimeoutMillisB\xe3\x01\n" +
 	"\x1bcom.muid.authn.v1.challengeB\x0eChallengeProtoP\x01Z4sanzi.io/muid/api/proto/authn/v1/challenge;challenge\xa2\x02\x04MAVC\xaa\x02\x17Muid.Authn.V1.Challenge\xca\x02\x17Muid\\Authn\\V1\\Challenge\xe2\x02#Muid\\Authn\\V1\\Challenge\\GPBMetadata\xea\x02\x1aMuid::Authn::V1::Challengeb\x06proto3"
 
-var (
-	file_authn_v1_challenge_proto_rawDescOnce sync.Once
-	file_authn_v1_challenge_proto_rawDescData []byte
-)
-
-func file_authn_v1_challenge_proto_rawDescGZIP() []byte {
-	file_authn_v1_challenge_proto_rawDescOnce.Do(func() {
-		file_authn_v1_challenge_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_challenge_proto_rawDesc), len(file_authn_v1_challenge_proto_rawDesc)))
-	})
-	return file_authn_v1_challenge_proto_rawDescData
-}
-
 var file_authn_v1_challenge_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_authn_v1_challenge_proto_goTypes = []any{
 	(*AuthChallenge)(nil),    // 0: muid.authn.v1.challenge.AuthChallenge
@@ -370,9 +555,9 @@ func file_authn_v1_challenge_proto_init() {
 		return
 	}
 	file_authn_v1_challenge_proto_msgTypes[0].OneofWrappers = []any{
-		(*AuthChallenge_EmailChallenge)(nil),
-		(*AuthChallenge_OauthChallenge)(nil),
-		(*AuthChallenge_PasskeyChallenge)(nil),
+		(*authChallenge_EmailChallenge)(nil),
+		(*authChallenge_OauthChallenge)(nil),
+		(*authChallenge_PasskeyChallenge)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

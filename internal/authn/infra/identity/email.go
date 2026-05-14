@@ -155,12 +155,11 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	}
 
 	created_at := time.Now()
-	msg := &mail.SendOTPEmailEvent{
-		Email:     email,
-		Code:      code.OTP,
-		ExpiresAt: code.ExpiresAt.Unix(),
-		CreatedAt: created_at.Unix(),
-	}
+	msg := &mail.SendOTPEmailEvent{}
+	msg.SetEmail(email)
+	msg.SetCode(code.OTP)
+	msg.SetExpiresAt(code.ExpiresAt.Unix())
+	msg.SetCreatedAt(created_at.Unix())
 
 	msgBytes, err := proto.Marshal(msg)
 	if err != nil {

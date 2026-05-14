@@ -72,10 +72,10 @@ func (g *GRPCHandler) StartAuthSession(
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &pb.StartAuthSessionResponse{
-		TransitionId: step.TransitionId,
-		Challenge:    ch,
-	}, nil
+	out := &pb.StartAuthSessionResponse{}
+	out.SetTransitionId(step.TransitionId)
+	out.SetChallenge(ch)
+	return out, nil
 }
 
 func (g *GRPCHandler) ContinueAuthSession(
@@ -116,15 +116,13 @@ func (g *GRPCHandler) ContinueAuthSession(
 		return nil, status.Error(codes.Internal, "provider did not complete authentication")
 	}
 
-	return &pb.ContinueAuthSessionResponse{
-		TransitionId: tid,
-		Status:       basic.AuthStatus_AUTH_STATE_AUTHENTICATED,
-		Result: &pb.ContinueAuthSessionResponse_AuthSuccess{
-			AuthSuccess: &sessionpb.AuthSuccess{
-				Result: step.AuthenticatedResult,
-			},
-		},
-	}, nil
+	authOK := &sessionpb.AuthSuccess{}
+	authOK.SetResult(step.AuthenticatedResult)
+	resp := &pb.ContinueAuthSessionResponse{}
+	resp.SetTransitionId(tid)
+	resp.SetStatus(basic.AuthStatus_AUTH_STATE_AUTHENTICATED)
+	resp.SetAuthSuccess(authOK)
+	return resp, nil
 }
 
 func providerNameForMethod(m basic.AuthMethod, identifier string) (string, error) {
@@ -149,42 +147,35 @@ func buildAuthChallenge(
 	step identity.StepResult,
 ) (*challenge.AuthChallenge, error) {
 	now := time.Now()
-	out := &challenge.AuthChallenge{
-		ChallengeId: step.TransitionId,
-		IssuedAt:    now.Unix(),
-		ExpiresAt:   now.Add(15 * time.Minute).Unix(),
-	}
+	ch := &challenge.AuthChallenge{}
+	ch.SetChallengeId(step.TransitionId)
+	ch.SetIssuedAt(now.Unix())
+	ch.SetExpiresAt(now.Add(15 * time.Minute).Unix())
 
 	switch method {
 	case basic.AuthMethod_AUTH_METHOD_EMAIL_OTP:
 		if sess.Store.Email == nil {
 			return nil, fmt.Errorf("missing email transition data")
 		}
-		out.Challenge = &challenge.AuthChallenge_EmailChallenge{
-			EmailChallenge: &challenge.EmailChallenge{
-				EmailMasked:          maskEmail(sess.Store.Email.Email),
-				ResendCooldownMillis: 60_000,
-			},
-		}
+		ec := &challenge.EmailChallenge{}
+		ec.SetEmailMasked(maskEmail(sess.Store.Email.Email))
+		ec.SetResendCooldownMillis(60_000)
+		ch.SetEmailChallenge(ec)
 	case basic.AuthMethod_AUTH_METHOD_OAUTH:
-		out.Challenge = &challenge.AuthChallenge_OauthChallenge{
-			OauthChallenge: &challenge.OAuthChallenge{
-				Provider: sess.Provider,
-				AuthUrl:  step.RedirectURL,
-			},
-		}
+		oc := &challenge.OAuthChallenge{}
+		oc.SetProvider(sess.Provider)
+		oc.SetAuthUrl(step.RedirectURL)
+		ch.SetOauthChallenge(oc)
 	case basic.AuthMethod_AUTH_METHOD_PASSKEY:
-		out.Challenge = &challenge.AuthChallenge_PasskeyChallenge{
-			PasskeyChallenge: &challenge.PasskeyChallenge{
-				State:                                 step.TransitionId,
-				PublicKeyCredentialRequestOptionsJson: step.PasskeyPublicKeyCredentialRequestOptionsJSON,
-				TimeoutMillis:                         step.PasskeyTimeoutMillis,
-			},
-		}
+		pc := &challenge.PasskeyChallenge{}
+		pc.SetState(step.TransitionId)
+		pc.SetPublicKeyCredentialRequestOptionsJson(step.PasskeyPublicKeyCredentialRequestOptionsJSON)
+		pc.SetTimeoutMillis(step.PasskeyTimeoutMillis)
+		ch.SetPasskeyChallenge(pc)
 	default:
 		return nil, fmt.Errorf("unsupported method for challenge mapping")
 	}
-	return out, nil
+	return ch, nil
 }
 
 func maskEmail(email string) string {
@@ -204,23 +195,23 @@ func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
 	if proof == nil {
 		return nil, status.Error(codes.InvalidArgument, "missing proof")
 	}
-	switch x := proof.Proof.(type) {
-	case *proofpb.AuthProof_EmailProof:
+	if ep := proof.GetEmailProof(); ep != nil {
 		return map[string]any{
-			implIdentity.EmailPayloadKeyCode: x.EmailProof.GetOtpCode(),
+			implIdentity.EmailPayloadKeyCode: ep.GetOtpCode(),
 		}, nil
-	case *proofpb.AuthProof_OauthProof:
-		return map[string]any{
-			implIdentity.OIDCPayloadKeyCode:  x.OauthProof.GetCode(),
-			implIdentity.OIDCPayloadKeyState: x.OauthProof.GetState(),
-		}, nil
-	case *proofpb.AuthProof_PasskeyProof:
-		return map[string]any{
-			"credential_assertion_response_json": x.PasskeyProof.GetCredentialAssertionResponseJson(),
-		}, nil
-	default:
-		return nil, status.Error(codes.InvalidArgument, "unsupported proof type")
 	}
+	if op := proof.GetOauthProof(); op != nil {
+		return map[string]any{
+			implIdentity.OIDCPayloadKeyCode:  op.GetCode(),
+			implIdentity.OIDCPayloadKeyState: op.GetState(),
+		}, nil
+	}
+	if pp := proof.GetPasskeyProof(); pp != nil {
+		return map[string]any{
+			"credential_assertion_response_json": pp.GetCredentialAssertionResponseJson(),
+		}, nil
+	}
+	return nil, status.Error(codes.InvalidArgument, "unsupported proof type")
 }
 
 func mapStartError(err error) error {
@@ -260,16 +251,14 @@ func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, e
 }
 
 func authFailureResponse(tid, reason, code string) *pb.ContinueAuthSessionResponse {
-	return &pb.ContinueAuthSessionResponse{
-		TransitionId: tid,
-		Status:       basic.AuthStatus_AUTH_STATE_FAILED,
-		Result: &pb.ContinueAuthSessionResponse_AuthFailure{
-			AuthFailure: &sessionpb.AuthFailure{
-				Reason:    reason,
-				ErrorCode: code,
-			},
-		},
-	}
+	fail := &sessionpb.AuthFailure{}
+	fail.SetReason(reason)
+	fail.SetErrorCode(code)
+	out := &pb.ContinueAuthSessionResponse{}
+	out.SetTransitionId(tid)
+	out.SetStatus(basic.AuthStatus_AUTH_STATE_FAILED)
+	out.SetAuthFailure(fail)
+	return out
 }
 
 // GetAuthorizedSession implements [authn.AuthnServiceServer].

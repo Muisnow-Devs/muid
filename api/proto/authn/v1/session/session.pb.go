@@ -13,7 +13,6 @@ import (
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	challenge "sanzi.io/muid/api/proto/authn/v1/challenge"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -71,16 +70,11 @@ func (x AuthLevel) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use AuthLevel.Descriptor instead.
-func (AuthLevel) EnumDescriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{0}
-}
-
 type SessionToken struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Value         string                 `protobuf:"bytes,1,opt,name=value,proto3" json:"value,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Value string                 `protobuf:"bytes,1,opt,name=value,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SessionToken) Reset() {
@@ -108,25 +102,38 @@ func (x *SessionToken) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SessionToken.ProtoReflect.Descriptor instead.
-func (*SessionToken) Descriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *SessionToken) GetValue() string {
 	if x != nil {
-		return x.Value
+		return x.xxx_hidden_Value
 	}
 	return ""
 }
 
+func (x *SessionToken) SetValue(v string) {
+	x.xxx_hidden_Value = v
+}
+
+type SessionToken_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Value string
+}
+
+func (b0 SessionToken_builder) Build() *SessionToken {
+	m0 := &SessionToken{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Value = b.Value
+	return m0
+}
+
 type SessionContext struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SessionToken  *SessionToken          `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3" json:"session_token,omitempty"`
-	IssuedAt      *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=issued_at,json=issuedAt,proto3" json:"issued_at,omitempty"`
-	ExpiresAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3" json:"expires_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *SessionToken          `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	xxx_hidden_IssuedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=issued_at,json=issuedAt,proto3"`
+	xxx_hidden_ExpiresAt    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SessionContext) Reset() {
@@ -154,39 +161,97 @@ func (x *SessionContext) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SessionContext.ProtoReflect.Descriptor instead.
-func (*SessionContext) Descriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *SessionContext) GetSessionToken() *SessionToken {
 	if x != nil {
-		return x.SessionToken
+		return x.xxx_hidden_SessionToken
 	}
 	return nil
 }
 
 func (x *SessionContext) GetIssuedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.IssuedAt
+		return x.xxx_hidden_IssuedAt
 	}
 	return nil
 }
 
 func (x *SessionContext) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.ExpiresAt
+		return x.xxx_hidden_ExpiresAt
 	}
 	return nil
 }
 
+func (x *SessionContext) SetSessionToken(v *SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *SessionContext) SetIssuedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_IssuedAt = v
+}
+
+func (x *SessionContext) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *SessionContext) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *SessionContext) HasIssuedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_IssuedAt != nil
+}
+
+func (x *SessionContext) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *SessionContext) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+func (x *SessionContext) ClearIssuedAt() {
+	x.xxx_hidden_IssuedAt = nil
+}
+
+func (x *SessionContext) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+type SessionContext_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *SessionToken
+	IssuedAt     *timestamppb.Timestamp
+	ExpiresAt    *timestamppb.Timestamp
+}
+
+func (b0 SessionContext_builder) Build() *SessionContext {
+	m0 := &SessionContext{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	x.xxx_hidden_IssuedAt = b.IssuedAt
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	return m0
+}
+
 type AuthenticatedResult struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	UserId         string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	SessionContext *SessionContext        `protobuf:"bytes,2,opt,name=session_context,json=sessionContext,proto3" json:"session_context,omitempty"`
-	AuthLevel      AuthLevel              `protobuf:"varint,3,opt,name=auth_level,json=authLevel,proto3,enum=muid.authn.v1.session.AuthLevel" json:"auth_level,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId         string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_SessionContext *SessionContext        `protobuf:"bytes,2,opt,name=session_context,json=sessionContext,proto3"`
+	xxx_hidden_AuthLevel      AuthLevel              `protobuf:"varint,3,opt,name=auth_level,json=authLevel,proto3,enum=muid.authn.v1.session.AuthLevel"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
 }
 
 func (x *AuthenticatedResult) Reset() {
@@ -214,37 +279,73 @@ func (x *AuthenticatedResult) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthenticatedResult.ProtoReflect.Descriptor instead.
-func (*AuthenticatedResult) Descriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *AuthenticatedResult) GetUserId() string {
 	if x != nil {
-		return x.UserId
+		return x.xxx_hidden_UserId
 	}
 	return ""
 }
 
 func (x *AuthenticatedResult) GetSessionContext() *SessionContext {
 	if x != nil {
-		return x.SessionContext
+		return x.xxx_hidden_SessionContext
 	}
 	return nil
 }
 
 func (x *AuthenticatedResult) GetAuthLevel() AuthLevel {
 	if x != nil {
-		return x.AuthLevel
+		return x.xxx_hidden_AuthLevel
 	}
 	return AuthLevel_AUTH_LEVEL_UNSPECIFIED
 }
 
+func (x *AuthenticatedResult) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *AuthenticatedResult) SetSessionContext(v *SessionContext) {
+	x.xxx_hidden_SessionContext = v
+}
+
+func (x *AuthenticatedResult) SetAuthLevel(v AuthLevel) {
+	x.xxx_hidden_AuthLevel = v
+}
+
+func (x *AuthenticatedResult) HasSessionContext() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionContext != nil
+}
+
+func (x *AuthenticatedResult) ClearSessionContext() {
+	x.xxx_hidden_SessionContext = nil
+}
+
+type AuthenticatedResult_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId         string
+	SessionContext *SessionContext
+	AuthLevel      AuthLevel
+}
+
+func (b0 AuthenticatedResult_builder) Build() *AuthenticatedResult {
+	m0 := &AuthenticatedResult{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_SessionContext = b.SessionContext
+	x.xxx_hidden_AuthLevel = b.AuthLevel
+	return m0
+}
+
 type ChallengeRequired struct {
-	state         protoimpl.MessageState   `protogen:"open.v1"`
-	Challenge     *challenge.AuthChallenge `protobuf:"bytes,1,opt,name=challenge,proto3" json:"challenge,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState   `protogen:"opaque.v1"`
+	xxx_hidden_Challenge *challenge.AuthChallenge `protobuf:"bytes,1,opt,name=challenge,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *ChallengeRequired) Reset() {
@@ -272,23 +373,47 @@ func (x *ChallengeRequired) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChallengeRequired.ProtoReflect.Descriptor instead.
-func (*ChallengeRequired) Descriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *ChallengeRequired) GetChallenge() *challenge.AuthChallenge {
 	if x != nil {
-		return x.Challenge
+		return x.xxx_hidden_Challenge
 	}
 	return nil
 }
 
+func (x *ChallengeRequired) SetChallenge(v *challenge.AuthChallenge) {
+	x.xxx_hidden_Challenge = v
+}
+
+func (x *ChallengeRequired) HasChallenge() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Challenge != nil
+}
+
+func (x *ChallengeRequired) ClearChallenge() {
+	x.xxx_hidden_Challenge = nil
+}
+
+type ChallengeRequired_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Challenge *challenge.AuthChallenge
+}
+
+func (b0 ChallengeRequired_builder) Build() *ChallengeRequired {
+	m0 := &ChallengeRequired{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Challenge = b.Challenge
+	return m0
+}
+
 type AuthSuccess struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Result        *AuthenticatedResult   `protobuf:"bytes,1,opt,name=result,proto3" json:"result,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Result *AuthenticatedResult   `protobuf:"bytes,1,opt,name=result,proto3"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *AuthSuccess) Reset() {
@@ -316,24 +441,48 @@ func (x *AuthSuccess) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthSuccess.ProtoReflect.Descriptor instead.
-func (*AuthSuccess) Descriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{4}
-}
-
 func (x *AuthSuccess) GetResult() *AuthenticatedResult {
 	if x != nil {
-		return x.Result
+		return x.xxx_hidden_Result
 	}
 	return nil
 }
 
+func (x *AuthSuccess) SetResult(v *AuthenticatedResult) {
+	x.xxx_hidden_Result = v
+}
+
+func (x *AuthSuccess) HasResult() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Result != nil
+}
+
+func (x *AuthSuccess) ClearResult() {
+	x.xxx_hidden_Result = nil
+}
+
+type AuthSuccess_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Result *AuthenticatedResult
+}
+
+func (b0 AuthSuccess_builder) Build() *AuthSuccess {
+	m0 := &AuthSuccess{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Result = b.Result
+	return m0
+}
+
 type AuthFailure struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reason        string                 `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
-	ErrorCode     string                 `protobuf:"bytes,2,opt,name=error_code,json=errorCode,proto3" json:"error_code,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Reason    string                 `protobuf:"bytes,1,opt,name=reason,proto3"`
+	xxx_hidden_ErrorCode string                 `protobuf:"bytes,2,opt,name=error_code,json=errorCode,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *AuthFailure) Reset() {
@@ -361,23 +510,42 @@ func (x *AuthFailure) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthFailure.ProtoReflect.Descriptor instead.
-func (*AuthFailure) Descriptor() ([]byte, []int) {
-	return file_authn_v1_session_proto_rawDescGZIP(), []int{5}
-}
-
 func (x *AuthFailure) GetReason() string {
 	if x != nil {
-		return x.Reason
+		return x.xxx_hidden_Reason
 	}
 	return ""
 }
 
 func (x *AuthFailure) GetErrorCode() string {
 	if x != nil {
-		return x.ErrorCode
+		return x.xxx_hidden_ErrorCode
 	}
 	return ""
+}
+
+func (x *AuthFailure) SetReason(v string) {
+	x.xxx_hidden_Reason = v
+}
+
+func (x *AuthFailure) SetErrorCode(v string) {
+	x.xxx_hidden_ErrorCode = v
+}
+
+type AuthFailure_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Reason    string
+	ErrorCode string
+}
+
+func (b0 AuthFailure_builder) Build() *AuthFailure {
+	m0 := &AuthFailure{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Reason = b.Reason
+	x.xxx_hidden_ErrorCode = b.ErrorCode
+	return m0
 }
 
 var File_authn_v1_session_proto protoreflect.FileDescriptor
@@ -411,18 +579,6 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\x11AUTH_LEVEL_MEDIUM\x10\x02\x12\x13\n" +
 	"\x0fAUTH_LEVEL_HIGH\x10\x03B\xd3\x01\n" +
 	"\x19com.muid.authn.v1.sessionB\fSessionProtoP\x01Z0sanzi.io/muid/api/proto/authn/v1/session;session\xa2\x02\x04MAVS\xaa\x02\x15Muid.Authn.V1.Session\xca\x02\x15Muid\\Authn\\V1\\Session\xe2\x02!Muid\\Authn\\V1\\Session\\GPBMetadata\xea\x02\x18Muid::Authn::V1::Sessionb\x06proto3"
-
-var (
-	file_authn_v1_session_proto_rawDescOnce sync.Once
-	file_authn_v1_session_proto_rawDescData []byte
-)
-
-func file_authn_v1_session_proto_rawDescGZIP() []byte {
-	file_authn_v1_session_proto_rawDescOnce.Do(func() {
-		file_authn_v1_session_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_session_proto_rawDesc), len(file_authn_v1_session_proto_rawDesc)))
-	})
-	return file_authn_v1_session_proto_rawDescData
-}
 
 var file_authn_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_authn_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 6)

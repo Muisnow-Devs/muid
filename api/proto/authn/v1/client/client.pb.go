@@ -11,7 +11,6 @@ import (
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -23,14 +22,14 @@ const (
 )
 
 type AuthorizedClient struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ClientId      string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty"`
-	ClientName    string                 `protobuf:"bytes,2,opt,name=client_name,json=clientName,proto3" json:"client_name,omitempty"`
-	Scopes        []string               `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	AuthorizedAt  *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=authorized_at,json=authorizedAt,proto3" json:"authorized_at,omitempty"`
-	LastUsedAt    *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3" json:"last_used_at,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ClientId     string                 `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3"`
+	xxx_hidden_ClientName   string                 `protobuf:"bytes,2,opt,name=client_name,json=clientName,proto3"`
+	xxx_hidden_Scopes       []string               `protobuf:"bytes,3,rep,name=scopes,proto3"`
+	xxx_hidden_AuthorizedAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=authorized_at,json=authorizedAt,proto3"`
+	xxx_hidden_LastUsedAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=last_used_at,json=lastUsedAt,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *AuthorizedClient) Reset() {
@@ -58,44 +57,103 @@ func (x *AuthorizedClient) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthorizedClient.ProtoReflect.Descriptor instead.
-func (*AuthorizedClient) Descriptor() ([]byte, []int) {
-	return file_authn_v1_client_proto_rawDescGZIP(), []int{0}
-}
-
 func (x *AuthorizedClient) GetClientId() string {
 	if x != nil {
-		return x.ClientId
+		return x.xxx_hidden_ClientId
 	}
 	return ""
 }
 
 func (x *AuthorizedClient) GetClientName() string {
 	if x != nil {
-		return x.ClientName
+		return x.xxx_hidden_ClientName
 	}
 	return ""
 }
 
 func (x *AuthorizedClient) GetScopes() []string {
 	if x != nil {
-		return x.Scopes
+		return x.xxx_hidden_Scopes
 	}
 	return nil
 }
 
 func (x *AuthorizedClient) GetAuthorizedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.AuthorizedAt
+		return x.xxx_hidden_AuthorizedAt
 	}
 	return nil
 }
 
 func (x *AuthorizedClient) GetLastUsedAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.LastUsedAt
+		return x.xxx_hidden_LastUsedAt
 	}
 	return nil
+}
+
+func (x *AuthorizedClient) SetClientId(v string) {
+	x.xxx_hidden_ClientId = v
+}
+
+func (x *AuthorizedClient) SetClientName(v string) {
+	x.xxx_hidden_ClientName = v
+}
+
+func (x *AuthorizedClient) SetScopes(v []string) {
+	x.xxx_hidden_Scopes = v
+}
+
+func (x *AuthorizedClient) SetAuthorizedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_AuthorizedAt = v
+}
+
+func (x *AuthorizedClient) SetLastUsedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_LastUsedAt = v
+}
+
+func (x *AuthorizedClient) HasAuthorizedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_AuthorizedAt != nil
+}
+
+func (x *AuthorizedClient) HasLastUsedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_LastUsedAt != nil
+}
+
+func (x *AuthorizedClient) ClearAuthorizedAt() {
+	x.xxx_hidden_AuthorizedAt = nil
+}
+
+func (x *AuthorizedClient) ClearLastUsedAt() {
+	x.xxx_hidden_LastUsedAt = nil
+}
+
+type AuthorizedClient_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	ClientId     string
+	ClientName   string
+	Scopes       []string
+	AuthorizedAt *timestamppb.Timestamp
+	LastUsedAt   *timestamppb.Timestamp
+}
+
+func (b0 AuthorizedClient_builder) Build() *AuthorizedClient {
+	m0 := &AuthorizedClient{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ClientId = b.ClientId
+	x.xxx_hidden_ClientName = b.ClientName
+	x.xxx_hidden_Scopes = b.Scopes
+	x.xxx_hidden_AuthorizedAt = b.AuthorizedAt
+	x.xxx_hidden_LastUsedAt = b.LastUsedAt
+	return m0
 }
 
 var File_authn_v1_client_proto protoreflect.FileDescriptor
@@ -112,18 +170,6 @@ const file_authn_v1_client_proto_rawDesc = "" +
 	"\flast_used_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"lastUsedAtB\xcb\x01\n" +
 	"\x18com.muid.authn.v1.clientB\vClientProtoP\x01Z.sanzi.io/muid/api/proto/authn/v1/client;client\xa2\x02\x04MAVC\xaa\x02\x14Muid.Authn.V1.Client\xca\x02\x14Muid\\Authn\\V1\\Client\xe2\x02 Muid\\Authn\\V1\\Client\\GPBMetadata\xea\x02\x17Muid::Authn::V1::Clientb\x06proto3"
-
-var (
-	file_authn_v1_client_proto_rawDescOnce sync.Once
-	file_authn_v1_client_proto_rawDescData []byte
-)
-
-func file_authn_v1_client_proto_rawDescGZIP() []byte {
-	file_authn_v1_client_proto_rawDescOnce.Do(func() {
-		file_authn_v1_client_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_client_proto_rawDesc), len(file_authn_v1_client_proto_rawDesc)))
-	})
-	return file_authn_v1_client_proto_rawDescData
-}
 
 var file_authn_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_authn_v1_client_proto_goTypes = []any{

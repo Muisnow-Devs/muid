@@ -11,7 +11,6 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
-	sync "sync"
 	unsafe "unsafe"
 )
 
@@ -23,15 +22,10 @@ const (
 )
 
 type AuthProof struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Proof:
-	//
-	//	*AuthProof_EmailProof
-	//	*AuthProof_OauthProof
-	//	*AuthProof_PasskeyProof
-	Proof         isAuthProof_Proof `protobuf_oneof:"proof"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Proof isAuthProof_Proof      `protobuf_oneof:"proof"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *AuthProof) Reset() {
@@ -59,21 +53,9 @@ func (x *AuthProof) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use AuthProof.ProtoReflect.Descriptor instead.
-func (*AuthProof) Descriptor() ([]byte, []int) {
-	return file_authn_v1_proof_proto_rawDescGZIP(), []int{0}
-}
-
-func (x *AuthProof) GetProof() isAuthProof_Proof {
-	if x != nil {
-		return x.Proof
-	}
-	return nil
-}
-
 func (x *AuthProof) GetEmailProof() *EmailProof {
 	if x != nil {
-		if x, ok := x.Proof.(*AuthProof_EmailProof); ok {
+		if x, ok := x.xxx_hidden_Proof.(*authProof_EmailProof); ok {
 			return x.EmailProof
 		}
 	}
@@ -82,7 +64,7 @@ func (x *AuthProof) GetEmailProof() *EmailProof {
 
 func (x *AuthProof) GetOauthProof() *OAuthProof {
 	if x != nil {
-		if x, ok := x.Proof.(*AuthProof_OauthProof); ok {
+		if x, ok := x.xxx_hidden_Proof.(*authProof_OauthProof); ok {
 			return x.OauthProof
 		}
 	}
@@ -91,40 +73,174 @@ func (x *AuthProof) GetOauthProof() *OAuthProof {
 
 func (x *AuthProof) GetPasskeyProof() *PasskeyProof {
 	if x != nil {
-		if x, ok := x.Proof.(*AuthProof_PasskeyProof); ok {
+		if x, ok := x.xxx_hidden_Proof.(*authProof_PasskeyProof); ok {
 			return x.PasskeyProof
 		}
 	}
 	return nil
 }
 
+func (x *AuthProof) SetEmailProof(v *EmailProof) {
+	if v == nil {
+		x.xxx_hidden_Proof = nil
+		return
+	}
+	x.xxx_hidden_Proof = &authProof_EmailProof{v}
+}
+
+func (x *AuthProof) SetOauthProof(v *OAuthProof) {
+	if v == nil {
+		x.xxx_hidden_Proof = nil
+		return
+	}
+	x.xxx_hidden_Proof = &authProof_OauthProof{v}
+}
+
+func (x *AuthProof) SetPasskeyProof(v *PasskeyProof) {
+	if v == nil {
+		x.xxx_hidden_Proof = nil
+		return
+	}
+	x.xxx_hidden_Proof = &authProof_PasskeyProof{v}
+}
+
+func (x *AuthProof) HasProof() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Proof != nil
+}
+
+func (x *AuthProof) HasEmailProof() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Proof.(*authProof_EmailProof)
+	return ok
+}
+
+func (x *AuthProof) HasOauthProof() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Proof.(*authProof_OauthProof)
+	return ok
+}
+
+func (x *AuthProof) HasPasskeyProof() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Proof.(*authProof_PasskeyProof)
+	return ok
+}
+
+func (x *AuthProof) ClearProof() {
+	x.xxx_hidden_Proof = nil
+}
+
+func (x *AuthProof) ClearEmailProof() {
+	if _, ok := x.xxx_hidden_Proof.(*authProof_EmailProof); ok {
+		x.xxx_hidden_Proof = nil
+	}
+}
+
+func (x *AuthProof) ClearOauthProof() {
+	if _, ok := x.xxx_hidden_Proof.(*authProof_OauthProof); ok {
+		x.xxx_hidden_Proof = nil
+	}
+}
+
+func (x *AuthProof) ClearPasskeyProof() {
+	if _, ok := x.xxx_hidden_Proof.(*authProof_PasskeyProof); ok {
+		x.xxx_hidden_Proof = nil
+	}
+}
+
+const AuthProof_Proof_not_set_case case_AuthProof_Proof = 0
+const AuthProof_EmailProof_case case_AuthProof_Proof = 1
+const AuthProof_OauthProof_case case_AuthProof_Proof = 2
+const AuthProof_PasskeyProof_case case_AuthProof_Proof = 3
+
+func (x *AuthProof) WhichProof() case_AuthProof_Proof {
+	if x == nil {
+		return AuthProof_Proof_not_set_case
+	}
+	switch x.xxx_hidden_Proof.(type) {
+	case *authProof_EmailProof:
+		return AuthProof_EmailProof_case
+	case *authProof_OauthProof:
+		return AuthProof_OauthProof_case
+	case *authProof_PasskeyProof:
+		return AuthProof_PasskeyProof_case
+	default:
+		return AuthProof_Proof_not_set_case
+	}
+}
+
+type AuthProof_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// Fields of oneof xxx_hidden_Proof:
+	EmailProof   *EmailProof
+	OauthProof   *OAuthProof
+	PasskeyProof *PasskeyProof
+	// -- end of xxx_hidden_Proof
+}
+
+func (b0 AuthProof_builder) Build() *AuthProof {
+	m0 := &AuthProof{}
+	b, x := &b0, m0
+	_, _ = b, x
+	if b.EmailProof != nil {
+		x.xxx_hidden_Proof = &authProof_EmailProof{b.EmailProof}
+	}
+	if b.OauthProof != nil {
+		x.xxx_hidden_Proof = &authProof_OauthProof{b.OauthProof}
+	}
+	if b.PasskeyProof != nil {
+		x.xxx_hidden_Proof = &authProof_PasskeyProof{b.PasskeyProof}
+	}
+	return m0
+}
+
+type case_AuthProof_Proof protoreflect.FieldNumber
+
+func (x case_AuthProof_Proof) String() string {
+	md := file_authn_v1_proof_proto_msgTypes[0].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
 type isAuthProof_Proof interface {
 	isAuthProof_Proof()
 }
 
-type AuthProof_EmailProof struct {
+type authProof_EmailProof struct {
 	EmailProof *EmailProof `protobuf:"bytes,1,opt,name=email_proof,json=emailProof,proto3,oneof"`
 }
 
-type AuthProof_OauthProof struct {
+type authProof_OauthProof struct {
 	OauthProof *OAuthProof `protobuf:"bytes,2,opt,name=oauth_proof,json=oauthProof,proto3,oneof"`
 }
 
-type AuthProof_PasskeyProof struct {
+type authProof_PasskeyProof struct {
 	PasskeyProof *PasskeyProof `protobuf:"bytes,3,opt,name=passkey_proof,json=passkeyProof,proto3,oneof"`
 }
 
-func (*AuthProof_EmailProof) isAuthProof_Proof() {}
+func (*authProof_EmailProof) isAuthProof_Proof() {}
 
-func (*AuthProof_OauthProof) isAuthProof_Proof() {}
+func (*authProof_OauthProof) isAuthProof_Proof() {}
 
-func (*AuthProof_PasskeyProof) isAuthProof_Proof() {}
+func (*authProof_PasskeyProof) isAuthProof_Proof() {}
 
 type EmailProof struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OtpCode       string                 `protobuf:"bytes,1,opt,name=otp_code,json=otpCode,proto3" json:"otp_code,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OtpCode string                 `protobuf:"bytes,1,opt,name=otp_code,json=otpCode,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
 }
 
 func (x *EmailProof) Reset() {
@@ -152,24 +268,37 @@ func (x *EmailProof) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use EmailProof.ProtoReflect.Descriptor instead.
-func (*EmailProof) Descriptor() ([]byte, []int) {
-	return file_authn_v1_proof_proto_rawDescGZIP(), []int{1}
-}
-
 func (x *EmailProof) GetOtpCode() string {
 	if x != nil {
-		return x.OtpCode
+		return x.xxx_hidden_OtpCode
 	}
 	return ""
 }
 
+func (x *EmailProof) SetOtpCode(v string) {
+	x.xxx_hidden_OtpCode = v
+}
+
+type EmailProof_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	OtpCode string
+}
+
+func (b0 EmailProof_builder) Build() *EmailProof {
+	m0 := &EmailProof{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_OtpCode = b.OtpCode
+	return m0
+}
+
 type OAuthProof struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Code          string                 `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
-	State         string                 `protobuf:"bytes,2,opt,name=state,proto3" json:"state,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Code  string                 `protobuf:"bytes,1,opt,name=code,proto3"`
+	xxx_hidden_State string                 `protobuf:"bytes,2,opt,name=state,proto3"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *OAuthProof) Reset() {
@@ -197,30 +326,49 @@ func (x *OAuthProof) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use OAuthProof.ProtoReflect.Descriptor instead.
-func (*OAuthProof) Descriptor() ([]byte, []int) {
-	return file_authn_v1_proof_proto_rawDescGZIP(), []int{2}
-}
-
 func (x *OAuthProof) GetCode() string {
 	if x != nil {
-		return x.Code
+		return x.xxx_hidden_Code
 	}
 	return ""
 }
 
 func (x *OAuthProof) GetState() string {
 	if x != nil {
-		return x.State
+		return x.xxx_hidden_State
 	}
 	return ""
 }
 
+func (x *OAuthProof) SetCode(v string) {
+	x.xxx_hidden_Code = v
+}
+
+func (x *OAuthProof) SetState(v string) {
+	x.xxx_hidden_State = v
+}
+
+type OAuthProof_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Code  string
+	State string
+}
+
+func (b0 OAuthProof_builder) Build() *OAuthProof {
+	m0 := &OAuthProof{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Code = b.Code
+	x.xxx_hidden_State = b.State
+	return m0
+}
+
 type PasskeyProof struct {
-	state                           protoimpl.MessageState `protogen:"open.v1"`
-	CredentialAssertionResponseJson string                 `protobuf:"bytes,1,opt,name=credential_assertion_response_json,json=credentialAssertionResponseJson,proto3" json:"credential_assertion_response_json,omitempty"`
-	unknownFields                   protoimpl.UnknownFields
-	sizeCache                       protoimpl.SizeCache
+	state                                      protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_CredentialAssertionResponseJson string                 `protobuf:"bytes,1,opt,name=credential_assertion_response_json,json=credentialAssertionResponseJson,proto3"`
+	unknownFields                              protoimpl.UnknownFields
+	sizeCache                                  protoimpl.SizeCache
 }
 
 func (x *PasskeyProof) Reset() {
@@ -248,16 +396,29 @@ func (x *PasskeyProof) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use PasskeyProof.ProtoReflect.Descriptor instead.
-func (*PasskeyProof) Descriptor() ([]byte, []int) {
-	return file_authn_v1_proof_proto_rawDescGZIP(), []int{3}
-}
-
 func (x *PasskeyProof) GetCredentialAssertionResponseJson() string {
 	if x != nil {
-		return x.CredentialAssertionResponseJson
+		return x.xxx_hidden_CredentialAssertionResponseJson
 	}
 	return ""
+}
+
+func (x *PasskeyProof) SetCredentialAssertionResponseJson(v string) {
+	x.xxx_hidden_CredentialAssertionResponseJson = v
+}
+
+type PasskeyProof_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	CredentialAssertionResponseJson string
+}
+
+func (b0 PasskeyProof_builder) Build() *PasskeyProof {
+	m0 := &PasskeyProof{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_CredentialAssertionResponseJson = b.CredentialAssertionResponseJson
+	return m0
 }
 
 var File_authn_v1_proof_proto protoreflect.FileDescriptor
@@ -284,18 +445,6 @@ const file_authn_v1_proof_proto_rawDesc = "" +
 	"\x17com.muid.authn.v1.proofB\n" +
 	"ProofProtoP\x01Z,sanzi.io/muid/api/proto/authn/v1/proof;proof\xa2\x02\x04MAVP\xaa\x02\x13Muid.Authn.V1.Proof\xca\x02\x13Muid\\Authn\\V1\\Proof\xe2\x02\x1fMuid\\Authn\\V1\\Proof\\GPBMetadata\xea\x02\x16Muid::Authn::V1::Proofb\x06proto3"
 
-var (
-	file_authn_v1_proof_proto_rawDescOnce sync.Once
-	file_authn_v1_proof_proto_rawDescData []byte
-)
-
-func file_authn_v1_proof_proto_rawDescGZIP() []byte {
-	file_authn_v1_proof_proto_rawDescOnce.Do(func() {
-		file_authn_v1_proof_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_authn_v1_proof_proto_rawDesc), len(file_authn_v1_proof_proto_rawDesc)))
-	})
-	return file_authn_v1_proof_proto_rawDescData
-}
-
 var file_authn_v1_proof_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_authn_v1_proof_proto_goTypes = []any{
 	(*AuthProof)(nil),    // 0: muid.authn.v1.proof.AuthProof
@@ -320,9 +469,9 @@ func file_authn_v1_proof_proto_init() {
 		return
 	}
 	file_authn_v1_proof_proto_msgTypes[0].OneofWrappers = []any{
-		(*AuthProof_EmailProof)(nil),
-		(*AuthProof_OauthProof)(nil),
-		(*AuthProof_PasskeyProof)(nil),
+		(*authProof_EmailProof)(nil),
+		(*authProof_OauthProof)(nil),
+		(*authProof_PasskeyProof)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -36,9 +36,10 @@ func (s *Services) provisionFromProfile(
 	if id, ok := traceid.FromContext(ctx); ok {
 		pctx = traceid.With(pctx, id)
 	}
-	req := &profilepb.CreateProfileRequest{Email: email}
+	req := &profilepb.CreateProfileRequest{}
+	req.SetEmail(email)
 	if claims != nil {
-		req.Claims = claims
+		req.SetClaims(claims)
 	}
 	resp, err := s.Profile.CreateProfile(pctx, req)
 	if err != nil {

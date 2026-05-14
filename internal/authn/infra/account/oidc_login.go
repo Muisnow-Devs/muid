@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/proto"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
@@ -50,15 +49,14 @@ func (s *Services) ResolveOIDCLogin(
 		return uuid.Nil, err
 	}
 
-	claims := &claimspb.IdentityClaims{
-		Email:         proto.String(email),
-		EmailVerified: proto.Bool(emailVerified),
-	}
+	claims := &claimspb.IdentityClaims{}
+	claims.SetEmail(email)
+	claims.SetEmailVerified(emailVerified)
 	if displayName != "" {
-		claims.Name = proto.String(displayName)
+		claims.SetName(displayName)
 	}
 	if picture != "" {
-		claims.Picture = proto.String(picture)
+		claims.SetPicture(picture)
 	}
 
 	uid, err := s.provisionFromProfile(ctx, email, claims)

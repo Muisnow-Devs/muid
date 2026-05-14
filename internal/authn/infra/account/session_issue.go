@@ -29,7 +29,7 @@ func (s *Services) IssueAuthenticatedSession(
 
 	selector := base64.RawURLEncoding.EncodeToString(selectorBytes)
 	validatorEncoded := base64.RawURLEncoding.EncodeToString(validatorSecret)
-	token := selector + "." + validatorEncoded
+	wireToken := selector + "." + validatorEncoded
 
 	if len(selector) != 22 || len(validatorEncoded) != 43 {
 		return nil, fmt.Errorf(
@@ -56,13 +56,15 @@ func (s *Services) IssueAuthenticatedSession(
 		return nil, err
 	}
 
-	return &sessionpb.AuthenticatedResult{
-		UserId: userID.String(),
-		SessionContext: &sessionpb.SessionContext{
-			SessionToken: &sessionpb.SessionToken{Value: token},
-			IssuedAt:     timestamppb.New(now),
-			ExpiresAt:    timestamppb.New(expires),
-		},
-		AuthLevel: sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM,
-	}, nil
+	stok := &sessionpb.SessionToken{}
+	stok.SetValue(wireToken)
+	sctx := &sessionpb.SessionContext{}
+	sctx.SetSessionToken(stok)
+	sctx.SetIssuedAt(timestamppb.New(now))
+	sctx.SetExpiresAt(timestamppb.New(expires))
+	out := &sessionpb.AuthenticatedResult{}
+	out.SetUserId(userID.String())
+	out.SetSessionContext(sctx)
+	out.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM)
+	return out, nil
 }

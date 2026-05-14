@@ -26,7 +26,7 @@ func rasterKindMIME(k RasterKind) string {
 	case RasterGIF:
 		return "image/gif"
 	case RasterWebP:
-		return "image/webp"
+		return ContentTypeWebP
 	default:
 		return ""
 	}

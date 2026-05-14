@@ -334,7 +334,7 @@ func (c *UserAvatarClient) QueryUser(_m *UserAvatar) *UserProfileQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(useravatar.Table, useravatar.FieldID, id),
 			sqlgraph.To(userprofile.Table, userprofile.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, useravatar.UserTable, useravatar.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, useravatar.UserTable, useravatar.UserColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -640,15 +640,15 @@ func (c *UserProfileClient) QueryPreference(_m *UserProfile) *UserPreferenceQuer
 	return query
 }
 
-// QueryAvatar queries the avatar edge of a UserProfile.
-func (c *UserProfileClient) QueryAvatar(_m *UserProfile) *UserAvatarQuery {
+// QueryAvatars queries the avatars edge of a UserProfile.
+func (c *UserProfileClient) QueryAvatars(_m *UserProfile) *UserAvatarQuery {
 	query := (&UserAvatarClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userprofile.Table, userprofile.FieldID, id),
 			sqlgraph.To(useravatar.Table, useravatar.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, userprofile.AvatarTable, userprofile.AvatarColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, userprofile.AvatarsTable, userprofile.AvatarsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

@@ -2,6 +2,7 @@ package profilegrpc
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -14,8 +15,10 @@ import (
 	profileevent "sanzi.io/muid/api/proto/event/v1/profile"
 	pb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/profile/ent"
-	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
+	"sanzi.io/muid/internal/profile/updatemask"
+	"sanzi.io/muid/pkg/errutil"
+	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/topics"
 )
 
@@ -28,22 +31,20 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 	claims := req.GetClaims()
 	anonymous := !claimsAreMeaningful(claims)
 
-	userID := uuid.New()
+	userID := shared.UUIDV7()
 	local := emailLocalPart(email)
 
-	var displayName, username, avatarURL string
+	var displayName, username string
+	var oidcPictureURL string
 	if anonymous {
 		displayName = randomDisplayName()
-		avatarURL = githubIdenticonURL(userID)
 	} else {
 		displayName = displayNameFromClaims(claims, local)
 		if displayName == "" {
 			displayName = randomDisplayName()
 		}
 		if pic := avatarFromClaims(claims); pic != "" {
-			avatarURL = pic
-		} else {
-			avatarURL = githubIdenticonURL(userID)
+			oidcPictureURL = pic
 		}
 	}
 
@@ -70,17 +71,13 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 	if err != nil {
 		return nil, grpcInternal(ctx, "profile create tx begin", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
-	defer func() { _ = tx.Rollback() }()
-
-	prefID := uuid.New()
-	avID := uuid.New()
+	defer func() { errutil.Discard(tx.Rollback()) }()
 
 	_, err = tx.UserProfile.Create().
 		SetID(userID).
-		SetEmail(email).
+		SetEmailRef(email).
 		SetDisplayName(displayName).
 		SetUsername(username).
-		SetAvatarURL(avatarURL).
 		Save(ctx)
 	if err != nil {
 		if ent.IsConstraintError(err) {
@@ -90,7 +87,6 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 	}
 
 	_, err = tx.UserPreference.Create().
-		SetID(prefID).
 		SetUserID(userID).
 		SetLocale(locale).
 		Save(ctx)
@@ -98,19 +94,15 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		return nil, grpcInternal(ctx, "profile create user_preference", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
-	_, err = tx.UserAvatar.Create().
-		SetID(avID).
-		SetUserID(userID).
-		Save(ctx)
-	if err != nil {
-		return nil, grpcInternal(ctx, "profile create user_avatar", err, "user_id_prefix", userIDPrefix(userID.String()))
-	}
-
 	if err := tx.Commit(); err != nil {
 		return nil, grpcInternal(ctx, "profile create tx commit", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
-	if err := g.publishChange(ctx, userID.String(), email, profileevent.ProfileChangedEvent_CHANGE_TYPE_CREATED); err != nil {
+	if g.avatarIngest != nil {
+		g.avatarIngest.GoBootstrap(ctx, userID, oidcPictureURL)
+	}
+
+	if err := g.publishChange(userID.String(), email, profileevent.ProfileChangedEvent_CHANGE_TYPE_CREATED); err != nil {
 		return nil, grpcInternal(ctx, "profile create publish", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
@@ -126,7 +118,6 @@ func (g *GRPCHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest)
 	p, err := g.db.UserProfile.Query().
 		Where(userprofile.ID(id)).
 		WithPreference().
-		WithAvatar().
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, status.Error(codes.NotFound, "profile not found")
@@ -139,17 +130,17 @@ func (g *GRPCHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest)
 	if p.Edges.Preference != nil {
 		locale = p.Edges.Preference.Locale
 	}
-	objectKey := ""
-	if p.Edges.Avatar != nil {
-		objectKey = p.Edges.Avatar.ObjectKey
+	avatarURL, objectKey, err := g.queryDisplayAvatar(ctx, id)
+	if err != nil {
+		return nil, grpcInternal(ctx, "profile get avatar", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
 	return &pb.GetProfileResponse{
 		Id:              p.ID.String(),
-		Email:           p.Email,
+		Email:           p.EmailRef,
 		DisplayName:     p.DisplayName,
 		Username:        p.Username,
-		AvatarUrl:       p.AvatarURL,
+		AvatarUrl:       avatarURL,
 		Locale:          locale,
 		AvatarObjectKey: objectKey,
 	}, nil
@@ -160,40 +151,35 @@ func (g *GRPCHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid profile id")
 	}
-	if req.DisplayName == nil && req.Locale == nil {
-		return nil, status.Error(codes.InvalidArgument, "no fields to update")
+
+	paths, err := sortedPatchableProfileMaskPaths(req.GetUpdateMask())
+	if err != nil {
+		switch {
+		case errors.Is(err, updatemask.ErrEmptyMask):
+			return nil, status.Error(codes.InvalidArgument, "update_mask must list at least one field path")
+		case errors.Is(err, errProfileUpdateUnsupportedPath):
+			return nil, status.Error(codes.InvalidArgument, "unsupported update_mask path")
+		case errors.Is(err, updatemask.ErrUnknownPath):
+			return nil, status.Error(codes.InvalidArgument, "unknown update_mask path")
+		default:
+			return nil, status.Error(codes.InvalidArgument, "invalid update_mask path")
+		}
+	}
+
+	prof := req.GetProfile()
+	if prof == nil {
+		prof = &pb.UpdateProfileFields{}
 	}
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
 		return nil, grpcInternal(ctx, "profile update tx begin", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
-	defer func() { _ = tx.Rollback() }()
+	defer func() { errutil.Discard(tx.Rollback()) }()
 
-	if req.DisplayName != nil {
-		dn := strings.TrimSpace(*req.DisplayName)
-		if dn == "" {
-			return nil, status.Error(codes.InvalidArgument, "display_name must not be empty")
-		}
-		if _, err := tx.UserProfile.UpdateOneID(id).SetDisplayName(dn).Save(ctx); err != nil {
-			if ent.IsNotFound(err) {
-				return nil, status.Error(codes.NotFound, "profile not found")
-			}
-			return nil, grpcInternal(ctx, "profile update display_name", err, "profile_id_prefix", userIDPrefix(id.String()))
-		}
-	}
-
-	if req.Locale != nil {
-		loc := strings.TrimSpace(*req.Locale)
-		n, err := tx.UserPreference.Update().
-			Where(userpreference.HasUserWith(userprofile.ID(id))).
-			SetLocale(loc).
-			Save(ctx)
-		if err != nil {
-			return nil, grpcInternal(ctx, "profile update preference", err, "profile_id_prefix", userIDPrefix(id.String()))
-		}
-		if n == 0 {
-			return nil, status.Error(codes.NotFound, "preference not found for profile")
+	for _, p := range paths {
+		if err := profilePatchRegistry[p](ctx, g, tx, id, prof); err != nil {
+			return nil, err
 		}
 	}
 
@@ -206,7 +192,7 @@ func (g *GRPCHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 		return nil, grpcInternal(ctx, "profile update reload", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
-	if err := g.publishChange(ctx, id.String(), p.Email, profileevent.ProfileChangedEvent_CHANGE_TYPE_UPDATED); err != nil {
+	if err := g.publishChange(id.String(), p.EmailRef, profileevent.ProfileChangedEvent_CHANGE_TYPE_UPDATED); err != nil {
 		return nil, grpcInternal(ctx, "profile update publish", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
@@ -238,7 +224,7 @@ func (g *GRPCHandler) allocateUsername(ctx context.Context, base string) (string
 	return "", status.Error(codes.ResourceExhausted, "could not allocate a unique username")
 }
 
-func (g *GRPCHandler) publishChange(ctx context.Context, userID, email string, ct profileevent.ProfileChangedEvent_ChangeType) error {
+func (g *GRPCHandler) publishChange(userID, email string, ct profileevent.ProfileChangedEvent_ChangeType) error {
 	msg := &profileevent.ProfileChangedEvent{
 		UserId:         userID,
 		Email:          email,

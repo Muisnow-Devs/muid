@@ -3,6 +3,7 @@ syntax = "proto3";
 package muid.profile.v1;
 
 import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
 
 import "shared/v1/claims.proto";
 
@@ -20,7 +21,7 @@ service ProfileService {
 
 message CreateProfileRequest {
   string email = 1 [(buf.validate.field).string.email = true];
-  // When absent or empty, the service assigns random display name, username, and a GitHub-style identicon URL.
+  // When absent or empty, the service assigns random display name, username, and a deterministic synthetic avatar (goavatar).
   optional muid.shared.v1.claims.IdentityClaims claims = 2;
 }
 
@@ -42,11 +43,21 @@ message GetProfileResponse {
   string avatar_object_key = 7;
 }
 
+// Scalar profile fields that may be partially updated. Only fields listed in
+// `update_mask` are applied; mask paths are relative to UpdateProfileRequest
+// (e.g. "profile.display_name"). See server docs / AGENT_STYLING.md.
+message UpdateProfileFields {
+  string username = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
+  string display_name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 128}];
+  string locale = 3 [(buf.validate.field).string = {max_len: 32}];
+}
+
 message UpdateProfileRequest {
   string id = 1 [(buf.validate.field).string.uuid = true];
-
-  optional string display_name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 128}];
-  optional string locale       = 3 [(buf.validate.field).string = {max_len: 32}];
+  // Paths use proto snake_case under `profile`, e.g. "profile.username".
+  // JSON clients may send camelCase segments ("profile.displayName"); the server normalizes.
+  google.protobuf.FieldMask update_mask = 2;
+  UpdateProfileFields profile = 3;
 }
 
 message UpdateProfileResponse {

@@ -14,22 +14,20 @@ const (
 	Label = "user_profile"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldEmail holds the string denoting the email field in the database.
-	FieldEmail = "email"
+	// FieldEmailRef holds the string denoting the email_ref field in the database.
+	FieldEmailRef = "email_ref"
 	// FieldDisplayName holds the string denoting the display_name field in the database.
 	FieldDisplayName = "display_name"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
-	// FieldAvatarURL holds the string denoting the avatar_url field in the database.
-	FieldAvatarURL = "avatar_url"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// EdgePreference holds the string denoting the preference edge name in mutations.
 	EdgePreference = "preference"
-	// EdgeAvatar holds the string denoting the avatar edge name in mutations.
-	EdgeAvatar = "avatar"
+	// EdgeAvatars holds the string denoting the avatars edge name in mutations.
+	EdgeAvatars = "avatars"
 	// Table holds the table name of the userprofile in the database.
 	Table = "user_profiles"
 	// PreferenceTable is the table that holds the preference relation/edge.
@@ -39,22 +37,21 @@ const (
 	PreferenceInverseTable = "user_preferences"
 	// PreferenceColumn is the table column denoting the preference relation/edge.
 	PreferenceColumn = "user_id"
-	// AvatarTable is the table that holds the avatar relation/edge.
-	AvatarTable = "user_avatars"
-	// AvatarInverseTable is the table name for the UserAvatar entity.
+	// AvatarsTable is the table that holds the avatars relation/edge.
+	AvatarsTable = "user_avatars"
+	// AvatarsInverseTable is the table name for the UserAvatar entity.
 	// It exists in this package in order to avoid circular dependency with the "useravatar" package.
-	AvatarInverseTable = "user_avatars"
-	// AvatarColumn is the table column denoting the avatar relation/edge.
-	AvatarColumn = "user_id"
+	AvatarsInverseTable = "user_avatars"
+	// AvatarsColumn is the table column denoting the avatars relation/edge.
+	AvatarsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for userprofile fields.
 var Columns = []string{
 	FieldID,
-	FieldEmail,
+	FieldEmailRef,
 	FieldDisplayName,
 	FieldUsername,
-	FieldAvatarURL,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -70,14 +67,12 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	EmailValidator func(string) error
+	// EmailRefValidator is a validator for the "email_ref" field. It is called by the builders before save.
+	EmailRefValidator func(string) error
 	// DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
 	DisplayNameValidator func(string) error
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	UsernameValidator func(string) error
-	// AvatarURLValidator is a validator for the "avatar_url" field. It is called by the builders before save.
-	AvatarURLValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -94,9 +89,9 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByEmail orders the results by the email field.
-func ByEmail(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEmail, opts...).ToFunc()
+// ByEmailRef orders the results by the email_ref field.
+func ByEmailRef(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldEmailRef, opts...).ToFunc()
 }
 
 // ByDisplayName orders the results by the display_name field.
@@ -107,11 +102,6 @@ func ByDisplayName(opts ...sql.OrderTermOption) OrderOption {
 // ByUsername orders the results by the username field.
 func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUsername, opts...).ToFunc()
-}
-
-// ByAvatarURL orders the results by the avatar_url field.
-func ByAvatarURL(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAvatarURL, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
@@ -131,10 +121,17 @@ func ByPreferenceField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
-// ByAvatarField orders the results by avatar field.
-func ByAvatarField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByAvatarsCount orders the results by avatars count.
+func ByAvatarsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newAvatarStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborsCount(s, newAvatarsStep(), opts...)
+	}
+}
+
+// ByAvatars orders the results by avatars terms.
+func ByAvatars(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAvatarsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 func newPreferenceStep() *sqlgraph.Step {
@@ -144,10 +141,10 @@ func newPreferenceStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2O, false, PreferenceTable, PreferenceColumn),
 	)
 }
-func newAvatarStep() *sqlgraph.Step {
+func newAvatarsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(AvatarInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, AvatarTable, AvatarColumn),
+		sqlgraph.To(AvatarsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AvatarsTable, AvatarsColumn),
 	)
 }

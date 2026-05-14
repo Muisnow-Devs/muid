@@ -10,7 +10,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
@@ -20,14 +19,12 @@ type UserProfile struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// Email holds the value of the "email" field.
-	Email string `json:"email,omitempty"`
+	// EmailRef holds the value of the "email_ref" field.
+	EmailRef string `json:"email_ref,omitempty"`
 	// DisplayName holds the value of the "display_name" field.
 	DisplayName string `json:"display_name,omitempty"`
 	// Username holds the value of the "username" field.
 	Username string `json:"username,omitempty"`
-	// AvatarURL holds the value of the "avatar_url" field.
-	AvatarURL string `json:"avatar_url,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -42,8 +39,8 @@ type UserProfile struct {
 type UserProfileEdges struct {
 	// Preference holds the value of the preference edge.
 	Preference *UserPreference `json:"preference,omitempty"`
-	// Avatar holds the value of the avatar edge.
-	Avatar *UserAvatar `json:"avatar,omitempty"`
+	// Avatars holds the value of the avatars edge.
+	Avatars []*UserAvatar `json:"avatars,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
@@ -60,15 +57,13 @@ func (e UserProfileEdges) PreferenceOrErr() (*UserPreference, error) {
 	return nil, &NotLoadedError{edge: "preference"}
 }
 
-// AvatarOrErr returns the Avatar value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e UserProfileEdges) AvatarOrErr() (*UserAvatar, error) {
-	if e.Avatar != nil {
-		return e.Avatar, nil
-	} else if e.loadedTypes[1] {
-		return nil, &NotFoundError{label: useravatar.Label}
+// AvatarsOrErr returns the Avatars value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserProfileEdges) AvatarsOrErr() ([]*UserAvatar, error) {
+	if e.loadedTypes[1] {
+		return e.Avatars, nil
 	}
-	return nil, &NotLoadedError{edge: "avatar"}
+	return nil, &NotLoadedError{edge: "avatars"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -76,7 +71,7 @@ func (*UserProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userprofile.FieldEmail, userprofile.FieldDisplayName, userprofile.FieldUsername, userprofile.FieldAvatarURL:
+		case userprofile.FieldEmailRef, userprofile.FieldDisplayName, userprofile.FieldUsername:
 			values[i] = new(sql.NullString)
 		case userprofile.FieldCreatedAt, userprofile.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -103,11 +98,11 @@ func (_m *UserProfile) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case userprofile.FieldEmail:
+		case userprofile.FieldEmailRef:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field email", values[i])
+				return fmt.Errorf("unexpected type %T for field email_ref", values[i])
 			} else if value.Valid {
-				_m.Email = value.String
+				_m.EmailRef = value.String
 			}
 		case userprofile.FieldDisplayName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -120,12 +115,6 @@ func (_m *UserProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field username", values[i])
 			} else if value.Valid {
 				_m.Username = value.String
-			}
-		case userprofile.FieldAvatarURL:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field avatar_url", values[i])
-			} else if value.Valid {
-				_m.AvatarURL = value.String
 			}
 		case userprofile.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -157,9 +146,9 @@ func (_m *UserProfile) QueryPreference() *UserPreferenceQuery {
 	return NewUserProfileClient(_m.config).QueryPreference(_m)
 }
 
-// QueryAvatar queries the "avatar" edge of the UserProfile entity.
-func (_m *UserProfile) QueryAvatar() *UserAvatarQuery {
-	return NewUserProfileClient(_m.config).QueryAvatar(_m)
+// QueryAvatars queries the "avatars" edge of the UserProfile entity.
+func (_m *UserProfile) QueryAvatars() *UserAvatarQuery {
+	return NewUserProfileClient(_m.config).QueryAvatars(_m)
 }
 
 // Update returns a builder for updating this UserProfile.
@@ -185,17 +174,14 @@ func (_m *UserProfile) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserProfile(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("email=")
-	builder.WriteString(_m.Email)
+	builder.WriteString("email_ref=")
+	builder.WriteString(_m.EmailRef)
 	builder.WriteString(", ")
 	builder.WriteString("display_name=")
 	builder.WriteString(_m.DisplayName)
 	builder.WriteString(", ")
 	builder.WriteString("username=")
 	builder.WriteString(_m.Username)
-	builder.WriteString(", ")
-	builder.WriteString("avatar_url=")
-	builder.WriteString(_m.AvatarURL)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

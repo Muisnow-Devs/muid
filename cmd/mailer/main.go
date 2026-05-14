@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"sanzi.io/muid/internal/mailer/app"
+	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/shared"
 )
 
@@ -27,7 +28,7 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("init infra: %w", err)
 	}
-	defer func() { _ = infra.Close() }()
+	defer func() { errutil.Discard(infra.Close()) }()
 
 	if err := app.RegisterSubscribers(infra); err != nil {
 		return fmt.Errorf("register subscribers: %w", err)

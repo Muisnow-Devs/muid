@@ -56,9 +56,9 @@ func IDLTE(id uuid.UUID) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldLTE(FieldID, id))
 }
 
-// Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
-func Email(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEQ(FieldEmail, v))
+// EmailRef applies equality check predicate on the "email_ref" field. It's identical to EmailRefEQ.
+func EmailRef(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEQ(FieldEmailRef, v))
 }
 
 // DisplayName applies equality check predicate on the "display_name" field. It's identical to DisplayNameEQ.
@@ -71,11 +71,6 @@ func Username(v string) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldUsername, v))
 }
 
-// AvatarURL applies equality check predicate on the "avatar_url" field. It's identical to AvatarURLEQ.
-func AvatarURL(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEQ(FieldAvatarURL, v))
-}
-
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldCreatedAt, v))
@@ -86,69 +81,69 @@ func UpdatedAt(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// EmailEQ applies the EQ predicate on the "email" field.
-func EmailEQ(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEQ(FieldEmail, v))
+// EmailRefEQ applies the EQ predicate on the "email_ref" field.
+func EmailRefEQ(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEQ(FieldEmailRef, v))
 }
 
-// EmailNEQ applies the NEQ predicate on the "email" field.
-func EmailNEQ(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldNEQ(FieldEmail, v))
+// EmailRefNEQ applies the NEQ predicate on the "email_ref" field.
+func EmailRefNEQ(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldNEQ(FieldEmailRef, v))
 }
 
-// EmailIn applies the In predicate on the "email" field.
-func EmailIn(vs ...string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldIn(FieldEmail, vs...))
+// EmailRefIn applies the In predicate on the "email_ref" field.
+func EmailRefIn(vs ...string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldIn(FieldEmailRef, vs...))
 }
 
-// EmailNotIn applies the NotIn predicate on the "email" field.
-func EmailNotIn(vs ...string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldNotIn(FieldEmail, vs...))
+// EmailRefNotIn applies the NotIn predicate on the "email_ref" field.
+func EmailRefNotIn(vs ...string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldNotIn(FieldEmailRef, vs...))
 }
 
-// EmailGT applies the GT predicate on the "email" field.
-func EmailGT(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldGT(FieldEmail, v))
+// EmailRefGT applies the GT predicate on the "email_ref" field.
+func EmailRefGT(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldGT(FieldEmailRef, v))
 }
 
-// EmailGTE applies the GTE predicate on the "email" field.
-func EmailGTE(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldGTE(FieldEmail, v))
+// EmailRefGTE applies the GTE predicate on the "email_ref" field.
+func EmailRefGTE(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldGTE(FieldEmailRef, v))
 }
 
-// EmailLT applies the LT predicate on the "email" field.
-func EmailLT(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldLT(FieldEmail, v))
+// EmailRefLT applies the LT predicate on the "email_ref" field.
+func EmailRefLT(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldLT(FieldEmailRef, v))
 }
 
-// EmailLTE applies the LTE predicate on the "email" field.
-func EmailLTE(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldLTE(FieldEmail, v))
+// EmailRefLTE applies the LTE predicate on the "email_ref" field.
+func EmailRefLTE(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldLTE(FieldEmailRef, v))
 }
 
-// EmailContains applies the Contains predicate on the "email" field.
-func EmailContains(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldContains(FieldEmail, v))
+// EmailRefContains applies the Contains predicate on the "email_ref" field.
+func EmailRefContains(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldContains(FieldEmailRef, v))
 }
 
-// EmailHasPrefix applies the HasPrefix predicate on the "email" field.
-func EmailHasPrefix(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldHasPrefix(FieldEmail, v))
+// EmailRefHasPrefix applies the HasPrefix predicate on the "email_ref" field.
+func EmailRefHasPrefix(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldHasPrefix(FieldEmailRef, v))
 }
 
-// EmailHasSuffix applies the HasSuffix predicate on the "email" field.
-func EmailHasSuffix(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldHasSuffix(FieldEmail, v))
+// EmailRefHasSuffix applies the HasSuffix predicate on the "email_ref" field.
+func EmailRefHasSuffix(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldHasSuffix(FieldEmailRef, v))
 }
 
-// EmailEqualFold applies the EqualFold predicate on the "email" field.
-func EmailEqualFold(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEqualFold(FieldEmail, v))
+// EmailRefEqualFold applies the EqualFold predicate on the "email_ref" field.
+func EmailRefEqualFold(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEqualFold(FieldEmailRef, v))
 }
 
-// EmailContainsFold applies the ContainsFold predicate on the "email" field.
-func EmailContainsFold(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldContainsFold(FieldEmail, v))
+// EmailRefContainsFold applies the ContainsFold predicate on the "email_ref" field.
+func EmailRefContainsFold(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldContainsFold(FieldEmailRef, v))
 }
 
 // DisplayNameEQ applies the EQ predicate on the "display_name" field.
@@ -281,71 +276,6 @@ func UsernameContainsFold(v string) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldContainsFold(FieldUsername, v))
 }
 
-// AvatarURLEQ applies the EQ predicate on the "avatar_url" field.
-func AvatarURLEQ(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEQ(FieldAvatarURL, v))
-}
-
-// AvatarURLNEQ applies the NEQ predicate on the "avatar_url" field.
-func AvatarURLNEQ(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldNEQ(FieldAvatarURL, v))
-}
-
-// AvatarURLIn applies the In predicate on the "avatar_url" field.
-func AvatarURLIn(vs ...string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldIn(FieldAvatarURL, vs...))
-}
-
-// AvatarURLNotIn applies the NotIn predicate on the "avatar_url" field.
-func AvatarURLNotIn(vs ...string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldNotIn(FieldAvatarURL, vs...))
-}
-
-// AvatarURLGT applies the GT predicate on the "avatar_url" field.
-func AvatarURLGT(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldGT(FieldAvatarURL, v))
-}
-
-// AvatarURLGTE applies the GTE predicate on the "avatar_url" field.
-func AvatarURLGTE(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldGTE(FieldAvatarURL, v))
-}
-
-// AvatarURLLT applies the LT predicate on the "avatar_url" field.
-func AvatarURLLT(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldLT(FieldAvatarURL, v))
-}
-
-// AvatarURLLTE applies the LTE predicate on the "avatar_url" field.
-func AvatarURLLTE(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldLTE(FieldAvatarURL, v))
-}
-
-// AvatarURLContains applies the Contains predicate on the "avatar_url" field.
-func AvatarURLContains(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldContains(FieldAvatarURL, v))
-}
-
-// AvatarURLHasPrefix applies the HasPrefix predicate on the "avatar_url" field.
-func AvatarURLHasPrefix(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldHasPrefix(FieldAvatarURL, v))
-}
-
-// AvatarURLHasSuffix applies the HasSuffix predicate on the "avatar_url" field.
-func AvatarURLHasSuffix(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldHasSuffix(FieldAvatarURL, v))
-}
-
-// AvatarURLEqualFold applies the EqualFold predicate on the "avatar_url" field.
-func AvatarURLEqualFold(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEqualFold(FieldAvatarURL, v))
-}
-
-// AvatarURLContainsFold applies the ContainsFold predicate on the "avatar_url" field.
-func AvatarURLContainsFold(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldContainsFold(FieldAvatarURL, v))
-}
-
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldCreatedAt, v))
@@ -449,21 +379,21 @@ func HasPreferenceWith(preds ...predicate.UserPreference) predicate.UserProfile 
 	})
 }
 
-// HasAvatar applies the HasEdge predicate on the "avatar" edge.
-func HasAvatar() predicate.UserProfile {
+// HasAvatars applies the HasEdge predicate on the "avatars" edge.
+func HasAvatars() predicate.UserProfile {
 	return predicate.UserProfile(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, AvatarTable, AvatarColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, AvatarsTable, AvatarsColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasAvatarWith applies the HasEdge predicate on the "avatar" edge with a given conditions (other predicates).
-func HasAvatarWith(preds ...predicate.UserAvatar) predicate.UserProfile {
+// HasAvatarsWith applies the HasEdge predicate on the "avatars" edge with a given conditions (other predicates).
+func HasAvatarsWith(preds ...predicate.UserAvatar) predicate.UserProfile {
 	return predicate.UserProfile(func(s *sql.Selector) {
-		step := newAvatarStep()
+		step := newAvatarsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

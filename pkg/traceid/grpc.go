@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"sanzi.io/muid/pkg/shared"
 )
 
 // UnaryServerInterceptor injects a trace id into context: prefers incoming
@@ -15,7 +15,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		id := fromIncomingMetadata(ctx)
 		if id == "" {
-			id = uuid.New().String()
+			id = shared.UUIDV7().String()
 		}
 		return handler(With(ctx, id), req)
 	}

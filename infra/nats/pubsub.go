@@ -3,8 +3,8 @@ package nats
 import (
 	"context"
 
-	"github.com/google/uuid"
 	natsio "github.com/nats-io/nats.go"
+	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 	"sanzi.io/muid/pkg/traceid"
@@ -30,7 +30,7 @@ func (n *NATSPubSub) Publish(topic topics.Topic, message []byte) error {
 
 func (n *NATSPubSub) Subscribe(topic topics.Topic, opts pubsub.SubscribeOptions, handler func(ctx context.Context, message []byte) error) error {
 	cb := func(msg *natsio.Msg) {
-		ctx := traceid.With(context.Background(), uuid.New().String())
+		ctx := traceid.With(context.Background(), shared.UUIDV7().String())
 		if err := handler(ctx, msg.Data); err != nil {
 			traceid.LogUnexpected(ctx, "nats subscriber", err.Error(), "topic", string(topic))
 		}

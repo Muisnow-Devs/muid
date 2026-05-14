@@ -26,6 +26,10 @@ func NewRedisKVStore(redisURL string) *RedisKVStore { /* ... */ }
 - **套件命名**：`muid.<domain>.v1`（例如 `muid.profile.v1`）；**Go package** 使用 `option go_package` 中宣告的路徑與套件別名。
 - **驗證**：欄位規則優先使用 **`buf.validate`**（`import "buf/validate/validate.proto"`），與現有 `shared/v1/claims.proto` 等檔案一致。
 - **選填語意**：需要「有無欄位」區別時使用 `optional`（例如未帶入 claims 時由後端決定預設顯示名稱與頭像）。
+- **Profile 部分更新**：`UpdateProfile` 使用 `google.protobuf.FieldMask`（`update_mask`）搭配巢狀的 `UpdateProfileFields`（`profile`）；僅處理 allowlist 內的路徑（正規化後為 `profile.<proto snake_case 欄位>`，例如 `profile.display_name`）。路徑解析與單元測試在 **`internal/profile/updatemask`**，實際寫入 DB 的 mutator 註冊在 **`internal/profile/grpc`** 的 `profilePatchRegistry`。
+- **Profile 頭像**：`GetProfile` 回傳的 `avatar_url` 由 **`UserAvatar`** 決定（同一 `user_id`、**`uploaded_at` 非空** 的列中 **`id` 最大** 者；`id` 為 UUID v7）。**`UserAvatar` 為 append-only**：完成上傳或 bootstrap 一律 **INSERT** 新列，**不以 UPDATE 覆寫既有列** 代表「更換頭像」。暫存列（`uploaded_at` 為空、僅供 presign 上傳）不參與顯示挑選；在 **`CreateProfile`** 完成前若尚未有已上傳列，`GetProfile` 依既有規則回退 **`goavatar` 產生的 PNG data URL**（種子為 profile `user_id` 字串）。
+- **`CreateProfile` 順序與非同步頭像**：RPC 在單一交易中先 **`INSERT user_profiles`**（含預先配置的 `id`＝新 `user_id`）、再 **`INSERT user_preferences`**，**`COMMIT` 成功後** 才對客戶端回傳成功。OIDC `picture`（若有）經 HTTPS 下載；否則或失敗時改以 **`goavatar`** 本機產生 PNG，再經驗證、轉 WebP、寫入 R2 與 **`INSERT user_avatars`**，由 **`internal/profile/avataringest`** 的 **`ExternalAvatarIngestor.GoBootstrap`** 排程（`go func`＋逾時 context＋panic recovery＋`traceid`）；該管線為 **profile 專用子系統**，**不是** gRPC handler 的核心職責，且 **不得** 在 handler 內 await，以免阻塞建立回應。
+- **`UserAvatar` 不可變欄位**：`user_id`、`object_key`、`content_type` 在寫入後視為歷史列的一部分，**禁止**以 `UpdateOne` 或任何後續 UPDATE 變更；新狀態僅能靠新列表達（含 staging：每次 presign 嘗試為新列；完成上傳為另 insert 正式資產列，與 `CompleteAvatarUpload` 行為一致）。
 
 ## gRPC
 
@@ -91,7 +95,7 @@ func (e *InvalidSegmentError) Detail() string { return e.Field + "=" + e.Value }
 - 使用 **`github.com/kelseyhightower/envconfig`**，以 **`LoadConfig[T](prefix)`**（`pkg/shared`）載入。
 - **Prefix 慣例**：服務專用前綴 + 底線，例如 `AUTHN_`、`PROFILE_`、`MAILER_`；結構體內欄位用 `envconfig` tag 對應去掉前綴後的環境變數名（例如 `PROFILE_DATABASE_URL` → 欄位 `DATABASE_URL`）。
 - **Mailer（SMTP）**：`MAILER_NATS_URL`、`MAILER_SMTP_HOST`、`MAILER_SMTP_PORT`、`MAILER_SMTP_FROM`、選填 `MAILER_SMTP_USERNAME` / `MAILER_SMTP_PASSWORD` / `MAILER_SMTP_SSL`。
-- **Profile 頭像（R2）**：`PROFILE_R2_ACCOUNT_ID`、`PROFILE_R2_ACCESS_KEY_ID`、`PROFILE_R2_SECRET_ACCESS_KEY`；暫存上傳桶 `PROFILE_R2_UPLOAD_BUCKET`、正式資產桶 `PROFILE_R2_ASSETS_BUCKET`、對外網址前綴 `PROFILE_PUBLIC_ASSETS_URL`（用於 `avatar_url` 與資產桶 key 拼接）。
+- **Profile 頭像（R2）**：`PROFILE_R2_ACCOUNT_ID`、`PROFILE_R2_ACCESS_KEY_ID`、`PROFILE_R2_SECRET_ACCESS_KEY`；暫存上傳桶 `PROFILE_R2_UPLOAD_BUCKET`、正式資產桶 `PROFILE_R2_ASSETS_BUCKET`、對外 CDN／資產基底 **`PROFILE_PUBLIC_ASSETS_URL`**（與 `object_key` 拼接產生對外 `avatar_url`；**不**將 OIDC `picture` 等第三方 URL 當作長期權威來源持久化）。
 
 ## 訊息與 NATS
 
@@ -120,12 +124,12 @@ func (e *InvalidSegmentError) Detail() string { return e.Field + "=" + e.Value }
 
 - **跨服務／可測的處理鏈**（例如：點陣圖解碼、裁切、縮放、編碼 WebP）應放在 **`internal/<領域能力>/`** 這類「能力套件」，以 **介面** 描述行為、以 **獨立檔案** 放具體實作；gRPC／HTTP 服務只依賴介面，並在 **`bootstrap` 或 `New*App`** 注入實作（便於單元測試替換、也避免業務套件塞滿影像演算法）。
 - **命名**：本倉 avatar 管線使用 **`RasterAvatarProcessor`**（`ProcessToSquareWebP`）：語意上強調「點陣大頭貼」而非泛用任意向量或 PDF；預設實作為 **`WebPRasterAvatarProcessor`**（`internal/media`），與 Protobuf／Ent 無耦合，僅處理 bytes 與 Content-Type。可預期的像素／MIME 失敗語意見 **`internal/media/errors.go`**（例如 `ErrRasterDecodeFailed`），與 `interface.go` 同目錄。
-- **安全（CompleteAvatarUpload）**：以 **R2 `HeadObject` 的 `ContentLength` 為唯一權威**（客戶端 `byte_size` 僅能與其一致）；下載本體長度須與 HEAD 一致。`internal/media` 的 **`ValidateAvatarStagingObject`** 負責 magic-byte 辨識（JPEG/PNG/GIF/WebP）、對已知 raster 的 **HEAD `Content-Type` 與 sniff 交叉比對**、對前綴再跑 **`http.DetectContentType` 與 sniff 互相佐證**，並在完整 raster 解碼前以 **`DecodeConfig` + 像素上限**（見 `raster_limits.go`）阻擋異常尺寸／解壓炸彈類風險；`ProcessToSquareWebP` 內仍會再做一層處理前驗證以防繞過。
+- **安全（CompleteAvatarUpload）**：以 **R2 `HeadObject` 的 `ContentLength` 為唯一權威**（客戶端 `byte_size` 僅能與其一致）；下載本體長度須與 HEAD 一致。`internal/media` 的 **`ValidateAvatarStagingObject`** 負責 magic-byte 辨識（JPEG/PNG/GIF/WebP）、對已知 raster 的 **HEAD `Content-Type` 與 sniff 交叉比對**、對前綴再跑 **`http.DetectContentType` 與 sniff 互相佐證**，並在完整 raster 解碼前以 **`DecodeConfig` + 像素上限**（見 `raster_limits.go`）阻擋異常尺寸／解壓炸彈類風險；`ProcessToSquareWebP` 內仍會再做一層處理前驗證以防繞過。完成後對 **`user_avatars` 為 INSERT 新列**（append-only），不 UPDATE 既有 staging 列。
 - **服務內常數**：staging 位元組上限與像素上限以 **`internal/media` 的常數**（`MaxAvatarStagingBytes`、`MaxRasterDimension`、`MaxRasterPixelCount`）為準；profile handler 僅組裝 `AvatarStagingTrust` 與讀取邊界。
 
 ### Ent（資料層）
 
-- **Schema**：欄位型別、索引、`edge` 與 `internal/authn/ent/schema` 風格一致（UUID 主鍵、`created_at` / `updated_at` 等）。指向「登入使用者／帳號主體」的外鍵欄位命名為 **`user_id`**（與 Protobuf `user_id`、JSON `userId` 對齊）；Ent 產生之 Go 欄位為 **`UserID`**。
+- **Schema**：欄位型別、索引、`edge` 與 `internal/authn/ent/schema` 風格一致（UUID 主鍵、`created_at` / `updated_at` 等，**`UserAvatar` 僅 `created_at`、無 `updated_at`**）。指向「登入使用者／帳號主體」的外鍵欄位命名為 **`user_id`**（與 Protobuf `user_id`、JSON `userId` 對齊）；Ent 產生之 Go 欄位為 **`UserID`**。
 - **遷移**：目前以 **`client.Schema.Create`** 於服務啟動時建立表（profile 服務在重啟時若表已存在會記錄 log 並略過常見的「已存在」錯誤）；正式環境建議後續導入 Atlas 或明確的 migration 流程。
 
 ## 使用者識別（user id）跨層命名
@@ -144,9 +148,14 @@ NATS 事件 payload 亦使用上述 Protobuf 訊息定義（例如 `api/proto/ev
 
 ## 命名與程式風格（Go）
 
+### 刻意捨棄回傳值與魔術字串
+
+- **捨棄 `error`**：若語意上必須忽略（例如 `defer` 裡的 `Close`／`Rollback`），**不要**在各處重複 `_ = x()`；請用 **`pkg/errutil` 的 `Discard(err error)`**（或等價的單一集中輔助）表達「已知且刻意忽略」。若表達式可寫成**裸陳述式**（無須指派），則優先裸呼叫。
+- **魔術字串**：重複出現或承載跨套件語意的字串，改為**具名常數**、**小套件內的鍵／路徑輔助**（例如頭像 object key 見 `internal/profile/avatarkey`），或沿用既有集中處（如 **`pkg/shared/topics`**）。僅單點使用且已封裝者，可用 `func Name() string { return "literal" }` 保留字面量。
+
 - **可匯出 API**：簡潔英文，避免縮寫過度；錯誤處理對齊上文「`fmt.Errorf` 與錯誤鏈」一節（內層 sentinel／typed／`errors.Join`，頂層邊界才考慮單層包裝）。
 - **gRPC handler**：實作對應的 `Unimplemented*Server` 嵌入型別，避免 forward-compat 編譯問題。
-- **註解**：僅在商業規則或非顯而易見的整合點（例如 R2 presign、identicon 策略）加上短說明即可。
+- **註解**：僅在商業規則或非顯而易見的整合點（例如 R2 presign、預設頭像策略）加上短說明即可。
 
 ## 與本文件一起參考的程式入口
 

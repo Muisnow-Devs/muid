@@ -79,7 +79,7 @@ func validateRasterProcessInput(raw []byte, claimedContentType string) error {
 func AllowedRasterContentType(ct string) bool {
 	ct = strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
 	switch ct {
-	case "image/jpeg", "image/png", "image/gif", "image/webp":
+	case "image/jpeg", "image/png", "image/gif", ContentTypeWebP:
 		return true
 	default:
 		return false

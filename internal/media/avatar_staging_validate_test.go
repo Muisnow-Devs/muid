@@ -7,14 +7,16 @@ import (
 	"errors"
 	"hash/crc32"
 	"testing"
+
+	"sanzi.io/muid/pkg/errutil"
 )
 
 func writePNGChunk(buf *bytes.Buffer, typ string, data []byte) {
-	_ = binary.Write(buf, binary.BigEndian, uint32(len(data)))
+	errutil.Discard(binary.Write(buf, binary.BigEndian, uint32(len(data))))
 	buf.WriteString(typ)
 	buf.Write(data)
 	crc := crc32.ChecksumIEEE(append([]byte(typ), data...))
-	_ = binary.Write(buf, binary.BigEndian, crc)
+	errutil.Discard(binary.Write(buf, binary.BigEndian, crc))
 }
 
 // minimalPNGWithIHDR returns a syntactically valid PNG with the given IHDR dimensions

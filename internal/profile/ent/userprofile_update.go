@@ -31,16 +31,16 @@ func (_u *UserProfileUpdate) Where(ps ...predicate.UserProfile) *UserProfileUpda
 	return _u
 }
 
-// SetEmail sets the "email" field.
-func (_u *UserProfileUpdate) SetEmail(v string) *UserProfileUpdate {
-	_u.mutation.SetEmail(v)
+// SetEmailRef sets the "email_ref" field.
+func (_u *UserProfileUpdate) SetEmailRef(v string) *UserProfileUpdate {
+	_u.mutation.SetEmailRef(v)
 	return _u
 }
 
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_u *UserProfileUpdate) SetNillableEmail(v *string) *UserProfileUpdate {
+// SetNillableEmailRef sets the "email_ref" field if the given value is not nil.
+func (_u *UserProfileUpdate) SetNillableEmailRef(v *string) *UserProfileUpdate {
 	if v != nil {
-		_u.SetEmail(*v)
+		_u.SetEmailRef(*v)
 	}
 	return _u
 }
@@ -73,20 +73,6 @@ func (_u *UserProfileUpdate) SetNillableUsername(v *string) *UserProfileUpdate {
 	return _u
 }
 
-// SetAvatarURL sets the "avatar_url" field.
-func (_u *UserProfileUpdate) SetAvatarURL(v string) *UserProfileUpdate {
-	_u.mutation.SetAvatarURL(v)
-	return _u
-}
-
-// SetNillableAvatarURL sets the "avatar_url" field if the given value is not nil.
-func (_u *UserProfileUpdate) SetNillableAvatarURL(v *string) *UserProfileUpdate {
-	if v != nil {
-		_u.SetAvatarURL(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserProfileUpdate) SetUpdatedAt(v time.Time) *UserProfileUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -112,23 +98,19 @@ func (_u *UserProfileUpdate) SetPreference(v *UserPreference) *UserProfileUpdate
 	return _u.SetPreferenceID(v.ID)
 }
 
-// SetAvatarID sets the "avatar" edge to the UserAvatar entity by ID.
-func (_u *UserProfileUpdate) SetAvatarID(id uuid.UUID) *UserProfileUpdate {
-	_u.mutation.SetAvatarID(id)
+// AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by IDs.
+func (_u *UserProfileUpdate) AddAvatarIDs(ids ...uuid.UUID) *UserProfileUpdate {
+	_u.mutation.AddAvatarIDs(ids...)
 	return _u
 }
 
-// SetNillableAvatarID sets the "avatar" edge to the UserAvatar entity by ID if the given value is not nil.
-func (_u *UserProfileUpdate) SetNillableAvatarID(id *uuid.UUID) *UserProfileUpdate {
-	if id != nil {
-		_u = _u.SetAvatarID(*id)
+// AddAvatars adds the "avatars" edges to the UserAvatar entity.
+func (_u *UserProfileUpdate) AddAvatars(v ...*UserAvatar) *UserProfileUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return _u
-}
-
-// SetAvatar sets the "avatar" edge to the UserAvatar entity.
-func (_u *UserProfileUpdate) SetAvatar(v *UserAvatar) *UserProfileUpdate {
-	return _u.SetAvatarID(v.ID)
+	return _u.AddAvatarIDs(ids...)
 }
 
 // Mutation returns the UserProfileMutation object of the builder.
@@ -142,10 +124,25 @@ func (_u *UserProfileUpdate) ClearPreference() *UserProfileUpdate {
 	return _u
 }
 
-// ClearAvatar clears the "avatar" edge to the UserAvatar entity.
-func (_u *UserProfileUpdate) ClearAvatar() *UserProfileUpdate {
-	_u.mutation.ClearAvatar()
+// ClearAvatars clears all "avatars" edges to the UserAvatar entity.
+func (_u *UserProfileUpdate) ClearAvatars() *UserProfileUpdate {
+	_u.mutation.ClearAvatars()
 	return _u
+}
+
+// RemoveAvatarIDs removes the "avatars" edge to UserAvatar entities by IDs.
+func (_u *UserProfileUpdate) RemoveAvatarIDs(ids ...uuid.UUID) *UserProfileUpdate {
+	_u.mutation.RemoveAvatarIDs(ids...)
+	return _u
+}
+
+// RemoveAvatars removes "avatars" edges to UserAvatar entities.
+func (_u *UserProfileUpdate) RemoveAvatars(v ...*UserAvatar) *UserProfileUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAvatarIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -186,9 +183,9 @@ func (_u *UserProfileUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserProfileUpdate) check() error {
-	if v, ok := _u.mutation.Email(); ok {
-		if err := userprofile.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email": %w`, err)}
+	if v, ok := _u.mutation.EmailRef(); ok {
+		if err := userprofile.EmailRefValidator(v); err != nil {
+			return &ValidationError{Name: "email_ref", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email_ref": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.DisplayName(); ok {
@@ -199,11 +196,6 @@ func (_u *UserProfileUpdate) check() error {
 	if v, ok := _u.mutation.Username(); ok {
 		if err := userprofile.UsernameValidator(v); err != nil {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.AvatarURL(); ok {
-		if err := userprofile.AvatarURLValidator(v); err != nil {
-			return &ValidationError{Name: "avatar_url", err: fmt.Errorf(`ent: validator failed for field "UserProfile.avatar_url": %w`, err)}
 		}
 	}
 	return nil
@@ -221,17 +213,14 @@ func (_u *UserProfileUpdate) sqlSave(ctx context.Context) (_node int, err error)
 			}
 		}
 	}
-	if value, ok := _u.mutation.Email(); ok {
-		_spec.SetField(userprofile.FieldEmail, field.TypeString, value)
+	if value, ok := _u.mutation.EmailRef(); ok {
+		_spec.SetField(userprofile.FieldEmailRef, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.DisplayName(); ok {
 		_spec.SetField(userprofile.FieldDisplayName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(userprofile.FieldUsername, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.AvatarURL(); ok {
-		_spec.SetField(userprofile.FieldAvatarURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userprofile.FieldUpdatedAt, field.TypeTime, value)
@@ -265,12 +254,12 @@ func (_u *UserProfileUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.AvatarCleared() {
+	if _u.mutation.AvatarsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userprofile.AvatarTable,
-			Columns: []string{userprofile.AvatarColumn},
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),
@@ -278,12 +267,28 @@ func (_u *UserProfileUpdate) sqlSave(ctx context.Context) (_node int, err error)
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.AvatarIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RemovedAvatarsIDs(); len(nodes) > 0 && !_u.mutation.AvatarsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userprofile.AvatarTable,
-			Columns: []string{userprofile.AvatarColumn},
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AvatarsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),
@@ -314,16 +319,16 @@ type UserProfileUpdateOne struct {
 	mutation *UserProfileMutation
 }
 
-// SetEmail sets the "email" field.
-func (_u *UserProfileUpdateOne) SetEmail(v string) *UserProfileUpdateOne {
-	_u.mutation.SetEmail(v)
+// SetEmailRef sets the "email_ref" field.
+func (_u *UserProfileUpdateOne) SetEmailRef(v string) *UserProfileUpdateOne {
+	_u.mutation.SetEmailRef(v)
 	return _u
 }
 
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_u *UserProfileUpdateOne) SetNillableEmail(v *string) *UserProfileUpdateOne {
+// SetNillableEmailRef sets the "email_ref" field if the given value is not nil.
+func (_u *UserProfileUpdateOne) SetNillableEmailRef(v *string) *UserProfileUpdateOne {
 	if v != nil {
-		_u.SetEmail(*v)
+		_u.SetEmailRef(*v)
 	}
 	return _u
 }
@@ -356,20 +361,6 @@ func (_u *UserProfileUpdateOne) SetNillableUsername(v *string) *UserProfileUpdat
 	return _u
 }
 
-// SetAvatarURL sets the "avatar_url" field.
-func (_u *UserProfileUpdateOne) SetAvatarURL(v string) *UserProfileUpdateOne {
-	_u.mutation.SetAvatarURL(v)
-	return _u
-}
-
-// SetNillableAvatarURL sets the "avatar_url" field if the given value is not nil.
-func (_u *UserProfileUpdateOne) SetNillableAvatarURL(v *string) *UserProfileUpdateOne {
-	if v != nil {
-		_u.SetAvatarURL(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *UserProfileUpdateOne) SetUpdatedAt(v time.Time) *UserProfileUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -395,23 +386,19 @@ func (_u *UserProfileUpdateOne) SetPreference(v *UserPreference) *UserProfileUpd
 	return _u.SetPreferenceID(v.ID)
 }
 
-// SetAvatarID sets the "avatar" edge to the UserAvatar entity by ID.
-func (_u *UserProfileUpdateOne) SetAvatarID(id uuid.UUID) *UserProfileUpdateOne {
-	_u.mutation.SetAvatarID(id)
+// AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by IDs.
+func (_u *UserProfileUpdateOne) AddAvatarIDs(ids ...uuid.UUID) *UserProfileUpdateOne {
+	_u.mutation.AddAvatarIDs(ids...)
 	return _u
 }
 
-// SetNillableAvatarID sets the "avatar" edge to the UserAvatar entity by ID if the given value is not nil.
-func (_u *UserProfileUpdateOne) SetNillableAvatarID(id *uuid.UUID) *UserProfileUpdateOne {
-	if id != nil {
-		_u = _u.SetAvatarID(*id)
+// AddAvatars adds the "avatars" edges to the UserAvatar entity.
+func (_u *UserProfileUpdateOne) AddAvatars(v ...*UserAvatar) *UserProfileUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return _u
-}
-
-// SetAvatar sets the "avatar" edge to the UserAvatar entity.
-func (_u *UserProfileUpdateOne) SetAvatar(v *UserAvatar) *UserProfileUpdateOne {
-	return _u.SetAvatarID(v.ID)
+	return _u.AddAvatarIDs(ids...)
 }
 
 // Mutation returns the UserProfileMutation object of the builder.
@@ -425,10 +412,25 @@ func (_u *UserProfileUpdateOne) ClearPreference() *UserProfileUpdateOne {
 	return _u
 }
 
-// ClearAvatar clears the "avatar" edge to the UserAvatar entity.
-func (_u *UserProfileUpdateOne) ClearAvatar() *UserProfileUpdateOne {
-	_u.mutation.ClearAvatar()
+// ClearAvatars clears all "avatars" edges to the UserAvatar entity.
+func (_u *UserProfileUpdateOne) ClearAvatars() *UserProfileUpdateOne {
+	_u.mutation.ClearAvatars()
 	return _u
+}
+
+// RemoveAvatarIDs removes the "avatars" edge to UserAvatar entities by IDs.
+func (_u *UserProfileUpdateOne) RemoveAvatarIDs(ids ...uuid.UUID) *UserProfileUpdateOne {
+	_u.mutation.RemoveAvatarIDs(ids...)
+	return _u
+}
+
+// RemoveAvatars removes "avatars" edges to UserAvatar entities.
+func (_u *UserProfileUpdateOne) RemoveAvatars(v ...*UserAvatar) *UserProfileUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveAvatarIDs(ids...)
 }
 
 // Where appends a list predicates to the UserProfileUpdate builder.
@@ -482,9 +484,9 @@ func (_u *UserProfileUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserProfileUpdateOne) check() error {
-	if v, ok := _u.mutation.Email(); ok {
-		if err := userprofile.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email": %w`, err)}
+	if v, ok := _u.mutation.EmailRef(); ok {
+		if err := userprofile.EmailRefValidator(v); err != nil {
+			return &ValidationError{Name: "email_ref", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email_ref": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.DisplayName(); ok {
@@ -495,11 +497,6 @@ func (_u *UserProfileUpdateOne) check() error {
 	if v, ok := _u.mutation.Username(); ok {
 		if err := userprofile.UsernameValidator(v); err != nil {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
-		}
-	}
-	if v, ok := _u.mutation.AvatarURL(); ok {
-		if err := userprofile.AvatarURLValidator(v); err != nil {
-			return &ValidationError{Name: "avatar_url", err: fmt.Errorf(`ent: validator failed for field "UserProfile.avatar_url": %w`, err)}
 		}
 	}
 	return nil
@@ -534,17 +531,14 @@ func (_u *UserProfileUpdateOne) sqlSave(ctx context.Context) (_node *UserProfile
 			}
 		}
 	}
-	if value, ok := _u.mutation.Email(); ok {
-		_spec.SetField(userprofile.FieldEmail, field.TypeString, value)
+	if value, ok := _u.mutation.EmailRef(); ok {
+		_spec.SetField(userprofile.FieldEmailRef, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.DisplayName(); ok {
 		_spec.SetField(userprofile.FieldDisplayName, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(userprofile.FieldUsername, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.AvatarURL(); ok {
-		_spec.SetField(userprofile.FieldAvatarURL, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userprofile.FieldUpdatedAt, field.TypeTime, value)
@@ -578,12 +572,12 @@ func (_u *UserProfileUpdateOne) sqlSave(ctx context.Context) (_node *UserProfile
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.AvatarCleared() {
+	if _u.mutation.AvatarsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userprofile.AvatarTable,
-			Columns: []string{userprofile.AvatarColumn},
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),
@@ -591,12 +585,28 @@ func (_u *UserProfileUpdateOne) sqlSave(ctx context.Context) (_node *UserProfile
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.AvatarIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.RemovedAvatarsIDs(); len(nodes) > 0 && !_u.mutation.AvatarsCleared() {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userprofile.AvatarTable,
-			Columns: []string{userprofile.AvatarColumn},
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.AvatarsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),

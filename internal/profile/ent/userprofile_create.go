@@ -23,9 +23,9 @@ type UserProfileCreate struct {
 	hooks    []Hook
 }
 
-// SetEmail sets the "email" field.
-func (_c *UserProfileCreate) SetEmail(v string) *UserProfileCreate {
-	_c.mutation.SetEmail(v)
+// SetEmailRef sets the "email_ref" field.
+func (_c *UserProfileCreate) SetEmailRef(v string) *UserProfileCreate {
+	_c.mutation.SetEmailRef(v)
 	return _c
 }
 
@@ -38,12 +38,6 @@ func (_c *UserProfileCreate) SetDisplayName(v string) *UserProfileCreate {
 // SetUsername sets the "username" field.
 func (_c *UserProfileCreate) SetUsername(v string) *UserProfileCreate {
 	_c.mutation.SetUsername(v)
-	return _c
-}
-
-// SetAvatarURL sets the "avatar_url" field.
-func (_c *UserProfileCreate) SetAvatarURL(v string) *UserProfileCreate {
-	_c.mutation.SetAvatarURL(v)
 	return _c
 }
 
@@ -100,23 +94,19 @@ func (_c *UserProfileCreate) SetPreference(v *UserPreference) *UserProfileCreate
 	return _c.SetPreferenceID(v.ID)
 }
 
-// SetAvatarID sets the "avatar" edge to the UserAvatar entity by ID.
-func (_c *UserProfileCreate) SetAvatarID(id uuid.UUID) *UserProfileCreate {
-	_c.mutation.SetAvatarID(id)
+// AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by IDs.
+func (_c *UserProfileCreate) AddAvatarIDs(ids ...uuid.UUID) *UserProfileCreate {
+	_c.mutation.AddAvatarIDs(ids...)
 	return _c
 }
 
-// SetNillableAvatarID sets the "avatar" edge to the UserAvatar entity by ID if the given value is not nil.
-func (_c *UserProfileCreate) SetNillableAvatarID(id *uuid.UUID) *UserProfileCreate {
-	if id != nil {
-		_c = _c.SetAvatarID(*id)
+// AddAvatars adds the "avatars" edges to the UserAvatar entity.
+func (_c *UserProfileCreate) AddAvatars(v ...*UserAvatar) *UserProfileCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return _c
-}
-
-// SetAvatar sets the "avatar" edge to the UserAvatar entity.
-func (_c *UserProfileCreate) SetAvatar(v *UserAvatar) *UserProfileCreate {
-	return _c.SetAvatarID(v.ID)
+	return _c.AddAvatarIDs(ids...)
 }
 
 // Mutation returns the UserProfileMutation object of the builder.
@@ -166,12 +156,12 @@ func (_c *UserProfileCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserProfileCreate) check() error {
-	if _, ok := _c.mutation.Email(); !ok {
-		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "UserProfile.email"`)}
+	if _, ok := _c.mutation.EmailRef(); !ok {
+		return &ValidationError{Name: "email_ref", err: errors.New(`ent: missing required field "UserProfile.email_ref"`)}
 	}
-	if v, ok := _c.mutation.Email(); ok {
-		if err := userprofile.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email": %w`, err)}
+	if v, ok := _c.mutation.EmailRef(); ok {
+		if err := userprofile.EmailRefValidator(v); err != nil {
+			return &ValidationError{Name: "email_ref", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email_ref": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.DisplayName(); !ok {
@@ -188,14 +178,6 @@ func (_c *UserProfileCreate) check() error {
 	if v, ok := _c.mutation.Username(); ok {
 		if err := userprofile.UsernameValidator(v); err != nil {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
-		}
-	}
-	if _, ok := _c.mutation.AvatarURL(); !ok {
-		return &ValidationError{Name: "avatar_url", err: errors.New(`ent: missing required field "UserProfile.avatar_url"`)}
-	}
-	if v, ok := _c.mutation.AvatarURL(); ok {
-		if err := userprofile.AvatarURLValidator(v); err != nil {
-			return &ValidationError{Name: "avatar_url", err: fmt.Errorf(`ent: validator failed for field "UserProfile.avatar_url": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
@@ -239,9 +221,9 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.Email(); ok {
-		_spec.SetField(userprofile.FieldEmail, field.TypeString, value)
-		_node.Email = value
+	if value, ok := _c.mutation.EmailRef(); ok {
+		_spec.SetField(userprofile.FieldEmailRef, field.TypeString, value)
+		_node.EmailRef = value
 	}
 	if value, ok := _c.mutation.DisplayName(); ok {
 		_spec.SetField(userprofile.FieldDisplayName, field.TypeString, value)
@@ -250,10 +232,6 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Username(); ok {
 		_spec.SetField(userprofile.FieldUsername, field.TypeString, value)
 		_node.Username = value
-	}
-	if value, ok := _c.mutation.AvatarURL(); ok {
-		_spec.SetField(userprofile.FieldAvatarURL, field.TypeString, value)
-		_node.AvatarURL = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(userprofile.FieldCreatedAt, field.TypeTime, value)
@@ -279,12 +257,12 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.AvatarIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.AvatarsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userprofile.AvatarTable,
-			Columns: []string{userprofile.AvatarColumn},
+			Table:   userprofile.AvatarsTable,
+			Columns: []string{userprofile.AvatarsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useravatar.FieldID, field.TypeUUID),

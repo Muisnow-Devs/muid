@@ -76,6 +76,14 @@ func (_c *UserPreferenceCreate) SetID(v uuid.UUID) *UserPreferenceCreate {
 	return _c
 }
 
+// SetNillableID sets the "id" field if the given value is not nil.
+func (_c *UserPreferenceCreate) SetNillableID(v *uuid.UUID) *UserPreferenceCreate {
+	if v != nil {
+		_c.SetID(*v)
+	}
+	return _c
+}
+
 // SetUser sets the "user" edge to the UserProfile entity.
 func (_c *UserPreferenceCreate) SetUser(v *UserProfile) *UserPreferenceCreate {
 	return _c.SetUserID(v.ID)
@@ -127,6 +135,10 @@ func (_c *UserPreferenceCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := userpreference.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.ID(); !ok {
+		v := userpreference.DefaultID()
+		_c.mutation.SetID(v)
 	}
 }
 

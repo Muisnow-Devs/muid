@@ -20,7 +20,7 @@ type Config struct {
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
 
-	// PublicAssetURL is the CDN or public origin for objects in the production assets bucket (used for avatar_url after processing).
+	// PublicAssetURL is the CDN or public origin for objects in the production assets bucket (used when deriving URLs from UserAvatar.object_key).
 	PublicAssetURL string `envconfig:"PUBLIC_ASSETS_URL" default:""`
 
 	// R2 (S3 API). Leave AccountID empty to disable Start/Complete avatar RPCs.

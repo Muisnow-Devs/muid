@@ -9,11 +9,12 @@ import (
 	"sanzi.io/muid/internal/authn/infra/kv"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/redis"
+	"sanzi.io/muid/pkg/errutil"
 )
 
 func closeIfCloser(v any) {
 	if c, ok := v.(io.Closer); ok {
-		_ = c.Close()
+		errutil.Discard(c.Close())
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
 	reflect "reflect"
 	claims "sanzi.io/muid/api/proto/shared/v1/claims"
 	sync "sync"
@@ -26,7 +27,7 @@ const (
 type CreateProfileRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Email string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	// When absent or empty, the service assigns random display name, username, and a GitHub-style identicon URL.
+	// When absent or empty, the service assigns random display name, username, and a deterministic synthetic avatar (goavatar).
 	Claims        *claims.IdentityClaims `protobuf:"bytes,2,opt,name=claims,proto3,oneof" json:"claims,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -256,18 +257,83 @@ func (x *GetProfileResponse) GetAvatarObjectKey() string {
 	return ""
 }
 
-type UpdateProfileRequest struct {
+// Scalar profile fields that may be partially updated. Only fields listed in
+// `update_mask` are applied; mask paths are relative to UpdateProfileRequest
+// (e.g. "profile.display_name"). See server docs / AGENT_STYLING.md.
+type UpdateProfileFields struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	DisplayName   *string                `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3,oneof" json:"display_name,omitempty"`
-	Locale        *string                `protobuf:"bytes,3,opt,name=locale,proto3,oneof" json:"locale,omitempty"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Locale        string                 `protobuf:"bytes,3,opt,name=locale,proto3" json:"locale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProfileFields) Reset() {
+	*x = UpdateProfileFields{}
+	mi := &file_profile_v1_profile_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProfileFields) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProfileFields) ProtoMessage() {}
+
+func (x *UpdateProfileFields) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProfileFields.ProtoReflect.Descriptor instead.
+func (*UpdateProfileFields) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateProfileFields) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *UpdateProfileFields) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *UpdateProfileFields) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
+}
+
+type UpdateProfileRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Paths use proto snake_case under `profile`, e.g. "profile.username".
+	// JSON clients may send camelCase segments ("profile.displayName"); the server normalizes.
+	UpdateMask    *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3" json:"update_mask,omitempty"`
+	Profile       *UpdateProfileFields   `protobuf:"bytes,3,opt,name=profile,proto3" json:"profile,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateProfileRequest) Reset() {
 	*x = UpdateProfileRequest{}
-	mi := &file_profile_v1_profile_proto_msgTypes[4]
+	mi := &file_profile_v1_profile_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -279,7 +345,7 @@ func (x *UpdateProfileRequest) String() string {
 func (*UpdateProfileRequest) ProtoMessage() {}
 
 func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[4]
+	mi := &file_profile_v1_profile_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -292,7 +358,7 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{4}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UpdateProfileRequest) GetId() string {
@@ -302,18 +368,18 @@ func (x *UpdateProfileRequest) GetId() string {
 	return ""
 }
 
-func (x *UpdateProfileRequest) GetDisplayName() string {
-	if x != nil && x.DisplayName != nil {
-		return *x.DisplayName
+func (x *UpdateProfileRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
+	if x != nil {
+		return x.UpdateMask
 	}
-	return ""
+	return nil
 }
 
-func (x *UpdateProfileRequest) GetLocale() string {
-	if x != nil && x.Locale != nil {
-		return *x.Locale
+func (x *UpdateProfileRequest) GetProfile() *UpdateProfileFields {
+	if x != nil {
+		return x.Profile
 	}
-	return ""
+	return nil
 }
 
 type UpdateProfileResponse struct {
@@ -325,7 +391,7 @@ type UpdateProfileResponse struct {
 
 func (x *UpdateProfileResponse) Reset() {
 	*x = UpdateProfileResponse{}
-	mi := &file_profile_v1_profile_proto_msgTypes[5]
+	mi := &file_profile_v1_profile_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -337,7 +403,7 @@ func (x *UpdateProfileResponse) String() string {
 func (*UpdateProfileResponse) ProtoMessage() {}
 
 func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[5]
+	mi := &file_profile_v1_profile_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -350,7 +416,7 @@ func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProfileResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProfileResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{5}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UpdateProfileResponse) GetId() string {
@@ -370,7 +436,7 @@ type StartAvatarUploadRequest struct {
 
 func (x *StartAvatarUploadRequest) Reset() {
 	*x = StartAvatarUploadRequest{}
-	mi := &file_profile_v1_profile_proto_msgTypes[6]
+	mi := &file_profile_v1_profile_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -382,7 +448,7 @@ func (x *StartAvatarUploadRequest) String() string {
 func (*StartAvatarUploadRequest) ProtoMessage() {}
 
 func (x *StartAvatarUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[6]
+	mi := &file_profile_v1_profile_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -395,7 +461,7 @@ func (x *StartAvatarUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartAvatarUploadRequest.ProtoReflect.Descriptor instead.
 func (*StartAvatarUploadRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{6}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StartAvatarUploadRequest) GetUserId() string {
@@ -423,7 +489,7 @@ type StartAvatarUploadResponse struct {
 
 func (x *StartAvatarUploadResponse) Reset() {
 	*x = StartAvatarUploadResponse{}
-	mi := &file_profile_v1_profile_proto_msgTypes[7]
+	mi := &file_profile_v1_profile_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -435,7 +501,7 @@ func (x *StartAvatarUploadResponse) String() string {
 func (*StartAvatarUploadResponse) ProtoMessage() {}
 
 func (x *StartAvatarUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[7]
+	mi := &file_profile_v1_profile_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -448,7 +514,7 @@ func (x *StartAvatarUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StartAvatarUploadResponse.ProtoReflect.Descriptor instead.
 func (*StartAvatarUploadResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{7}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StartAvatarUploadResponse) GetUploadUrl() string {
@@ -483,7 +549,7 @@ type CompleteAvatarUploadRequest struct {
 
 func (x *CompleteAvatarUploadRequest) Reset() {
 	*x = CompleteAvatarUploadRequest{}
-	mi := &file_profile_v1_profile_proto_msgTypes[8]
+	mi := &file_profile_v1_profile_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -495,7 +561,7 @@ func (x *CompleteAvatarUploadRequest) String() string {
 func (*CompleteAvatarUploadRequest) ProtoMessage() {}
 
 func (x *CompleteAvatarUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[8]
+	mi := &file_profile_v1_profile_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -508,7 +574,7 @@ func (x *CompleteAvatarUploadRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteAvatarUploadRequest.ProtoReflect.Descriptor instead.
 func (*CompleteAvatarUploadRequest) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{8}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CompleteAvatarUploadRequest) GetUserId() string {
@@ -541,7 +607,7 @@ type CompleteAvatarUploadResponse struct {
 
 func (x *CompleteAvatarUploadResponse) Reset() {
 	*x = CompleteAvatarUploadResponse{}
-	mi := &file_profile_v1_profile_proto_msgTypes[9]
+	mi := &file_profile_v1_profile_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -553,7 +619,7 @@ func (x *CompleteAvatarUploadResponse) String() string {
 func (*CompleteAvatarUploadResponse) ProtoMessage() {}
 
 func (x *CompleteAvatarUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[9]
+	mi := &file_profile_v1_profile_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -566,7 +632,7 @@ func (x *CompleteAvatarUploadResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompleteAvatarUploadResponse.ProtoReflect.Descriptor instead.
 func (*CompleteAvatarUploadResponse) Descriptor() ([]byte, []int) {
-	return file_profile_v1_profile_proto_rawDescGZIP(), []int{9}
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CompleteAvatarUploadResponse) GetAvatarUrl() string {
@@ -580,7 +646,7 @@ var File_profile_v1_profile_proto protoreflect.FileDescriptor
 
 const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a\x16shared/v1/claims.proto\"\x84\x01\n" +
+	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a google/protobuf/field_mask.proto\x1a\x16shared/v1/claims.proto\"\x84\x01\n" +
 	"\x14CreateProfileRequest\x12\x1d\n" +
 	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12B\n" +
 	"\x06claims\x18\x02 \x01(\v2%.muid.shared.v1.claims.IdentityClaimsH\x00R\x06claims\x88\x01\x01B\t\n" +
@@ -597,14 +663,17 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
 	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
 	"\x06locale\x18\x06 \x01(\tR\x06locale\x12*\n" +
-	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\"\xa6\x01\n" +
-	"\x14UpdateProfileRequest\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x122\n" +
+	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\"\x8c\x01\n" +
+	"\x13UpdateProfileFields\x12%\n" +
+	"\busername\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18@R\busername\x12-\n" +
 	"\fdisplay_name\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\x80\x01H\x00R\vdisplayName\x88\x01\x01\x12$\n" +
-	"\x06locale\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18 H\x01R\x06locale\x88\x01\x01B\x0f\n" +
-	"\r_display_nameB\t\n" +
-	"\a_locale\"1\n" +
+	"\xbaH\ar\x05\x10\x01\x18\x80\x01R\vdisplayName\x12\x1f\n" +
+	"\x06locale\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18 R\x06locale\"\xad\x01\n" +
+	"\x14UpdateProfileRequest\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12;\n" +
+	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
+	"updateMask\x12>\n" +
+	"\aprofile\x18\x03 \x01(\v2$.muid.profile.v1.UpdateProfileFieldsR\aprofile\"1\n" +
 	"\x15UpdateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"l\n" +
 	"\x18StartAvatarUploadRequest\x12!\n" +
@@ -647,37 +716,41 @@ func file_profile_v1_profile_proto_rawDescGZIP() []byte {
 	return file_profile_v1_profile_proto_rawDescData
 }
 
-var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_profile_v1_profile_proto_goTypes = []any{
 	(*CreateProfileRequest)(nil),         // 0: muid.profile.v1.CreateProfileRequest
 	(*CreateProfileResponse)(nil),        // 1: muid.profile.v1.CreateProfileResponse
 	(*GetProfileRequest)(nil),            // 2: muid.profile.v1.GetProfileRequest
 	(*GetProfileResponse)(nil),           // 3: muid.profile.v1.GetProfileResponse
-	(*UpdateProfileRequest)(nil),         // 4: muid.profile.v1.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),        // 5: muid.profile.v1.UpdateProfileResponse
-	(*StartAvatarUploadRequest)(nil),     // 6: muid.profile.v1.StartAvatarUploadRequest
-	(*StartAvatarUploadResponse)(nil),    // 7: muid.profile.v1.StartAvatarUploadResponse
-	(*CompleteAvatarUploadRequest)(nil),  // 8: muid.profile.v1.CompleteAvatarUploadRequest
-	(*CompleteAvatarUploadResponse)(nil), // 9: muid.profile.v1.CompleteAvatarUploadResponse
-	(*claims.IdentityClaims)(nil),        // 10: muid.shared.v1.claims.IdentityClaims
+	(*UpdateProfileFields)(nil),          // 4: muid.profile.v1.UpdateProfileFields
+	(*UpdateProfileRequest)(nil),         // 5: muid.profile.v1.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),        // 6: muid.profile.v1.UpdateProfileResponse
+	(*StartAvatarUploadRequest)(nil),     // 7: muid.profile.v1.StartAvatarUploadRequest
+	(*StartAvatarUploadResponse)(nil),    // 8: muid.profile.v1.StartAvatarUploadResponse
+	(*CompleteAvatarUploadRequest)(nil),  // 9: muid.profile.v1.CompleteAvatarUploadRequest
+	(*CompleteAvatarUploadResponse)(nil), // 10: muid.profile.v1.CompleteAvatarUploadResponse
+	(*claims.IdentityClaims)(nil),        // 11: muid.shared.v1.claims.IdentityClaims
+	(*fieldmaskpb.FieldMask)(nil),        // 12: google.protobuf.FieldMask
 }
 var file_profile_v1_profile_proto_depIdxs = []int32{
-	10, // 0: muid.profile.v1.CreateProfileRequest.claims:type_name -> muid.shared.v1.claims.IdentityClaims
-	0,  // 1: muid.profile.v1.ProfileService.CreateProfile:input_type -> muid.profile.v1.CreateProfileRequest
-	2,  // 2: muid.profile.v1.ProfileService.GetProfile:input_type -> muid.profile.v1.GetProfileRequest
-	4,  // 3: muid.profile.v1.ProfileService.UpdateProfile:input_type -> muid.profile.v1.UpdateProfileRequest
-	6,  // 4: muid.profile.v1.ProfileService.StartAvatarUpload:input_type -> muid.profile.v1.StartAvatarUploadRequest
-	8,  // 5: muid.profile.v1.ProfileService.CompleteAvatarUpload:input_type -> muid.profile.v1.CompleteAvatarUploadRequest
-	1,  // 6: muid.profile.v1.ProfileService.CreateProfile:output_type -> muid.profile.v1.CreateProfileResponse
-	3,  // 7: muid.profile.v1.ProfileService.GetProfile:output_type -> muid.profile.v1.GetProfileResponse
-	5,  // 8: muid.profile.v1.ProfileService.UpdateProfile:output_type -> muid.profile.v1.UpdateProfileResponse
-	7,  // 9: muid.profile.v1.ProfileService.StartAvatarUpload:output_type -> muid.profile.v1.StartAvatarUploadResponse
-	9,  // 10: muid.profile.v1.ProfileService.CompleteAvatarUpload:output_type -> muid.profile.v1.CompleteAvatarUploadResponse
-	6,  // [6:11] is the sub-list for method output_type
-	1,  // [1:6] is the sub-list for method input_type
-	1,  // [1:1] is the sub-list for extension type_name
-	1,  // [1:1] is the sub-list for extension extendee
-	0,  // [0:1] is the sub-list for field type_name
+	11, // 0: muid.profile.v1.CreateProfileRequest.claims:type_name -> muid.shared.v1.claims.IdentityClaims
+	12, // 1: muid.profile.v1.UpdateProfileRequest.update_mask:type_name -> google.protobuf.FieldMask
+	4,  // 2: muid.profile.v1.UpdateProfileRequest.profile:type_name -> muid.profile.v1.UpdateProfileFields
+	0,  // 3: muid.profile.v1.ProfileService.CreateProfile:input_type -> muid.profile.v1.CreateProfileRequest
+	2,  // 4: muid.profile.v1.ProfileService.GetProfile:input_type -> muid.profile.v1.GetProfileRequest
+	5,  // 5: muid.profile.v1.ProfileService.UpdateProfile:input_type -> muid.profile.v1.UpdateProfileRequest
+	7,  // 6: muid.profile.v1.ProfileService.StartAvatarUpload:input_type -> muid.profile.v1.StartAvatarUploadRequest
+	9,  // 7: muid.profile.v1.ProfileService.CompleteAvatarUpload:input_type -> muid.profile.v1.CompleteAvatarUploadRequest
+	1,  // 8: muid.profile.v1.ProfileService.CreateProfile:output_type -> muid.profile.v1.CreateProfileResponse
+	3,  // 9: muid.profile.v1.ProfileService.GetProfile:output_type -> muid.profile.v1.GetProfileResponse
+	6,  // 10: muid.profile.v1.ProfileService.UpdateProfile:output_type -> muid.profile.v1.UpdateProfileResponse
+	8,  // 11: muid.profile.v1.ProfileService.StartAvatarUpload:output_type -> muid.profile.v1.StartAvatarUploadResponse
+	10, // 12: muid.profile.v1.ProfileService.CompleteAvatarUpload:output_type -> muid.profile.v1.CompleteAvatarUploadResponse
+	8,  // [8:13] is the sub-list for method output_type
+	3,  // [3:8] is the sub-list for method input_type
+	3,  // [3:3] is the sub-list for extension type_name
+	3,  // [3:3] is the sub-list for extension extendee
+	0,  // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_profile_v1_profile_proto_init() }
@@ -686,14 +759,13 @@ func file_profile_v1_profile_proto_init() {
 		return
 	}
 	file_profile_v1_profile_proto_msgTypes[0].OneofWrappers = []any{}
-	file_profile_v1_profile_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_profile_v1_profile_proto_rawDesc), len(file_profile_v1_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

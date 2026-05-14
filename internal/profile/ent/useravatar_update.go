@@ -11,10 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/predicate"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
-	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
 // UserAvatarUpdate is the builder for updating UserAvatar entities.
@@ -27,48 +25,6 @@ type UserAvatarUpdate struct {
 // Where appends a list predicates to the UserAvatarUpdate builder.
 func (_u *UserAvatarUpdate) Where(ps ...predicate.UserAvatar) *UserAvatarUpdate {
 	_u.mutation.Where(ps...)
-	return _u
-}
-
-// SetUserID sets the "user_id" field.
-func (_u *UserAvatarUpdate) SetUserID(v uuid.UUID) *UserAvatarUpdate {
-	_u.mutation.SetUserID(v)
-	return _u
-}
-
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserAvatarUpdate) SetNillableUserID(v *uuid.UUID) *UserAvatarUpdate {
-	if v != nil {
-		_u.SetUserID(*v)
-	}
-	return _u
-}
-
-// SetObjectKey sets the "object_key" field.
-func (_u *UserAvatarUpdate) SetObjectKey(v string) *UserAvatarUpdate {
-	_u.mutation.SetObjectKey(v)
-	return _u
-}
-
-// SetNillableObjectKey sets the "object_key" field if the given value is not nil.
-func (_u *UserAvatarUpdate) SetNillableObjectKey(v *string) *UserAvatarUpdate {
-	if v != nil {
-		_u.SetObjectKey(*v)
-	}
-	return _u
-}
-
-// SetContentType sets the "content_type" field.
-func (_u *UserAvatarUpdate) SetContentType(v string) *UserAvatarUpdate {
-	_u.mutation.SetContentType(v)
-	return _u
-}
-
-// SetNillableContentType sets the "content_type" field if the given value is not nil.
-func (_u *UserAvatarUpdate) SetNillableContentType(v *string) *UserAvatarUpdate {
-	if v != nil {
-		_u.SetContentType(*v)
-	}
 	return _u
 }
 
@@ -93,6 +49,26 @@ func (_u *UserAvatarUpdate) AddByteSize(v int64) *UserAvatarUpdate {
 	return _u
 }
 
+// SetPublicURL sets the "public_url" field.
+func (_u *UserAvatarUpdate) SetPublicURL(v string) *UserAvatarUpdate {
+	_u.mutation.SetPublicURL(v)
+	return _u
+}
+
+// SetNillablePublicURL sets the "public_url" field if the given value is not nil.
+func (_u *UserAvatarUpdate) SetNillablePublicURL(v *string) *UserAvatarUpdate {
+	if v != nil {
+		_u.SetPublicURL(*v)
+	}
+	return _u
+}
+
+// ClearPublicURL clears the value of the "public_url" field.
+func (_u *UserAvatarUpdate) ClearPublicURL() *UserAvatarUpdate {
+	_u.mutation.ClearPublicURL()
+	return _u
+}
+
 // SetUploadedAt sets the "uploaded_at" field.
 func (_u *UserAvatarUpdate) SetUploadedAt(v time.Time) *UserAvatarUpdate {
 	_u.mutation.SetUploadedAt(v)
@@ -113,31 +89,13 @@ func (_u *UserAvatarUpdate) ClearUploadedAt() *UserAvatarUpdate {
 	return _u
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (_u *UserAvatarUpdate) SetUpdatedAt(v time.Time) *UserAvatarUpdate {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
-}
-
-// SetUser sets the "user" edge to the UserProfile entity.
-func (_u *UserAvatarUpdate) SetUser(v *UserProfile) *UserAvatarUpdate {
-	return _u.SetUserID(v.ID)
-}
-
 // Mutation returns the UserAvatarMutation object of the builder.
 func (_u *UserAvatarUpdate) Mutation() *UserAvatarMutation {
 	return _u.mutation
 }
 
-// ClearUser clears the "user" edge to the UserProfile entity.
-func (_u *UserAvatarUpdate) ClearUser() *UserAvatarUpdate {
-	_u.mutation.ClearUser()
-	return _u
-}
-
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserAvatarUpdate) Save(ctx context.Context) (int, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -163,14 +121,6 @@ func (_u *UserAvatarUpdate) ExecX(ctx context.Context) {
 	}
 }
 
-// defaults sets the default values of the builder before save.
-func (_u *UserAvatarUpdate) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := useravatar.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
-	}
-}
-
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserAvatarUpdate) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
@@ -191,55 +141,23 @@ func (_u *UserAvatarUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			}
 		}
 	}
-	if value, ok := _u.mutation.ObjectKey(); ok {
-		_spec.SetField(useravatar.FieldObjectKey, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.ContentType(); ok {
-		_spec.SetField(useravatar.FieldContentType, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.ByteSize(); ok {
 		_spec.SetField(useravatar.FieldByteSize, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedByteSize(); ok {
 		_spec.AddField(useravatar.FieldByteSize, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.PublicURL(); ok {
+		_spec.SetField(useravatar.FieldPublicURL, field.TypeString, value)
+	}
+	if _u.mutation.PublicURLCleared() {
+		_spec.ClearField(useravatar.FieldPublicURL, field.TypeString)
+	}
 	if value, ok := _u.mutation.UploadedAt(); ok {
 		_spec.SetField(useravatar.FieldUploadedAt, field.TypeTime, value)
 	}
 	if _u.mutation.UploadedAtCleared() {
 		_spec.ClearField(useravatar.FieldUploadedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(useravatar.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   useravatar.UserTable,
-			Columns: []string{useravatar.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   useravatar.UserTable,
-			Columns: []string{useravatar.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -259,48 +177,6 @@ type UserAvatarUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserAvatarMutation
-}
-
-// SetUserID sets the "user_id" field.
-func (_u *UserAvatarUpdateOne) SetUserID(v uuid.UUID) *UserAvatarUpdateOne {
-	_u.mutation.SetUserID(v)
-	return _u
-}
-
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserAvatarUpdateOne) SetNillableUserID(v *uuid.UUID) *UserAvatarUpdateOne {
-	if v != nil {
-		_u.SetUserID(*v)
-	}
-	return _u
-}
-
-// SetObjectKey sets the "object_key" field.
-func (_u *UserAvatarUpdateOne) SetObjectKey(v string) *UserAvatarUpdateOne {
-	_u.mutation.SetObjectKey(v)
-	return _u
-}
-
-// SetNillableObjectKey sets the "object_key" field if the given value is not nil.
-func (_u *UserAvatarUpdateOne) SetNillableObjectKey(v *string) *UserAvatarUpdateOne {
-	if v != nil {
-		_u.SetObjectKey(*v)
-	}
-	return _u
-}
-
-// SetContentType sets the "content_type" field.
-func (_u *UserAvatarUpdateOne) SetContentType(v string) *UserAvatarUpdateOne {
-	_u.mutation.SetContentType(v)
-	return _u
-}
-
-// SetNillableContentType sets the "content_type" field if the given value is not nil.
-func (_u *UserAvatarUpdateOne) SetNillableContentType(v *string) *UserAvatarUpdateOne {
-	if v != nil {
-		_u.SetContentType(*v)
-	}
-	return _u
 }
 
 // SetByteSize sets the "byte_size" field.
@@ -324,6 +200,26 @@ func (_u *UserAvatarUpdateOne) AddByteSize(v int64) *UserAvatarUpdateOne {
 	return _u
 }
 
+// SetPublicURL sets the "public_url" field.
+func (_u *UserAvatarUpdateOne) SetPublicURL(v string) *UserAvatarUpdateOne {
+	_u.mutation.SetPublicURL(v)
+	return _u
+}
+
+// SetNillablePublicURL sets the "public_url" field if the given value is not nil.
+func (_u *UserAvatarUpdateOne) SetNillablePublicURL(v *string) *UserAvatarUpdateOne {
+	if v != nil {
+		_u.SetPublicURL(*v)
+	}
+	return _u
+}
+
+// ClearPublicURL clears the value of the "public_url" field.
+func (_u *UserAvatarUpdateOne) ClearPublicURL() *UserAvatarUpdateOne {
+	_u.mutation.ClearPublicURL()
+	return _u
+}
+
 // SetUploadedAt sets the "uploaded_at" field.
 func (_u *UserAvatarUpdateOne) SetUploadedAt(v time.Time) *UserAvatarUpdateOne {
 	_u.mutation.SetUploadedAt(v)
@@ -344,26 +240,9 @@ func (_u *UserAvatarUpdateOne) ClearUploadedAt() *UserAvatarUpdateOne {
 	return _u
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (_u *UserAvatarUpdateOne) SetUpdatedAt(v time.Time) *UserAvatarUpdateOne {
-	_u.mutation.SetUpdatedAt(v)
-	return _u
-}
-
-// SetUser sets the "user" edge to the UserProfile entity.
-func (_u *UserAvatarUpdateOne) SetUser(v *UserProfile) *UserAvatarUpdateOne {
-	return _u.SetUserID(v.ID)
-}
-
 // Mutation returns the UserAvatarMutation object of the builder.
 func (_u *UserAvatarUpdateOne) Mutation() *UserAvatarMutation {
 	return _u.mutation
-}
-
-// ClearUser clears the "user" edge to the UserProfile entity.
-func (_u *UserAvatarUpdateOne) ClearUser() *UserAvatarUpdateOne {
-	_u.mutation.ClearUser()
-	return _u
 }
 
 // Where appends a list predicates to the UserAvatarUpdate builder.
@@ -381,7 +260,6 @@ func (_u *UserAvatarUpdateOne) Select(field string, fields ...string) *UserAvata
 
 // Save executes the query and returns the updated UserAvatar entity.
 func (_u *UserAvatarUpdateOne) Save(ctx context.Context) (*UserAvatar, error) {
-	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
@@ -404,14 +282,6 @@ func (_u *UserAvatarUpdateOne) Exec(ctx context.Context) error {
 func (_u *UserAvatarUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
-	}
-}
-
-// defaults sets the default values of the builder before save.
-func (_u *UserAvatarUpdateOne) defaults() {
-	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := useravatar.UpdateDefaultUpdatedAt()
-		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
@@ -452,55 +322,23 @@ func (_u *UserAvatarUpdateOne) sqlSave(ctx context.Context) (_node *UserAvatar, 
 			}
 		}
 	}
-	if value, ok := _u.mutation.ObjectKey(); ok {
-		_spec.SetField(useravatar.FieldObjectKey, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.ContentType(); ok {
-		_spec.SetField(useravatar.FieldContentType, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.ByteSize(); ok {
 		_spec.SetField(useravatar.FieldByteSize, field.TypeInt64, value)
 	}
 	if value, ok := _u.mutation.AddedByteSize(); ok {
 		_spec.AddField(useravatar.FieldByteSize, field.TypeInt64, value)
 	}
+	if value, ok := _u.mutation.PublicURL(); ok {
+		_spec.SetField(useravatar.FieldPublicURL, field.TypeString, value)
+	}
+	if _u.mutation.PublicURLCleared() {
+		_spec.ClearField(useravatar.FieldPublicURL, field.TypeString)
+	}
 	if value, ok := _u.mutation.UploadedAt(); ok {
 		_spec.SetField(useravatar.FieldUploadedAt, field.TypeTime, value)
 	}
 	if _u.mutation.UploadedAtCleared() {
 		_spec.ClearField(useravatar.FieldUploadedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(useravatar.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   useravatar.UserTable,
-			Columns: []string{useravatar.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   useravatar.UserTable,
-			Columns: []string{useravatar.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &UserAvatar{config: _u.config}
 	_spec.Assign = _node.assignValues

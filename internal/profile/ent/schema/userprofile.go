@@ -8,9 +8,11 @@ import (
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
+	"sanzi.io/muid/pkg/shared"
 )
 
 // UserProfile holds the schema definition for the UserProfile entity.
+// Avatar URLs are not stored here; see UserAvatar rows for the same user_id.
 type UserProfile struct {
 	ent.Schema
 }
@@ -18,11 +20,10 @@ type UserProfile struct {
 // Fields of the UserProfile.
 func (UserProfile) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).Immutable(),
-		field.String("email").NotEmpty().Unique(),
+		field.UUID("id", uuid.UUID{}).Immutable().Default(shared.UUIDV7),
+		field.String("email_ref").NotEmpty().Unique(),
 		field.String("display_name").NotEmpty(),
 		field.String("username").NotEmpty().Unique(),
-		field.String("avatar_url").NotEmpty(),
 
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
@@ -32,7 +33,7 @@ func (UserProfile) Fields() []ent.Field {
 // Indexes of the UserProfile.
 func (UserProfile) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("email"),
+		index.Fields("email_ref"),
 		index.Fields("username"),
 	}
 }
@@ -41,6 +42,8 @@ func (UserProfile) Indexes() []ent.Index {
 func (UserProfile) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("preference", UserPreference.Type).Unique(),
-		edge.To("avatar", UserAvatar.Type).Unique(),
+		// One profile has many UserAvatar rows (upload history). Canonical URL is resolved from
+		// the latest eligible row; see profilegrpc / UserAvatar schema comments.
+		edge.To("avatars", UserAvatar.Type),
 	}
 }

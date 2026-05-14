@@ -5,6 +5,7 @@ package ent
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/schema"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/userpreference"
@@ -19,26 +20,24 @@ func init() {
 	_ = useravatarFields
 	// useravatarDescObjectKey is the schema descriptor for object_key field.
 	useravatarDescObjectKey := useravatarFields[2].Descriptor()
-	// useravatar.DefaultObjectKey holds the default value on creation for the object_key field.
-	useravatar.DefaultObjectKey = useravatarDescObjectKey.Default.(string)
+	// useravatar.ObjectKeyValidator is a validator for the "object_key" field. It is called by the builders before save.
+	useravatar.ObjectKeyValidator = useravatarDescObjectKey.Validators[0].(func(string) error)
 	// useravatarDescContentType is the schema descriptor for content_type field.
 	useravatarDescContentType := useravatarFields[3].Descriptor()
-	// useravatar.DefaultContentType holds the default value on creation for the content_type field.
-	useravatar.DefaultContentType = useravatarDescContentType.Default.(string)
+	// useravatar.ContentTypeValidator is a validator for the "content_type" field. It is called by the builders before save.
+	useravatar.ContentTypeValidator = useravatarDescContentType.Validators[0].(func(string) error)
 	// useravatarDescByteSize is the schema descriptor for byte_size field.
 	useravatarDescByteSize := useravatarFields[4].Descriptor()
 	// useravatar.DefaultByteSize holds the default value on creation for the byte_size field.
 	useravatar.DefaultByteSize = useravatarDescByteSize.Default.(int64)
 	// useravatarDescCreatedAt is the schema descriptor for created_at field.
-	useravatarDescCreatedAt := useravatarFields[6].Descriptor()
+	useravatarDescCreatedAt := useravatarFields[7].Descriptor()
 	// useravatar.DefaultCreatedAt holds the default value on creation for the created_at field.
 	useravatar.DefaultCreatedAt = useravatarDescCreatedAt.Default.(func() time.Time)
-	// useravatarDescUpdatedAt is the schema descriptor for updated_at field.
-	useravatarDescUpdatedAt := useravatarFields[7].Descriptor()
-	// useravatar.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	useravatar.DefaultUpdatedAt = useravatarDescUpdatedAt.Default.(func() time.Time)
-	// useravatar.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	useravatar.UpdateDefaultUpdatedAt = useravatarDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// useravatarDescID is the schema descriptor for id field.
+	useravatarDescID := useravatarFields[0].Descriptor()
+	// useravatar.DefaultID holds the default value on creation for the id field.
+	useravatar.DefaultID = useravatarDescID.Default.(func() uuid.UUID)
 	userpreferenceFields := schema.UserPreference{}.Fields()
 	_ = userpreferenceFields
 	// userpreferenceDescLocale is the schema descriptor for locale field.
@@ -55,12 +54,16 @@ func init() {
 	userpreference.DefaultUpdatedAt = userpreferenceDescUpdatedAt.Default.(func() time.Time)
 	// userpreference.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	userpreference.UpdateDefaultUpdatedAt = userpreferenceDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// userpreferenceDescID is the schema descriptor for id field.
+	userpreferenceDescID := userpreferenceFields[0].Descriptor()
+	// userpreference.DefaultID holds the default value on creation for the id field.
+	userpreference.DefaultID = userpreferenceDescID.Default.(func() uuid.UUID)
 	userprofileFields := schema.UserProfile{}.Fields()
 	_ = userprofileFields
-	// userprofileDescEmail is the schema descriptor for email field.
-	userprofileDescEmail := userprofileFields[1].Descriptor()
-	// userprofile.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	userprofile.EmailValidator = userprofileDescEmail.Validators[0].(func(string) error)
+	// userprofileDescEmailRef is the schema descriptor for email_ref field.
+	userprofileDescEmailRef := userprofileFields[1].Descriptor()
+	// userprofile.EmailRefValidator is a validator for the "email_ref" field. It is called by the builders before save.
+	userprofile.EmailRefValidator = userprofileDescEmailRef.Validators[0].(func(string) error)
 	// userprofileDescDisplayName is the schema descriptor for display_name field.
 	userprofileDescDisplayName := userprofileFields[2].Descriptor()
 	// userprofile.DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
@@ -69,16 +72,12 @@ func init() {
 	userprofileDescUsername := userprofileFields[3].Descriptor()
 	// userprofile.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	userprofile.UsernameValidator = userprofileDescUsername.Validators[0].(func(string) error)
-	// userprofileDescAvatarURL is the schema descriptor for avatar_url field.
-	userprofileDescAvatarURL := userprofileFields[4].Descriptor()
-	// userprofile.AvatarURLValidator is a validator for the "avatar_url" field. It is called by the builders before save.
-	userprofile.AvatarURLValidator = userprofileDescAvatarURL.Validators[0].(func(string) error)
 	// userprofileDescCreatedAt is the schema descriptor for created_at field.
-	userprofileDescCreatedAt := userprofileFields[5].Descriptor()
+	userprofileDescCreatedAt := userprofileFields[4].Descriptor()
 	// userprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userprofile.DefaultCreatedAt = userprofileDescCreatedAt.Default.(func() time.Time)
 	// userprofileDescUpdatedAt is the schema descriptor for updated_at field.
-	userprofileDescUpdatedAt := userprofileFields[6].Descriptor()
+	userprofileDescUpdatedAt := userprofileFields[5].Descriptor()
 	// userprofile.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userprofile.DefaultUpdatedAt = userprofileDescUpdatedAt.Default.(func() time.Time)
 	// userprofile.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

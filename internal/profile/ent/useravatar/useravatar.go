@@ -7,6 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"github.com/google/uuid"
 )
 
 const (
@@ -22,12 +23,12 @@ const (
 	FieldContentType = "content_type"
 	// FieldByteSize holds the string denoting the byte_size field in the database.
 	FieldByteSize = "byte_size"
+	// FieldPublicURL holds the string denoting the public_url field in the database.
+	FieldPublicURL = "public_url"
 	// FieldUploadedAt holds the string denoting the uploaded_at field in the database.
 	FieldUploadedAt = "uploaded_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
-	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
-	FieldUpdatedAt = "updated_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// Table holds the table name of the useravatar in the database.
@@ -48,9 +49,9 @@ var Columns = []string{
 	FieldObjectKey,
 	FieldContentType,
 	FieldByteSize,
+	FieldPublicURL,
 	FieldUploadedAt,
 	FieldCreatedAt,
-	FieldUpdatedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -64,18 +65,16 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// DefaultObjectKey holds the default value on creation for the "object_key" field.
-	DefaultObjectKey string
-	// DefaultContentType holds the default value on creation for the "content_type" field.
-	DefaultContentType string
+	// ObjectKeyValidator is a validator for the "object_key" field. It is called by the builders before save.
+	ObjectKeyValidator func(string) error
+	// ContentTypeValidator is a validator for the "content_type" field. It is called by the builders before save.
+	ContentTypeValidator func(string) error
 	// DefaultByteSize holds the default value on creation for the "byte_size" field.
 	DefaultByteSize int64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
-	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
-	DefaultUpdatedAt func() time.Time
-	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
-	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultID holds the default value on creation for the "id" field.
+	DefaultID func() uuid.UUID
 )
 
 // OrderOption defines the ordering options for the UserAvatar queries.
@@ -106,6 +105,11 @@ func ByByteSize(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldByteSize, opts...).ToFunc()
 }
 
+// ByPublicURL orders the results by the public_url field.
+func ByPublicURL(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublicURL, opts...).ToFunc()
+}
+
 // ByUploadedAt orders the results by the uploaded_at field.
 func ByUploadedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUploadedAt, opts...).ToFunc()
@@ -114,11 +118,6 @@ func ByUploadedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
-}
-
-// ByUpdatedAt orders the results by the updated_at field.
-func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.
@@ -131,6 +130,6 @@ func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(UserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, true, UserTable, UserColumn),
+		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 	)
 }

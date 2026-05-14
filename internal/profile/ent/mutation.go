@@ -42,9 +42,9 @@ type UserAvatarMutation struct {
 	content_type  *string
 	byte_size     *int64
 	addbyte_size  *int64
+	public_url    *string
 	uploaded_at   *time.Time
 	created_at    *time.Time
-	updated_at    *time.Time
 	clearedFields map[string]struct{}
 	user          *uuid.UUID
 	cleareduser   bool
@@ -321,6 +321,55 @@ func (m *UserAvatarMutation) ResetByteSize() {
 	m.addbyte_size = nil
 }
 
+// SetPublicURL sets the "public_url" field.
+func (m *UserAvatarMutation) SetPublicURL(s string) {
+	m.public_url = &s
+}
+
+// PublicURL returns the value of the "public_url" field in the mutation.
+func (m *UserAvatarMutation) PublicURL() (r string, exists bool) {
+	v := m.public_url
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublicURL returns the old "public_url" field's value of the UserAvatar entity.
+// If the UserAvatar object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserAvatarMutation) OldPublicURL(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublicURL is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublicURL requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublicURL: %w", err)
+	}
+	return oldValue.PublicURL, nil
+}
+
+// ClearPublicURL clears the value of the "public_url" field.
+func (m *UserAvatarMutation) ClearPublicURL() {
+	m.public_url = nil
+	m.clearedFields[useravatar.FieldPublicURL] = struct{}{}
+}
+
+// PublicURLCleared returns if the "public_url" field was cleared in this mutation.
+func (m *UserAvatarMutation) PublicURLCleared() bool {
+	_, ok := m.clearedFields[useravatar.FieldPublicURL]
+	return ok
+}
+
+// ResetPublicURL resets all changes to the "public_url" field.
+func (m *UserAvatarMutation) ResetPublicURL() {
+	m.public_url = nil
+	delete(m.clearedFields, useravatar.FieldPublicURL)
+}
+
 // SetUploadedAt sets the "uploaded_at" field.
 func (m *UserAvatarMutation) SetUploadedAt(t time.Time) {
 	m.uploaded_at = &t
@@ -406,42 +455,6 @@ func (m *UserAvatarMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (m *UserAvatarMutation) SetUpdatedAt(t time.Time) {
-	m.updated_at = &t
-}
-
-// UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *UserAvatarMutation) UpdatedAt() (r time.Time, exists bool) {
-	v := m.updated_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldUpdatedAt returns the old "updated_at" field's value of the UserAvatar entity.
-// If the UserAvatar object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserAvatarMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
-	}
-	return oldValue.UpdatedAt, nil
-}
-
-// ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *UserAvatarMutation) ResetUpdatedAt() {
-	m.updated_at = nil
-}
-
 // ClearUser clears the "user" edge to the UserProfile entity.
 func (m *UserAvatarMutation) ClearUser() {
 	m.cleareduser = true
@@ -516,14 +529,14 @@ func (m *UserAvatarMutation) Fields() []string {
 	if m.byte_size != nil {
 		fields = append(fields, useravatar.FieldByteSize)
 	}
+	if m.public_url != nil {
+		fields = append(fields, useravatar.FieldPublicURL)
+	}
 	if m.uploaded_at != nil {
 		fields = append(fields, useravatar.FieldUploadedAt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, useravatar.FieldCreatedAt)
-	}
-	if m.updated_at != nil {
-		fields = append(fields, useravatar.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -541,12 +554,12 @@ func (m *UserAvatarMutation) Field(name string) (ent.Value, bool) {
 		return m.ContentType()
 	case useravatar.FieldByteSize:
 		return m.ByteSize()
+	case useravatar.FieldPublicURL:
+		return m.PublicURL()
 	case useravatar.FieldUploadedAt:
 		return m.UploadedAt()
 	case useravatar.FieldCreatedAt:
 		return m.CreatedAt()
-	case useravatar.FieldUpdatedAt:
-		return m.UpdatedAt()
 	}
 	return nil, false
 }
@@ -564,12 +577,12 @@ func (m *UserAvatarMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldContentType(ctx)
 	case useravatar.FieldByteSize:
 		return m.OldByteSize(ctx)
+	case useravatar.FieldPublicURL:
+		return m.OldPublicURL(ctx)
 	case useravatar.FieldUploadedAt:
 		return m.OldUploadedAt(ctx)
 	case useravatar.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case useravatar.FieldUpdatedAt:
-		return m.OldUpdatedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown UserAvatar field %s", name)
 }
@@ -607,6 +620,13 @@ func (m *UserAvatarMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetByteSize(v)
 		return nil
+	case useravatar.FieldPublicURL:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublicURL(v)
+		return nil
 	case useravatar.FieldUploadedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -620,13 +640,6 @@ func (m *UserAvatarMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
-		return nil
-	case useravatar.FieldUpdatedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetUpdatedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown UserAvatar field %s", name)
@@ -673,6 +686,9 @@ func (m *UserAvatarMutation) AddField(name string, value ent.Value) error {
 // mutation.
 func (m *UserAvatarMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(useravatar.FieldPublicURL) {
+		fields = append(fields, useravatar.FieldPublicURL)
+	}
 	if m.FieldCleared(useravatar.FieldUploadedAt) {
 		fields = append(fields, useravatar.FieldUploadedAt)
 	}
@@ -690,6 +706,9 @@ func (m *UserAvatarMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *UserAvatarMutation) ClearField(name string) error {
 	switch name {
+	case useravatar.FieldPublicURL:
+		m.ClearPublicURL()
+		return nil
 	case useravatar.FieldUploadedAt:
 		m.ClearUploadedAt()
 		return nil
@@ -713,14 +732,14 @@ func (m *UserAvatarMutation) ResetField(name string) error {
 	case useravatar.FieldByteSize:
 		m.ResetByteSize()
 		return nil
+	case useravatar.FieldPublicURL:
+		m.ResetPublicURL()
+		return nil
 	case useravatar.FieldUploadedAt:
 		m.ResetUploadedAt()
 		return nil
 	case useravatar.FieldCreatedAt:
 		m.ResetCreatedAt()
-		return nil
-	case useravatar.FieldUpdatedAt:
-		m.ResetUpdatedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown UserAvatar field %s", name)
@@ -1354,17 +1373,17 @@ type UserProfileMutation struct {
 	op                Op
 	typ               string
 	id                *uuid.UUID
-	email             *string
+	email_ref         *string
 	display_name      *string
 	username          *string
-	avatar_url        *string
 	created_at        *time.Time
 	updated_at        *time.Time
 	clearedFields     map[string]struct{}
 	preference        *uuid.UUID
 	clearedpreference bool
-	avatar            *uuid.UUID
-	clearedavatar     bool
+	avatars           map[uuid.UUID]struct{}
+	removedavatars    map[uuid.UUID]struct{}
+	clearedavatars    bool
 	done              bool
 	oldValue          func(context.Context) (*UserProfile, error)
 	predicates        []predicate.UserProfile
@@ -1474,40 +1493,40 @@ func (m *UserProfileMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	}
 }
 
-// SetEmail sets the "email" field.
-func (m *UserProfileMutation) SetEmail(s string) {
-	m.email = &s
+// SetEmailRef sets the "email_ref" field.
+func (m *UserProfileMutation) SetEmailRef(s string) {
+	m.email_ref = &s
 }
 
-// Email returns the value of the "email" field in the mutation.
-func (m *UserProfileMutation) Email() (r string, exists bool) {
-	v := m.email
+// EmailRef returns the value of the "email_ref" field in the mutation.
+func (m *UserProfileMutation) EmailRef() (r string, exists bool) {
+	v := m.email_ref
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldEmail returns the old "email" field's value of the UserProfile entity.
+// OldEmailRef returns the old "email_ref" field's value of the UserProfile entity.
 // If the UserProfile object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserProfileMutation) OldEmail(ctx context.Context) (v string, err error) {
+func (m *UserProfileMutation) OldEmailRef(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEmail is only allowed on UpdateOne operations")
+		return v, errors.New("OldEmailRef is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEmail requires an ID field in the mutation")
+		return v, errors.New("OldEmailRef requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEmail: %w", err)
+		return v, fmt.Errorf("querying old value for OldEmailRef: %w", err)
 	}
-	return oldValue.Email, nil
+	return oldValue.EmailRef, nil
 }
 
-// ResetEmail resets all changes to the "email" field.
-func (m *UserProfileMutation) ResetEmail() {
-	m.email = nil
+// ResetEmailRef resets all changes to the "email_ref" field.
+func (m *UserProfileMutation) ResetEmailRef() {
+	m.email_ref = nil
 }
 
 // SetDisplayName sets the "display_name" field.
@@ -1580,42 +1599,6 @@ func (m *UserProfileMutation) OldUsername(ctx context.Context) (v string, err er
 // ResetUsername resets all changes to the "username" field.
 func (m *UserProfileMutation) ResetUsername() {
 	m.username = nil
-}
-
-// SetAvatarURL sets the "avatar_url" field.
-func (m *UserProfileMutation) SetAvatarURL(s string) {
-	m.avatar_url = &s
-}
-
-// AvatarURL returns the value of the "avatar_url" field in the mutation.
-func (m *UserProfileMutation) AvatarURL() (r string, exists bool) {
-	v := m.avatar_url
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAvatarURL returns the old "avatar_url" field's value of the UserProfile entity.
-// If the UserProfile object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserProfileMutation) OldAvatarURL(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAvatarURL is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAvatarURL requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAvatarURL: %w", err)
-	}
-	return oldValue.AvatarURL, nil
-}
-
-// ResetAvatarURL resets all changes to the "avatar_url" field.
-func (m *UserProfileMutation) ResetAvatarURL() {
-	m.avatar_url = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -1729,43 +1712,58 @@ func (m *UserProfileMutation) ResetPreference() {
 	m.clearedpreference = false
 }
 
-// SetAvatarID sets the "avatar" edge to the UserAvatar entity by id.
-func (m *UserProfileMutation) SetAvatarID(id uuid.UUID) {
-	m.avatar = &id
+// AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by ids.
+func (m *UserProfileMutation) AddAvatarIDs(ids ...uuid.UUID) {
+	if m.avatars == nil {
+		m.avatars = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.avatars[ids[i]] = struct{}{}
+	}
 }
 
-// ClearAvatar clears the "avatar" edge to the UserAvatar entity.
-func (m *UserProfileMutation) ClearAvatar() {
-	m.clearedavatar = true
+// ClearAvatars clears the "avatars" edge to the UserAvatar entity.
+func (m *UserProfileMutation) ClearAvatars() {
+	m.clearedavatars = true
 }
 
-// AvatarCleared reports if the "avatar" edge to the UserAvatar entity was cleared.
-func (m *UserProfileMutation) AvatarCleared() bool {
-	return m.clearedavatar
+// AvatarsCleared reports if the "avatars" edge to the UserAvatar entity was cleared.
+func (m *UserProfileMutation) AvatarsCleared() bool {
+	return m.clearedavatars
 }
 
-// AvatarID returns the "avatar" edge ID in the mutation.
-func (m *UserProfileMutation) AvatarID() (id uuid.UUID, exists bool) {
-	if m.avatar != nil {
-		return *m.avatar, true
+// RemoveAvatarIDs removes the "avatars" edge to the UserAvatar entity by IDs.
+func (m *UserProfileMutation) RemoveAvatarIDs(ids ...uuid.UUID) {
+	if m.removedavatars == nil {
+		m.removedavatars = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.avatars, ids[i])
+		m.removedavatars[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAvatars returns the removed IDs of the "avatars" edge to the UserAvatar entity.
+func (m *UserProfileMutation) RemovedAvatarsIDs() (ids []uuid.UUID) {
+	for id := range m.removedavatars {
+		ids = append(ids, id)
 	}
 	return
 }
 
-// AvatarIDs returns the "avatar" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// AvatarID instead. It exists only for internal usage by the builders.
-func (m *UserProfileMutation) AvatarIDs() (ids []uuid.UUID) {
-	if id := m.avatar; id != nil {
-		ids = append(ids, *id)
+// AvatarsIDs returns the "avatars" edge IDs in the mutation.
+func (m *UserProfileMutation) AvatarsIDs() (ids []uuid.UUID) {
+	for id := range m.avatars {
+		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetAvatar resets all changes to the "avatar" edge.
-func (m *UserProfileMutation) ResetAvatar() {
-	m.avatar = nil
-	m.clearedavatar = false
+// ResetAvatars resets all changes to the "avatars" edge.
+func (m *UserProfileMutation) ResetAvatars() {
+	m.avatars = nil
+	m.clearedavatars = false
+	m.removedavatars = nil
 }
 
 // Where appends a list predicates to the UserProfileMutation builder.
@@ -1802,18 +1800,15 @@ func (m *UserProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserProfileMutation) Fields() []string {
-	fields := make([]string, 0, 6)
-	if m.email != nil {
-		fields = append(fields, userprofile.FieldEmail)
+	fields := make([]string, 0, 5)
+	if m.email_ref != nil {
+		fields = append(fields, userprofile.FieldEmailRef)
 	}
 	if m.display_name != nil {
 		fields = append(fields, userprofile.FieldDisplayName)
 	}
 	if m.username != nil {
 		fields = append(fields, userprofile.FieldUsername)
-	}
-	if m.avatar_url != nil {
-		fields = append(fields, userprofile.FieldAvatarURL)
 	}
 	if m.created_at != nil {
 		fields = append(fields, userprofile.FieldCreatedAt)
@@ -1829,14 +1824,12 @@ func (m *UserProfileMutation) Fields() []string {
 // schema.
 func (m *UserProfileMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case userprofile.FieldEmail:
-		return m.Email()
+	case userprofile.FieldEmailRef:
+		return m.EmailRef()
 	case userprofile.FieldDisplayName:
 		return m.DisplayName()
 	case userprofile.FieldUsername:
 		return m.Username()
-	case userprofile.FieldAvatarURL:
-		return m.AvatarURL()
 	case userprofile.FieldCreatedAt:
 		return m.CreatedAt()
 	case userprofile.FieldUpdatedAt:
@@ -1850,14 +1843,12 @@ func (m *UserProfileMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *UserProfileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case userprofile.FieldEmail:
-		return m.OldEmail(ctx)
+	case userprofile.FieldEmailRef:
+		return m.OldEmailRef(ctx)
 	case userprofile.FieldDisplayName:
 		return m.OldDisplayName(ctx)
 	case userprofile.FieldUsername:
 		return m.OldUsername(ctx)
-	case userprofile.FieldAvatarURL:
-		return m.OldAvatarURL(ctx)
 	case userprofile.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case userprofile.FieldUpdatedAt:
@@ -1871,12 +1862,12 @@ func (m *UserProfileMutation) OldField(ctx context.Context, name string) (ent.Va
 // type.
 func (m *UserProfileMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case userprofile.FieldEmail:
+	case userprofile.FieldEmailRef:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetEmail(v)
+		m.SetEmailRef(v)
 		return nil
 	case userprofile.FieldDisplayName:
 		v, ok := value.(string)
@@ -1891,13 +1882,6 @@ func (m *UserProfileMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUsername(v)
-		return nil
-	case userprofile.FieldAvatarURL:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAvatarURL(v)
 		return nil
 	case userprofile.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1962,17 +1946,14 @@ func (m *UserProfileMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *UserProfileMutation) ResetField(name string) error {
 	switch name {
-	case userprofile.FieldEmail:
-		m.ResetEmail()
+	case userprofile.FieldEmailRef:
+		m.ResetEmailRef()
 		return nil
 	case userprofile.FieldDisplayName:
 		m.ResetDisplayName()
 		return nil
 	case userprofile.FieldUsername:
 		m.ResetUsername()
-		return nil
-	case userprofile.FieldAvatarURL:
-		m.ResetAvatarURL()
 		return nil
 	case userprofile.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -1990,8 +1971,8 @@ func (m *UserProfileMutation) AddedEdges() []string {
 	if m.preference != nil {
 		edges = append(edges, userprofile.EdgePreference)
 	}
-	if m.avatar != nil {
-		edges = append(edges, userprofile.EdgeAvatar)
+	if m.avatars != nil {
+		edges = append(edges, userprofile.EdgeAvatars)
 	}
 	return edges
 }
@@ -2004,10 +1985,12 @@ func (m *UserProfileMutation) AddedIDs(name string) []ent.Value {
 		if id := m.preference; id != nil {
 			return []ent.Value{*id}
 		}
-	case userprofile.EdgeAvatar:
-		if id := m.avatar; id != nil {
-			return []ent.Value{*id}
+	case userprofile.EdgeAvatars:
+		ids := make([]ent.Value, 0, len(m.avatars))
+		for id := range m.avatars {
+			ids = append(ids, id)
 		}
+		return ids
 	}
 	return nil
 }
@@ -2015,12 +1998,23 @@ func (m *UserProfileMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserProfileMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
+	if m.removedavatars != nil {
+		edges = append(edges, userprofile.EdgeAvatars)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *UserProfileMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case userprofile.EdgeAvatars:
+		ids := make([]ent.Value, 0, len(m.removedavatars))
+		for id := range m.removedavatars {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
@@ -2030,8 +2024,8 @@ func (m *UserProfileMutation) ClearedEdges() []string {
 	if m.clearedpreference {
 		edges = append(edges, userprofile.EdgePreference)
 	}
-	if m.clearedavatar {
-		edges = append(edges, userprofile.EdgeAvatar)
+	if m.clearedavatars {
+		edges = append(edges, userprofile.EdgeAvatars)
 	}
 	return edges
 }
@@ -2042,8 +2036,8 @@ func (m *UserProfileMutation) EdgeCleared(name string) bool {
 	switch name {
 	case userprofile.EdgePreference:
 		return m.clearedpreference
-	case userprofile.EdgeAvatar:
-		return m.clearedavatar
+	case userprofile.EdgeAvatars:
+		return m.clearedavatars
 	}
 	return false
 }
@@ -2054,9 +2048,6 @@ func (m *UserProfileMutation) ClearEdge(name string) error {
 	switch name {
 	case userprofile.EdgePreference:
 		m.ClearPreference()
-		return nil
-	case userprofile.EdgeAvatar:
-		m.ClearAvatar()
 		return nil
 	}
 	return fmt.Errorf("unknown UserProfile unique edge %s", name)
@@ -2069,8 +2060,8 @@ func (m *UserProfileMutation) ResetEdge(name string) error {
 	case userprofile.EdgePreference:
 		m.ResetPreference()
 		return nil
-	case userprofile.EdgeAvatar:
-		m.ResetAvatar()
+	case userprofile.EdgeAvatars:
+		m.ResetAvatars()
 		return nil
 	}
 	return fmt.Errorf("unknown UserProfile edge %s", name)

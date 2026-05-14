@@ -2,12 +2,11 @@ package profilegrpc
 
 import (
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
 
-	"github.com/google/uuid"
+	"sanzi.io/muid/pkg/errutil"
 )
 
 var adjectives = []string{
@@ -22,22 +21,19 @@ var nouns = []string{
 
 func randomDisplayName() string {
 	var buf [8]byte
-	_, _ = rand.Read(buf[:])
+	_, err := rand.Read(buf[:])
+	errutil.Discard(err)
 	ai := binary.BigEndian.Uint32(buf[:4]) % uint32(len(adjectives))
 	ni := binary.BigEndian.Uint32(buf[4:]) % uint32(len(nouns))
 	var suffix [2]byte
-	_, _ = rand.Read(suffix[:])
+	_, err = rand.Read(suffix[:])
+	errutil.Discard(err)
 	return fmt.Sprintf("%s-%s-%02x", adjectives[ai], nouns[ni], suffix[0])
 }
 
 func randomUsernameBase() string {
 	var b [8]byte
-	_, _ = rand.Read(b[:])
+	_, err := rand.Read(b[:])
+	errutil.Discard(err)
 	return "user-" + hex.EncodeToString(b[:])
-}
-
-func githubIdenticonURL(profileID uuid.UUID) string {
-	sum := sha256.Sum256(profileID[:])
-	h := hex.EncodeToString(sum[:])
-	return fmt.Sprintf("https://github.com/identicons/%s.png", h[:20])
 }

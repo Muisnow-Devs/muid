@@ -8,6 +8,7 @@ import (
 	smtpimpl "sanzi.io/muid/infra/smtp"
 	"sanzi.io/muid/internal/templates"
 	sharedmailer "sanzi.io/muid/pkg/shared/mailer"
+	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -21,7 +22,7 @@ type InfraDependencies struct {
 
 func closeIfCloser(v any) {
 	if c, ok := v.(io.Closer); ok {
-		_ = c.Close()
+		errutil.Discard(c.Close())
 	}
 }
 

@@ -27,7 +27,7 @@ type UserProfileQuery struct {
 	inters         []Interceptor
 	predicates     []predicate.UserProfile
 	withPreference *UserPreferenceQuery
-	withAvatar     *UserAvatarQuery
+	withAvatars    *UserAvatarQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -86,8 +86,8 @@ func (_q *UserProfileQuery) QueryPreference() *UserPreferenceQuery {
 	return query
 }
 
-// QueryAvatar chains the current query on the "avatar" edge.
-func (_q *UserProfileQuery) QueryAvatar() *UserAvatarQuery {
+// QueryAvatars chains the current query on the "avatars" edge.
+func (_q *UserProfileQuery) QueryAvatars() *UserAvatarQuery {
 	query := (&UserAvatarClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
@@ -100,7 +100,7 @@ func (_q *UserProfileQuery) QueryAvatar() *UserAvatarQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userprofile.Table, userprofile.FieldID, selector),
 			sqlgraph.To(useravatar.Table, useravatar.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, userprofile.AvatarTable, userprofile.AvatarColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, userprofile.AvatarsTable, userprofile.AvatarsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -301,7 +301,7 @@ func (_q *UserProfileQuery) Clone() *UserProfileQuery {
 		inters:         append([]Interceptor{}, _q.inters...),
 		predicates:     append([]predicate.UserProfile{}, _q.predicates...),
 		withPreference: _q.withPreference.Clone(),
-		withAvatar:     _q.withAvatar.Clone(),
+		withAvatars:    _q.withAvatars.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -319,14 +319,14 @@ func (_q *UserProfileQuery) WithPreference(opts ...func(*UserPreferenceQuery)) *
 	return _q
 }
 
-// WithAvatar tells the query-builder to eager-load the nodes that are connected to
-// the "avatar" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserProfileQuery) WithAvatar(opts ...func(*UserAvatarQuery)) *UserProfileQuery {
+// WithAvatars tells the query-builder to eager-load the nodes that are connected to
+// the "avatars" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserProfileQuery) WithAvatars(opts ...func(*UserAvatarQuery)) *UserProfileQuery {
 	query := (&UserAvatarClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withAvatar = query
+	_q.withAvatars = query
 	return _q
 }
 
@@ -336,12 +336,12 @@ func (_q *UserProfileQuery) WithAvatar(opts ...func(*UserAvatarQuery)) *UserProf
 // Example:
 //
 //	var v []struct {
-//		Email string `json:"email,omitempty"`
+//		EmailRef string `json:"email_ref,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.UserProfile.Query().
-//		GroupBy(userprofile.FieldEmail).
+//		GroupBy(userprofile.FieldEmailRef).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *UserProfileQuery) GroupBy(field string, fields ...string) *UserProfileGroupBy {
@@ -359,11 +359,11 @@ func (_q *UserProfileQuery) GroupBy(field string, fields ...string) *UserProfile
 // Example:
 //
 //	var v []struct {
-//		Email string `json:"email,omitempty"`
+//		EmailRef string `json:"email_ref,omitempty"`
 //	}
 //
 //	client.UserProfile.Query().
-//		Select(userprofile.FieldEmail).
+//		Select(userprofile.FieldEmailRef).
 //		Scan(ctx, &v)
 func (_q *UserProfileQuery) Select(fields ...string) *UserProfileSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -410,7 +410,7 @@ func (_q *UserProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
 			_q.withPreference != nil,
-			_q.withAvatar != nil,
+			_q.withAvatars != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -437,9 +437,10 @@ func (_q *UserProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 			return nil, err
 		}
 	}
-	if query := _q.withAvatar; query != nil {
-		if err := _q.loadAvatar(ctx, query, nodes, nil,
-			func(n *UserProfile, e *UserAvatar) { n.Edges.Avatar = e }); err != nil {
+	if query := _q.withAvatars; query != nil {
+		if err := _q.loadAvatars(ctx, query, nodes,
+			func(n *UserProfile) { n.Edges.Avatars = []*UserAvatar{} },
+			func(n *UserProfile, e *UserAvatar) { n.Edges.Avatars = append(n.Edges.Avatars, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -473,18 +474,21 @@ func (_q *UserProfileQuery) loadPreference(ctx context.Context, query *UserPrefe
 	}
 	return nil
 }
-func (_q *UserProfileQuery) loadAvatar(ctx context.Context, query *UserAvatarQuery, nodes []*UserProfile, init func(*UserProfile), assign func(*UserProfile, *UserAvatar)) error {
+func (_q *UserProfileQuery) loadAvatars(ctx context.Context, query *UserAvatarQuery, nodes []*UserProfile, init func(*UserProfile), assign func(*UserProfile, *UserAvatar)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*UserProfile)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
 	}
 	if len(query.ctx.Fields) > 0 {
 		query.ctx.AppendFieldOnce(useravatar.FieldUserID)
 	}
 	query.Where(predicate.UserAvatar(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(userprofile.AvatarColumn), fks...))
+		s.Where(sql.InValues(s.C(userprofile.AvatarsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

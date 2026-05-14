@@ -76,6 +76,11 @@ func ByteSize(v int64) predicate.UserAvatar {
 	return predicate.UserAvatar(sql.FieldEQ(FieldByteSize, v))
 }
 
+// PublicURL applies equality check predicate on the "public_url" field. It's identical to PublicURLEQ.
+func PublicURL(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldEQ(FieldPublicURL, v))
+}
+
 // UploadedAt applies equality check predicate on the "uploaded_at" field. It's identical to UploadedAtEQ.
 func UploadedAt(v time.Time) predicate.UserAvatar {
 	return predicate.UserAvatar(sql.FieldEQ(FieldUploadedAt, v))
@@ -84,11 +89,6 @@ func UploadedAt(v time.Time) predicate.UserAvatar {
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.UserAvatar {
 	return predicate.UserAvatar(sql.FieldEQ(FieldCreatedAt, v))
-}
-
-// UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
-func UpdatedAt(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.
@@ -281,6 +281,81 @@ func ByteSizeLTE(v int64) predicate.UserAvatar {
 	return predicate.UserAvatar(sql.FieldLTE(FieldByteSize, v))
 }
 
+// PublicURLEQ applies the EQ predicate on the "public_url" field.
+func PublicURLEQ(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldEQ(FieldPublicURL, v))
+}
+
+// PublicURLNEQ applies the NEQ predicate on the "public_url" field.
+func PublicURLNEQ(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldNEQ(FieldPublicURL, v))
+}
+
+// PublicURLIn applies the In predicate on the "public_url" field.
+func PublicURLIn(vs ...string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldIn(FieldPublicURL, vs...))
+}
+
+// PublicURLNotIn applies the NotIn predicate on the "public_url" field.
+func PublicURLNotIn(vs ...string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldNotIn(FieldPublicURL, vs...))
+}
+
+// PublicURLGT applies the GT predicate on the "public_url" field.
+func PublicURLGT(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldGT(FieldPublicURL, v))
+}
+
+// PublicURLGTE applies the GTE predicate on the "public_url" field.
+func PublicURLGTE(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldGTE(FieldPublicURL, v))
+}
+
+// PublicURLLT applies the LT predicate on the "public_url" field.
+func PublicURLLT(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldLT(FieldPublicURL, v))
+}
+
+// PublicURLLTE applies the LTE predicate on the "public_url" field.
+func PublicURLLTE(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldLTE(FieldPublicURL, v))
+}
+
+// PublicURLContains applies the Contains predicate on the "public_url" field.
+func PublicURLContains(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldContains(FieldPublicURL, v))
+}
+
+// PublicURLHasPrefix applies the HasPrefix predicate on the "public_url" field.
+func PublicURLHasPrefix(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldHasPrefix(FieldPublicURL, v))
+}
+
+// PublicURLHasSuffix applies the HasSuffix predicate on the "public_url" field.
+func PublicURLHasSuffix(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldHasSuffix(FieldPublicURL, v))
+}
+
+// PublicURLIsNil applies the IsNil predicate on the "public_url" field.
+func PublicURLIsNil() predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldIsNull(FieldPublicURL))
+}
+
+// PublicURLNotNil applies the NotNil predicate on the "public_url" field.
+func PublicURLNotNil() predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldNotNull(FieldPublicURL))
+}
+
+// PublicURLEqualFold applies the EqualFold predicate on the "public_url" field.
+func PublicURLEqualFold(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldEqualFold(FieldPublicURL, v))
+}
+
+// PublicURLContainsFold applies the ContainsFold predicate on the "public_url" field.
+func PublicURLContainsFold(v string) predicate.UserAvatar {
+	return predicate.UserAvatar(sql.FieldContainsFold(FieldPublicURL, v))
+}
+
 // UploadedAtEQ applies the EQ predicate on the "uploaded_at" field.
 func UploadedAtEQ(v time.Time) predicate.UserAvatar {
 	return predicate.UserAvatar(sql.FieldEQ(FieldUploadedAt, v))
@@ -371,52 +446,12 @@ func CreatedAtLTE(v time.Time) predicate.UserAvatar {
 	return predicate.UserAvatar(sql.FieldLTE(FieldCreatedAt, v))
 }
 
-// UpdatedAtEQ applies the EQ predicate on the "updated_at" field.
-func UpdatedAtEQ(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldEQ(FieldUpdatedAt, v))
-}
-
-// UpdatedAtNEQ applies the NEQ predicate on the "updated_at" field.
-func UpdatedAtNEQ(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldNEQ(FieldUpdatedAt, v))
-}
-
-// UpdatedAtIn applies the In predicate on the "updated_at" field.
-func UpdatedAtIn(vs ...time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldIn(FieldUpdatedAt, vs...))
-}
-
-// UpdatedAtNotIn applies the NotIn predicate on the "updated_at" field.
-func UpdatedAtNotIn(vs ...time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldNotIn(FieldUpdatedAt, vs...))
-}
-
-// UpdatedAtGT applies the GT predicate on the "updated_at" field.
-func UpdatedAtGT(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldGT(FieldUpdatedAt, v))
-}
-
-// UpdatedAtGTE applies the GTE predicate on the "updated_at" field.
-func UpdatedAtGTE(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldGTE(FieldUpdatedAt, v))
-}
-
-// UpdatedAtLT applies the LT predicate on the "updated_at" field.
-func UpdatedAtLT(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldLT(FieldUpdatedAt, v))
-}
-
-// UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
-func UpdatedAtLTE(v time.Time) predicate.UserAvatar {
-	return predicate.UserAvatar(sql.FieldLTE(FieldUpdatedAt, v))
-}
-
 // HasUser applies the HasEdge predicate on the "user" edge.
 func HasUser() predicate.UserAvatar {
 	return predicate.UserAvatar(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})

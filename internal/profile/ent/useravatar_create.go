@@ -34,25 +34,9 @@ func (_c *UserAvatarCreate) SetObjectKey(v string) *UserAvatarCreate {
 	return _c
 }
 
-// SetNillableObjectKey sets the "object_key" field if the given value is not nil.
-func (_c *UserAvatarCreate) SetNillableObjectKey(v *string) *UserAvatarCreate {
-	if v != nil {
-		_c.SetObjectKey(*v)
-	}
-	return _c
-}
-
 // SetContentType sets the "content_type" field.
 func (_c *UserAvatarCreate) SetContentType(v string) *UserAvatarCreate {
 	_c.mutation.SetContentType(v)
-	return _c
-}
-
-// SetNillableContentType sets the "content_type" field if the given value is not nil.
-func (_c *UserAvatarCreate) SetNillableContentType(v *string) *UserAvatarCreate {
-	if v != nil {
-		_c.SetContentType(*v)
-	}
 	return _c
 }
 
@@ -66,6 +50,20 @@ func (_c *UserAvatarCreate) SetByteSize(v int64) *UserAvatarCreate {
 func (_c *UserAvatarCreate) SetNillableByteSize(v *int64) *UserAvatarCreate {
 	if v != nil {
 		_c.SetByteSize(*v)
+	}
+	return _c
+}
+
+// SetPublicURL sets the "public_url" field.
+func (_c *UserAvatarCreate) SetPublicURL(v string) *UserAvatarCreate {
+	_c.mutation.SetPublicURL(v)
+	return _c
+}
+
+// SetNillablePublicURL sets the "public_url" field if the given value is not nil.
+func (_c *UserAvatarCreate) SetNillablePublicURL(v *string) *UserAvatarCreate {
+	if v != nil {
+		_c.SetPublicURL(*v)
 	}
 	return _c
 }
@@ -98,23 +96,17 @@ func (_c *UserAvatarCreate) SetNillableCreatedAt(v *time.Time) *UserAvatarCreate
 	return _c
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (_c *UserAvatarCreate) SetUpdatedAt(v time.Time) *UserAvatarCreate {
-	_c.mutation.SetUpdatedAt(v)
-	return _c
-}
-
-// SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *UserAvatarCreate) SetNillableUpdatedAt(v *time.Time) *UserAvatarCreate {
-	if v != nil {
-		_c.SetUpdatedAt(*v)
-	}
-	return _c
-}
-
 // SetID sets the "id" field.
 func (_c *UserAvatarCreate) SetID(v uuid.UUID) *UserAvatarCreate {
 	_c.mutation.SetID(v)
+	return _c
+}
+
+// SetNillableID sets the "id" field if the given value is not nil.
+func (_c *UserAvatarCreate) SetNillableID(v *uuid.UUID) *UserAvatarCreate {
+	if v != nil {
+		_c.SetID(*v)
+	}
 	return _c
 }
 
@@ -158,14 +150,6 @@ func (_c *UserAvatarCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *UserAvatarCreate) defaults() {
-	if _, ok := _c.mutation.ObjectKey(); !ok {
-		v := useravatar.DefaultObjectKey
-		_c.mutation.SetObjectKey(v)
-	}
-	if _, ok := _c.mutation.ContentType(); !ok {
-		v := useravatar.DefaultContentType
-		_c.mutation.SetContentType(v)
-	}
 	if _, ok := _c.mutation.ByteSize(); !ok {
 		v := useravatar.DefaultByteSize
 		_c.mutation.SetByteSize(v)
@@ -174,9 +158,9 @@ func (_c *UserAvatarCreate) defaults() {
 		v := useravatar.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		v := useravatar.DefaultUpdatedAt()
-		_c.mutation.SetUpdatedAt(v)
+	if _, ok := _c.mutation.ID(); !ok {
+		v := useravatar.DefaultID()
+		_c.mutation.SetID(v)
 	}
 }
 
@@ -188,17 +172,24 @@ func (_c *UserAvatarCreate) check() error {
 	if _, ok := _c.mutation.ObjectKey(); !ok {
 		return &ValidationError{Name: "object_key", err: errors.New(`ent: missing required field "UserAvatar.object_key"`)}
 	}
+	if v, ok := _c.mutation.ObjectKey(); ok {
+		if err := useravatar.ObjectKeyValidator(v); err != nil {
+			return &ValidationError{Name: "object_key", err: fmt.Errorf(`ent: validator failed for field "UserAvatar.object_key": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ContentType(); !ok {
 		return &ValidationError{Name: "content_type", err: errors.New(`ent: missing required field "UserAvatar.content_type"`)}
+	}
+	if v, ok := _c.mutation.ContentType(); ok {
+		if err := useravatar.ContentTypeValidator(v); err != nil {
+			return &ValidationError{Name: "content_type", err: fmt.Errorf(`ent: validator failed for field "UserAvatar.content_type": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.ByteSize(); !ok {
 		return &ValidationError{Name: "byte_size", err: errors.New(`ent: missing required field "UserAvatar.byte_size"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "UserAvatar.created_at"`)}
-	}
-	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "UserAvatar.updated_at"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserAvatar.user"`)}
@@ -250,6 +241,10 @@ func (_c *UserAvatarCreate) createSpec() (*UserAvatar, *sqlgraph.CreateSpec) {
 		_spec.SetField(useravatar.FieldByteSize, field.TypeInt64, value)
 		_node.ByteSize = value
 	}
+	if value, ok := _c.mutation.PublicURL(); ok {
+		_spec.SetField(useravatar.FieldPublicURL, field.TypeString, value)
+		_node.PublicURL = &value
+	}
 	if value, ok := _c.mutation.UploadedAt(); ok {
 		_spec.SetField(useravatar.FieldUploadedAt, field.TypeTime, value)
 		_node.UploadedAt = &value
@@ -258,13 +253,9 @@ func (_c *UserAvatarCreate) createSpec() (*UserAvatar, *sqlgraph.CreateSpec) {
 		_spec.SetField(useravatar.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := _c.mutation.UpdatedAt(); ok {
-		_spec.SetField(useravatar.FieldUpdatedAt, field.TypeTime, value)
-		_node.UpdatedAt = value
-	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
+			Rel:     sqlgraph.M2O,
 			Inverse: true,
 			Table:   useravatar.UserTable,
 			Columns: []string{useravatar.UserColumn},

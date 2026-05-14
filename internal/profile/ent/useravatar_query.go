@@ -75,7 +75,7 @@ func (_q *UserAvatarQuery) QueryUser() *UserProfileQuery {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(useravatar.Table, useravatar.FieldID, selector),
 			sqlgraph.To(userprofile.Table, userprofile.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, useravatar.UserTable, useravatar.UserColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, useravatar.UserTable, useravatar.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil

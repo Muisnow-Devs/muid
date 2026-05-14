@@ -11,10 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/predicate"
 	"sanzi.io/muid/internal/profile/ent/userpreference"
-	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
 // UserPreferenceUpdate is the builder for updating UserPreference entities.
@@ -27,20 +25,6 @@ type UserPreferenceUpdate struct {
 // Where appends a list predicates to the UserPreferenceUpdate builder.
 func (_u *UserPreferenceUpdate) Where(ps ...predicate.UserPreference) *UserPreferenceUpdate {
 	_u.mutation.Where(ps...)
-	return _u
-}
-
-// SetUserID sets the "user_id" field.
-func (_u *UserPreferenceUpdate) SetUserID(v uuid.UUID) *UserPreferenceUpdate {
-	_u.mutation.SetUserID(v)
-	return _u
-}
-
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserPreferenceUpdate) SetNillableUserID(v *uuid.UUID) *UserPreferenceUpdate {
-	if v != nil {
-		_u.SetUserID(*v)
-	}
 	return _u
 }
 
@@ -64,20 +48,9 @@ func (_u *UserPreferenceUpdate) SetUpdatedAt(v time.Time) *UserPreferenceUpdate 
 	return _u
 }
 
-// SetUser sets the "user" edge to the UserProfile entity.
-func (_u *UserPreferenceUpdate) SetUser(v *UserProfile) *UserPreferenceUpdate {
-	return _u.SetUserID(v.ID)
-}
-
 // Mutation returns the UserPreferenceMutation object of the builder.
 func (_u *UserPreferenceUpdate) Mutation() *UserPreferenceMutation {
 	return _u.mutation
-}
-
-// ClearUser clears the "user" edge to the UserProfile entity.
-func (_u *UserPreferenceUpdate) ClearUser() *UserPreferenceUpdate {
-	_u.mutation.ClearUser()
-	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -142,35 +115,6 @@ func (_u *UserPreferenceUpdate) sqlSave(ctx context.Context) (_node int, err err
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userpreference.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if _u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   userpreference.UserTable,
-			Columns: []string{userpreference.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   userpreference.UserTable,
-			Columns: []string{userpreference.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userpreference.Label}
@@ -189,20 +133,6 @@ type UserPreferenceUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserPreferenceMutation
-}
-
-// SetUserID sets the "user_id" field.
-func (_u *UserPreferenceUpdateOne) SetUserID(v uuid.UUID) *UserPreferenceUpdateOne {
-	_u.mutation.SetUserID(v)
-	return _u
-}
-
-// SetNillableUserID sets the "user_id" field if the given value is not nil.
-func (_u *UserPreferenceUpdateOne) SetNillableUserID(v *uuid.UUID) *UserPreferenceUpdateOne {
-	if v != nil {
-		_u.SetUserID(*v)
-	}
-	return _u
 }
 
 // SetLocale sets the "locale" field.
@@ -225,20 +155,9 @@ func (_u *UserPreferenceUpdateOne) SetUpdatedAt(v time.Time) *UserPreferenceUpda
 	return _u
 }
 
-// SetUser sets the "user" edge to the UserProfile entity.
-func (_u *UserPreferenceUpdateOne) SetUser(v *UserProfile) *UserPreferenceUpdateOne {
-	return _u.SetUserID(v.ID)
-}
-
 // Mutation returns the UserPreferenceMutation object of the builder.
 func (_u *UserPreferenceUpdateOne) Mutation() *UserPreferenceMutation {
 	return _u.mutation
-}
-
-// ClearUser clears the "user" edge to the UserProfile entity.
-func (_u *UserPreferenceUpdateOne) ClearUser() *UserPreferenceUpdateOne {
-	_u.mutation.ClearUser()
-	return _u
 }
 
 // Where appends a list predicates to the UserPreferenceUpdate builder.
@@ -332,35 +251,6 @@ func (_u *UserPreferenceUpdateOne) sqlSave(ctx context.Context) (_node *UserPref
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userpreference.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.UserCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   userpreference.UserTable,
-			Columns: []string{userpreference.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.UserIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: true,
-			Table:   userpreference.UserTable,
-			Columns: []string{userpreference.UserColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &UserPreference{config: _u.config}
 	_spec.Assign = _node.assignValues

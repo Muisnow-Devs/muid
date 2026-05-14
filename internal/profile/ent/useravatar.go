@@ -27,12 +27,12 @@ type UserAvatar struct {
 	ContentType string `json:"content_type,omitempty"`
 	// ByteSize holds the value of the "byte_size" field.
 	ByteSize int64 `json:"byte_size,omitempty"`
+	// CDN URL persisted at insert when object is in the production assets bucket
+	PublicURL *string `json:"public_url,omitempty"`
 	// UploadedAt holds the value of the "uploaded_at" field.
 	UploadedAt *time.Time `json:"uploaded_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
-	// UpdatedAt holds the value of the "updated_at" field.
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the UserAvatarQuery when eager-loading is set.
 	Edges        UserAvatarEdges `json:"edges"`
@@ -66,9 +66,9 @@ func (*UserAvatar) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case useravatar.FieldByteSize:
 			values[i] = new(sql.NullInt64)
-		case useravatar.FieldObjectKey, useravatar.FieldContentType:
+		case useravatar.FieldObjectKey, useravatar.FieldContentType, useravatar.FieldPublicURL:
 			values[i] = new(sql.NullString)
-		case useravatar.FieldUploadedAt, useravatar.FieldCreatedAt, useravatar.FieldUpdatedAt:
+		case useravatar.FieldUploadedAt, useravatar.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
 		case useravatar.FieldID, useravatar.FieldUserID:
 			values[i] = new(uuid.UUID)
@@ -117,6 +117,13 @@ func (_m *UserAvatar) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ByteSize = value.Int64
 			}
+		case useravatar.FieldPublicURL:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field public_url", values[i])
+			} else if value.Valid {
+				_m.PublicURL = new(string)
+				*_m.PublicURL = value.String
+			}
 		case useravatar.FieldUploadedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field uploaded_at", values[i])
@@ -129,12 +136,6 @@ func (_m *UserAvatar) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
-			}
-		case useravatar.FieldUpdatedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
-			} else if value.Valid {
-				_m.UpdatedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -189,6 +190,11 @@ func (_m *UserAvatar) String() string {
 	builder.WriteString("byte_size=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ByteSize))
 	builder.WriteString(", ")
+	if v := _m.PublicURL; v != nil {
+		builder.WriteString("public_url=")
+		builder.WriteString(*v)
+	}
+	builder.WriteString(", ")
 	if v := _m.UploadedAt; v != nil {
 		builder.WriteString("uploaded_at=")
 		builder.WriteString(v.Format(time.ANSIC))
@@ -196,9 +202,6 @@ func (_m *UserAvatar) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
-	builder.WriteString("updated_at=")
-	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

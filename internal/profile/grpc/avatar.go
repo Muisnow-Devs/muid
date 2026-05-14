@@ -189,7 +189,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		)
 	}
 	raw, err := readAllLimited(rc, head.Size+1)
-	errutil.Discard(rc.Close())
+	errutil.Close(rc)
 	if err != nil {
 		return nil, grpcInternal(
 			ctx,

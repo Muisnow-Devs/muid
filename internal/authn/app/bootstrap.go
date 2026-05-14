@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"log"
 	"strings"
 	"time"
 
+	"entgo.io/ent/dialect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -18,15 +17,10 @@ import (
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/infra/account"
 	"sanzi.io/muid/internal/authn/infra/kv"
+	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/traceid"
 )
-
-func closeIfCloser(v any) {
-	if c, ok := v.(io.Closer); ok {
-		errutil.Discard(c.Close())
-	}
-}
 
 // NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and the identity manager.
 func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
@@ -34,7 +28,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 
 	otpSecret, err := hex.DecodeString(cfg.OTPSecretKey)
 	if err != nil {
-		closeIfCloser(redisKV)
+		errutil.CloseIf(redisKV)
 		return nil, fmt.Errorf("invalid OTP secret key: %w, should be a valid hex string", err)
 	}
 
@@ -42,29 +36,26 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 
 	pubSub, err := nats.NewNATSPubSub(cfg.NATSURL)
 	if err != nil {
-		closeIfCloser(redisKV)
+		errutil.CloseIf(redisKV)
 		return nil, fmt.Errorf("nats: %w", err)
 	}
 
 	transitionStore := kv.NewKVAuthTransitionStore(redisKV)
 
-	entClient, err := authnent.Open("pgx", cfg.DatabaseURL)
-	if err != nil {
-		closeIfCloser(pubSub)
-		closeIfCloser(redisKV)
-		return nil, fmt.Errorf("ent open: %w", err)
+	fatalCleanup := func() {
+		errutil.CloseIf(pubSub)
+		errutil.CloseIf(redisKV)
 	}
-
-	if err := entClient.Schema.Create(ctx); err != nil {
-		msg := strings.ToLower(err.Error())
-		if strings.Contains(msg, "already exists") || strings.Contains(msg, "duplicate") {
-			log.Printf("authn ent: reusing existing schema (%v)", err)
-		} else {
-			errutil.Discard(entClient.Close())
-			closeIfCloser(pubSub)
-			closeIfCloser(redisKV)
-			return nil, fmt.Errorf("authn ent schema: %w", err)
-		}
+	entClient, _, err := entpostgres.OpenEntPostgres(ctx, cfg.DatabaseURL,
+		func(d dialect.Driver) *authnent.Client {
+			return authnent.NewClient(authnent.Driver(d))
+		},
+		func(c *authnent.Client) entpostgres.SchemaMigrator { return c.Schema },
+		fatalCleanup,
+		"authn ent: ",
+	)
+	if err != nil {
+		return nil, err
 	}
 
 	var profileConn *grpc.ClientConn
@@ -76,9 +67,9 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 			grpc.WithUnaryInterceptor(traceid.UnaryClientInterceptor()),
 		)
 		if err != nil {
-			errutil.Discard(entClient.Close())
-			closeIfCloser(pubSub)
-			closeIfCloser(redisKV)
+			errutil.Close(entClient)
+			errutil.CloseIf(pubSub)
+			errutil.CloseIf(redisKV)
 			return nil, fmt.Errorf("profile grpc dial: %w", err)
 		}
 		profileCli = profilepb.NewProfileServiceClient(profileConn)
@@ -99,12 +90,10 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		accounts,
 	)
 	if err != nil {
-		if profileConn != nil {
-			errutil.Discard(profileConn.Close())
-		}
-		errutil.Discard(entClient.Close())
-		closeIfCloser(pubSub)
-		closeIfCloser(redisKV)
+		errutil.Close(profileConn)
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		errutil.CloseIf(redisKV)
 		return nil, fmt.Errorf("identity manager: %w", err)
 	}
 

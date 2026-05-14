@@ -26,6 +26,11 @@ func NewRedisKVStore(redisURL string) redis.KVStore { /* ... */ }
 func NewRedisKVStore(redisURL string) *RedisKVStore { /* ... */ }
 ```
 - **Ent 產物**：各領域自有 `internal/<領域>/ent/`，schema 在 `ent/schema/`；以 `go generate` 驅動 `ent generate`（見各目錄 `generate.go`）。
+- **PostgreSQL（`database/sql`）**：底層連線與 driver 名稱集中在 **`pkg/sqldb`**（`OpenPostgres`、`EntDriverName`）；由該套件以 side effect 註冊 jackc/pgx 的 stdlib driver。**服務 bootstrap 若需「開庫 + Ent Client + `Schema.Create`（已存在表時僅 log、其餘錯誤往上拋）」**，請用 **`pkg/entpostgres`**，避免各服務複製同一組 `CloseIf`／字串比對邏輯。
+  - **`entpostgres.OpenEntPostgres[Client io.Closer](ctx, dsn, newClient, schema, onFatalCleanup, schemaLogPrefix) (Client, *sql.DB, error)`**：`newClient` 為 `func(dialect.Driver) Client`（例如 `func(d dialect.Driver) *profileent.Client { return profileent.NewClient(profileent.Driver(d)) }`）；`schema` 為 `func(Client) entpostgres.SchemaMigrator`（通常 `func(c *T) entpostgres.SchemaMigrator { return c.Schema }`）；`onFatalCleanup` 在 **無法開啟資料庫** 或 **schema 非 idempotent 失敗** 時呼叫（前者尚無 client；後者函式內會先 `errutil.Close(client)` 再呼叫），用來關閉已建立的 Redis／NATS 等**同層已開資源**。`schemaLogPrefix` 用於「重用既有 schema」的 `log.Printf` 前綴（建議含服務語意與尾端空白，例如 `"authn ent: "`）。
+  - **`entpostgres.SchemaCreateBestEffort(ctx, m SchemaMigrator, logPrefix, opts...)`**：僅負責 `Create` 與「already exists／duplicate」略過；硬錯誤回傳 **`errors.Join(entpostgres.ErrSchemaCreate, err)`**，**不**關閉 client。
+  - **錯誤 sentinel**：`entpostgres.ErrOpenPostgres`、`entpostgres.ErrSchemaCreate`；與底層錯誤以 **`errors.Join`** 組合，bootstrap／`cmd/*` 邊界可再包一層語意或 **`errors.Is`** 辨識。
+  - 若只需 raw `*sql.DB` 而不走上述流程，仍可直接使用 `sqldb.OpenPostgres`；手動組 Ent 時以 **`entgo.io/ent/dialect`** 的 **`dialect.Postgres`** 搭配 **`entgo.io/ent/dialect/sql`** 的 **`OpenDB(dialect.Postgres, db)`** 包裝 `*sql.DB`，再傳入各領域產生碼的 **`NewClient(…, Driver(drv))`**（產生之 **`ent.Open`** 僅辨識 `mysql`／`postgres`／`sqlite3` 等名稱，**不要**把 `"pgx"` 當成該函式的 driver 名稱）。
 
 ## Protobuf 與驗證
 
@@ -136,7 +141,7 @@ func (e *InvalidSegmentError) Detail() string { return e.Field + "=" + e.Value }
 ### Ent（資料層）
 
 - **Schema**：欄位型別、索引、`edge` 與 `internal/authn/ent/schema` 風格一致（UUID 主鍵、`created_at` / `updated_at` 等，**`UserAvatar` 僅 `created_at`、無 `updated_at`**）。指向「登入使用者／帳號主體」的外鍵欄位命名為 **`user_id`**（與 Protobuf `user_id`、JSON `userId` 對齊）；Ent 產生之 Go 欄位為 **`UserID`**。
-- **遷移**：目前以 **`client.Schema.Create`** 於服務啟動時建立表（profile 服務在重啟時若表已存在會記錄 log 並略過常見的「已存在」錯誤）；正式環境建議後續導入 Atlas 或明確的 migration 流程。
+- **遷移**：目前以 **`client.Schema.Create`** 於服務啟動時建立表；重複建立時常見的「已存在」錯誤由 **`pkg/entpostgres`**（`SchemaCreateBestEffort`／`OpenEntPostgres`）統一略過並 log；正式環境建議後續導入 Atlas 或明確的 migration 流程。
 
 ## 使用者識別（user id）跨層命名
 
@@ -156,7 +161,7 @@ NATS 事件 payload 亦使用上述 Protobuf 訊息定義（例如 `api/proto/ev
 
 ### 刻意捨棄回傳值與魔術字串
 
-- **捨棄 `error`**：若語意上必須忽略（例如 `defer` 裡的 `Close`／`Rollback`），**不要**在各處重複 `_ = x()`；請用 **`pkg/errutil` 的 `Discard(err error)`**（或等價的單一集中輔助）表達「已知且刻意忽略」。若表達式可寫成**裸陳述式**（無須指派），則優先裸呼叫。
+- **捨棄 `error`**：若語意上必須忽略（例如 `defer` 裡的 `Close`／`Rollback`），**不要**在各處重複 `_ = x()`；請用 **`pkg/errutil` 的 `Discard(err error)`** 表達「已知且刻意忽略」（例如 **`Rollback()`**）。針對 **`io.Closer`** 的清理路徑使用 **`errutil.Close(c)`**（含 `nil` 安全）；對 **`any`** 做可選關閉時使用 **`errutil.CloseIf(v)`**，**不要**在各服務的 `bootstrap` 複製私有 `closeIfCloser`。若表達式可寫成**裸陳述式**（無須指派），則優先裸呼叫。
 - **魔術字串**：重複出現或承載跨套件語意的字串，改為**具名常數**、**小套件內的鍵／路徑輔助**（例如頭像 object key 見 `internal/profile/avatarkey`），或沿用既有集中處（如 **`pkg/shared/topics`**）。僅單點使用且已封裝者，可用 `func Name() string { return "literal" }` 保留字面量。
 
 - **可匯出 API**：簡潔英文，避免縮寫過度；錯誤處理對齊上文「`fmt.Errorf` 與錯誤鏈」一節（內層 sentinel／typed／`errors.Join`，頂層邊界才考慮單層包裝）。

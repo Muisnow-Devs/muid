@@ -169,7 +169,9 @@ func buildAuthChallenge(
 	case basic.AuthMethod_AUTH_METHOD_PASSKEY:
 		pc := &challenge.PasskeyChallenge{}
 		pc.SetState(step.TransitionId)
-		pc.SetPublicKeyCredentialRequestOptionsJson(step.PasskeyPublicKeyCredentialRequestOptionsJSON)
+		pc.SetPublicKeyCredentialRequestOptionsJson(
+			step.PasskeyPublicKeyCredentialRequestOptionsJSON,
+		)
 		pc.SetTimeoutMillis(step.PasskeyTimeoutMillis)
 		ch.SetPasskeyChallenge(pc)
 	default:

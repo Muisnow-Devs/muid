@@ -8,8 +8,6 @@ import (
 	"os/signal"
 	"syscall"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
-
 	"sanzi.io/muid/internal/profile/app"
 	"sanzi.io/muid/pkg/shared"
 )

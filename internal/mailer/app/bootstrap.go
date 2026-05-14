@@ -20,12 +20,6 @@ type InfraDependencies struct {
 	Templates templates.MailRenderer
 }
 
-func closeIfCloser(v any) {
-	if c, ok := v.(io.Closer); ok {
-		errutil.Discard(c.Close())
-	}
-}
-
 func (d *InfraDependencies) Close() error {
 	var errs []error
 	if d.PubSub != nil {
@@ -60,7 +54,7 @@ func NewInfra(cfg Config) (*InfraDependencies, error) {
 		SSL:      cfg.SMTPSSL,
 	})
 	if err != nil {
-		closeIfCloser(pubSub)
+		errutil.CloseIf(pubSub)
 		return nil, err
 	}
 

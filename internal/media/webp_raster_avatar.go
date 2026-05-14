@@ -13,6 +13,7 @@ import (
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+	_ "golang.org/x/image/webp"
 )
 
 // avatarOutputPixels is the max width/height of the square WebP stored on the CDN.
@@ -35,6 +36,9 @@ func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(raw []byte, contentType 
 	if !AllowedRasterContentType(contentType) {
 		return nil, &UnsupportedRasterContentTypeError{ContentType: contentType}
 	}
+	if err := validateRasterProcessInput(raw, contentType); err != nil {
+		return nil, err
+	}
 	img, _, err := image.Decode(bytes.NewReader(raw))
 	if err != nil {
 		return nil, errors.Join(ErrRasterDecodeFailed, err)
@@ -46,6 +50,28 @@ func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(raw []byte, contentType 
 		return nil, errors.Join(ErrWebPEncodeFailed, err)
 	}
 	return buf.Bytes(), nil
+}
+
+func validateRasterProcessInput(raw []byte, claimedContentType string) error {
+	if int64(len(raw)) > MaxAvatarStagingBytes {
+		return ErrRasterObjectTooLarge
+	}
+	claimed := normalizeMIME(claimedContentType)
+	kind := SniffRasterKind(raw)
+	if kind == RasterUnknown {
+		return ErrRasterSignatureInvalid
+	}
+	if rasterKindMIME(kind) != claimed {
+		return ErrRasterClaimedKindMismatch
+	}
+	if detectContentTypeDisagreesWithKind(raw, kind) {
+		return ErrRasterSniffContentTypeConflict
+	}
+	cfg, err := rasterDecodeConfig(kind, raw)
+	if err != nil {
+		return errors.Join(ErrRasterDecodeFailed, err)
+	}
+	return checkRasterConfigLimits(cfg)
 }
 
 // AllowedRasterContentType reports whether ct is a supported raster image MIME type

@@ -119,7 +119,8 @@ func (e *InvalidSegmentError) Detail() string { return e.Field + "=" + e.Value }
 
 - **跨服務／可測的處理鏈**（例如：點陣圖解碼、裁切、縮放、編碼 WebP）應放在 **`internal/<領域能力>/`** 這類「能力套件」，以 **介面** 描述行為、以 **獨立檔案** 放具體實作；gRPC／HTTP 服務只依賴介面，並在 **`bootstrap` 或 `New*App`** 注入實作（便於單元測試替換、也避免業務套件塞滿影像演算法）。
 - **命名**：本倉 avatar 管線使用 **`RasterAvatarProcessor`**（`ProcessToSquareWebP`）：語意上強調「點陣大頭貼」而非泛用任意向量或 PDF；預設實作為 **`WebPRasterAvatarProcessor`**（`internal/media`），與 Protobuf／Ent 無耦合，僅處理 bytes 與 Content-Type。可預期的像素／MIME 失敗語意見 **`internal/media/errors.go`**（例如 `ErrRasterDecodeFailed`），與 `interface.go` 同目錄。
-- **服務內常數**：與儲存流程綁定的限制（例如 staging 物件讀取上限）可留在該服務的 handler；與像素／編碼品質相關的預設則放在 `internal/media` 實作側，必要時再透過建構子或選項擴充。
+- **安全（CompleteAvatarUpload）**：以 **R2 `HeadObject` 的 `ContentLength` 為唯一權威**（客戶端 `byte_size` 僅能與其一致）；下載本體長度須與 HEAD 一致。`internal/media` 的 **`ValidateAvatarStagingObject`** 負責 magic-byte 辨識（JPEG/PNG/GIF/WebP）、對已知 raster 的 **HEAD `Content-Type` 與 sniff 交叉比對**、對前綴再跑 **`http.DetectContentType` 與 sniff 互相佐證**，並在完整 raster 解碼前以 **`DecodeConfig` + 像素上限**（見 `raster_limits.go`）阻擋異常尺寸／解壓炸彈類風險；`ProcessToSquareWebP` 內仍會再做一層處理前驗證以防繞過。
+- **服務內常數**：staging 位元組上限與像素上限以 **`internal/media` 的常數**（`MaxAvatarStagingBytes`、`MaxRasterDimension`、`MaxRasterPixelCount`）為準；profile handler 僅組裝 `AvatarStagingTrust` 與讀取邊界。
 
 ### Ent（資料層）
 

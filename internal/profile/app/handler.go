@@ -29,9 +29,6 @@ import (
 	"sanzi.io/muid/pkg/traceid"
 )
 
-// maxAvatarUploadBytes caps how much we read from the staging bucket into memory.
-const maxAvatarUploadBytes = 15 << 20
-
 func grpcInternal(ctx context.Context, reason string, err error, pairs ...string) error {
 	detail := ""
 	if err != nil {
@@ -334,14 +331,11 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 		}
 		return nil, grpcInternal(ctx, "avatar head staging", err, "bucket", g.avatars.UploadBucket, "user_id_prefix", userIDPrefix(userID.String()))
 	}
-	if head.Size != req.GetByteSize() {
-		return nil, status.Errorf(codes.InvalidArgument, "byte_size mismatch: head reports %d", head.Size)
-	}
-	if head.Size <= 0 || head.Size > maxAvatarUploadBytes {
+	if head.Size <= 0 || head.Size > media.MaxAvatarStagingBytes {
 		return nil, status.Errorf(codes.InvalidArgument, "unreasonable object size %d", head.Size)
 	}
-	if !media.AllowedRasterContentType(head.ContentType) {
-		return nil, status.Errorf(codes.InvalidArgument, "unsupported content type %q (expected raster image)", head.ContentType)
+	if req.GetByteSize() != head.Size {
+		return nil, status.Errorf(codes.InvalidArgument, "byte_size does not match object (head reports %d)", head.Size)
 	}
 
 	rc, _, err := g.avatars.Store.GetObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
@@ -351,18 +345,30 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 		}
 		return nil, grpcInternal(ctx, "avatar download staging", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
-	raw, err := readAllLimited(rc, maxAvatarUploadBytes)
+	raw, err := readAllLimited(rc, head.Size+1)
 	_ = rc.Close()
 	if err != nil {
 		return nil, grpcInternal(ctx, "avatar read staging", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
-	if int64(len(raw)) > maxAvatarUploadBytes {
-		return nil, status.Error(codes.InvalidArgument, "object too large")
+	if int64(len(raw)) != head.Size {
+		return nil, status.Error(codes.InvalidArgument, "downloaded size does not match object metadata")
 	}
 
-	webpBytes, err := g.avatarProc.ProcessToSquareWebP(raw, head.ContentType)
+	canonicalMIME, err := media.ValidateAvatarStagingObject(raw, media.AvatarStagingTrust{
+		HeadContentLength: head.Size,
+		HeadContentType:   head.ContentType,
+		ClientByteSize:    req.GetByteSize(),
+	})
 	if err != nil {
-		if errors.Is(err, media.ErrEmptyRasterInput) || errors.Is(err, media.ErrUnsupportedRasterContentType) || errors.Is(err, media.ErrRasterDecodeFailed) {
+		if isAvatarValidationErr(err) {
+			return nil, status.Error(codes.InvalidArgument, "invalid avatar image")
+		}
+		return nil, grpcInternal(ctx, "avatar staging validate", err, "user_id_prefix", userIDPrefix(userID.String()))
+	}
+
+	webpBytes, err := g.avatarProc.ProcessToSquareWebP(raw, canonicalMIME)
+	if err != nil {
+		if isAvatarValidationErr(err) {
 			return nil, status.Error(codes.InvalidArgument, "invalid avatar image")
 		}
 		return nil, grpcInternal(ctx, "avatar raster process", err, "user_id_prefix", userIDPrefix(userID.String()))
@@ -458,7 +464,33 @@ func (g *GRPCHandler) publishChange(ctx context.Context, userID, email string, c
 }
 
 func readAllLimited(r io.Reader, limit int64) ([]byte, error) {
-	return io.ReadAll(io.LimitReader(r, limit+1))
+	return io.ReadAll(io.LimitReader(r, limit))
+}
+
+func isAvatarValidationErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	switch {
+	case errors.Is(err, media.ErrEmptyRasterInput),
+		errors.Is(err, media.ErrUnsupportedRasterContentType),
+		errors.Is(err, media.ErrRasterDecodeFailed),
+		errors.Is(err, media.ErrRasterSignatureInvalid),
+		errors.Is(err, media.ErrRasterHeadContentTypeMismatch),
+		errors.Is(err, media.ErrRasterSniffContentTypeConflict),
+		errors.Is(err, media.ErrRasterBodySizeMismatchHEAD),
+		errors.Is(err, media.ErrAvatarClientSizeDisagreesWithHEAD),
+		errors.Is(err, media.ErrRasterObjectTooLarge),
+		errors.Is(err, media.ErrRasterHeadSizeInvalid),
+		errors.Is(err, media.ErrRasterDimensionsExceedLimit),
+		errors.Is(err, media.ErrRasterClaimedKindMismatch):
+		return true
+	}
+	var d media.DetailError
+	if errors.As(err, &d) {
+		return true
+	}
+	return false
 }
 
 // RunProfileSubscriber blocks, unmarshalling profile.change payloads (for side effects / fan-out).

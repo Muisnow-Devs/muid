@@ -62,8 +62,8 @@ type InfraDependencies struct {
 
 	Accounts *account.Services
 
-	entClient     *authnent.Client
-	profileConn   *grpc.ClientConn
+	entClient   *authnent.Client
+	profileConn *grpc.ClientConn
 }
 
 func (d *InfraDependencies) Close() error {

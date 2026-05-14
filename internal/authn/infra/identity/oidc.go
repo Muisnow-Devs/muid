@@ -187,7 +187,7 @@ func (p *OIDCIdentityProvider) Continue(
 	_ = p.transitionStore.Delete(ctx, sess.Id)
 
 	return idn.StepResult{
-		Type:                 idn.StepComplete,
+		Type:                idn.StepComplete,
 		AuthenticatedResult: authResult,
 	}, nil
 }

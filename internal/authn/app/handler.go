@@ -41,7 +41,10 @@ func (g *GRPCHandler) StartAuthSession(
 	ctx context.Context,
 	req *pb.StartAuthSessionRequest,
 ) (*pb.StartAuthSessionResponse, error) {
-	providerName, err := providerNameForMethod(req.GetMethod(), strings.TrimSpace(req.GetIdentifier()))
+	providerName, err := providerNameForMethod(
+		req.GetMethod(),
+		strings.TrimSpace(req.GetIdentifier()),
+	)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -230,7 +233,8 @@ func mapStartError(err error) error {
 func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, error) {
 	switch {
 	case errors.Is(err, identity.ErrOIDCManualAccountLinkingRequired):
-		return authFailureResponse(tid,
+		return authFailureResponse(
+			tid,
 			"This email is already registered without this OIDC provider. Manual account linking is required.",
 			ErrCodeOIDCManualLinkRequired,
 		), nil

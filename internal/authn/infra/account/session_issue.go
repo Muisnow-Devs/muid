@@ -32,7 +32,11 @@ func (s *Services) IssueAuthenticatedSession(
 	token := selector + "." + validatorEncoded
 
 	if len(selector) != 22 || len(validatorEncoded) != 43 {
-		return nil, fmt.Errorf("session token segments unexpected lengths %d/%d", len(selector), len(validatorEncoded))
+		return nil, fmt.Errorf(
+			"session token segments unexpected lengths %d/%d",
+			len(selector),
+			len(validatorEncoded),
+		)
 	}
 
 	sum := sha256.Sum256(validatorSecret)

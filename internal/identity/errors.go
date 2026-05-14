@@ -14,7 +14,9 @@ var (
 
 	// ErrOIDCManualAccountLinkingRequired is returned when an OIDC identity is new
 	// but the email already belongs to a manually-created (non-federated) account.
-	ErrOIDCManualAccountLinkingRequired = errors.New("muid.authn.oidc_manual_account_linking_required")
+	ErrOIDCManualAccountLinkingRequired = errors.New(
+		"muid.authn.oidc_manual_account_linking_required",
+	)
 
 	// ErrPasskeyNotLinked is returned when the presented WebAuthn credential is unknown.
 	ErrPasskeyNotLinked = errors.New("muid.authn.passkey_credential_not_linked")

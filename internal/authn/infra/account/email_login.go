@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
+	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/pkg/traceid"

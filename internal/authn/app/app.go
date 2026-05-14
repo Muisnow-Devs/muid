@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 
-	implIdentity "sanzi.io/muid/internal/authn/infra/identity"
 	"sanzi.io/muid/internal/authn/infra/account"
+	implIdentity "sanzi.io/muid/internal/authn/infra/identity"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"

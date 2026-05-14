@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 
-	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/infra/account"
+	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )
 
@@ -137,7 +137,7 @@ func (p *PasskeyProvider) Continue(
 	_ = p.transitionStore.Delete(ctx, sess.Id)
 
 	return idn.StepResult{
-		Type:                 idn.StepComplete,
+		Type:                idn.StepComplete,
 		AuthenticatedResult: authResult,
 	}, nil
 }

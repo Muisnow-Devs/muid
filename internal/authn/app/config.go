@@ -7,6 +7,7 @@ import (
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/shared/kv"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -43,31 +44,29 @@ type Config struct {
 type InfraDependencies struct {
 	GlobalConfig Config
 
-	// Add other dependencies like database connections, Redis clients, etc. here
-	OTPStore        otp.OTPStore
-	TransitionStore session.AuthTransitionStore
-	PubSub          pubsub.PubSub
-	IdentityManager *identity.IdentityManager
+	Redis kv.KVStore
+
+	OTPStore          otp.OTPStore
+	TransitionStore   session.AuthTransitionStore
+	PubSub            pubsub.PubSub
+	IdentityManager   *identity.IdentityManager
 }
 
-func closeAll(closers ...any) error {
+func (d *InfraDependencies) Close() error {
 	var errs []error
-
-	for i := len(closers) - 1; i >= 0; i-- {
-		if c, ok := closers[i].(io.Closer); ok {
+	if d.PubSub != nil {
+		if c, ok := d.PubSub.(io.Closer); ok {
 			if err := c.Close(); err != nil {
 				errs = append(errs, err)
 			}
 		}
 	}
-
+	if d.Redis != nil {
+		if c, ok := d.Redis.(io.Closer); ok {
+			if err := c.Close(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+	}
 	return errors.Join(errs...)
-}
-
-func (d *InfraDependencies) Close() error {
-	return closeAll(
-		d.OTPStore,
-		d.TransitionStore,
-		d.PubSub,
-	)
 }

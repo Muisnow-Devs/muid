@@ -2,14 +2,18 @@ package templates
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"encoding/json"
 	"fmt"
 	"maps"
 	"path/filepath"
+	"strings"
 	"sync"
 	"text/template"
 	textTemplate "text/template"
+
+	"golang.org/x/sync/errgroup"
 )
 
 const fallbackLocale = "en"
@@ -30,9 +34,8 @@ type RenderedMail struct {
 }
 
 type compiledTemplate struct {
-	html    *template.Template
-	text    *template.Template
-	subject string
+	html *template.Template
+	text *textTemplate.Template
 }
 
 type TemplateLoader struct {
@@ -44,7 +47,8 @@ type TemplateLoader struct {
 	messageCache  sync.Map
 }
 
-func NewTemplateLoader(htmlFS embed.FS, textFS embed.FS, localeFS embed.FS) *TemplateLoader {
+// NewTemplateLoader returns a [MailRenderer] backed by the given embedded filesystems.
+func NewTemplateLoader(htmlFS embed.FS, textFS embed.FS, localeFS embed.FS) MailRenderer {
 	return &TemplateLoader{
 		htmlFS:   htmlFS,
 		textFS:   textFS,
@@ -120,10 +124,11 @@ func (l *TemplateLoader) loadMessages(
 }
 
 func (l *TemplateLoader) loadTemplates(
+	locale string,
 	page string,
 	messages map[string]string,
 ) (*compiledTemplate, error) {
-	cacheKey := page
+	cacheKey := locale + ":" + page
 
 	if v, ok := l.templateCache.Load(cacheKey); ok {
 		return v.(*compiledTemplate), nil
@@ -157,9 +162,8 @@ func (l *TemplateLoader) loadTemplates(
 	}
 
 	compiled := &compiledTemplate{
-		html:    htmlTmpl,
-		text:    textTmpl,
-		subject: tFunc("subject"),
+		html: htmlTmpl,
+		text: textTmpl,
 	}
 
 	l.templateCache.Store(cacheKey, compiled)
@@ -196,38 +200,83 @@ func executeTextTemplate(
 	return buf.String(), nil
 }
 
+func (l *TemplateLoader) renderSubject(messages map[string]string, data any) (string, error) {
+	raw, ok := messages["subject"]
+	if !ok || strings.TrimSpace(raw) == "" {
+		return "", fmt.Errorf("templates: missing subject string in locale bundle")
+	}
+	tmpl, err := textTemplate.New("subject").Parse(raw)
+	if err != nil {
+		return "", fmt.Errorf("templates: parse subject: %w", err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		return "", fmt.Errorf("templates: execute subject: %w", err)
+	}
+	return strings.TrimSpace(buf.String()), nil
+}
+
 func (l *TemplateLoader) Render(
+	ctx context.Context,
 	locale string,
 	page string,
 	data any,
 ) (*RenderedMail, error) {
+	if err := validateTemplateSegment(locale, "locale"); err != nil {
+		return nil, fmt.Errorf("invalid template path: %w", err)
+	}
+
+	if err := validateTemplateSegment(page, "page"); err != nil {
+		return nil, fmt.Errorf("invalid template path: %w", err)
+	}
+
 	messages, err := l.loadMessages(locale, page)
 	if err != nil {
 		return nil, err
 	}
 
-	tmpl, err := l.loadTemplates(page, messages)
+	tmpl, err := l.loadTemplates(locale, page, messages)
 	if err != nil {
 		return nil, err
 	}
 
-	htmlBody, err := executeHTMLTemplate(tmpl.html, data)
-	if err != nil {
-		return nil, err
-	}
-
-	textBody, err := executeTextTemplate(
-		tmpl.text,
-		"base",
-		data,
+	var (
+		htmlBody string
+		textBody string
+		subject  string
 	)
-	if err != nil {
+
+	g, ctx := errgroup.WithContext(ctx)
+
+	g.Go(func() error {
+		var err error
+		htmlBody, err = executeHTMLTemplate(tmpl.html, data)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		textBody, err = executeTextTemplate(
+			tmpl.text,
+			"base",
+			data,
+		)
+		return err
+	})
+
+	g.Go(func() error {
+		var err error
+		subject, err = l.renderSubject(messages, data)
+		return err
+	})
+
+	if err := g.Wait(); err != nil {
 		return nil, err
 	}
 
 	return &RenderedMail{
 		HTML:    htmlBody,
 		Text:    textBody,
-		Subject: tmpl.subject,
+		Subject: subject,
 	}, nil
 }

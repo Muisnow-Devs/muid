@@ -1,14 +1,16 @@
 package templates
 
 import (
+	"context"
 	"testing"
 )
 
 func TestLoad(t *testing.T) {
 	loader := NewTemplateLoader(HTMLTemplatesFS, TextTemplatesFS, LocaleTemplateFS)
+	ctx := context.Background()
 
 	t.Run("Load existing template", func(t *testing.T) {
-		tmpl, err := loader.Render("en", "otp", struct {
+		tmpl, err := loader.Render(ctx, "en", "otp", struct {
 			ExpiryTime string
 			OTP        string
 		}{

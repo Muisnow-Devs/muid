@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package muid.event.v1.profile;
+
+option go_package = "sanzi.io/muid/api/proto/event/v1/profile;profileevent";
+
+// ProfileChangedEvent is published on NATS topic profile.change (see pkg/shared/topics).
+message ProfileChangedEvent {
+  string user_id = 1;
+  string email   = 2;
+
+  enum ChangeType {
+    CHANGE_TYPE_UNSPECIFIED    = 0;
+    CHANGE_TYPE_CREATED        = 1;
+    CHANGE_TYPE_UPDATED        = 2;
+    CHANGE_TYPE_AVATAR_UPDATED = 3;
+  }
+  ChangeType change_type = 3;
+
+  int64 occurred_at_unix = 4;
+}

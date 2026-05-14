@@ -3,13 +3,13 @@
 
 {{ t "description" }}
 
-{{ t "information_device" }} {{ .DeviceInfo }}
-{{ t "information_location" }} {{ .LocationInfo }}
-{{ t "information_ip" }} {{ .IPInfo }}
-{{ t "information_time" }} {{ .TimeInfo }}
+{{ t "information_device" }} {{ .Device }}
+{{ t "information_location" }} {{ .Location }}
+{{ t "information_ip" }} {{ .IPAddress }}
+{{ t "information_time" }} {{ .Time }}
 
-{{ t "additional_information_1" }}
-{{ t "additional_information_2" }}
+{{ t "additional_info_1" }}
+{{ t "additional_info_2" }}
 
-{{ t "action_secure_account" }}: {{ .ActionURL }}
+{{ t "action_text" }}: {{ .SecureAccountLink }}
 {{ end }}

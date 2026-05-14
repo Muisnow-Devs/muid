@@ -24,9 +24,10 @@ const (
 )
 
 type CreateProfileRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
-	Claims        *claims.IdentityClaims `protobuf:"bytes,2,opt,name=claims,proto3" json:"claims,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Email string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	// When absent or empty, the service assigns random display name, username, and a GitHub-style identicon URL.
+	Claims        *claims.IdentityClaims `protobuf:"bytes,2,opt,name=claims,proto3,oneof" json:"claims,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -119,18 +120,519 @@ func (x *CreateProfileResponse) GetId() string {
 	return ""
 }
 
+type GetProfileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetProfileRequest) Reset() {
+	*x = GetProfileRequest{}
+	mi := &file_profile_v1_profile_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProfileRequest) ProtoMessage() {}
+
+func (x *GetProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProfileRequest.ProtoReflect.Descriptor instead.
+func (*GetProfileRequest) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetProfileRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type GetProfileResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Id              string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email           string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	DisplayName     string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	Username        string                 `protobuf:"bytes,4,opt,name=username,proto3" json:"username,omitempty"`
+	AvatarUrl       string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	Locale          string                 `protobuf:"bytes,6,opt,name=locale,proto3" json:"locale,omitempty"`
+	AvatarObjectKey string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3" json:"avatar_object_key,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *GetProfileResponse) Reset() {
+	*x = GetProfileResponse{}
+	mi := &file_profile_v1_profile_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetProfileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetProfileResponse) ProtoMessage() {}
+
+func (x *GetProfileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetProfileResponse.ProtoReflect.Descriptor instead.
+func (*GetProfileResponse) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetProfileResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
+}
+
+func (x *GetProfileResponse) GetAvatarObjectKey() string {
+	if x != nil {
+		return x.AvatarObjectKey
+	}
+	return ""
+}
+
+type UpdateProfileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	DisplayName   *string                `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3,oneof" json:"display_name,omitempty"`
+	Locale        *string                `protobuf:"bytes,3,opt,name=locale,proto3,oneof" json:"locale,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProfileRequest) Reset() {
+	*x = UpdateProfileRequest{}
+	mi := &file_profile_v1_profile_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProfileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProfileRequest) ProtoMessage() {}
+
+func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProfileRequest.ProtoReflect.Descriptor instead.
+func (*UpdateProfileRequest) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *UpdateProfileRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetDisplayName() string {
+	if x != nil && x.DisplayName != nil {
+		return *x.DisplayName
+	}
+	return ""
+}
+
+func (x *UpdateProfileRequest) GetLocale() string {
+	if x != nil && x.Locale != nil {
+		return *x.Locale
+	}
+	return ""
+}
+
+type UpdateProfileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UpdateProfileResponse) Reset() {
+	*x = UpdateProfileResponse{}
+	mi := &file_profile_v1_profile_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UpdateProfileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UpdateProfileResponse) ProtoMessage() {}
+
+func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UpdateProfileResponse.ProtoReflect.Descriptor instead.
+func (*UpdateProfileResponse) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UpdateProfileResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type StartAvatarUploadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ContentType   string                 `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3" json:"content_type,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartAvatarUploadRequest) Reset() {
+	*x = StartAvatarUploadRequest{}
+	mi := &file_profile_v1_profile_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartAvatarUploadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartAvatarUploadRequest) ProtoMessage() {}
+
+func (x *StartAvatarUploadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartAvatarUploadRequest.ProtoReflect.Descriptor instead.
+func (*StartAvatarUploadRequest) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *StartAvatarUploadRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *StartAvatarUploadRequest) GetContentType() string {
+	if x != nil {
+		return x.ContentType
+	}
+	return ""
+}
+
+type StartAvatarUploadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3" json:"upload_url,omitempty"`
+	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	ExpiresAtUnix int64                  `protobuf:"varint,3,opt,name=expires_at_unix,json=expiresAtUnix,proto3" json:"expires_at_unix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StartAvatarUploadResponse) Reset() {
+	*x = StartAvatarUploadResponse{}
+	mi := &file_profile_v1_profile_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StartAvatarUploadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StartAvatarUploadResponse) ProtoMessage() {}
+
+func (x *StartAvatarUploadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StartAvatarUploadResponse.ProtoReflect.Descriptor instead.
+func (*StartAvatarUploadResponse) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *StartAvatarUploadResponse) GetUploadUrl() string {
+	if x != nil {
+		return x.UploadUrl
+	}
+	return ""
+}
+
+func (x *StartAvatarUploadResponse) GetObjectKey() string {
+	if x != nil {
+		return x.ObjectKey
+	}
+	return ""
+}
+
+func (x *StartAvatarUploadResponse) GetExpiresAtUnix() int64 {
+	if x != nil {
+		return x.ExpiresAtUnix
+	}
+	return 0
+}
+
+type CompleteAvatarUploadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	UserId        string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3" json:"object_key,omitempty"`
+	ByteSize      int64                  `protobuf:"varint,3,opt,name=byte_size,json=byteSize,proto3" json:"byte_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteAvatarUploadRequest) Reset() {
+	*x = CompleteAvatarUploadRequest{}
+	mi := &file_profile_v1_profile_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteAvatarUploadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteAvatarUploadRequest) ProtoMessage() {}
+
+func (x *CompleteAvatarUploadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteAvatarUploadRequest.ProtoReflect.Descriptor instead.
+func (*CompleteAvatarUploadRequest) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *CompleteAvatarUploadRequest) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *CompleteAvatarUploadRequest) GetObjectKey() string {
+	if x != nil {
+		return x.ObjectKey
+	}
+	return ""
+}
+
+func (x *CompleteAvatarUploadRequest) GetByteSize() int64 {
+	if x != nil {
+		return x.ByteSize
+	}
+	return 0
+}
+
+type CompleteAvatarUploadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	AvatarUrl     string                 `protobuf:"bytes,1,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CompleteAvatarUploadResponse) Reset() {
+	*x = CompleteAvatarUploadResponse{}
+	mi := &file_profile_v1_profile_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CompleteAvatarUploadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CompleteAvatarUploadResponse) ProtoMessage() {}
+
+func (x *CompleteAvatarUploadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_profile_v1_profile_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CompleteAvatarUploadResponse.ProtoReflect.Descriptor instead.
+func (*CompleteAvatarUploadResponse) Descriptor() ([]byte, []int) {
+	return file_profile_v1_profile_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *CompleteAvatarUploadResponse) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
 var File_profile_v1_profile_proto protoreflect.FileDescriptor
 
 const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a\x16shared/v1/claims.proto\"t\n" +
+	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a\x16shared/v1/claims.proto\"\x84\x01\n" +
 	"\x14CreateProfileRequest\x12\x1d\n" +
-	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12=\n" +
-	"\x06claims\x18\x02 \x01(\v2%.muid.shared.v1.claims.IdentityClaimsR\x06claims\"1\n" +
+	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12B\n" +
+	"\x06claims\x18\x02 \x01(\v2%.muid.shared.v1.claims.IdentityClaimsH\x00R\x06claims\x88\x01\x01B\t\n" +
+	"\a_claims\"1\n" +
 	"\x15CreateProfileResponse\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id2p\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"-\n" +
+	"\x11GetProfileRequest\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\xdc\x01\n" +
+	"\x12GetProfileResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12!\n" +
+	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12\x1a\n" +
+	"\busername\x18\x04 \x01(\tR\busername\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
+	"\x06locale\x18\x06 \x01(\tR\x06locale\x12*\n" +
+	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\"\xa6\x01\n" +
+	"\x14UpdateProfileRequest\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x122\n" +
+	"\fdisplay_name\x18\x02 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01\x18\x80\x01H\x00R\vdisplayName\x88\x01\x01\x12$\n" +
+	"\x06locale\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18 H\x01R\x06locale\x88\x01\x01B\x0f\n" +
+	"\r_display_nameB\t\n" +
+	"\a_locale\"1\n" +
+	"\x15UpdateProfileResponse\x12\x18\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"l\n" +
+	"\x18StartAvatarUploadRequest\x12!\n" +
+	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12-\n" +
+	"\fcontent_type\x18\x02 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x03\x18\x80\x01R\vcontentType\"\x81\x01\n" +
+	"\x19StartAvatarUploadResponse\x12\x1d\n" +
+	"\n" +
+	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x1d\n" +
+	"\n" +
+	"object_key\x18\x02 \x01(\tR\tobjectKey\x12&\n" +
+	"\x0fexpires_at_unix\x18\x03 \x01(\x03R\rexpiresAtUnix\"\x91\x01\n" +
+	"\x1bCompleteAvatarUploadRequest\x12!\n" +
+	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12)\n" +
+	"\n" +
+	"object_key\x18\x02 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01\x18\x80\x04R\tobjectKey\x12$\n" +
+	"\tbyte_size\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x01R\bbyteSize\"=\n" +
+	"\x1cCompleteAvatarUploadResponse\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x01 \x01(\tR\tavatarUrl2\x88\x04\n" +
 	"\x0eProfileService\x12^\n" +
-	"\rCreateProfile\x12%.muid.profile.v1.CreateProfileRequest\x1a&.muid.profile.v1.CreateProfileResponseB\xad\x01\n" +
+	"\rCreateProfile\x12%.muid.profile.v1.CreateProfileRequest\x1a&.muid.profile.v1.CreateProfileResponse\x12U\n" +
+	"\n" +
+	"GetProfile\x12\".muid.profile.v1.GetProfileRequest\x1a#.muid.profile.v1.GetProfileResponse\x12^\n" +
+	"\rUpdateProfile\x12%.muid.profile.v1.UpdateProfileRequest\x1a&.muid.profile.v1.UpdateProfileResponse\x12j\n" +
+	"\x11StartAvatarUpload\x12).muid.profile.v1.StartAvatarUploadRequest\x1a*.muid.profile.v1.StartAvatarUploadResponse\x12s\n" +
+	"\x14CompleteAvatarUpload\x12,.muid.profile.v1.CompleteAvatarUploadRequest\x1a-.muid.profile.v1.CompleteAvatarUploadResponseB\xad\x01\n" +
 	"\x13com.muid.profile.v1B\fProfileProtoP\x01Z*sanzi.io/muid/api/proto/profile/v1;profile\xa2\x02\x03MPX\xaa\x02\x0fMuid.Profile.V1\xca\x02\x0fMuid\\Profile\\V1\xe2\x02\x1bMuid\\Profile\\V1\\GPBMetadata\xea\x02\x11Muid::Profile::V1b\x06proto3"
 
 var (
@@ -145,21 +647,37 @@ func file_profile_v1_profile_proto_rawDescGZIP() []byte {
 	return file_profile_v1_profile_proto_rawDescData
 }
 
-var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_profile_v1_profile_proto_goTypes = []any{
-	(*CreateProfileRequest)(nil),  // 0: muid.profile.v1.CreateProfileRequest
-	(*CreateProfileResponse)(nil), // 1: muid.profile.v1.CreateProfileResponse
-	(*claims.IdentityClaims)(nil), // 2: muid.shared.v1.claims.IdentityClaims
+	(*CreateProfileRequest)(nil),         // 0: muid.profile.v1.CreateProfileRequest
+	(*CreateProfileResponse)(nil),        // 1: muid.profile.v1.CreateProfileResponse
+	(*GetProfileRequest)(nil),            // 2: muid.profile.v1.GetProfileRequest
+	(*GetProfileResponse)(nil),           // 3: muid.profile.v1.GetProfileResponse
+	(*UpdateProfileRequest)(nil),         // 4: muid.profile.v1.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),        // 5: muid.profile.v1.UpdateProfileResponse
+	(*StartAvatarUploadRequest)(nil),     // 6: muid.profile.v1.StartAvatarUploadRequest
+	(*StartAvatarUploadResponse)(nil),    // 7: muid.profile.v1.StartAvatarUploadResponse
+	(*CompleteAvatarUploadRequest)(nil),  // 8: muid.profile.v1.CompleteAvatarUploadRequest
+	(*CompleteAvatarUploadResponse)(nil), // 9: muid.profile.v1.CompleteAvatarUploadResponse
+	(*claims.IdentityClaims)(nil),        // 10: muid.shared.v1.claims.IdentityClaims
 }
 var file_profile_v1_profile_proto_depIdxs = []int32{
-	2, // 0: muid.profile.v1.CreateProfileRequest.claims:type_name -> muid.shared.v1.claims.IdentityClaims
-	0, // 1: muid.profile.v1.ProfileService.CreateProfile:input_type -> muid.profile.v1.CreateProfileRequest
-	1, // 2: muid.profile.v1.ProfileService.CreateProfile:output_type -> muid.profile.v1.CreateProfileResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	10, // 0: muid.profile.v1.CreateProfileRequest.claims:type_name -> muid.shared.v1.claims.IdentityClaims
+	0,  // 1: muid.profile.v1.ProfileService.CreateProfile:input_type -> muid.profile.v1.CreateProfileRequest
+	2,  // 2: muid.profile.v1.ProfileService.GetProfile:input_type -> muid.profile.v1.GetProfileRequest
+	4,  // 3: muid.profile.v1.ProfileService.UpdateProfile:input_type -> muid.profile.v1.UpdateProfileRequest
+	6,  // 4: muid.profile.v1.ProfileService.StartAvatarUpload:input_type -> muid.profile.v1.StartAvatarUploadRequest
+	8,  // 5: muid.profile.v1.ProfileService.CompleteAvatarUpload:input_type -> muid.profile.v1.CompleteAvatarUploadRequest
+	1,  // 6: muid.profile.v1.ProfileService.CreateProfile:output_type -> muid.profile.v1.CreateProfileResponse
+	3,  // 7: muid.profile.v1.ProfileService.GetProfile:output_type -> muid.profile.v1.GetProfileResponse
+	5,  // 8: muid.profile.v1.ProfileService.UpdateProfile:output_type -> muid.profile.v1.UpdateProfileResponse
+	7,  // 9: muid.profile.v1.ProfileService.StartAvatarUpload:output_type -> muid.profile.v1.StartAvatarUploadResponse
+	9,  // 10: muid.profile.v1.ProfileService.CompleteAvatarUpload:output_type -> muid.profile.v1.CompleteAvatarUploadResponse
+	6,  // [6:11] is the sub-list for method output_type
+	1,  // [1:6] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_profile_v1_profile_proto_init() }
@@ -167,13 +685,15 @@ func file_profile_v1_profile_proto_init() {
 	if File_profile_v1_profile_proto != nil {
 		return
 	}
+	file_profile_v1_profile_proto_msgTypes[0].OneofWrappers = []any{}
+	file_profile_v1_profile_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_profile_v1_profile_proto_rawDesc), len(file_profile_v1_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

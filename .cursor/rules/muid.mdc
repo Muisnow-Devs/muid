@@ -1,0 +1,99 @@
+---
+description: muid repo non-negotiables (Go, gRPC, infra, Ent, protobuf)
+alwaysApply: true
+---
+
+# muid project rules
+
+## Engineering principles
+
+- **Reuse before duplication:** extend or refactor shared helpers and existing modules (e.g. `pkg/*`, `infra/*`). Do **not** add a parallel “smaller duplicate” for the same concern (second HTTP client wrapper, second validation layer, …) unless the same change migrates callers off the old path.
+- **Simple, obvious design:** prefer straightforward control flow, shallow modules, and clear data ownership; avoid clever patterns that hide behavior.
+- **Names and splits:** name files, functions, and packages after domain behavior; split oversized files by concern when readability or debugging suffers.
+- **Flat control flow:** prefer early returns, small private functions, typed handlers (`TopicHandler`-style), and composition helpers (`pkg/entpostgres.OpenEntPostgres`-style) over deeply nested lambdas or goroutine callbacks. Treat deep nesting as a smell—flatten when the logic is hard to follow at a glance (guideline, not a tool rule).
+
+## Module and API surface
+
+- Go module: `sanzi.io/muid`. Generated API stubs: `sanzi.io/muid/api` (`replace` → `./api`).
+- Protobuf: `api/proto/`, Buf `buf.yaml` / `buf.gen.yaml`. Go plugin uses **opaque API** (`default_api_level=API_OPAQUE` in `buf.gen.yaml`).
+- **Message construction:** prefer `msg := &pb.Foo{}` then `SetBar(...)`, `GetBar()`, `HasBar()`; nested messages via `SetBaz(&pb.Baz{})`. Do not use `new(pb.Foo)` for generated messages; avoid generated `*_builder` as the default style.
+
+## `infra/*` layout
+
+- Each backend package: **`infra/<name>/interface.go`** — **only** exported interfaces, type aliases, and small config structs. **No implementations** in that file.
+- Implementations live in other files in the same directory (e.g. `objectstore.go`, `kvstore.go`). **Never** name an implementation file `interface.go`.
+- **Expected errors** for a package: colocate **`errors.go`** next to **`interface.go`** using `var Err…` and/or small typed errors with `errors.Is` / `errors.As`. Do not invent empty `errors.go` files when there is no stable error contract.
+
+## Authn-specific infrastructure
+
+- Generic drivers stay in **`infra/`** (redis, nats, smtp, r2, mocked, …).
+- Authn-coupled pieces (OTP, transition session, identity providers) live under **`internal/authn/infra/`** (`kv/`, `identity/`), not top-level `infra/`.
+
+## Transition store typing
+
+- **`internal/session`**: `SessionStore` discriminates with **`AuthFlowKind`** (`email_otp`, `oidc`, `passkey`) and typed pointers **`Email`**, **`OIDC`**, **`Passkey`** — not `map[string]any` for transition state.
+- Redis implementation: **`internal/authn/infra/kv`**. **`internal/identity`**: `IdentityProvider`; routing in **`internal/authn/app`** (e.g. `ContinueAuthSession`).
+
+## Account service and Profile gRPC
+
+- **`internal/authn/infra/account`**: user refs, federated identity, **`CreateProfile`** via Profile gRPC when configured (`AUTHN_PROFILE_GRPC_ADDR`, timeout `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`).
+- Profile client dial uses **`traceid.UnaryClientInterceptor()`** so **`x-trace-id`** is forwarded downstream.
+
+## gRPC interceptors (unary server)
+
+Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go`**:
+
+1. `grpcutils.TraceUnaryInterceptor`
+2. `UnaryProtovalidateInterceptor()` from **`pkg/grpc_utils`** (`buf.build/go/protovalidate`)
+3. `grpcutils.RecoveryInterceptor`
+4. `grpcutils.LoggerInterceptor`
+5. `grpcutils.TimeoutInterceptor` driven by `*_REQUEST_TIMEOUT_SECONDS` in service config
+
+## Protovalidate
+
+- **`pkg/grpc_utils.UnaryProtovalidateInterceptor`**: on rule violations → **`codes.InvalidArgument`** with fixed message **`request validation failed`**; log includes **`trace_id`** and full violation text — **do not** put raw violations in the status message. Non-validation failures from the validator → log + internal path consistent with that file.
+
+## Trace id
+
+- **`pkg/traceid`**: `FromContext` / `TraceIDFromContext`, `With`.
+- Server: metadata **`x-trace-id`** then **`x-request-id`**; else new id (`pkg/traceid` + `pkg/shared` UUID v7).
+- Unexpected errors: **`traceid.LogUnexpected`** with short `reason`, safe `detail`, and **non-sensitive** key/value pairs only.
+- Handlers: unexpected domain failures → **`grpcutils.GRPCInternalError()`** (`internal error`), aligned with recovery behavior.
+
+## Errors (inner vs boundary)
+
+- Inner layers: prefer **sentinels**, **typed errors**, **`errors.Join`** — avoid deep `fmt.Errorf("%w", …)` chains. Single top-level boundaries (`cmd/*/main`, similar) may wrap once for operational context.
+- Stable semantics (e.g. `storage.ErrObjectNotFound`): return the sentinel directly unless that layer is the intentional wrapping boundary.
+
+## PostgreSQL and Ent
+
+- **`pkg/sqldb`**: `OpenPostgres`, `EntDriverName()` (`pgx` stdlib registration via import).
+- **`pkg/entpostgres`**: `OpenEntPostgres`, `SchemaCreateBestEffort`, sentinels `ErrOpenPostgres`, `ErrSchemaCreate` (often combined with **`errors.Join`**).
+- Ent schemas per service under **`internal/<service>/ent/schema`**, generate via **`go generate`** in **`internal/<service>/ent/generate.go`**.
+
+## Profile conventions
+
+- gRPC handlers and helpers: package **`profilegrpc`**, directory **`internal/profile/grpc`** (not `internal/profile/handler`).
+- NATS: **`internal/profile/subscriber`** (e.g. `profile.change` → `ProfileChangedEvent`).
+- Partial updates: **`google.protobuf.FieldMask`** + optional **`IdentityInformation`**; canonical paths **`identity.<proto snake_case field>`** — logic in **`internal/profile/updatemask`**; mutators registered from **`internal/profile/grpc`** (`profilePatchRegistry` / related).
+- **`api/proto/shared/v1/claims.proto`**: **`IdentityInformation`** is the shared shape for OIDC, create/update, and event **`changes`**; timestamps as **`google.protobuf.Timestamp`** where used.
+- **Usernames:** proto `buf.validate` + **`pkg/validation.ValidUsername`** / **`UsernameCharsetRegex`** (`^[a-zA-Z0-9_]{5,32}$`); storage normalization uses **`strings.ToLower`** where implemented.
+- **UserAvatar:** append-only (**INSERT** only for new visible rows; display rule max `id` among rows with **`uploaded_at` set**). Staging rows excluded from display selection. **`internal/profile/avataringest`** for async OIDC/bootstrap avatar pipeline — **not** awaited inside `CreateProfile` RPC handler.
+
+## NATS and mailer
+
+- Pub/sub contract: **`pkg/shared/pubsub.PubSub`**; NATS impl **`infra/nats`** (subscriber context gets **`traceid.With`**).
+- Topics: **`pkg/shared/topics`** (`Topic` types, `domain.action` style strings).
+- Mailer: **`internal/mailer/handlers.TopicHandler`** — `Topic()`, `SubscribeOptions()`, `Handle(ctx, deps, payload []byte) error`; register via **`RegisterTopicHandlers`**. Per-event code under **`internal/mailer/handlers/<event>/`**; **`internal/mailer/app`** wires infra and subscribers only.
+
+## Cleanup helpers
+
+- **`errutil.Discard`**: intentional ignore (e.g. defer after failure). **`errutil.Close`** / **`errutil.CloseIf`**: `io.Closer` cleanup — do not copy private `closeIf` helpers per service.
+
+## Factories returning interfaces
+
+- When a constructor returns something that should only be used through a project interface (e.g. `kv.KVStore`, `r2.ObjectStore`, `mailer.Mailer`), **return that interface type**, not `*Concrete`.
+
+## Testing
+
+- **Table-driven** tests with **`t.Parallel()`** where safe; subtests **`t.Run`**. Packages like **`internal/profile/updatemask`** stay free of Ent/DB imports for fast unit tests.

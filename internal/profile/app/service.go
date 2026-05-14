@@ -26,6 +26,7 @@ func NewProfileGRPC(config Config, handler pb.ProfileServiceServer) (*ProfileGRP
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
+			grpcutils.TraceUnaryInterceptor,
 			grpcutils.RecoveryInterceptor,
 			grpcutils.LoggerInterceptor,
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),

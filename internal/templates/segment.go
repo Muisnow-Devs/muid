@@ -1,30 +1,22 @@
 package templates
 
-import (
-	"errors"
-	"fmt"
-	"strings"
-)
-
-// ErrInvalidTemplatePath indicates locale or page identifiers that are unsafe
-// for embedding in embedded template paths (e.g. path traversal).
-var ErrInvalidTemplatePath = errors.New("templates: invalid template path")
+import "strings"
 
 func validateTemplateSegment(s, field string) error {
 	if s == "" {
-		return fmt.Errorf("templates: invalid %s: empty: %w", field, ErrInvalidTemplatePath)
+		return &InvalidTemplateSegmentError{Field: field, Value: s, Reason: "empty"}
 	}
 
 	if s == "." || s == ".." {
-		return fmt.Errorf("templates: invalid %s %q: %w", field, s, ErrInvalidTemplatePath)
+		return &InvalidTemplateSegmentError{Field: field, Value: s, Reason: "dot_segment"}
 	}
 
 	if strings.ContainsAny(s, "/\\\x00") {
-		return fmt.Errorf("templates: invalid %s %q: %w", field, s, ErrInvalidTemplatePath)
+		return &InvalidTemplateSegmentError{Field: field, Value: s, Reason: "path_separator"}
 	}
 
 	if strings.Contains(s, "..") {
-		return fmt.Errorf("templates: invalid %s %q: %w", field, s, ErrInvalidTemplatePath)
+		return &InvalidTemplateSegmentError{Field: field, Value: s, Reason: "double_dot"}
 	}
 
 	return nil

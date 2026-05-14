@@ -3,6 +3,7 @@ package r2
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -12,6 +13,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	smhttp "github.com/aws/smithy-go/transport/http"
+
+	"sanzi.io/muid/pkg/shared/storage"
 )
 
 // R2ObjectStore uses the Cloudflare R2 S3-compatible API (any single-account endpoint).
@@ -43,6 +47,17 @@ func NewR2ObjectStore(ctx context.Context, accountID, accessKeyID, secretAccessK
 	}, nil
 }
 
+func mapS3NotFound(err error) error {
+	if err == nil {
+		return nil
+	}
+	var re *smhttp.ResponseError
+	if errors.As(err, &re) && re.HTTPStatusCode() == 404 {
+		return storage.ErrObjectNotFound
+	}
+	return err
+}
+
 func (r *R2ObjectStore) PresignPut(ctx context.Context, bucket, objectKey, contentType string, exp time.Duration) (string, time.Time, error) {
 	out, err := r.presign.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
@@ -50,7 +65,7 @@ func (r *R2ObjectStore) PresignPut(ctx context.Context, bucket, objectKey, conte
 		ContentType: aws.String(contentType),
 	}, s3.WithPresignExpires(exp))
 	if err != nil {
-		return "", time.Time{}, err
+		return "", time.Time{}, mapS3NotFound(err)
 	}
 	return out.URL, time.Now().Add(exp), nil
 }
@@ -61,7 +76,7 @@ func (r *R2ObjectStore) HeadObject(ctx context.Context, bucket, objectKey string
 		Key:    aws.String(objectKey),
 	})
 	if err != nil {
-		return ObjectHead{}, err
+		return ObjectHead{}, mapS3NotFound(err)
 	}
 	var h ObjectHead
 	if out.ContentLength != nil {
@@ -79,7 +94,7 @@ func (r *R2ObjectStore) GetObject(ctx context.Context, bucket, objectKey string)
 		Key:    aws.String(objectKey),
 	})
 	if err != nil {
-		return nil, ObjectHead{}, err
+		return nil, ObjectHead{}, mapS3NotFound(err)
 	}
 	var h ObjectHead
 	if out.ContentLength != nil {

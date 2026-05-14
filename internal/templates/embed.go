@@ -5,6 +5,7 @@ import (
 	"context"
 	"embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"path/filepath"
@@ -203,15 +204,15 @@ func executeTextTemplate(
 func (l *TemplateLoader) renderSubject(messages map[string]string, data any) (string, error) {
 	raw, ok := messages["subject"]
 	if !ok || strings.TrimSpace(raw) == "" {
-		return "", fmt.Errorf("templates: missing subject string in locale bundle")
+		return "", ErrMissingSubjectInLocaleBundle
 	}
 	tmpl, err := textTemplate.New("subject").Parse(raw)
 	if err != nil {
-		return "", fmt.Errorf("templates: parse subject: %w", err)
+		return "", errors.Join(ErrTemplateSubjectParseFailed, err)
 	}
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, data); err != nil {
-		return "", fmt.Errorf("templates: execute subject: %w", err)
+		return "", errors.Join(ErrTemplateSubjectExecFailed, err)
 	}
 	return strings.TrimSpace(buf.String()), nil
 }
@@ -223,11 +224,11 @@ func (l *TemplateLoader) Render(
 	data any,
 ) (*RenderedMail, error) {
 	if err := validateTemplateSegment(locale, "locale"); err != nil {
-		return nil, fmt.Errorf("invalid template path: %w", err)
+		return nil, err
 	}
 
 	if err := validateTemplateSegment(page, "page"); err != nil {
-		return nil, fmt.Errorf("invalid template path: %w", err)
+		return nil, err
 	}
 
 	messages, err := l.loadMessages(locale, page)

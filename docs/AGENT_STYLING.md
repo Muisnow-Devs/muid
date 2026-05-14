@@ -29,9 +29,61 @@ func NewRedisKVStore(redisURL string) *RedisKVStore { /* ... */ }
 
 ## gRPC
 
-- **攔截器鏈**：與 `internal/authn/app/service.go` 相同，使用 `pkg/grpc_utils` 的 `RecoveryInterceptor`、`LoggerInterceptor`、`TimeoutInterceptor`。
+- **攔截器鏈**：與 `internal/authn/app/service.go` 相同，使用 `pkg/grpc_utils` 的 **`TraceUnaryInterceptor`**（注入 trace id，見 `pkg/traceid`）、`RecoveryInterceptor`、`LoggerInterceptor`、`TimeoutInterceptor`。
 - **逾時**：由設定的 `*_REQUEST_TIMEOUT_SECONDS`（authn 為 `AUTHN_`，profile 為 `PROFILE_`）控制。
-- **錯誤**：優先使用 `google.golang.org/grpc/status` 的標準 codes（例如 `InvalidArgument`、`NotFound`、`AlreadyExists`、`FailedPrecondition`）。
+- **錯誤**：優先使用 `google.golang.org/grpc/status` 的標準 codes（例如 `InvalidArgument`、`NotFound`、`AlreadyExists`、`FailedPrecondition`）。**非預期**失敗回傳客戶端時應使用固定、不洩漏內部細節的訊息（例如 `internal error`），細節僅寫入伺服器 log（見下文「錯誤處理與 trace id」）。
+
+## 錯誤處理與 trace id
+
+### `fmt.Errorf` 與錯誤鏈（專案慣例）
+
+- **避免**在內層到處使用 `fmt.Errorf("...: %w", err)` 疊上下文；內層優先回傳 **sentinel**（`var ErrFoo = errors.New(...)`）、**實作小型介面的型別錯誤**（例如帶 `Detail() string` 的驗證／網域錯誤）、或 **不額外包裝的底層錯誤**。需要多個獨立失敗時使用 **`errors.Join(err1, err2, ...)`**，不要用多層 `fmt.Errorf` 假裝「多原因」。
+- **單一頂層邊界**（例如 `cmd/*/main.go` 啟動流程、對外 RPC 邊界）若需標註「整體作業」語意，**允許**一層 `fmt.Errorf("load config: %w", err)` 之類的包裝；內層業務／infra 套件則應收斂到 sentinel／typed error／`errors.Join`。
+- **語意穩定**的錯誤（例如 `storage.ErrObjectNotFound`）：**直接回傳** sentinel，不要為了型別一致再 `%w` 包一層，除非該層就是上述「單一頂層邊界」且需要作業名稱。
+- **需要結構化細節的預期錯誤**：在對應 **`errors.go`**（與 `interface.go` 同目錄者優先）定義 **型別 + 小介面**（例如 `Detail() string`），不要只靠 `fmt.Errorf` 字串承載可程式化解讀的內容。
+
+**範例（多原因）**
+
+```go
+return errors.Join(ErrWriteIndex, errFlush, errSync)
+```
+
+**範例（預期失敗 + 底層原因，內層）**
+
+```go
+return errors.Join(ErrMalformedMailEventPayload, err) // errors.Is(..., ErrMalformedMailEventPayload) 仍成立
+```
+
+**範例（帶安全細節的型別錯誤，示意）**
+
+```go
+type InvalidSegmentError struct { Field, Value string }
+
+func (e *InvalidSegmentError) Error() string { /* 固定前綴 + 欄位 */ return "..." }
+func (e *InvalidSegmentError) Unwrap() error { return ErrInvalidTemplatePath }
+func (e *InvalidSegmentError) Detail() string { return e.Field + "=" + e.Value }
+```
+
+### `errors.go` 與 `interface.go`
+
+- 凡在套件根目錄以 **`interface.go`** 定義對外合約（介面／型別別名）者，**預期可由呼叫端辨識的失敗**應集中在同目錄的 **`errors.go`**：以 `var ErrFoo = errors.New(...)` 或必要時小型 `type ValidationError struct`／`DetailError` 介面與實作型別等形式宣告；呼叫端以 **`errors.Is`／`errors.As`** 辨識，**不要**把預期語意散落在魔術字串比對。
+- **非預期**錯誤（I/O、第三方 SDK、程式缺陷）不強制新增 sentinel；應在邊界 **log** 後對外回傳 **泛用**錯誤（見下節）。若套件極小且沒有「可預期失敗」語意，**不要**為了慣例硬加空的 `errors.go`。
+
+### 預期 vs 非預期
+
+- **預期**：業務規則或輸入可預見的拒絕（例如範本路徑不合法、Protobuf 無法反序列化為約定訊息、物件不存在且屬合約內語意）。使用 sentinel／typed error，對 **gRPC** 對應適當 **codes** 與**穩定、不含敏感資料**的訊息（可略具體若已是公開合約）。
+- **非預期**：資料庫／網路／儲存等未預期失敗。在 **handler 或最靠近邊界處** 以 **`pkg/traceid.LogUnexpected`**（或等價格式）記錄：`reason`（短）、`detail`（安全內部字串，通常為 `err.Error()`）、以及成對的 **非敏感** 索引欄位（例如 `topic=...`、`user_id_prefix=...` 前綴八碼、bucket 名稱），**不得**記錄秘密、token、完整 payload。對 **客戶端** 只回傳泛用訊息與 `Internal`（或適當 code），**不要**回傳 stack、不要回傳原始 `err.Error()`。
+
+### Trace id
+
+- **進入點**：`pkg/traceid` 提供 **`TraceIDFromContext`**（與 **`FromContext`** 同義）及 **`With`**。gRPC 上由 **`grpcutils.TraceUnaryInterceptor`** 注入：優先讀取 metadata **`x-trace-id`**、其次 **`x-request-id`**；皆無則產生新的 UUID 字串。
+- **NATS 等無上游 metadata 的訊息**：`infra/nats` 對每則訊息以新 UUID 寫入 context，使訂閱端 log 仍能帶上 **`trace_id`**。
+- **日誌格式範例**（非預期）：`unexpected trace_id=<id> reason=<短原因> detail=<內部說明> topic=mail.send.otp`（鍵值對可增減）。`pkg/grpc_utils` 的 **`LoggerInterceptor`** 會在 method 日誌附帶 **`trace_id=`**。
+
+### Handler 與 gRPC 回應
+
+- Profile 等 gRPC handler 對非預期錯誤應透過 **`grpcutils.GRPCInternalError()`**（或等價）回傳 **`codes.Internal`** 與固定英文 **`internal error`**，與 **`RecoveryInterceptor`** 對 panic 的客戶端回應一致。
+- Mailer 主題處理：`internal/mailer/handlers` 內 **`ErrMalformedMailEventPayload`** 等為預期錯誤根因（常與底層 `proto.Unmarshal` 以 **`errors.Join`** 合併）；SMTP 非驗證類失敗以 **`errors.Join(mailer.ErrEmailSendFailed, err)`** 保留語意並由基礎設施層 log。
 
 ## 設定（環境變數）
 
@@ -46,14 +98,14 @@ func NewRedisKVStore(redisURL string) *RedisKVStore { /* ... */ }
 - **NATS 實作**：`infra/nats`（`NewNATSPubSub`）。
 - **Redis KV**：`infra/redis`（`NewRedisKVStore`）；測試用記憶體實作在 `infra/mocked`（`NewMockKVStore`）。
 - **SMTP 寄信**：郵件合約在 `pkg/shared/mailer`；SMTP 傳輸實作在 `infra/smtp`（`NewSMTPMailer`）。
-- **物件儲存（S3 / R2）**：合約在 **`infra/r2`** 的 `interface.go`（`ObjectStore`、`ObjectHead`）；R2 實作為同套件 `objectstore.go` 的 `NewR2ObjectStore`（同一組帳號憑證，呼叫時傳入不同 bucket 名稱以區隔暫存與正式資產）；公開 URL 拼接見 `public_url.go` 的 `PublicObjectURL`。
+- **物件儲存（S3 / R2）**：合約在 **`infra/r2`** 的 `interface.go`（`ObjectStore`、`ObjectHead`）；R2 實作為同套件 `objectstore.go` 的 `NewR2ObjectStore`（同一組帳號憑證，呼叫時傳入不同 bucket 名稱以區隔暫存與正式資產）；公開 URL 拼接見 `public_url.go` 的 `PublicObjectURL`。HTTP 404／物件不存在時實作會回傳 **`pkg/shared/storage.ErrObjectNotFound`**（見同模組 **`errors.go`**），供 handler 對應為客戶端安全訊息。
 - **主題常數**：`pkg/shared/topics` 底下依領域分檔（如 `mail.go`、`profile.go`），字串格式為 **`domain.action`** 或更細的階層（參考 `mail.send.otp` 與 `profile.change`）。
 - **Payload**：與 `internal/authn/infra/identity/email.go` 相同，使用 **Protobuf 序列化**（`google.golang.org/protobuf/proto.Marshal`）後再發布。
 
 ## 郵件範本（mailer）
 
 - **內嵌資源**：`internal/templates` 以 `go:embed` 提供 `layouts/`、`pages/<名稱>/content.html|txt` 與 `locales/<語系>/<頁面>.json`。
-- **`locale`／`page` 安全**：`Render` 會驗證兩者為單一路徑區段（拒絕空字串、`.`、`..`、含 `..` 子字串、斜線、反斜線與 NUL），避免目錄逃出嵌入範本樹；可偵測錯誤根因為 `templates.ErrInvalidTemplatePath`。
+- **`locale`／`page` 安全**：`Render` 會驗證兩者為單一路徑區段（拒絕空字串、`.`、`..`、含 `..` 子字串、斜線、反斜線與 NUL），避免目錄逃出嵌入範本樹；可偵測錯誤根因為同套件 **`errors.go`** 內之 `templates.ErrInvalidTemplatePath`（與 `interface.go` 同目錄）。
 - **渲染**：`NewTemplateLoader` 回傳 `MailRenderer`；`internal/mailer/handlers` 透過 `TopicHandler` 訂閱 `mail.send.*` 主題後以 `Render(locale, page, data)` 產出 HTML／純文字／主旨，再填入 `pkg/shared/mailer.Message` 交 `infra/smtp` 寄送。
 
 ### Mailer 多事件版面（multi-event layout）
@@ -66,7 +118,7 @@ func NewRedisKVStore(redisURL string) *RedisKVStore { /* ... */ }
 ### 領域模組 vs 服務專屬程式（domain modules）
 
 - **跨服務／可測的處理鏈**（例如：點陣圖解碼、裁切、縮放、編碼 WebP）應放在 **`internal/<領域能力>/`** 這類「能力套件」，以 **介面** 描述行為、以 **獨立檔案** 放具體實作；gRPC／HTTP 服務只依賴介面，並在 **`bootstrap` 或 `New*App`** 注入實作（便於單元測試替換、也避免業務套件塞滿影像演算法）。
-- **命名**：本倉 avatar 管線使用 **`RasterAvatarProcessor`**（`ProcessToSquareWebP`）：語意上強調「點陣大頭貼」而非泛用任意向量或 PDF；預設實作為 **`WebPRasterAvatarProcessor`**（`internal/media`），與 Protobuf／Ent 無耦合，僅處理 bytes 與 Content-Type。
+- **命名**：本倉 avatar 管線使用 **`RasterAvatarProcessor`**（`ProcessToSquareWebP`）：語意上強調「點陣大頭貼」而非泛用任意向量或 PDF；預設實作為 **`WebPRasterAvatarProcessor`**（`internal/media`），與 Protobuf／Ent 無耦合，僅處理 bytes 與 Content-Type。可預期的像素／MIME 失敗語意見 **`internal/media/errors.go`**（例如 `ErrRasterDecodeFailed`），與 `interface.go` 同目錄。
 - **服務內常數**：與儲存流程綁定的限制（例如 staging 物件讀取上限）可留在該服務的 handler；與像素／編碼品質相關的預設則放在 `internal/media` 實作側，必要時再透過建構子或選項擴充。
 
 ### Ent（資料層）
@@ -90,7 +142,7 @@ NATS 事件 payload 亦使用上述 Protobuf 訊息定義（例如 `api/proto/ev
 
 ## 命名與程式風格（Go）
 
-- **可匯出 API**：簡潔英文，避免縮寫過度；錯誤用 `fmt.Errorf` 包裝上下文。
+- **可匯出 API**：簡潔英文，避免縮寫過度；錯誤處理對齊上文「`fmt.Errorf` 與錯誤鏈」一節（內層 sentinel／typed／`errors.Join`，頂層邊界才考慮單層包裝）。
 - **gRPC handler**：實作對應的 `Unimplemented*Server` 嵌入型別，避免 forward-compat 編譯問題。
 - **註解**：僅在商業規則或非顯而易見的整合點（例如 R2 presign、identicon 策略）加上短說明即可。
 

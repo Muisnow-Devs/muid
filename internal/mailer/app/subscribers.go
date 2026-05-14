@@ -1,8 +1,6 @@
 package app
 
 import (
-	"fmt"
-
 	"sanzi.io/muid/internal/mailer/handlers"
 	"sanzi.io/muid/internal/mailer/handlers/loginalert"
 	"sanzi.io/muid/internal/mailer/handlers/otp"
@@ -17,7 +15,7 @@ func RegisterSubscribers(infra *InfraDependencies) error {
 		otp.Handler{},
 		loginalert.Handler{},
 	); err != nil {
-		return fmt.Errorf("topic handlers: %w", err)
+		return err
 	}
 	return nil
 }

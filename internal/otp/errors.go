@@ -8,10 +8,10 @@ import (
 var (
 	ErrOTPAuthFailed = errors.New("otp: authentication failed")
 
-	ErrOTPNotFound     = fmt.Errorf("%w: OTP not found or expired", ErrOTPAuthFailed)
-	ErrOTPInvalid      = fmt.Errorf("%w: invalid OTP", ErrOTPAuthFailed)
-	ErrOTPExpired      = fmt.Errorf("%w: OTP has expired", ErrOTPAuthFailed)
-	ErrTooManyAttempts = fmt.Errorf("%w: too many OTP verification attempts", ErrOTPAuthFailed)
+	ErrOTPNotFound     = fmt.Errorf("otp: OTP not found: %w", ErrOTPAuthFailed)
+	ErrOTPInvalid      = fmt.Errorf("otp: invalid OTP: %w", ErrOTPAuthFailed)
+	ErrOTPExpired      = fmt.Errorf("otp: OTP has expired: %w", ErrOTPAuthFailed)
+	ErrTooManyAttempts = fmt.Errorf("otp: too many OTP verification attempts: %w", ErrOTPAuthFailed)
 
 	ErrOTPStoreClosed = errors.New("otp: OTP store is closed")
 )

@@ -2,11 +2,10 @@ package app
 
 import (
 	"context"
-	"fmt"
 
 	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/identity"
 	implIdentity "sanzi.io/muid/internal/authn/infra/identity"
+	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"
@@ -79,7 +78,7 @@ func InitializeIdentityManager(
 	for _, cfg := range oidcProviders {
 		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore, entClient)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create OIDC provider %s: %w", cfg.Name, err)
+			return nil, &OIDCProviderInitError{Name: cfg.Name, Err: err}
 		}
 
 		providers = append(providers, p)

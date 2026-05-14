@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -16,17 +17,36 @@ import (
 
 	profileevent "sanzi.io/muid/api/proto/event/v1/profile"
 	pb "sanzi.io/muid/api/proto/profile/v1"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/internal/media"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 	"sanzi.io/muid/pkg/shared/pubsub"
+	"sanzi.io/muid/pkg/shared/storage"
 	"sanzi.io/muid/pkg/shared/topics"
+	"sanzi.io/muid/pkg/traceid"
 )
 
 // maxAvatarUploadBytes caps how much we read from the staging bucket into memory.
 const maxAvatarUploadBytes = 15 << 20
+
+func grpcInternal(ctx context.Context, reason string, err error, pairs ...string) error {
+	detail := ""
+	if err != nil {
+		detail = err.Error()
+	}
+	traceid.LogUnexpected(ctx, reason, detail, pairs...)
+	return grpcutils.GRPCInternalError()
+}
+
+func userIDPrefix(userID string) string {
+	if len(userID) >= 8 {
+		return userID[:8]
+	}
+	return userID
+}
 
 type GRPCHandler struct {
 	pb.UnimplementedProfileServiceServer
@@ -90,7 +110,7 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "tx: %v", err)
+		return nil, grpcInternal(ctx, "profile create tx begin", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -108,7 +128,7 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		if ent.IsConstraintError(err) {
 			return nil, status.Error(codes.AlreadyExists, "profile with this email or username already exists")
 		}
-		return nil, status.Errorf(codes.Internal, "create profile: %v", err)
+		return nil, grpcInternal(ctx, "profile create user_profile", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	_, err = tx.UserPreference.Create().
@@ -117,7 +137,7 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		SetLocale(locale).
 		Save(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "create preference: %v", err)
+		return nil, grpcInternal(ctx, "profile create user_preference", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	_, err = tx.UserAvatar.Create().
@@ -125,15 +145,15 @@ func (g *GRPCHandler) CreateProfile(ctx context.Context, req *pb.CreateProfileRe
 		SetUserID(userID).
 		Save(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "create avatar: %v", err)
+		return nil, grpcInternal(ctx, "profile create user_avatar", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+		return nil, grpcInternal(ctx, "profile create tx commit", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	if err := g.publishChange(ctx, userID.String(), email, profileevent.ProfileChangedEvent_CHANGE_TYPE_CREATED); err != nil {
-		return nil, status.Errorf(codes.Internal, "publish: %v", err)
+		return nil, grpcInternal(ctx, "profile create publish", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	return &pb.CreateProfileResponse{Id: userID.String()}, nil
@@ -154,7 +174,7 @@ func (g *GRPCHandler) GetProfile(ctx context.Context, req *pb.GetProfileRequest)
 		return nil, status.Error(codes.NotFound, "profile not found")
 	}
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "query: %v", err)
+		return nil, grpcInternal(ctx, "profile get query", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
 	locale := ""
@@ -188,7 +208,7 @@ func (g *GRPCHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "tx: %v", err)
+		return nil, grpcInternal(ctx, "profile update tx begin", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -201,7 +221,7 @@ func (g *GRPCHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 			if ent.IsNotFound(err) {
 				return nil, status.Error(codes.NotFound, "profile not found")
 			}
-			return nil, status.Errorf(codes.Internal, "update profile: %v", err)
+			return nil, grpcInternal(ctx, "profile update display_name", err, "profile_id_prefix", userIDPrefix(id.String()))
 		}
 	}
 
@@ -212,7 +232,7 @@ func (g *GRPCHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 			SetLocale(loc).
 			Save(ctx)
 		if err != nil {
-			return nil, status.Errorf(codes.Internal, "update preference: %v", err)
+			return nil, grpcInternal(ctx, "profile update preference", err, "profile_id_prefix", userIDPrefix(id.String()))
 		}
 		if n == 0 {
 			return nil, status.Error(codes.NotFound, "preference not found for profile")
@@ -220,16 +240,16 @@ func (g *GRPCHandler) UpdateProfile(ctx context.Context, req *pb.UpdateProfileRe
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+		return nil, grpcInternal(ctx, "profile update tx commit", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
 	p, err := g.db.UserProfile.Get(ctx, id)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "reload: %v", err)
+		return nil, grpcInternal(ctx, "profile update reload", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
 	if err := g.publishChange(ctx, id.String(), p.Email, profileevent.ProfileChangedEvent_CHANGE_TYPE_UPDATED); err != nil {
-		return nil, status.Errorf(codes.Internal, "publish: %v", err)
+		return nil, grpcInternal(ctx, "profile update publish", err, "profile_id_prefix", userIDPrefix(id.String()))
 	}
 
 	return &pb.UpdateProfileResponse{Id: id.String()}, nil
@@ -248,7 +268,7 @@ func (g *GRPCHandler) StartAvatarUpload(ctx context.Context, req *pb.StartAvatar
 	if _, err := g.db.UserProfile.Get(ctx, userID); ent.IsNotFound(err) {
 		return nil, status.Error(codes.NotFound, "profile not found")
 	} else if err != nil {
-		return nil, status.Errorf(codes.Internal, "profile: %v", err)
+		return nil, grpcInternal(ctx, "avatar start profile lookup", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	ct := strings.TrimSpace(req.GetContentType())
@@ -260,7 +280,7 @@ func (g *GRPCHandler) StartAvatarUpload(ctx context.Context, req *pb.StartAvatar
 	exp := 15 * time.Minute
 	url, expTime, err := g.avatars.Store.PresignPut(ctx, g.avatars.UploadBucket, objectKey, ct, exp)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "presign: %v", err)
+		return nil, grpcInternal(ctx, "avatar presign put", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	_, err = g.db.UserAvatar.Update().
@@ -271,7 +291,7 @@ func (g *GRPCHandler) StartAvatarUpload(ctx context.Context, req *pb.StartAvatar
 		SetByteSize(0).
 		Save(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "record pending upload: %v", err)
+		return nil, grpcInternal(ctx, "avatar start record pending", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	return &pb.StartAvatarUploadResponse{
@@ -301,7 +321,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 		return nil, status.Error(codes.NotFound, "avatar row not found")
 	}
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "avatar query: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete query row", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 	if av.ObjectKey != req.GetObjectKey() {
 		return nil, status.Error(codes.FailedPrecondition, "object_key does not match the active upload session")
@@ -309,7 +329,10 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 
 	head, err := g.avatars.Store.HeadObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
 	if err != nil {
-		return nil, status.Errorf(codes.FailedPrecondition, "object not found in storage: %v", err)
+		if errors.Is(err, storage.ErrObjectNotFound) {
+			return nil, status.Error(codes.FailedPrecondition, "object not found in storage")
+		}
+		return nil, grpcInternal(ctx, "avatar head staging", err, "bucket", g.avatars.UploadBucket, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 	if head.Size != req.GetByteSize() {
 		return nil, status.Errorf(codes.InvalidArgument, "byte_size mismatch: head reports %d", head.Size)
@@ -323,12 +346,15 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 
 	rc, _, err := g.avatars.Store.GetObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "download staging object: %v", err)
+		if errors.Is(err, storage.ErrObjectNotFound) {
+			return nil, status.Error(codes.FailedPrecondition, "object not found in storage")
+		}
+		return nil, grpcInternal(ctx, "avatar download staging", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 	raw, err := readAllLimited(rc, maxAvatarUploadBytes)
 	_ = rc.Close()
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "read staging object: %v", err)
+		return nil, grpcInternal(ctx, "avatar read staging", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 	if int64(len(raw)) > maxAvatarUploadBytes {
 		return nil, status.Error(codes.InvalidArgument, "object too large")
@@ -336,12 +362,15 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 
 	webpBytes, err := g.avatarProc.ProcessToSquareWebP(raw, head.ContentType)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "process avatar: %v", err)
+		if errors.Is(err, media.ErrEmptyRasterInput) || errors.Is(err, media.ErrUnsupportedRasterContentType) || errors.Is(err, media.ErrRasterDecodeFailed) {
+			return nil, status.Error(codes.InvalidArgument, "invalid avatar image")
+		}
+		return nil, grpcInternal(ctx, "avatar raster process", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	prodKey := fmt.Sprintf("avatars/%s.webp", userID.String())
 	if err := g.avatars.Store.PutObject(ctx, g.avatars.AssetsBucket, prodKey, webpBytes, "image/webp"); err != nil {
-		return nil, status.Errorf(codes.Internal, "store processed avatar: %v", err)
+		return nil, grpcInternal(ctx, "avatar store processed", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	publicURL := g.avatars.publicProdURL(prodKey)
@@ -349,7 +378,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "tx: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete tx begin", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -359,30 +388,31 @@ func (g *GRPCHandler) CompleteAvatarUpload(ctx context.Context, req *pb.Complete
 		SetByteSize(int64(len(webpBytes))).
 		SetContentType("image/webp").
 		Save(ctx); err != nil {
-		return nil, status.Errorf(codes.Internal, "update avatar: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete update row", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	if _, err := tx.UserProfile.UpdateOneID(userID).
 		SetAvatarURL(publicURL).
 		Save(ctx); err != nil {
-		return nil, status.Errorf(codes.Internal, "update profile: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete update profile", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, status.Errorf(codes.Internal, "commit: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete tx commit", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	if err := g.avatars.Store.DeleteObject(ctx, g.avatars.UploadBucket, req.GetObjectKey()); err != nil {
-		log.Printf("avatar: delete staging object %q: %v", req.GetObjectKey(), err)
+		tid, _ := traceid.FromContext(ctx)
+		log.Printf("avatar: delete staging object trace_id=%s object_key=%s err=%v", tid, req.GetObjectKey(), err)
 	}
 
 	p, err := g.db.UserProfile.Get(ctx, userID)
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "reload profile: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete reload profile", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	if err := g.publishChange(ctx, userID.String(), p.Email, profileevent.ProfileChangedEvent_CHANGE_TYPE_AVATAR_UPDATED); err != nil {
-		return nil, status.Errorf(codes.Internal, "publish: %v", err)
+		return nil, grpcInternal(ctx, "avatar complete publish", err, "user_id_prefix", userIDPrefix(userID.String()))
 	}
 
 	return &pb.CompleteAvatarUploadResponse{AvatarUrl: publicURL}, nil
@@ -393,7 +423,7 @@ func (g *GRPCHandler) allocateUsername(ctx context.Context, base string) (string
 	for i := 0; i < 24; i++ {
 		exists, err := g.db.UserProfile.Query().Where(userprofile.UsernameEQ(candidate)).Exist(ctx)
 		if err != nil {
-			return "", status.Errorf(codes.Internal, "username check: %v", err)
+			return "", grpcInternal(ctx, "username availability", err, "candidate_prefix", userIDPrefix(candidate))
 		}
 		if !exists {
 			return candidate, nil
@@ -404,7 +434,7 @@ func (g *GRPCHandler) allocateUsername(ctx context.Context, base string) (string
 		candidate := randomUsernameBase()
 		exists, err := g.db.UserProfile.Query().Where(userprofile.UsernameEQ(candidate)).Exist(ctx)
 		if err != nil {
-			return "", status.Errorf(codes.Internal, "username check: %v", err)
+			return "", grpcInternal(ctx, "username availability random", err, "candidate_prefix", userIDPrefix(candidate))
 		}
 		if !exists {
 			return candidate, nil
@@ -436,7 +466,7 @@ func RunProfileSubscriber(ctx context.Context, ps pubsub.PubSub) error {
 	return ps.Subscribe(topics.TopicProfileChange, pubsub.SubscribeOptions{}, func(ctx context.Context, message []byte) error {
 		var ev profileevent.ProfileChangedEvent
 		if err := proto.Unmarshal(message, &ev); err != nil {
-			return fmt.Errorf("unmarshal: %w", err)
+			return errors.Join(ErrMalformedProfileChangePayload, err)
 		}
 		log.Printf("profile.change user_id=%s change_type=%s", ev.GetUserId(), ev.GetChangeType().String())
 		return nil

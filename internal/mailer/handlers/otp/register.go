@@ -2,7 +2,7 @@ package otp
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"google.golang.org/protobuf/proto"
@@ -22,7 +22,7 @@ func (Handler) SubscribeOptions() pubsub.SubscribeOptions { return pubsub.Subscr
 func (Handler) Handle(ctx context.Context, deps handlers.MailerDeps, payload []byte) error {
 	var ev mailpb.SendOTPEmailEvent
 	if err := proto.Unmarshal(payload, &ev); err != nil {
-		return fmt.Errorf("unmarshal: %w", err)
+		return errors.Join(handlers.ErrMalformedMailEventPayload, err)
 	}
 	return sendOTPEmail(ctx, deps, &ev)
 }
@@ -57,5 +57,11 @@ func sendOTPEmail(ctx context.Context, deps handlers.MailerDeps, ev *mailpb.Send
 		TextBody: rendered.Text,
 		HTMLBody: rendered.HTML,
 	}
-	return deps.Mail.Send(ctx, msg)
+	if err := deps.Mail.Send(ctx, msg); err != nil {
+		if errors.Is(err, mailer.ErrInvalidEmailAddress) || errors.Is(err, mailer.ErrEmptyEmailContent) {
+			return err
+		}
+		return errors.Join(mailer.ErrEmailSendFailed, err)
+	}
+	return nil
 }

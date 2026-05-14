@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
@@ -16,7 +15,7 @@ func RegisterTopicHandlers(ps pubsub.PubSub, deps MailerDeps, hs ...TopicHandler
 		if err := ps.Subscribe(topic, h.SubscribeOptions(), func(ctx context.Context, message []byte) error {
 			return h.Handle(ctx, deps, message)
 		}); err != nil {
-			return fmt.Errorf("subscribe %s: %w", topic, err)
+			return &SubscribeTopicError{Topic: topic, Err: err}
 		}
 	}
 	return nil

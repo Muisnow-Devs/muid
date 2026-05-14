@@ -2,7 +2,7 @@ package media
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"image"
 	"image/draw"
 	"strings"
@@ -30,20 +30,20 @@ func NewWebPRasterAvatarProcessor() RasterAvatarProcessor {
 // avatarOutputPixels, and encodes lossy WebP.
 func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(raw []byte, contentType string) ([]byte, error) {
 	if len(raw) == 0 {
-		return nil, fmt.Errorf("empty image")
+		return nil, ErrEmptyRasterInput
 	}
 	if !AllowedRasterContentType(contentType) {
-		return nil, fmt.Errorf("unsupported content type %q", contentType)
+		return nil, &UnsupportedRasterContentTypeError{ContentType: contentType}
 	}
 	img, _, err := image.Decode(bytes.NewReader(raw))
 	if err != nil {
-		return nil, fmt.Errorf("decode image: %w", err)
+		return nil, errors.Join(ErrRasterDecodeFailed, err)
 	}
 	sq := squareCenterCropNRGBA(img)
 	scaled := scaleToSquareMax(sq, avatarOutputPixels)
 	var buf bytes.Buffer
 	if err := webp.Encode(&buf, scaled, &webp.Options{Lossy: true, Quality: 82}); err != nil {
-		return nil, fmt.Errorf("encode webp: %w", err)
+		return nil, errors.Join(ErrWebPEncodeFailed, err)
 	}
 	return buf.Bytes(), nil
 }

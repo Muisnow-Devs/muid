@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
+
+	"sanzi.io/muid/pkg/traceid"
 )
 
 func LoggerInterceptor(
@@ -18,9 +20,14 @@ func LoggerInterceptor(
 
 	resp, err := handler(ctx, req)
 
+	tid, _ := traceid.FromContext(ctx)
+	if tid == "" {
+		tid = "none"
+	}
 	log.Printf(
-		"method=%s duration=%s err=%v",
+		"method=%s trace_id=%s duration=%s err=%v",
 		info.FullMethod,
+		tid,
 		time.Since(start),
 		err,
 	)

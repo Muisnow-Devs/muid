@@ -3,7 +3,6 @@ package templates
 import (
 	"context"
 	"errors"
-	"strings"
 	"testing"
 )
 
@@ -107,10 +106,6 @@ func TestRender_templatePathValidation(t *testing.T) {
 
 			if !errors.Is(err, ErrInvalidTemplatePath) {
 				t.Fatalf("errors.Is: got %v", err)
-			}
-
-			if !strings.Contains(err.Error(), "invalid template path") {
-				t.Fatalf("error %q should mention invalid template path", err.Error())
 			}
 		})
 	}

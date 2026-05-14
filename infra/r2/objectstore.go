@@ -25,11 +25,17 @@ type R2ObjectStore struct {
 }
 
 // NewR2ObjectStore builds an S3 client targeting https://<accountID>.r2.cloudflarestorage.com.
-func NewR2ObjectStore(ctx context.Context, accountID, accessKeyID, secretAccessKey string) (ObjectStore, error) {
+func NewR2ObjectStore(
+	ctx context.Context,
+	accountID, accessKeyID, secretAccessKey string,
+) (ObjectStore, error) {
 	endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", accountID)
 
-	cfg, err := config.LoadDefaultConfig(ctx,
-		config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, "")),
+	cfg, err := config.LoadDefaultConfig(
+		ctx,
+		config.WithCredentialsProvider(
+			credentials.NewStaticCredentialsProvider(accessKeyID, secretAccessKey, ""),
+		),
 		config.WithRegion("auto"),
 	)
 	if err != nil {
@@ -58,7 +64,11 @@ func mapS3NotFound(err error) error {
 	return err
 }
 
-func (r *R2ObjectStore) PresignPut(ctx context.Context, bucket, objectKey, contentType string, exp time.Duration) (string, time.Time, error) {
+func (r *R2ObjectStore) PresignPut(
+	ctx context.Context,
+	bucket, objectKey, contentType string,
+	exp time.Duration,
+) (string, time.Time, error) {
 	out, err := r.presign.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(objectKey),
@@ -70,7 +80,10 @@ func (r *R2ObjectStore) PresignPut(ctx context.Context, bucket, objectKey, conte
 	return out.URL, time.Now().Add(exp), nil
 }
 
-func (r *R2ObjectStore) HeadObject(ctx context.Context, bucket, objectKey string) (ObjectHead, error) {
+func (r *R2ObjectStore) HeadObject(
+	ctx context.Context,
+	bucket, objectKey string,
+) (ObjectHead, error) {
 	out, err := r.apiClient.HeadObject(ctx, &s3.HeadObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
@@ -88,7 +101,10 @@ func (r *R2ObjectStore) HeadObject(ctx context.Context, bucket, objectKey string
 	return h, nil
 }
 
-func (r *R2ObjectStore) GetObject(ctx context.Context, bucket, objectKey string) (io.ReadCloser, ObjectHead, error) {
+func (r *R2ObjectStore) GetObject(
+	ctx context.Context,
+	bucket, objectKey string,
+) (io.ReadCloser, ObjectHead, error) {
 	out, err := r.apiClient.GetObject(ctx, &s3.GetObjectInput{
 		Bucket: aws.String(bucket),
 		Key:    aws.String(objectKey),
@@ -106,7 +122,12 @@ func (r *R2ObjectStore) GetObject(ctx context.Context, bucket, objectKey string)
 	return out.Body, h, nil
 }
 
-func (r *R2ObjectStore) PutObject(ctx context.Context, bucket, objectKey string, body []byte, contentType string) error {
+func (r *R2ObjectStore) PutObject(
+	ctx context.Context,
+	bucket, objectKey string,
+	body []byte,
+	contentType string,
+) error {
 	_, err := r.apiClient.PutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(objectKey),

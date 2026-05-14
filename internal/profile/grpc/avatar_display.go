@@ -22,7 +22,10 @@ import (
 // Display URLs are composed from PROFILE_PUBLIC_ASSETS_URL + object_key when avatar storage is
 // configured; legacy rows with object_key under virtual/ are treated as non-CDN and fall back
 // to an inline synthetic PNG (goavatar) without exposing stored third-party picture URLs.
-func (g *GRPCHandler) queryDisplayAvatar(ctx context.Context, userID uuid.UUID) (avatarURL, objectKey string, err error) {
+func (g *GRPCHandler) queryDisplayAvatar(
+	ctx context.Context,
+	userID uuid.UUID,
+) (avatarURL, objectKey string, err error) {
 	av, err := g.db.UserAvatar.Query().
 		Where(
 			useravatar.HasUserWith(userprofile.ID(userID)),

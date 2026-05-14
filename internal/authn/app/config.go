@@ -46,10 +46,10 @@ type InfraDependencies struct {
 
 	Redis kv.KVStore
 
-	OTPStore          otp.OTPStore
-	TransitionStore   session.AuthTransitionStore
-	PubSub            pubsub.PubSub
-	IdentityManager   *identity.IdentityManager
+	OTPStore        otp.OTPStore
+	TransitionStore session.AuthTransitionStore
+	PubSub          pubsub.PubSub
+	IdentityManager *identity.IdentityManager
 }
 
 func (d *InfraDependencies) Close() error {

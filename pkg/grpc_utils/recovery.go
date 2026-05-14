@@ -19,7 +19,13 @@ func RecoveryInterceptor(
 ) (resp interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
-			traceid.LogUnexpected(ctx, "grpc panic", fmt.Sprintf("%v", r), "method", info.FullMethod)
+			traceid.LogUnexpected(
+				ctx,
+				"grpc panic",
+				fmt.Sprintf("%v", r),
+				"method",
+				info.FullMethod,
+			)
 			err = status.Error(codes.Internal, "internal error")
 		}
 	}()

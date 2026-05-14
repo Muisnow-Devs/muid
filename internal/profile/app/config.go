@@ -4,8 +4,8 @@ import (
 	"errors"
 	"io"
 
-	"sanzi.io/muid/internal/profile/grpc"
 	"sanzi.io/muid/internal/profile/ent"
+	"sanzi.io/muid/internal/profile/grpc"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -15,8 +15,8 @@ type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 
 	Port        int    `envconfig:"PORT"         default:"5324"`
-	DatabaseURL string `envconfig:"DATABASE_URL" required:"true"`
-	NATSURL     string `envconfig:"NATS_URL"     required:"true"`
+	DatabaseURL string `envconfig:"DATABASE_URL"                required:"true"`
+	NATSURL     string `envconfig:"NATS_URL"                    required:"true"`
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
 

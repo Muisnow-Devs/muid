@@ -18,10 +18,21 @@ type GRPCHandler struct {
 	avatarIngest *avataringest.ExternalAvatarIngestor
 }
 
-func NewGRPCHandler(db *ent.Client, ps pubsub.PubSub, avatars *AvatarMedia, avatarProc media.RasterAvatarProcessor) pb.ProfileServiceServer {
+func NewGRPCHandler(
+	db *ent.Client,
+	ps pubsub.PubSub,
+	avatars *AvatarMedia,
+	avatarProc media.RasterAvatarProcessor,
+) pb.ProfileServiceServer {
 	h := &GRPCHandler{db: db, pub: ps, avatars: avatars, avatarProc: avatarProc}
 	if avatars != nil {
-		h.avatarIngest = avataringest.NewExternalAvatarIngestor(db, avatars.Store, avatars.AssetsBucket, avatars.PublicAssetURL, avatarProc)
+		h.avatarIngest = avataringest.NewExternalAvatarIngestor(
+			db,
+			avatars.Store,
+			avatars.AssetsBucket,
+			avatars.PublicAssetURL,
+			avatarProc,
+		)
 	}
 	return h
 }

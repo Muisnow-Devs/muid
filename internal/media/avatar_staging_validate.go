@@ -24,7 +24,10 @@ type AvatarStagingTrust struct {
 // ValidateAvatarStagingObject enforces trusted size, magic-byte sniffing,
 // optional HEAD Content-Type cross-check, bounded-prefix DetectContentType
 // corroboration, and image.DecodeConfig dimension caps before full decode.
-func ValidateAvatarStagingObject(raw []byte, tr AvatarStagingTrust) (canonicalMIME string, err error) {
+func ValidateAvatarStagingObject(
+	raw []byte,
+	tr AvatarStagingTrust,
+) (canonicalMIME string, err error) {
 	if len(raw) == 0 {
 		return "", ErrEmptyRasterInput
 	}

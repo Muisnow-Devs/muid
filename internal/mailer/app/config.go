@@ -8,9 +8,9 @@ type Config struct {
 	NATSURL string `envconfig:"NATS_URL" required:"true"`
 
 	SMTPHost     string `envconfig:"SMTP_HOST"     required:"true"`
-	SMTPPort     int    `envconfig:"SMTP_PORT"     default:"587"`
+	SMTPPort     int    `envconfig:"SMTP_PORT"                     default:"587"`
 	SMTPFrom     string `envconfig:"SMTP_FROM"     required:"true"`
-	SMTPUsername string `envconfig:"SMTP_USERNAME" default:""`
-	SMTPPassword string `envconfig:"SMTP_PASSWORD" default:""`
-	SMTPSSL      bool   `envconfig:"SMTP_SSL"      default:"false"`
+	SMTPUsername string `envconfig:"SMTP_USERNAME"                 default:""`
+	SMTPPassword string `envconfig:"SMTP_PASSWORD"                 default:""`
+	SMTPSSL      bool   `envconfig:"SMTP_SSL"                      default:"false"`
 }

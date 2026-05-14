@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/infra/mocked"
+	"sanzi.io/muid/internal/session"
 )
 
 func TestKVAuthTransitionStore_CreateAndGet_Success(t *testing.T) {

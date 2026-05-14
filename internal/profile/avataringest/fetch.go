@@ -22,7 +22,8 @@ func validateAvatarFetchHost(host string) error {
 		return errAvatarFetchHostBlocked
 	}
 	if ip := net.ParseIP(h); ip != nil {
-		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsMulticast() || !ip.IsGlobalUnicast() {
+		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsMulticast() ||
+			!ip.IsGlobalUnicast() {
 			return errAvatarFetchHostBlocked
 		}
 		return nil

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/infra/mocked"
+	"sanzi.io/muid/internal/otp"
 )
 
 func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {

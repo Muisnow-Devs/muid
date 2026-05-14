@@ -7,8 +7,8 @@ import (
 	"sanzi.io/muid/infra/nats"
 	smtpimpl "sanzi.io/muid/infra/smtp"
 	"sanzi.io/muid/internal/templates"
-	sharedmailer "sanzi.io/muid/pkg/shared/mailer"
 	"sanzi.io/muid/pkg/errutil"
+	sharedmailer "sanzi.io/muid/pkg/shared/mailer"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 

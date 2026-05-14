@@ -51,7 +51,8 @@ func CanonicalProfilePath(raw string) (string, error) {
 	for i := 0; i < md.Fields().Len(); i++ {
 		f := md.Fields().Get(i)
 		name := string(f.Name())
-		if fieldTok == name || fieldTok == f.JSONName() || strings.EqualFold(fieldTok, name) || strings.EqualFold(fieldTok, f.JSONName()) {
+		if fieldTok == name || fieldTok == f.JSONName() || strings.EqualFold(fieldTok, name) ||
+			strings.EqualFold(fieldTok, f.JSONName()) {
 			return profilePrefix + name, nil
 		}
 	}

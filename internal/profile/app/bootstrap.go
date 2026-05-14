@@ -7,12 +7,12 @@ import (
 	"log"
 	"strings"
 
-	"sanzi.io/muid/internal/media"
-	"sanzi.io/muid/internal/profile/grpc"
-	"sanzi.io/muid/internal/profile/subscriber"
-	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/r2"
+	"sanzi.io/muid/internal/media"
+	"sanzi.io/muid/internal/profile/ent"
+	"sanzi.io/muid/internal/profile/grpc"
+	"sanzi.io/muid/internal/profile/subscriber"
 	"sanzi.io/muid/pkg/errutil"
 )
 
@@ -40,18 +40,31 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 	}
 
 	var avatars *profilegrpc.AvatarMedia
-	if cfg.R2AccountID != "" || cfg.R2AccessKeyID != "" || cfg.R2SecretAccessKey != "" || cfg.R2UploadBucket != "" || cfg.R2AssetsBucket != "" {
-		if cfg.R2AccountID == "" || cfg.R2AccessKeyID == "" || cfg.R2SecretAccessKey == "" || cfg.R2UploadBucket == "" || cfg.R2AssetsBucket == "" {
+	if cfg.R2AccountID != "" || cfg.R2AccessKeyID != "" || cfg.R2SecretAccessKey != "" ||
+		cfg.R2UploadBucket != "" ||
+		cfg.R2AssetsBucket != "" {
+		if cfg.R2AccountID == "" || cfg.R2AccessKeyID == "" || cfg.R2SecretAccessKey == "" ||
+			cfg.R2UploadBucket == "" ||
+			cfg.R2AssetsBucket == "" {
 			errutil.Discard(client.Close())
 			closeIfCloser(pubSub)
-			return nil, fmt.Errorf("partial R2 configuration: set PROFILE_R2_ACCOUNT_ID, PROFILE_R2_ACCESS_KEY_ID, PROFILE_R2_SECRET_ACCESS_KEY, PROFILE_R2_UPLOAD_BUCKET, PROFILE_R2_ASSETS_BUCKET together")
+			return nil, fmt.Errorf(
+				"partial R2 configuration: set PROFILE_R2_ACCOUNT_ID, PROFILE_R2_ACCESS_KEY_ID, PROFILE_R2_SECRET_ACCESS_KEY, PROFILE_R2_UPLOAD_BUCKET, PROFILE_R2_ASSETS_BUCKET together",
+			)
 		}
 		if cfg.PublicAssetURL == "" {
 			errutil.Discard(client.Close())
 			closeIfCloser(pubSub)
-			return nil, fmt.Errorf("PROFILE_PUBLIC_ASSETS_URL is required when R2 avatar upload is enabled")
+			return nil, fmt.Errorf(
+				"PROFILE_PUBLIC_ASSETS_URL is required when R2 avatar upload is enabled",
+			)
 		}
-		store, err := r2.NewR2ObjectStore(ctx, cfg.R2AccountID, cfg.R2AccessKeyID, cfg.R2SecretAccessKey)
+		store, err := r2.NewR2ObjectStore(
+			ctx,
+			cfg.R2AccountID,
+			cfg.R2AccessKeyID,
+			cfg.R2SecretAccessKey,
+		)
 		if err != nil {
 			errutil.Discard(client.Close())
 			closeIfCloser(pubSub)
@@ -85,7 +98,12 @@ type ProfileApp struct {
 }
 
 func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
-	h := profilegrpc.NewGRPCHandler(infra.Ent, infra.PubSub, infra.Avatars, media.NewWebPRasterAvatarProcessor())
+	h := profilegrpc.NewGRPCHandler(
+		infra.Ent,
+		infra.PubSub,
+		infra.Avatars,
+		media.NewWebPRasterAvatarProcessor(),
+	)
 	svc, err := NewProfileGRPC(infra.GlobalConfig, h)
 	if err != nil {
 		return nil, err
@@ -98,7 +116,10 @@ func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
 
 func (a *ProfileApp) Start(ctx context.Context) error {
 	go func() {
-		if err := subscriber.RunProfileSubscriber(context.Background(), a.infra.PubSub); err != nil {
+		if err := subscriber.RunProfileSubscriber(
+			context.Background(),
+			a.infra.PubSub,
+		); err != nil {
 			log.Printf("profile subscriber: %v", err)
 		}
 	}()

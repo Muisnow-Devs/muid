@@ -12,9 +12,13 @@ func RegisterTopicHandlers(ps pubsub.PubSub, deps MailerDeps, hs ...TopicHandler
 	for _, h := range hs {
 		h := h
 		topic := h.Topic()
-		if err := ps.Subscribe(topic, h.SubscribeOptions(), func(ctx context.Context, message []byte) error {
-			return h.Handle(ctx, deps, message)
-		}); err != nil {
+		if err := ps.Subscribe(
+			topic,
+			h.SubscribeOptions(),
+			func(ctx context.Context, message []byte) error {
+				return h.Handle(ctx, deps, message)
+			},
+		); err != nil {
 			return &SubscribeTopicError{Topic: topic, Err: err}
 		}
 	}

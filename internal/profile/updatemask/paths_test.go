@@ -49,7 +49,9 @@ func TestSortedUniqueCanonicalPaths(t *testing.T) {
 	t.Parallel()
 	t.Run("dedupes and sorts", func(t *testing.T) {
 		t.Parallel()
-		mask := &fieldmaskpb.FieldMask{Paths: []string{"profile.locale", "profile.displayName", "profile.display_name"}}
+		mask := &fieldmaskpb.FieldMask{
+			Paths: []string{"profile.locale", "profile.displayName", "profile.display_name"},
+		}
 		got, err := SortedUniqueCanonicalPaths(mask)
 		if err != nil {
 			t.Fatal(err)

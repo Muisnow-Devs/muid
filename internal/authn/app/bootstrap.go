@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"io"
 
-	"sanzi.io/muid/internal/authn/infra/kv"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/redis"
+	"sanzi.io/muid/internal/authn/infra/kv"
 	"sanzi.io/muid/pkg/errutil"
 )
 
@@ -53,11 +53,11 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	}
 
 	return &InfraDependencies{
-		GlobalConfig:      cfg,
-		Redis:             redisKV,
-		OTPStore:          otpStore,
-		TransitionStore:   transitionStore,
-		PubSub:            pubSub,
-		IdentityManager:   ipm,
+		GlobalConfig:    cfg,
+		Redis:           redisKV,
+		OTPStore:        otpStore,
+		TransitionStore: transitionStore,
+		PubSub:          pubSub,
+		IdentityManager: ipm,
 	}, nil
 }

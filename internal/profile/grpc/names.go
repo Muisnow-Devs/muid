@@ -15,8 +15,26 @@ var adjectives = []string{
 }
 
 var nouns = []string{
-	"panda", "falcon", "river", "comet", "harbor", "meadow", "cipher", "atlas", "nova", "pixel",
-	"orchid", "willow", "ember", "quartz", "nebula", "canvas", "beacon", "summit", "harvest", "voyage",
+	"panda",
+	"falcon",
+	"river",
+	"comet",
+	"harbor",
+	"meadow",
+	"cipher",
+	"atlas",
+	"nova",
+	"pixel",
+	"orchid",
+	"willow",
+	"ember",
+	"quartz",
+	"nebula",
+	"canvas",
+	"beacon",
+	"summit",
+	"harvest",
+	"voyage",
 }
 
 func randomDisplayName() string {

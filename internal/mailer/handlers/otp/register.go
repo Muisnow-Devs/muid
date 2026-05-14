@@ -27,7 +27,11 @@ func (Handler) Handle(ctx context.Context, deps handlers.MailerDeps, payload []b
 	return sendOTPEmail(ctx, deps, &ev)
 }
 
-func sendOTPEmail(ctx context.Context, deps handlers.MailerDeps, ev *mailpb.SendOTPEmailEvent) error {
+func sendOTPEmail(
+	ctx context.Context,
+	deps handlers.MailerDeps,
+	ev *mailpb.SendOTPEmailEvent,
+) error {
 	if ev.GetEmail() == "" || ev.GetCode() == "" {
 		return mailer.ErrInvalidEmailAddress
 	}
@@ -58,7 +62,8 @@ func sendOTPEmail(ctx context.Context, deps handlers.MailerDeps, ev *mailpb.Send
 		HTMLBody: rendered.HTML,
 	}
 	if err := deps.Mail.Send(ctx, msg); err != nil {
-		if errors.Is(err, mailer.ErrInvalidEmailAddress) || errors.Is(err, mailer.ErrEmptyEmailContent) {
+		if errors.Is(err, mailer.ErrInvalidEmailAddress) ||
+			errors.Is(err, mailer.ErrEmptyEmailContent) {
 			return err
 		}
 		return errors.Join(mailer.ErrEmailSendFailed, err)

@@ -30,7 +30,9 @@ var (
 	ErrRasterBodySizeMismatchHEAD = errors.New("media: raster body size mismatch head")
 
 	// ErrAvatarClientSizeDisagreesWithHEAD means the client-reported size disagrees with HEAD.
-	ErrAvatarClientSizeDisagreesWithHEAD = errors.New("media: avatar client size disagrees with head")
+	ErrAvatarClientSizeDisagreesWithHEAD = errors.New(
+		"media: avatar client size disagrees with head",
+	)
 
 	// ErrRasterObjectTooLarge is returned when HEAD or body exceeds [MaxAvatarStagingBytes].
 	ErrRasterObjectTooLarge = errors.New("media: raster object too large")
@@ -43,7 +45,9 @@ var (
 	ErrRasterDimensionsExceedLimit = errors.New("media: raster dimensions exceed limit")
 
 	// ErrRasterClaimedKindMismatch means the declared MIME does not match magic-byte kind.
-	ErrRasterClaimedKindMismatch = errors.New("media: raster claimed content-type does not match payload")
+	ErrRasterClaimedKindMismatch = errors.New(
+		"media: raster claimed content-type does not match payload",
+	)
 )
 
 // UnsupportedRasterContentTypeError attaches the caller-supplied Content-Type for diagnostics.

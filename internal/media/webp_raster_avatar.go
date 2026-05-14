@@ -10,10 +10,10 @@ import (
 	webp "github.com/skrashevich/go-webp"
 	xdraw "golang.org/x/image/draw"
 
+	_ "golang.org/x/image/webp"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
-	_ "golang.org/x/image/webp"
 )
 
 // avatarOutputPixels is the max width/height of the square WebP stored on the CDN.
@@ -29,7 +29,10 @@ func NewWebPRasterAvatarProcessor() RasterAvatarProcessor {
 
 // ProcessToSquareWebP decodes a raster image, center-crops to a square, scales to
 // avatarOutputPixels, and encodes lossy WebP.
-func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(raw []byte, contentType string) ([]byte, error) {
+func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(
+	raw []byte,
+	contentType string,
+) ([]byte, error) {
 	if len(raw) == 0 {
 		return nil, ErrEmptyRasterInput
 	}

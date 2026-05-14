@@ -27,7 +27,11 @@ func (Handler) Handle(ctx context.Context, deps handlers.MailerDeps, payload []b
 	return sendLoginAlertEmail(ctx, deps, &ev)
 }
 
-func sendLoginAlertEmail(ctx context.Context, deps handlers.MailerDeps, ev *mailpb.SendLoginAlertEmailEvent) error {
+func sendLoginAlertEmail(
+	ctx context.Context,
+	deps handlers.MailerDeps,
+	ev *mailpb.SendLoginAlertEmailEvent,
+) error {
 	if ev.GetEmail() == "" {
 		return mailer.ErrInvalidEmailAddress
 	}
@@ -58,7 +62,8 @@ func sendLoginAlertEmail(ctx context.Context, deps handlers.MailerDeps, ev *mail
 		HTMLBody: rendered.HTML,
 	}
 	if err := deps.Mail.Send(ctx, msg); err != nil {
-		if errors.Is(err, mailer.ErrInvalidEmailAddress) || errors.Is(err, mailer.ErrEmptyEmailContent) {
+		if errors.Is(err, mailer.ErrInvalidEmailAddress) ||
+			errors.Is(err, mailer.ErrEmptyEmailContent) {
 			return err
 		}
 		return errors.Join(mailer.ErrEmailSendFailed, err)

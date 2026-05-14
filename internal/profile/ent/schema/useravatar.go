@@ -36,7 +36,10 @@ func (UserAvatar) Fields() []ent.Field {
 		field.String("content_type").NotEmpty().Immutable(),
 		field.Int64("byte_size").Default(0),
 
-		field.String("public_url").Optional().Nillable().Comment("CDN URL persisted at insert when object is in the production assets bucket"),
+		field.String("public_url").
+			Optional().
+			Nillable().
+			Comment("CDN URL persisted at insert when object is in the production assets bucket"),
 
 		// Nil while a staging upload is in progress; set when the row is display-ready (bootstrap or processed asset).
 		field.Time("uploaded_at").Optional().Nillable(),

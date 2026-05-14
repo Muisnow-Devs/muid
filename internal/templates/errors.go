@@ -10,7 +10,9 @@ import (
 var ErrInvalidTemplatePath = errors.New("templates: invalid template path")
 
 // ErrMissingSubjectInLocaleBundle is returned when a locale JSON bundle has no usable "subject" entry.
-var ErrMissingSubjectInLocaleBundle = errors.New("templates: missing subject string in locale bundle")
+var ErrMissingSubjectInLocaleBundle = errors.New(
+	"templates: missing subject string in locale bundle",
+)
 
 // ErrTemplateSubjectParseFailed wraps the text/template parse error for the subject line.
 var ErrTemplateSubjectParseFailed = errors.New("templates: parse subject template failed")

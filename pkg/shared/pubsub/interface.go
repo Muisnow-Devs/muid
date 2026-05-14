@@ -14,5 +14,9 @@ type SubscribeOptions struct {
 
 type PubSub interface {
 	Publish(topic topics.Topic, message []byte) error
-	Subscribe(topic topics.Topic, opts SubscribeOptions, handler func(ctx context.Context, message []byte) error) error
+	Subscribe(
+		topic topics.Topic,
+		opts SubscribeOptions,
+		handler func(ctx context.Context, message []byte) error,
+	) error
 }

@@ -8,11 +8,11 @@ import (
 
 	"github.com/google/uuid"
 
+	"sanzi.io/muid/infra/r2"
 	"sanzi.io/muid/internal/media"
 	"sanzi.io/muid/internal/profile/avatarkey"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/synthavatar"
-	"sanzi.io/muid/infra/r2"
 	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/traceid"
 )
@@ -57,7 +57,12 @@ func (i *ExternalAvatarIngestor) publicProdURL(objectKey string) string {
 }
 
 // prepareAndUploadFromRaw validates raster bytes, converts to WebP, uploads to assets bucket.
-func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(ctx context.Context, userID uuid.UUID, raw []byte, headContentType string) (rowID uuid.UUID, objectKey, publicURL string, byteSize int64, err error) {
+func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(
+	ctx context.Context,
+	userID uuid.UUID,
+	raw []byte,
+	headContentType string,
+) (rowID uuid.UUID, objectKey, publicURL string, byteSize int64, err error) {
 	n := int64(len(raw))
 	canonicalMIME, err := media.ValidateAvatarStagingObject(raw, media.AvatarStagingTrust{
 		HeadContentLength: n,
@@ -73,7 +78,13 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(ctx context.Context, us
 	}
 	rowID = shared.UUIDV7()
 	objectKey = avatarkey.ProductionWebPObjectKey(userID.String(), rowID.String())
-	if err := i.store.PutObject(ctx, i.assetsBucket, objectKey, webp, media.ContentTypeWebP); err != nil {
+	if err := i.store.PutObject(
+		ctx,
+		i.assetsBucket,
+		objectKey,
+		webp,
+		media.ContentTypeWebP,
+	); err != nil {
 		return uuid.Nil, "", "", 0, err
 	}
 	publicURL = i.publicProdURL(objectKey)
@@ -81,7 +92,11 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(ctx context.Context, us
 }
 
 // prepareAndUpload downloads sourceURL, validates, converts to WebP, uploads to assets bucket.
-func (i *ExternalAvatarIngestor) prepareAndUpload(ctx context.Context, userID uuid.UUID, sourceURL string) (rowID uuid.UUID, objectKey, publicURL string, byteSize int64, err error) {
+func (i *ExternalAvatarIngestor) prepareAndUpload(
+	ctx context.Context,
+	userID uuid.UUID,
+	sourceURL string,
+) (rowID uuid.UUID, objectKey, publicURL string, byteSize int64, err error) {
 	raw, headCT, err := fetchHTTPSAvatarSource(ctx, sourceURL)
 	if err != nil {
 		return uuid.Nil, "", "", 0, err
@@ -89,7 +104,12 @@ func (i *ExternalAvatarIngestor) prepareAndUpload(ctx context.Context, userID uu
 	return i.prepareAndUploadFromRaw(ctx, userID, raw, headCT)
 }
 
-func (i *ExternalAvatarIngestor) insertCommittedAvatar(ctx context.Context, userID, rowID uuid.UUID, objectKey, publicURL string, byteSize int64) error {
+func (i *ExternalAvatarIngestor) insertCommittedAvatar(
+	ctx context.Context,
+	userID, rowID uuid.UUID,
+	objectKey, publicURL string,
+	byteSize int64,
+) error {
 	_, err := i.db.UserAvatar.Create().
 		SetID(rowID).
 		SetUserID(userID).
@@ -108,7 +128,12 @@ func (i *ExternalAvatarIngestor) IngestSyntheticLocal(ctx context.Context, userI
 	if err != nil {
 		return err
 	}
-	rowID, objectKey, publicURL, byteSize, err := i.prepareAndUploadFromRaw(ctx, userID, raw, "image/png")
+	rowID, objectKey, publicURL, byteSize, err := i.prepareAndUploadFromRaw(
+		ctx,
+		userID,
+		raw,
+		"image/png",
+	)
 	if err != nil {
 		return err
 	}
@@ -116,7 +141,11 @@ func (i *ExternalAvatarIngestor) IngestSyntheticLocal(ctx context.Context, userI
 }
 
 // IngestFromURL tries primaryURL then optional fallbackURL (when different) before returning an error.
-func (i *ExternalAvatarIngestor) IngestFromURL(ctx context.Context, userID uuid.UUID, primaryURL, fallbackURL string) error {
+func (i *ExternalAvatarIngestor) IngestFromURL(
+	ctx context.Context,
+	userID uuid.UUID,
+	primaryURL, fallbackURL string,
+) error {
 	rowID, objectKey, publicURL, byteSize, err := i.prepareAndUpload(ctx, userID, primaryURL)
 	if err != nil && primaryURL != fallbackURL {
 		rowID, objectKey, publicURL, byteSize, err = i.prepareAndUpload(ctx, userID, fallbackURL)
@@ -128,7 +157,11 @@ func (i *ExternalAvatarIngestor) IngestFromURL(ctx context.Context, userID uuid.
 }
 
 // Go runs IngestFromURL in a new goroutine using a fresh context with timeout and propagated trace id.
-func (i *ExternalAvatarIngestor) Go(parentCtx context.Context, userID uuid.UUID, primaryURL, fallbackURL string) {
+func (i *ExternalAvatarIngestor) Go(
+	parentCtx context.Context,
+	userID uuid.UUID,
+	primaryURL, fallbackURL string,
+) {
 	if i == nil {
 		return
 	}
@@ -145,18 +178,34 @@ func (i *ExternalAvatarIngestor) Go(parentCtx context.Context, userID uuid.UUID,
 		defer cancel()
 		defer func() {
 			if r := recover(); r != nil {
-				traceid.LogUnexpected(workCtx, "ExternalAvatarIngestor.panic", fmt.Sprintf("%v", r), "user_id_prefix", userIDPrefix(uid.String()))
+				traceid.LogUnexpected(
+					workCtx,
+					"ExternalAvatarIngestor.panic",
+					fmt.Sprintf("%v", r),
+					"user_id_prefix",
+					userIDPrefix(uid.String()),
+				)
 			}
 		}()
 		if err := i.IngestFromURL(workCtx, uid, prim, fb); err != nil {
-			traceid.LogUnexpected(workCtx, "ExternalAvatarIngestor.IngestFromURL", err.Error(), "user_id_prefix", userIDPrefix(uid.String()))
+			traceid.LogUnexpected(
+				workCtx,
+				"ExternalAvatarIngestor.IngestFromURL",
+				err.Error(),
+				"user_id_prefix",
+				userIDPrefix(uid.String()),
+			)
 		}
 	}()
 }
 
 // GoBootstrap schedules post-CreateProfile ingestion: when oidcPictureURL is a non-empty https URL it is tried first;
 // on failure or when absent, a deterministic local synthetic avatar is ingested (no third-party placeholder URLs).
-func (i *ExternalAvatarIngestor) GoBootstrap(parentCtx context.Context, userID uuid.UUID, oidcPictureURL string) {
+func (i *ExternalAvatarIngestor) GoBootstrap(
+	parentCtx context.Context,
+	userID uuid.UUID,
+	oidcPictureURL string,
+) {
 	if i == nil {
 		return
 	}
@@ -172,7 +221,13 @@ func (i *ExternalAvatarIngestor) GoBootstrap(parentCtx context.Context, userID u
 		defer cancel()
 		defer func() {
 			if r := recover(); r != nil {
-				traceid.LogUnexpected(workCtx, "ExternalAvatarIngestor.GoBootstrap.panic", fmt.Sprintf("%v", r), "user_id_prefix", userIDPrefix(uid.String()))
+				traceid.LogUnexpected(
+					workCtx,
+					"ExternalAvatarIngestor.GoBootstrap.panic",
+					fmt.Sprintf("%v", r),
+					"user_id_prefix",
+					userIDPrefix(uid.String()),
+				)
 			}
 		}()
 
@@ -190,7 +245,13 @@ func (i *ExternalAvatarIngestor) GoBootstrap(parentCtx context.Context, userID u
 			err = i.IngestSyntheticLocal(workCtx, uid)
 		}
 		if err != nil {
-			traceid.LogUnexpected(workCtx, "ExternalAvatarIngestor.GoBootstrap", err.Error(), "user_id_prefix", userIDPrefix(uid.String()))
+			traceid.LogUnexpected(
+				workCtx,
+				"ExternalAvatarIngestor.GoBootstrap",
+				err.Error(),
+				"user_id_prefix",
+				userIDPrefix(uid.String()),
+			)
 		}
 	}()
 }

@@ -30,7 +30,13 @@ var profilePatchRegistry = map[string]profilePatchFn{
 	"profile.username":     patchProfileUsername,
 }
 
-func patchProfileDisplayName(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id uuid.UUID, prof *pb.UpdateProfileFields) error {
+func patchProfileDisplayName(
+	ctx context.Context,
+	g *GRPCHandler,
+	tx *ent.Tx,
+	id uuid.UUID,
+	prof *pb.UpdateProfileFields,
+) error {
 	dn := strings.TrimSpace(prof.GetDisplayName())
 	if dn == "" {
 		return status.Error(codes.InvalidArgument, "display_name must not be empty")
@@ -39,19 +45,37 @@ func patchProfileDisplayName(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id
 		if ent.IsNotFound(err) {
 			return status.Error(codes.NotFound, "profile not found")
 		}
-		return grpcInternal(ctx, "profile update display_name", err, "profile_id_prefix", userIDPrefix(id.String()))
+		return grpcInternal(
+			ctx,
+			"profile update display_name",
+			err,
+			"profile_id_prefix",
+			userIDPrefix(id.String()),
+		)
 	}
 	return nil
 }
 
-func patchProfileLocale(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id uuid.UUID, prof *pb.UpdateProfileFields) error {
+func patchProfileLocale(
+	ctx context.Context,
+	g *GRPCHandler,
+	tx *ent.Tx,
+	id uuid.UUID,
+	prof *pb.UpdateProfileFields,
+) error {
 	loc := strings.TrimSpace(prof.GetLocale())
 	n, err := tx.UserPreference.Update().
 		Where(userpreference.HasUserWith(userprofile.ID(id))).
 		SetLocale(loc).
 		Save(ctx)
 	if err != nil {
-		return grpcInternal(ctx, "profile update preference", err, "profile_id_prefix", userIDPrefix(id.String()))
+		return grpcInternal(
+			ctx,
+			"profile update preference",
+			err,
+			"profile_id_prefix",
+			userIDPrefix(id.String()),
+		)
 	}
 	if n == 0 {
 		return status.Error(codes.NotFound, "preference not found for profile")
@@ -59,7 +83,13 @@ func patchProfileLocale(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id uuid
 	return nil
 }
 
-func patchProfileUsername(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id uuid.UUID, prof *pb.UpdateProfileFields) error {
+func patchProfileUsername(
+	ctx context.Context,
+	g *GRPCHandler,
+	tx *ent.Tx,
+	id uuid.UUID,
+	prof *pb.UpdateProfileFields,
+) error {
 	candidate := sanitizeUsername(prof.GetUsername())
 	if candidate == "" {
 		return status.Error(codes.InvalidArgument, "username must not be empty")
@@ -68,7 +98,13 @@ func patchProfileUsername(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id uu
 		Where(userprofile.UsernameEQ(candidate), userprofile.IDNEQ(id)).
 		Exist(ctx)
 	if err != nil {
-		return grpcInternal(ctx, "profile update username taken check", err, "profile_id_prefix", userIDPrefix(id.String()))
+		return grpcInternal(
+			ctx,
+			"profile update username taken check",
+			err,
+			"profile_id_prefix",
+			userIDPrefix(id.String()),
+		)
 	}
 	if taken {
 		return status.Error(codes.AlreadyExists, "username already taken")
@@ -80,7 +116,13 @@ func patchProfileUsername(ctx context.Context, g *GRPCHandler, tx *ent.Tx, id uu
 		if ent.IsConstraintError(err) {
 			return status.Error(codes.AlreadyExists, "username already taken")
 		}
-		return grpcInternal(ctx, "profile update username", err, "profile_id_prefix", userIDPrefix(id.String()))
+		return grpcInternal(
+			ctx,
+			"profile update username",
+			err,
+			"profile_id_prefix",
+			userIDPrefix(id.String()),
+		)
 	}
 	return nil
 }

@@ -28,7 +28,11 @@ func (n *NATSPubSub) Publish(topic topics.Topic, message []byte) error {
 	return n.conn.Publish(string(topic), message)
 }
 
-func (n *NATSPubSub) Subscribe(topic topics.Topic, opts pubsub.SubscribeOptions, handler func(ctx context.Context, message []byte) error) error {
+func (n *NATSPubSub) Subscribe(
+	topic topics.Topic,
+	opts pubsub.SubscribeOptions,
+	handler func(ctx context.Context, message []byte) error,
+) error {
 	cb := func(msg *natsio.Msg) {
 		ctx := traceid.With(context.Background(), shared.UUIDV7().String())
 		if err := handler(ctx, msg.Data); err != nil {

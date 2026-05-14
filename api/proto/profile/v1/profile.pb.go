@@ -11,6 +11,7 @@ import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	claims "sanzi.io/muid/api/proto/shared/v1/claims"
 	unsafe "unsafe"
@@ -24,11 +25,11 @@ const (
 )
 
 type CreateProfileRequest struct {
-	state             protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Email  string                 `protobuf:"bytes,1,opt,name=email,proto3"`
-	xxx_hidden_Claims *claims.IdentityClaims `protobuf:"bytes,2,opt,name=claims,proto3,oneof"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	state               protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Email    string                      `protobuf:"bytes,1,opt,name=email,proto3"`
+	xxx_hidden_Identity *claims.IdentityInformation `protobuf:"bytes,2,opt,name=identity,proto3,oneof"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *CreateProfileRequest) Reset() {
@@ -63,9 +64,9 @@ func (x *CreateProfileRequest) GetEmail() string {
 	return ""
 }
 
-func (x *CreateProfileRequest) GetClaims() *claims.IdentityClaims {
+func (x *CreateProfileRequest) GetIdentity() *claims.IdentityInformation {
 	if x != nil {
-		return x.xxx_hidden_Claims
+		return x.xxx_hidden_Identity
 	}
 	return nil
 }
@@ -74,27 +75,27 @@ func (x *CreateProfileRequest) SetEmail(v string) {
 	x.xxx_hidden_Email = v
 }
 
-func (x *CreateProfileRequest) SetClaims(v *claims.IdentityClaims) {
-	x.xxx_hidden_Claims = v
+func (x *CreateProfileRequest) SetIdentity(v *claims.IdentityInformation) {
+	x.xxx_hidden_Identity = v
 }
 
-func (x *CreateProfileRequest) HasClaims() bool {
+func (x *CreateProfileRequest) HasIdentity() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Claims != nil
+	return x.xxx_hidden_Identity != nil
 }
 
-func (x *CreateProfileRequest) ClearClaims() {
-	x.xxx_hidden_Claims = nil
+func (x *CreateProfileRequest) ClearIdentity() {
+	x.xxx_hidden_Identity = nil
 }
 
 type CreateProfileRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Email string
-	// When absent or empty, the service assigns random display name, username, and a deterministic synthetic avatar (goavatar).
-	Claims *claims.IdentityClaims
+	// Optional OIDC-style claims: display name is taken from claims when resolvable, otherwise random; username is always auto-allocated (never from email); picture triggers async avatar bootstrap when https.
+	Identity *claims.IdentityInformation
 }
 
 func (b0 CreateProfileRequest_builder) Build() *CreateProfileRequest {
@@ -102,7 +103,7 @@ func (b0 CreateProfileRequest_builder) Build() *CreateProfileRequest {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Email = b.Email
-	x.xxx_hidden_Claims = b.Claims
+	x.xxx_hidden_Identity = b.Identity
 	return m0
 }
 
@@ -361,106 +362,18 @@ func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
 	return m0
 }
 
-// Scalar profile fields that may be partially updated. Only fields listed in
-// `update_mask` are applied; mask paths are relative to UpdateProfileRequest
-// (e.g. "profile.display_name"). See server docs / AGENT_STYLING.md.
-type UpdateProfileFields struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Username    string                 `protobuf:"bytes,1,opt,name=username,proto3"`
-	xxx_hidden_DisplayName string                 `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3"`
-	xxx_hidden_Locale      string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
-}
-
-func (x *UpdateProfileFields) Reset() {
-	*x = UpdateProfileFields{}
-	mi := &file_profile_v1_profile_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *UpdateProfileFields) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*UpdateProfileFields) ProtoMessage() {}
-
-func (x *UpdateProfileFields) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *UpdateProfileFields) GetUsername() string {
-	if x != nil {
-		return x.xxx_hidden_Username
-	}
-	return ""
-}
-
-func (x *UpdateProfileFields) GetDisplayName() string {
-	if x != nil {
-		return x.xxx_hidden_DisplayName
-	}
-	return ""
-}
-
-func (x *UpdateProfileFields) GetLocale() string {
-	if x != nil {
-		return x.xxx_hidden_Locale
-	}
-	return ""
-}
-
-func (x *UpdateProfileFields) SetUsername(v string) {
-	x.xxx_hidden_Username = v
-}
-
-func (x *UpdateProfileFields) SetDisplayName(v string) {
-	x.xxx_hidden_DisplayName = v
-}
-
-func (x *UpdateProfileFields) SetLocale(v string) {
-	x.xxx_hidden_Locale = v
-}
-
-type UpdateProfileFields_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Username    string
-	DisplayName string
-	Locale      string
-}
-
-func (b0 UpdateProfileFields_builder) Build() *UpdateProfileFields {
-	m0 := &UpdateProfileFields{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Username = b.Username
-	x.xxx_hidden_DisplayName = b.DisplayName
-	x.xxx_hidden_Locale = b.Locale
-	return m0
-}
-
 type UpdateProfileRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	xxx_hidden_UpdateMask *fieldmaskpb.FieldMask `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3"`
-	xxx_hidden_Profile    *UpdateProfileFields   `protobuf:"bytes,3,opt,name=profile,proto3"`
+	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                      `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_UpdateMask *fieldmaskpb.FieldMask      `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3"`
+	xxx_hidden_Identity   *claims.IdentityInformation `protobuf:"bytes,3,opt,name=identity,proto3,oneof"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
 
 func (x *UpdateProfileRequest) Reset() {
 	*x = UpdateProfileRequest{}
-	mi := &file_profile_v1_profile_proto_msgTypes[5]
+	mi := &file_profile_v1_profile_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +385,7 @@ func (x *UpdateProfileRequest) String() string {
 func (*UpdateProfileRequest) ProtoMessage() {}
 
 func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[5]
+	mi := &file_profile_v1_profile_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -497,9 +410,9 @@ func (x *UpdateProfileRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	return nil
 }
 
-func (x *UpdateProfileRequest) GetProfile() *UpdateProfileFields {
+func (x *UpdateProfileRequest) GetIdentity() *claims.IdentityInformation {
 	if x != nil {
-		return x.xxx_hidden_Profile
+		return x.xxx_hidden_Identity
 	}
 	return nil
 }
@@ -512,8 +425,8 @@ func (x *UpdateProfileRequest) SetUpdateMask(v *fieldmaskpb.FieldMask) {
 	x.xxx_hidden_UpdateMask = v
 }
 
-func (x *UpdateProfileRequest) SetProfile(v *UpdateProfileFields) {
-	x.xxx_hidden_Profile = v
+func (x *UpdateProfileRequest) SetIdentity(v *claims.IdentityInformation) {
+	x.xxx_hidden_Identity = v
 }
 
 func (x *UpdateProfileRequest) HasUpdateMask() bool {
@@ -523,29 +436,32 @@ func (x *UpdateProfileRequest) HasUpdateMask() bool {
 	return x.xxx_hidden_UpdateMask != nil
 }
 
-func (x *UpdateProfileRequest) HasProfile() bool {
+func (x *UpdateProfileRequest) HasIdentity() bool {
 	if x == nil {
 		return false
 	}
-	return x.xxx_hidden_Profile != nil
+	return x.xxx_hidden_Identity != nil
 }
 
 func (x *UpdateProfileRequest) ClearUpdateMask() {
 	x.xxx_hidden_UpdateMask = nil
 }
 
-func (x *UpdateProfileRequest) ClearProfile() {
-	x.xxx_hidden_Profile = nil
+func (x *UpdateProfileRequest) ClearIdentity() {
+	x.xxx_hidden_Identity = nil
 }
 
 type UpdateProfileRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Id string
-	// Paths use proto snake_case under `profile`, e.g. "profile.username".
-	// JSON clients may send camelCase segments ("profile.displayName"); the server normalizes.
+	// Mask paths are relative to this message: proto snake_case prefix `identity.` for
+	// IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username").
+	// JSON clients may send camelCase in the second segment (e.g. "identity.emailVerified");
+	// the server normalizes to canonical snake_case paths.
 	UpdateMask *fieldmaskpb.FieldMask
-	Profile    *UpdateProfileFields
+	// Values for fields listed in update_mask; only allowlisted paths are applied.
+	Identity *claims.IdentityInformation
 }
 
 func (b0 UpdateProfileRequest_builder) Build() *UpdateProfileRequest {
@@ -554,7 +470,7 @@ func (b0 UpdateProfileRequest_builder) Build() *UpdateProfileRequest {
 	_, _ = b, x
 	x.xxx_hidden_Id = b.Id
 	x.xxx_hidden_UpdateMask = b.UpdateMask
-	x.xxx_hidden_Profile = b.Profile
+	x.xxx_hidden_Identity = b.Identity
 	return m0
 }
 
@@ -567,7 +483,7 @@ type UpdateProfileResponse struct {
 
 func (x *UpdateProfileResponse) Reset() {
 	*x = UpdateProfileResponse{}
-	mi := &file_profile_v1_profile_proto_msgTypes[6]
+	mi := &file_profile_v1_profile_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -579,7 +495,7 @@ func (x *UpdateProfileResponse) String() string {
 func (*UpdateProfileResponse) ProtoMessage() {}
 
 func (x *UpdateProfileResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[6]
+	mi := &file_profile_v1_profile_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -625,7 +541,7 @@ type StartAvatarUploadRequest struct {
 
 func (x *StartAvatarUploadRequest) Reset() {
 	*x = StartAvatarUploadRequest{}
-	mi := &file_profile_v1_profile_proto_msgTypes[7]
+	mi := &file_profile_v1_profile_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -637,7 +553,7 @@ func (x *StartAvatarUploadRequest) String() string {
 func (*StartAvatarUploadRequest) ProtoMessage() {}
 
 func (x *StartAvatarUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[7]
+	mi := &file_profile_v1_profile_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -687,17 +603,17 @@ func (b0 StartAvatarUploadRequest_builder) Build() *StartAvatarUploadRequest {
 }
 
 type StartAvatarUploadResponse struct {
-	state                    protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UploadUrl     string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3"`
-	xxx_hidden_ObjectKey     string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3"`
-	xxx_hidden_ExpiresAtUnix int64                  `protobuf:"varint,3,opt,name=expires_at_unix,json=expiresAtUnix,proto3"`
-	unknownFields            protoimpl.UnknownFields
-	sizeCache                protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UploadUrl string                 `protobuf:"bytes,1,opt,name=upload_url,json=uploadUrl,proto3"`
+	xxx_hidden_ObjectKey string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *StartAvatarUploadResponse) Reset() {
 	*x = StartAvatarUploadResponse{}
-	mi := &file_profile_v1_profile_proto_msgTypes[8]
+	mi := &file_profile_v1_profile_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -709,7 +625,7 @@ func (x *StartAvatarUploadResponse) String() string {
 func (*StartAvatarUploadResponse) ProtoMessage() {}
 
 func (x *StartAvatarUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[8]
+	mi := &file_profile_v1_profile_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -734,11 +650,11 @@ func (x *StartAvatarUploadResponse) GetObjectKey() string {
 	return ""
 }
 
-func (x *StartAvatarUploadResponse) GetExpiresAtUnix() int64 {
+func (x *StartAvatarUploadResponse) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_ExpiresAtUnix
+		return x.xxx_hidden_ExpiresAt
 	}
-	return 0
+	return nil
 }
 
 func (x *StartAvatarUploadResponse) SetUploadUrl(v string) {
@@ -749,16 +665,27 @@ func (x *StartAvatarUploadResponse) SetObjectKey(v string) {
 	x.xxx_hidden_ObjectKey = v
 }
 
-func (x *StartAvatarUploadResponse) SetExpiresAtUnix(v int64) {
-	x.xxx_hidden_ExpiresAtUnix = v
+func (x *StartAvatarUploadResponse) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *StartAvatarUploadResponse) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *StartAvatarUploadResponse) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
 }
 
 type StartAvatarUploadResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	UploadUrl     string
-	ObjectKey     string
-	ExpiresAtUnix int64
+	UploadUrl string
+	ObjectKey string
+	ExpiresAt *timestamppb.Timestamp
 }
 
 func (b0 StartAvatarUploadResponse_builder) Build() *StartAvatarUploadResponse {
@@ -767,7 +694,7 @@ func (b0 StartAvatarUploadResponse_builder) Build() *StartAvatarUploadResponse {
 	_, _ = b, x
 	x.xxx_hidden_UploadUrl = b.UploadUrl
 	x.xxx_hidden_ObjectKey = b.ObjectKey
-	x.xxx_hidden_ExpiresAtUnix = b.ExpiresAtUnix
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
 	return m0
 }
 
@@ -782,7 +709,7 @@ type CompleteAvatarUploadRequest struct {
 
 func (x *CompleteAvatarUploadRequest) Reset() {
 	*x = CompleteAvatarUploadRequest{}
-	mi := &file_profile_v1_profile_proto_msgTypes[9]
+	mi := &file_profile_v1_profile_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -794,7 +721,7 @@ func (x *CompleteAvatarUploadRequest) String() string {
 func (*CompleteAvatarUploadRequest) ProtoMessage() {}
 
 func (x *CompleteAvatarUploadRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[9]
+	mi := &file_profile_v1_profile_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -865,7 +792,7 @@ type CompleteAvatarUploadResponse struct {
 
 func (x *CompleteAvatarUploadResponse) Reset() {
 	*x = CompleteAvatarUploadResponse{}
-	mi := &file_profile_v1_profile_proto_msgTypes[10]
+	mi := &file_profile_v1_profile_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -877,7 +804,7 @@ func (x *CompleteAvatarUploadResponse) String() string {
 func (*CompleteAvatarUploadResponse) ProtoMessage() {}
 
 func (x *CompleteAvatarUploadResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_profile_v1_profile_proto_msgTypes[10]
+	mi := &file_profile_v1_profile_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -917,11 +844,11 @@ var File_profile_v1_profile_proto protoreflect.FileDescriptor
 
 const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a google/protobuf/field_mask.proto\x1a\x16shared/v1/claims.proto\"\x84\x01\n" +
+	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a\x16shared/v1/claims.proto\"\x8f\x01\n" +
 	"\x14CreateProfileRequest\x12\x1d\n" +
-	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12B\n" +
-	"\x06claims\x18\x02 \x01(\v2%.muid.shared.v1.claims.IdentityClaimsH\x00R\x06claims\x88\x01\x01B\t\n" +
-	"\a_claims\"1\n" +
+	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12K\n" +
+	"\bidentity\x18\x02 \x01(\v2*.muid.shared.v1.claims.IdentityInformationH\x00R\bidentity\x88\x01\x01B\v\n" +
+	"\t_identity\"1\n" +
 	"\x15CreateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"-\n" +
 	"\x11GetProfileRequest\x12\x18\n" +
@@ -934,29 +861,26 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
 	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
 	"\x06locale\x18\x06 \x01(\tR\x06locale\x12*\n" +
-	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\"\x8c\x01\n" +
-	"\x13UpdateProfileFields\x12%\n" +
-	"\busername\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x18@R\busername\x12-\n" +
-	"\fdisplay_name\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\x80\x01R\vdisplayName\x12\x1f\n" +
-	"\x06locale\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18 R\x06locale\"\xad\x01\n" +
+	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\"\xc7\x01\n" +
 	"\x14UpdateProfileRequest\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
-	"updateMask\x12>\n" +
-	"\aprofile\x18\x03 \x01(\v2$.muid.profile.v1.UpdateProfileFieldsR\aprofile\"1\n" +
+	"updateMask\x12K\n" +
+	"\bidentity\x18\x03 \x01(\v2*.muid.shared.v1.claims.IdentityInformationH\x00R\bidentity\x88\x01\x01B\v\n" +
+	"\t_identity\"1\n" +
 	"\x15UpdateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"l\n" +
 	"\x18StartAvatarUploadRequest\x12!\n" +
 	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12-\n" +
 	"\fcontent_type\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x03\x18\x80\x01R\vcontentType\"\x81\x01\n" +
+	"\xbaH\ar\x05\x10\x03\x18\x80\x01R\vcontentType\"\x94\x01\n" +
 	"\x19StartAvatarUploadResponse\x12\x1d\n" +
 	"\n" +
 	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x1d\n" +
 	"\n" +
-	"object_key\x18\x02 \x01(\tR\tobjectKey\x12&\n" +
-	"\x0fexpires_at_unix\x18\x03 \x01(\x03R\rexpiresAtUnix\"\x91\x01\n" +
+	"object_key\x18\x02 \x01(\tR\tobjectKey\x129\n" +
+	"\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x91\x01\n" +
 	"\x1bCompleteAvatarUploadRequest\x12!\n" +
 	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12)\n" +
 	"\n" +
@@ -975,41 +899,42 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x14CompleteAvatarUpload\x12,.muid.profile.v1.CompleteAvatarUploadRequest\x1a-.muid.profile.v1.CompleteAvatarUploadResponseB\xad\x01\n" +
 	"\x13com.muid.profile.v1B\fProfileProtoP\x01Z*sanzi.io/muid/api/proto/profile/v1;profile\xa2\x02\x03MPX\xaa\x02\x0fMuid.Profile.V1\xca\x02\x0fMuid\\Profile\\V1\xe2\x02\x1bMuid\\Profile\\V1\\GPBMetadata\xea\x02\x11Muid::Profile::V1b\x06proto3"
 
-var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_profile_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_profile_v1_profile_proto_goTypes = []any{
 	(*CreateProfileRequest)(nil),         // 0: muid.profile.v1.CreateProfileRequest
 	(*CreateProfileResponse)(nil),        // 1: muid.profile.v1.CreateProfileResponse
 	(*GetProfileRequest)(nil),            // 2: muid.profile.v1.GetProfileRequest
 	(*GetProfileResponse)(nil),           // 3: muid.profile.v1.GetProfileResponse
-	(*UpdateProfileFields)(nil),          // 4: muid.profile.v1.UpdateProfileFields
-	(*UpdateProfileRequest)(nil),         // 5: muid.profile.v1.UpdateProfileRequest
-	(*UpdateProfileResponse)(nil),        // 6: muid.profile.v1.UpdateProfileResponse
-	(*StartAvatarUploadRequest)(nil),     // 7: muid.profile.v1.StartAvatarUploadRequest
-	(*StartAvatarUploadResponse)(nil),    // 8: muid.profile.v1.StartAvatarUploadResponse
-	(*CompleteAvatarUploadRequest)(nil),  // 9: muid.profile.v1.CompleteAvatarUploadRequest
-	(*CompleteAvatarUploadResponse)(nil), // 10: muid.profile.v1.CompleteAvatarUploadResponse
-	(*claims.IdentityClaims)(nil),        // 11: muid.shared.v1.claims.IdentityClaims
-	(*fieldmaskpb.FieldMask)(nil),        // 12: google.protobuf.FieldMask
+	(*UpdateProfileRequest)(nil),         // 4: muid.profile.v1.UpdateProfileRequest
+	(*UpdateProfileResponse)(nil),        // 5: muid.profile.v1.UpdateProfileResponse
+	(*StartAvatarUploadRequest)(nil),     // 6: muid.profile.v1.StartAvatarUploadRequest
+	(*StartAvatarUploadResponse)(nil),    // 7: muid.profile.v1.StartAvatarUploadResponse
+	(*CompleteAvatarUploadRequest)(nil),  // 8: muid.profile.v1.CompleteAvatarUploadRequest
+	(*CompleteAvatarUploadResponse)(nil), // 9: muid.profile.v1.CompleteAvatarUploadResponse
+	(*claims.IdentityInformation)(nil),   // 10: muid.shared.v1.claims.IdentityInformation
+	(*fieldmaskpb.FieldMask)(nil),        // 11: google.protobuf.FieldMask
+	(*timestamppb.Timestamp)(nil),        // 12: google.protobuf.Timestamp
 }
 var file_profile_v1_profile_proto_depIdxs = []int32{
-	11, // 0: muid.profile.v1.CreateProfileRequest.claims:type_name -> muid.shared.v1.claims.IdentityClaims
-	12, // 1: muid.profile.v1.UpdateProfileRequest.update_mask:type_name -> google.protobuf.FieldMask
-	4,  // 2: muid.profile.v1.UpdateProfileRequest.profile:type_name -> muid.profile.v1.UpdateProfileFields
-	0,  // 3: muid.profile.v1.ProfileService.CreateProfile:input_type -> muid.profile.v1.CreateProfileRequest
-	2,  // 4: muid.profile.v1.ProfileService.GetProfile:input_type -> muid.profile.v1.GetProfileRequest
-	5,  // 5: muid.profile.v1.ProfileService.UpdateProfile:input_type -> muid.profile.v1.UpdateProfileRequest
-	7,  // 6: muid.profile.v1.ProfileService.StartAvatarUpload:input_type -> muid.profile.v1.StartAvatarUploadRequest
-	9,  // 7: muid.profile.v1.ProfileService.CompleteAvatarUpload:input_type -> muid.profile.v1.CompleteAvatarUploadRequest
-	1,  // 8: muid.profile.v1.ProfileService.CreateProfile:output_type -> muid.profile.v1.CreateProfileResponse
-	3,  // 9: muid.profile.v1.ProfileService.GetProfile:output_type -> muid.profile.v1.GetProfileResponse
-	6,  // 10: muid.profile.v1.ProfileService.UpdateProfile:output_type -> muid.profile.v1.UpdateProfileResponse
-	8,  // 11: muid.profile.v1.ProfileService.StartAvatarUpload:output_type -> muid.profile.v1.StartAvatarUploadResponse
-	10, // 12: muid.profile.v1.ProfileService.CompleteAvatarUpload:output_type -> muid.profile.v1.CompleteAvatarUploadResponse
-	8,  // [8:13] is the sub-list for method output_type
-	3,  // [3:8] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	10, // 0: muid.profile.v1.CreateProfileRequest.identity:type_name -> muid.shared.v1.claims.IdentityInformation
+	11, // 1: muid.profile.v1.UpdateProfileRequest.update_mask:type_name -> google.protobuf.FieldMask
+	10, // 2: muid.profile.v1.UpdateProfileRequest.identity:type_name -> muid.shared.v1.claims.IdentityInformation
+	12, // 3: muid.profile.v1.StartAvatarUploadResponse.expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 4: muid.profile.v1.ProfileService.CreateProfile:input_type -> muid.profile.v1.CreateProfileRequest
+	2,  // 5: muid.profile.v1.ProfileService.GetProfile:input_type -> muid.profile.v1.GetProfileRequest
+	4,  // 6: muid.profile.v1.ProfileService.UpdateProfile:input_type -> muid.profile.v1.UpdateProfileRequest
+	6,  // 7: muid.profile.v1.ProfileService.StartAvatarUpload:input_type -> muid.profile.v1.StartAvatarUploadRequest
+	8,  // 8: muid.profile.v1.ProfileService.CompleteAvatarUpload:input_type -> muid.profile.v1.CompleteAvatarUploadRequest
+	1,  // 9: muid.profile.v1.ProfileService.CreateProfile:output_type -> muid.profile.v1.CreateProfileResponse
+	3,  // 10: muid.profile.v1.ProfileService.GetProfile:output_type -> muid.profile.v1.GetProfileResponse
+	5,  // 11: muid.profile.v1.ProfileService.UpdateProfile:output_type -> muid.profile.v1.UpdateProfileResponse
+	7,  // 12: muid.profile.v1.ProfileService.StartAvatarUpload:output_type -> muid.profile.v1.StartAvatarUploadResponse
+	9,  // 13: muid.profile.v1.ProfileService.CompleteAvatarUpload:output_type -> muid.profile.v1.CompleteAvatarUploadResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
+	4,  // [4:4] is the sub-list for extension type_name
+	4,  // [4:4] is the sub-list for extension extendee
+	0,  // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_profile_v1_profile_proto_init() }
@@ -1018,13 +943,14 @@ func file_profile_v1_profile_proto_init() {
 		return
 	}
 	file_profile_v1_profile_proto_msgTypes[0].OneofWrappers = []any{}
+	file_profile_v1_profile_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_profile_v1_profile_proto_rawDesc), len(file_profile_v1_profile_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

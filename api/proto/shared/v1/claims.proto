@@ -5,14 +5,17 @@ import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/shared/v1/claims;claims";
 
-message IdentityClaims {
-  optional string name        = 1 [(buf.validate.field).string.max_len = 32];
-  optional string given_name  = 2 [(buf.validate.field).string.max_len = 64];
-  optional string family_name = 3 [(buf.validate.field).string.max_len = 64];
+message IdentityInformation {
+  // This should acts like display_name
+  optional string name = 1 [(buf.validate.field).string.max_len = 32];
+  // This should acts like username, but is never derived from email local part; always auto-allocated to a random value (e.g. 8 chars) if not provided, and immutable after creation.
+  optional string username    = 2 [(buf.validate.field).string.max_len = 32];
+  optional string given_name  = 3 [(buf.validate.field).string.max_len = 64];
+  optional string family_name = 4 [(buf.validate.field).string.max_len = 64];
 
-  optional string picture = 4;
-  optional string locale  = 5 [(buf.validate.field).string.len = 32];
+  optional string picture = 5;
+  optional string locale  = 6 [(buf.validate.field).string.len = 32];
 
-  optional string email          = 6 [(buf.validate.field).string.email = true];
-  optional bool   email_verified = 7;
+  optional string email          = 7 [(buf.validate.field).string.email = true];
+  optional bool   email_verified = 8;
 }

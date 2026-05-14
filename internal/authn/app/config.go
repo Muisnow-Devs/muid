@@ -45,7 +45,7 @@ type Config struct {
 	GithubRedirectURL       string `envconfig:"GITHUB_REDIRECT_URL"        default:"http://localhost:5314/auth/callback/github"`
 
 	// ProfileGRPCAddr is the Profile gRPC authority (host:port). Leave empty to skip dialing (signup flows will fail until set).
-	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR" default:""`
+	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"            default:""`
 	// ProfileGRPCTimeoutSeconds bounds each outbound Profile RPC from authn.
 	ProfileGRPCTimeoutSeconds int `envconfig:"PROFILE_GRPC_TIMEOUT_SECONDS" default:"10"`
 }

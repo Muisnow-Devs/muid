@@ -2,8 +2,10 @@ syntax = "proto3";
 
 package muid.profile.v1;
 
-import "buf/validate/validate.proto";
 import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+import "buf/validate/validate.proto";
 
 import "shared/v1/claims.proto";
 
@@ -21,8 +23,8 @@ service ProfileService {
 
 message CreateProfileRequest {
   string email = 1 [(buf.validate.field).string.email = true];
-  // When absent or empty, the service assigns random display name, username, and a deterministic synthetic avatar (goavatar).
-  optional muid.shared.v1.claims.IdentityClaims claims = 2;
+  // Optional OIDC-style claims: display name is taken from claims when resolvable, otherwise random; username is always auto-allocated (never from email); picture triggers async avatar bootstrap when https.
+  optional muid.shared.v1.claims.IdentityInformation identity = 2;
 }
 
 message CreateProfileResponse {
@@ -34,30 +36,24 @@ message GetProfileRequest {
 }
 
 message GetProfileResponse {
-  string id             = 1;
-  string email          = 2;
-  string display_name   = 3;
-  string username       = 4;
-  string avatar_url     = 5;
-  string locale         = 6;
+  string id                = 1;
+  string email             = 2;
+  string display_name      = 3;
+  string username          = 4;
+  string avatar_url        = 5;
+  string locale            = 6;
   string avatar_object_key = 7;
-}
-
-// Scalar profile fields that may be partially updated. Only fields listed in
-// `update_mask` are applied; mask paths are relative to UpdateProfileRequest
-// (e.g. "profile.display_name"). See server docs / AGENT_STYLING.md.
-message UpdateProfileFields {
-  string username = 1 [(buf.validate.field).string = {min_len: 1, max_len: 64}];
-  string display_name = 2 [(buf.validate.field).string = {min_len: 1, max_len: 128}];
-  string locale = 3 [(buf.validate.field).string = {max_len: 32}];
 }
 
 message UpdateProfileRequest {
   string id = 1 [(buf.validate.field).string.uuid = true];
-  // Paths use proto snake_case under `profile`, e.g. "profile.username".
-  // JSON clients may send camelCase segments ("profile.displayName"); the server normalizes.
+  // Mask paths are relative to this message: proto snake_case prefix `identity.` for
+  // IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username").
+  // JSON clients may send camelCase in the second segment (e.g. "identity.emailVerified");
+  // the server normalizes to canonical snake_case paths.
   google.protobuf.FieldMask update_mask = 2;
-  UpdateProfileFields profile = 3;
+  // Values for fields listed in update_mask; only allowlisted paths are applied.
+  optional muid.shared.v1.claims.IdentityInformation identity = 3;
 }
 
 message UpdateProfileResponse {
@@ -65,20 +61,21 @@ message UpdateProfileResponse {
 }
 
 message StartAvatarUploadRequest {
-  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id      = 1 [(buf.validate.field).string.uuid = true];
   string content_type = 2 [(buf.validate.field).string = {min_len: 3, max_len: 128}];
 }
 
 message StartAvatarUploadResponse {
   string upload_url = 1;
-  string object_key   = 2;
-  int64  expires_at_unix = 3;
+  string object_key = 2;
+
+  google.protobuf.Timestamp expires_at = 3;
 }
 
 message CompleteAvatarUploadRequest {
-  string user_id = 1 [(buf.validate.field).string.uuid = true];
-  string object_key   = 2 [(buf.validate.field).string = {min_len: 1, max_len: 512}];
-  int64  byte_size    = 3 [(buf.validate.field).int64 = {gte: 1}];
+  string user_id    = 1 [(buf.validate.field).string.uuid = true];
+  string object_key = 2 [(buf.validate.field).string = {min_len: 1, max_len: 512}];
+  int64  byte_size  = 3 [(buf.validate.field).int64 = {gte: 1}];
 }
 
 message CompleteAvatarUploadResponse {

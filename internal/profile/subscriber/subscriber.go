@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -22,10 +23,21 @@ func RunProfileSubscriber(ctx context.Context, ps pubsub.PubSub) error {
 			if err := proto.Unmarshal(message, &ev); err != nil {
 				return errors.Join(ErrMalformedProfileChangePayload, err)
 			}
+			var paths []string
+			if cf := ev.GetChangedFields(); cf != nil {
+				paths = cf.GetPaths()
+			}
+			occ := ev.GetOccurredAt()
+			occStr := ""
+			if occ != nil {
+				occStr = occ.AsTime().UTC().Format(time.RFC3339)
+			}
 			log.Printf(
-				"profile.change user_id=%s change_type=%s",
+				"profile.change user_id=%s occurred_at=%s changed_fields=%q changes_set=%v",
 				ev.GetUserId(),
-				ev.GetChangeType().String(),
+				occStr,
+				paths,
+				ev.HasChanges(),
 			)
 			return nil
 		},

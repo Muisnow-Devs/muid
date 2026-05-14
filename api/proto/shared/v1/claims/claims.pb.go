@@ -21,35 +21,36 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type IdentityClaims struct {
+type IdentityInformation struct {
 	state                    protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Name          *string                `protobuf:"bytes,1,opt,name=name,proto3,oneof"`
-	xxx_hidden_GivenName     *string                `protobuf:"bytes,2,opt,name=given_name,json=givenName,proto3,oneof"`
-	xxx_hidden_FamilyName    *string                `protobuf:"bytes,3,opt,name=family_name,json=familyName,proto3,oneof"`
-	xxx_hidden_Picture       *string                `protobuf:"bytes,4,opt,name=picture,proto3,oneof"`
-	xxx_hidden_Locale        *string                `protobuf:"bytes,5,opt,name=locale,proto3,oneof"`
-	xxx_hidden_Email         *string                `protobuf:"bytes,6,opt,name=email,proto3,oneof"`
-	xxx_hidden_EmailVerified bool                   `protobuf:"varint,7,opt,name=email_verified,json=emailVerified,proto3,oneof"`
+	xxx_hidden_Username      *string                `protobuf:"bytes,2,opt,name=username,proto3,oneof"`
+	xxx_hidden_GivenName     *string                `protobuf:"bytes,3,opt,name=given_name,json=givenName,proto3,oneof"`
+	xxx_hidden_FamilyName    *string                `protobuf:"bytes,4,opt,name=family_name,json=familyName,proto3,oneof"`
+	xxx_hidden_Picture       *string                `protobuf:"bytes,5,opt,name=picture,proto3,oneof"`
+	xxx_hidden_Locale        *string                `protobuf:"bytes,6,opt,name=locale,proto3,oneof"`
+	xxx_hidden_Email         *string                `protobuf:"bytes,7,opt,name=email,proto3,oneof"`
+	xxx_hidden_EmailVerified bool                   `protobuf:"varint,8,opt,name=email_verified,json=emailVerified,proto3,oneof"`
 	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
 	XXX_presence             [1]uint32
 	unknownFields            protoimpl.UnknownFields
 	sizeCache                protoimpl.SizeCache
 }
 
-func (x *IdentityClaims) Reset() {
-	*x = IdentityClaims{}
+func (x *IdentityInformation) Reset() {
+	*x = IdentityInformation{}
 	mi := &file_shared_v1_claims_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *IdentityClaims) String() string {
+func (x *IdentityInformation) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*IdentityClaims) ProtoMessage() {}
+func (*IdentityInformation) ProtoMessage() {}
 
-func (x *IdentityClaims) ProtoReflect() protoreflect.Message {
+func (x *IdentityInformation) ProtoReflect() protoreflect.Message {
 	mi := &file_shared_v1_claims_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -61,7 +62,7 @@ func (x *IdentityClaims) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *IdentityClaims) GetName() string {
+func (x *IdentityInformation) GetName() string {
 	if x != nil {
 		if x.xxx_hidden_Name != nil {
 			return *x.xxx_hidden_Name
@@ -71,7 +72,17 @@ func (x *IdentityClaims) GetName() string {
 	return ""
 }
 
-func (x *IdentityClaims) GetGivenName() string {
+func (x *IdentityInformation) GetUsername() string {
+	if x != nil {
+		if x.xxx_hidden_Username != nil {
+			return *x.xxx_hidden_Username
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *IdentityInformation) GetGivenName() string {
 	if x != nil {
 		if x.xxx_hidden_GivenName != nil {
 			return *x.xxx_hidden_GivenName
@@ -81,7 +92,7 @@ func (x *IdentityClaims) GetGivenName() string {
 	return ""
 }
 
-func (x *IdentityClaims) GetFamilyName() string {
+func (x *IdentityInformation) GetFamilyName() string {
 	if x != nil {
 		if x.xxx_hidden_FamilyName != nil {
 			return *x.xxx_hidden_FamilyName
@@ -91,7 +102,7 @@ func (x *IdentityClaims) GetFamilyName() string {
 	return ""
 }
 
-func (x *IdentityClaims) GetPicture() string {
+func (x *IdentityInformation) GetPicture() string {
 	if x != nil {
 		if x.xxx_hidden_Picture != nil {
 			return *x.xxx_hidden_Picture
@@ -101,7 +112,7 @@ func (x *IdentityClaims) GetPicture() string {
 	return ""
 }
 
-func (x *IdentityClaims) GetLocale() string {
+func (x *IdentityInformation) GetLocale() string {
 	if x != nil {
 		if x.xxx_hidden_Locale != nil {
 			return *x.xxx_hidden_Locale
@@ -111,7 +122,7 @@ func (x *IdentityClaims) GetLocale() string {
 	return ""
 }
 
-func (x *IdentityClaims) GetEmail() string {
+func (x *IdentityInformation) GetEmail() string {
 	if x != nil {
 		if x.xxx_hidden_Email != nil {
 			return *x.xxx_hidden_Email
@@ -121,136 +132,156 @@ func (x *IdentityClaims) GetEmail() string {
 	return ""
 }
 
-func (x *IdentityClaims) GetEmailVerified() bool {
+func (x *IdentityInformation) GetEmailVerified() bool {
 	if x != nil {
 		return x.xxx_hidden_EmailVerified
 	}
 	return false
 }
 
-func (x *IdentityClaims) SetName(v string) {
+func (x *IdentityInformation) SetName(v string) {
 	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
 }
 
-func (x *IdentityClaims) SetGivenName(v string) {
+func (x *IdentityInformation) SetUsername(v string) {
+	x.xxx_hidden_Username = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+}
+
+func (x *IdentityInformation) SetGivenName(v string) {
 	x.xxx_hidden_GivenName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
 }
 
-func (x *IdentityClaims) SetFamilyName(v string) {
+func (x *IdentityInformation) SetFamilyName(v string) {
 	x.xxx_hidden_FamilyName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
 }
 
-func (x *IdentityClaims) SetPicture(v string) {
+func (x *IdentityInformation) SetPicture(v string) {
 	x.xxx_hidden_Picture = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
 }
 
-func (x *IdentityClaims) SetLocale(v string) {
+func (x *IdentityInformation) SetLocale(v string) {
 	x.xxx_hidden_Locale = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
 }
 
-func (x *IdentityClaims) SetEmail(v string) {
+func (x *IdentityInformation) SetEmail(v string) {
 	x.xxx_hidden_Email = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
 }
 
-func (x *IdentityClaims) SetEmailVerified(v bool) {
+func (x *IdentityInformation) SetEmailVerified(v bool) {
 	x.xxx_hidden_EmailVerified = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 7)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
 }
 
-func (x *IdentityClaims) HasName() bool {
+func (x *IdentityInformation) HasName() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
 }
 
-func (x *IdentityClaims) HasGivenName() bool {
+func (x *IdentityInformation) HasUsername() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
-func (x *IdentityClaims) HasFamilyName() bool {
+func (x *IdentityInformation) HasGivenName() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
-func (x *IdentityClaims) HasPicture() bool {
+func (x *IdentityInformation) HasFamilyName() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
-func (x *IdentityClaims) HasLocale() bool {
+func (x *IdentityInformation) HasPicture() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
 }
 
-func (x *IdentityClaims) HasEmail() bool {
+func (x *IdentityInformation) HasLocale() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
-func (x *IdentityClaims) HasEmailVerified() bool {
+func (x *IdentityInformation) HasEmail() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
-func (x *IdentityClaims) ClearName() {
+func (x *IdentityInformation) HasEmailVerified() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+}
+
+func (x *IdentityInformation) ClearName() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
 	x.xxx_hidden_Name = nil
 }
 
-func (x *IdentityClaims) ClearGivenName() {
+func (x *IdentityInformation) ClearUsername() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Username = nil
+}
+
+func (x *IdentityInformation) ClearGivenName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
 	x.xxx_hidden_GivenName = nil
 }
 
-func (x *IdentityClaims) ClearFamilyName() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+func (x *IdentityInformation) ClearFamilyName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
 	x.xxx_hidden_FamilyName = nil
 }
 
-func (x *IdentityClaims) ClearPicture() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+func (x *IdentityInformation) ClearPicture() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
 	x.xxx_hidden_Picture = nil
 }
 
-func (x *IdentityClaims) ClearLocale() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+func (x *IdentityInformation) ClearLocale() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
 	x.xxx_hidden_Locale = nil
 }
 
-func (x *IdentityClaims) ClearEmail() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+func (x *IdentityInformation) ClearEmail() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
 	x.xxx_hidden_Email = nil
 }
 
-func (x *IdentityClaims) ClearEmailVerified() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+func (x *IdentityInformation) ClearEmailVerified() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
 	x.xxx_hidden_EmailVerified = false
 }
 
-type IdentityClaims_builder struct {
+type IdentityInformation_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Name          *string
+	// This should acts like display_name
+	Name *string
+	// This should acts like username, but is never derived from email local part; always auto-allocated to a random value (e.g. 8 chars) if not provided, and immutable after creation.
+	Username      *string
 	GivenName     *string
 	FamilyName    *string
 	Picture       *string
@@ -259,36 +290,40 @@ type IdentityClaims_builder struct {
 	EmailVerified *bool
 }
 
-func (b0 IdentityClaims_builder) Build() *IdentityClaims {
-	m0 := &IdentityClaims{}
+func (b0 IdentityInformation_builder) Build() *IdentityInformation {
+	m0 := &IdentityInformation{}
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
 		x.xxx_hidden_Name = b.Name
 	}
+	if b.Username != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		x.xxx_hidden_Username = b.Username
+	}
 	if b.GivenName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
 		x.xxx_hidden_GivenName = b.GivenName
 	}
 	if b.FamilyName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
 		x.xxx_hidden_FamilyName = b.FamilyName
 	}
 	if b.Picture != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
 		x.xxx_hidden_Picture = b.Picture
 	}
 	if b.Locale != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
 		x.xxx_hidden_Locale = b.Locale
 	}
 	if b.Email != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
 		x.xxx_hidden_Email = b.Email
 	}
 	if b.EmailVerified != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 7)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
 		x.xxx_hidden_EmailVerified = *b.EmailVerified
 	}
 	return m0
@@ -298,18 +333,20 @@ var File_shared_v1_claims_proto protoreflect.FileDescriptor
 
 const file_shared_v1_claims_proto_rawDesc = "" +
 	"\n" +
-	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\x80\x03\n" +
-	"\x0eIdentityClaims\x12 \n" +
-	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18 H\x00R\x04name\x88\x01\x01\x12+\n" +
+	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xbc\x03\n" +
+	"\x13IdentityInformation\x12 \n" +
+	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18 H\x00R\x04name\x88\x01\x01\x12(\n" +
+	"\busername\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x18 H\x01R\busername\x88\x01\x01\x12+\n" +
 	"\n" +
-	"given_name\x18\x02 \x01(\tB\a\xbaH\x04r\x02\x18@H\x01R\tgivenName\x88\x01\x01\x12-\n" +
-	"\vfamily_name\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18@H\x02R\n" +
+	"given_name\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18@H\x02R\tgivenName\x88\x01\x01\x12-\n" +
+	"\vfamily_name\x18\x04 \x01(\tB\a\xbaH\x04r\x02\x18@H\x03R\n" +
 	"familyName\x88\x01\x01\x12\x1d\n" +
-	"\apicture\x18\x04 \x01(\tH\x03R\apicture\x88\x01\x01\x12%\n" +
-	"\x06locale\x18\x05 \x01(\tB\b\xbaH\x05r\x03\x98\x01 H\x04R\x06locale\x88\x01\x01\x12\"\n" +
-	"\x05email\x18\x06 \x01(\tB\a\xbaH\x04r\x02`\x01H\x05R\x05email\x88\x01\x01\x12*\n" +
-	"\x0eemail_verified\x18\a \x01(\bH\x06R\remailVerified\x88\x01\x01B\a\n" +
-	"\x05_nameB\r\n" +
+	"\apicture\x18\x05 \x01(\tH\x04R\apicture\x88\x01\x01\x12%\n" +
+	"\x06locale\x18\x06 \x01(\tB\b\xbaH\x05r\x03\x98\x01 H\x05R\x06locale\x88\x01\x01\x12\"\n" +
+	"\x05email\x18\a \x01(\tB\a\xbaH\x04r\x02`\x01H\x06R\x05email\x88\x01\x01\x12*\n" +
+	"\x0eemail_verified\x18\b \x01(\bH\aR\remailVerified\x88\x01\x01B\a\n" +
+	"\x05_nameB\v\n" +
+	"\t_usernameB\r\n" +
 	"\v_given_nameB\x0e\n" +
 	"\f_family_nameB\n" +
 	"\n" +
@@ -321,7 +358,7 @@ const file_shared_v1_claims_proto_rawDesc = "" +
 
 var file_shared_v1_claims_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_shared_v1_claims_proto_goTypes = []any{
-	(*IdentityClaims)(nil), // 0: muid.shared.v1.claims.IdentityClaims
+	(*IdentityInformation)(nil), // 0: muid.shared.v1.claims.IdentityInformation
 }
 var file_shared_v1_claims_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type

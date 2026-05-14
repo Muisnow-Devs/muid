@@ -36,7 +36,10 @@ func sendLoginAlertEmail(
 		return mailer.ErrInvalidEmailAddress
 	}
 	locale := ev.GetLocale()
-	when := time.Unix(ev.GetOccurredAt(), 0).UTC().Format(time.RFC1123Z)
+	when := time.Now().UTC().Format(time.RFC1123Z)
+	if ts := ev.GetOccurredAt(); ts != nil {
+		when = ts.AsTime().UTC().Format(time.RFC1123Z)
+	}
 
 	rendered, err := deps.Templates.Render(ctx, locale, "login_alert", struct {
 		Device            string

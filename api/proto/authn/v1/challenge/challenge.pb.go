@@ -10,6 +10,7 @@ import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -24,8 +25,8 @@ const (
 type AuthChallenge struct {
 	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_ChallengeId string                    `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3"`
-	xxx_hidden_IssuedAt    int64                     `protobuf:"varint,2,opt,name=issued_at,json=issuedAt,proto3"`
-	xxx_hidden_ExpiresAt   int64                     `protobuf:"varint,3,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_IssuedAt    *timestamppb.Timestamp    `protobuf:"bytes,2,opt,name=issued_at,json=issuedAt,proto3"`
+	xxx_hidden_ExpiresAt   *timestamppb.Timestamp    `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
 	xxx_hidden_Challenge   isAuthChallenge_Challenge `protobuf_oneof:"challenge"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -63,18 +64,18 @@ func (x *AuthChallenge) GetChallengeId() string {
 	return ""
 }
 
-func (x *AuthChallenge) GetIssuedAt() int64 {
+func (x *AuthChallenge) GetIssuedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_IssuedAt
 	}
-	return 0
+	return nil
 }
 
-func (x *AuthChallenge) GetExpiresAt() int64 {
+func (x *AuthChallenge) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_ExpiresAt
 	}
-	return 0
+	return nil
 }
 
 func (x *AuthChallenge) GetEmailChallenge() *EmailChallenge {
@@ -108,11 +109,11 @@ func (x *AuthChallenge) SetChallengeId(v string) {
 	x.xxx_hidden_ChallengeId = v
 }
 
-func (x *AuthChallenge) SetIssuedAt(v int64) {
+func (x *AuthChallenge) SetIssuedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_IssuedAt = v
 }
 
-func (x *AuthChallenge) SetExpiresAt(v int64) {
+func (x *AuthChallenge) SetExpiresAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_ExpiresAt = v
 }
 
@@ -138,6 +139,20 @@ func (x *AuthChallenge) SetPasskeyChallenge(v *PasskeyChallenge) {
 		return
 	}
 	x.xxx_hidden_Challenge = &authChallenge_PasskeyChallenge{v}
+}
+
+func (x *AuthChallenge) HasIssuedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_IssuedAt != nil
+}
+
+func (x *AuthChallenge) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
 }
 
 func (x *AuthChallenge) HasChallenge() bool {
@@ -169,6 +184,14 @@ func (x *AuthChallenge) HasPasskeyChallenge() bool {
 	}
 	_, ok := x.xxx_hidden_Challenge.(*authChallenge_PasskeyChallenge)
 	return ok
+}
+
+func (x *AuthChallenge) ClearIssuedAt() {
+	x.xxx_hidden_IssuedAt = nil
+}
+
+func (x *AuthChallenge) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
 }
 
 func (x *AuthChallenge) ClearChallenge() {
@@ -218,8 +241,8 @@ type AuthChallenge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	ChallengeId string
-	IssuedAt    int64
-	ExpiresAt   int64
+	IssuedAt    *timestamppb.Timestamp
+	ExpiresAt   *timestamppb.Timestamp
 	// Fields of oneof xxx_hidden_Challenge:
 	EmailChallenge   *EmailChallenge
 	OauthChallenge   *OAuthChallenge
@@ -509,12 +532,12 @@ var File_authn_v1_challenge_proto protoreflect.FileDescriptor
 
 const file_authn_v1_challenge_proto_rawDesc = "" +
 	"\n" +
-	"\x18authn/v1/challenge.proto\x12\x17muid.authn.v1.challenge\x1a\x1bbuf/validate/validate.proto\"\x87\x03\n" +
+	"\x18authn/v1/challenge.proto\x12\x17muid.authn.v1.challenge\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbf\x03\n" +
 	"\rAuthChallenge\x12+\n" +
-	"\fchallenge_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vchallengeId\x12\x1b\n" +
-	"\tissued_at\x18\x02 \x01(\x03R\bissuedAt\x12\x1d\n" +
+	"\fchallenge_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vchallengeId\x127\n" +
+	"\tissued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\x03R\texpiresAt\x12R\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12R\n" +
 	"\x0femail_challenge\x18\x04 \x01(\v2'.muid.authn.v1.challenge.EmailChallengeH\x00R\x0eemailChallenge\x12R\n" +
 	"\x0foauth_challenge\x18\x05 \x01(\v2'.muid.authn.v1.challenge.OAuthChallengeH\x00R\x0eoauthChallenge\x12X\n" +
 	"\x11passkey_challenge\x18\x06 \x01(\v2).muid.authn.v1.challenge.PasskeyChallengeH\x00R\x10passkeyChallengeB\v\n" +
@@ -533,20 +556,23 @@ const file_authn_v1_challenge_proto_rawDesc = "" +
 
 var file_authn_v1_challenge_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_authn_v1_challenge_proto_goTypes = []any{
-	(*AuthChallenge)(nil),    // 0: muid.authn.v1.challenge.AuthChallenge
-	(*EmailChallenge)(nil),   // 1: muid.authn.v1.challenge.EmailChallenge
-	(*OAuthChallenge)(nil),   // 2: muid.authn.v1.challenge.OAuthChallenge
-	(*PasskeyChallenge)(nil), // 3: muid.authn.v1.challenge.PasskeyChallenge
+	(*AuthChallenge)(nil),         // 0: muid.authn.v1.challenge.AuthChallenge
+	(*EmailChallenge)(nil),        // 1: muid.authn.v1.challenge.EmailChallenge
+	(*OAuthChallenge)(nil),        // 2: muid.authn.v1.challenge.OAuthChallenge
+	(*PasskeyChallenge)(nil),      // 3: muid.authn.v1.challenge.PasskeyChallenge
+	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
 }
 var file_authn_v1_challenge_proto_depIdxs = []int32{
-	1, // 0: muid.authn.v1.challenge.AuthChallenge.email_challenge:type_name -> muid.authn.v1.challenge.EmailChallenge
-	2, // 1: muid.authn.v1.challenge.AuthChallenge.oauth_challenge:type_name -> muid.authn.v1.challenge.OAuthChallenge
-	3, // 2: muid.authn.v1.challenge.AuthChallenge.passkey_challenge:type_name -> muid.authn.v1.challenge.PasskeyChallenge
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	4, // 0: muid.authn.v1.challenge.AuthChallenge.issued_at:type_name -> google.protobuf.Timestamp
+	4, // 1: muid.authn.v1.challenge.AuthChallenge.expires_at:type_name -> google.protobuf.Timestamp
+	1, // 2: muid.authn.v1.challenge.AuthChallenge.email_challenge:type_name -> muid.authn.v1.challenge.EmailChallenge
+	2, // 3: muid.authn.v1.challenge.AuthChallenge.oauth_challenge:type_name -> muid.authn.v1.challenge.OAuthChallenge
+	3, // 4: muid.authn.v1.challenge.AuthChallenge.passkey_challenge:type_name -> muid.authn.v1.challenge.PasskeyChallenge
+	5, // [5:5] is the sub-list for method output_type
+	5, // [5:5] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_challenge_proto_init() }

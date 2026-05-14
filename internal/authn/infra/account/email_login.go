@@ -26,7 +26,7 @@ func (s *Services) ResolveEmailLogin(ctx context.Context, email string) (uuid.UU
 func (s *Services) provisionFromProfile(
 	ctx context.Context,
 	email string,
-	claims *claimspb.IdentityClaims,
+	claims *claimspb.IdentityInformation,
 ) (uuid.UUID, error) {
 	if s.Profile == nil {
 		return uuid.Nil, errProfileClientUnset
@@ -39,7 +39,7 @@ func (s *Services) provisionFromProfile(
 	req := &profilepb.CreateProfileRequest{}
 	req.SetEmail(email)
 	if claims != nil {
-		req.SetClaims(claims)
+		req.SetIdentity(claims)
 	}
 	resp, err := s.Profile.CreateProfile(pctx, req)
 	if err != nil {

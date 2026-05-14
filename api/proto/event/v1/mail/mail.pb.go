@@ -9,6 +9,7 @@ package mail
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	unsafe "unsafe"
 )
@@ -99,7 +100,7 @@ type EmailMessage struct {
 	xxx_hidden_Template  string                 `protobuf:"bytes,5,opt,name=template,proto3"`
 	xxx_hidden_Locale    string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
 	xxx_hidden_Data      map[string]string      `protobuf:"bytes,7,rep,name=data,proto3" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_CreatedAt int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_CreatedAt *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -173,11 +174,11 @@ func (x *EmailMessage) GetData() map[string]string {
 	return nil
 }
 
-func (x *EmailMessage) GetCreatedAt() int64 {
+func (x *EmailMessage) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_CreatedAt
 	}
-	return 0
+	return nil
 }
 
 func (x *EmailMessage) SetId(v string) {
@@ -204,8 +205,19 @@ func (x *EmailMessage) SetData(v map[string]string) {
 	x.xxx_hidden_Data = v
 }
 
-func (x *EmailMessage) SetCreatedAt(v int64) {
+func (x *EmailMessage) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *EmailMessage) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *EmailMessage) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
 }
 
 type EmailMessage_builder struct {
@@ -217,7 +229,7 @@ type EmailMessage_builder struct {
 	Template  string
 	Locale    string
 	Data      map[string]string
-	CreatedAt int64
+	CreatedAt *timestamppb.Timestamp
 }
 
 func (b0 EmailMessage_builder) Build() *EmailMessage {
@@ -240,9 +252,9 @@ type SendOTPEmailEvent struct {
 	xxx_hidden_Email       string                 `protobuf:"bytes,2,opt,name=email,proto3"`
 	xxx_hidden_Locale      string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
 	xxx_hidden_Code        string                 `protobuf:"bytes,4,opt,name=code,proto3"`
-	xxx_hidden_ExpiresAt   int64                  `protobuf:"varint,5,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_ExpiresAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3"`
 	xxx_hidden_ProductName string                 `protobuf:"bytes,6,opt,name=product_name,json=productName,proto3"`
-	xxx_hidden_CreatedAt   int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -300,11 +312,11 @@ func (x *SendOTPEmailEvent) GetCode() string {
 	return ""
 }
 
-func (x *SendOTPEmailEvent) GetExpiresAt() int64 {
+func (x *SendOTPEmailEvent) GetExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_ExpiresAt
 	}
-	return 0
+	return nil
 }
 
 func (x *SendOTPEmailEvent) GetProductName() string {
@@ -314,11 +326,11 @@ func (x *SendOTPEmailEvent) GetProductName() string {
 	return ""
 }
 
-func (x *SendOTPEmailEvent) GetCreatedAt() int64 {
+func (x *SendOTPEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_CreatedAt
 	}
-	return 0
+	return nil
 }
 
 func (x *SendOTPEmailEvent) SetId(v string) {
@@ -337,7 +349,7 @@ func (x *SendOTPEmailEvent) SetCode(v string) {
 	x.xxx_hidden_Code = v
 }
 
-func (x *SendOTPEmailEvent) SetExpiresAt(v int64) {
+func (x *SendOTPEmailEvent) SetExpiresAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_ExpiresAt = v
 }
 
@@ -345,8 +357,30 @@ func (x *SendOTPEmailEvent) SetProductName(v string) {
 	x.xxx_hidden_ProductName = v
 }
 
-func (x *SendOTPEmailEvent) SetCreatedAt(v int64) {
+func (x *SendOTPEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *SendOTPEmailEvent) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *SendOTPEmailEvent) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *SendOTPEmailEvent) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+func (x *SendOTPEmailEvent) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
 }
 
 type SendOTPEmailEvent_builder struct {
@@ -356,9 +390,9 @@ type SendOTPEmailEvent_builder struct {
 	Email       string
 	Locale      string
 	Code        string
-	ExpiresAt   int64
+	ExpiresAt   *timestamppb.Timestamp
 	ProductName string
-	CreatedAt   int64
+	CreatedAt   *timestamppb.Timestamp
 }
 
 func (b0 SendOTPEmailEvent_builder) Build() *SendOTPEmailEvent {
@@ -383,8 +417,8 @@ type SendLoginAlertEmailEvent struct {
 	xxx_hidden_IpAddress  string                 `protobuf:"bytes,4,opt,name=ip_address,json=ipAddress,proto3"`
 	xxx_hidden_Location   string                 `protobuf:"bytes,5,opt,name=location,proto3"`
 	xxx_hidden_Device     string                 `protobuf:"bytes,6,opt,name=device,proto3"`
-	xxx_hidden_OccurredAt int64                  `protobuf:"varint,7,opt,name=occurred_at,json=occurredAt,proto3"`
-	xxx_hidden_CreatedAt  int64                  `protobuf:"varint,8,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_OccurredAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=occurred_at,json=occurredAt,proto3"`
+	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -456,18 +490,18 @@ func (x *SendLoginAlertEmailEvent) GetDevice() string {
 	return ""
 }
 
-func (x *SendLoginAlertEmailEvent) GetOccurredAt() int64 {
+func (x *SendLoginAlertEmailEvent) GetOccurredAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_OccurredAt
 	}
-	return 0
+	return nil
 }
 
-func (x *SendLoginAlertEmailEvent) GetCreatedAt() int64 {
+func (x *SendLoginAlertEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_CreatedAt
 	}
-	return 0
+	return nil
 }
 
 func (x *SendLoginAlertEmailEvent) SetId(v string) {
@@ -494,12 +528,34 @@ func (x *SendLoginAlertEmailEvent) SetDevice(v string) {
 	x.xxx_hidden_Device = v
 }
 
-func (x *SendLoginAlertEmailEvent) SetOccurredAt(v int64) {
+func (x *SendLoginAlertEmailEvent) SetOccurredAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_OccurredAt = v
 }
 
-func (x *SendLoginAlertEmailEvent) SetCreatedAt(v int64) {
+func (x *SendLoginAlertEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *SendLoginAlertEmailEvent) HasOccurredAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_OccurredAt != nil
+}
+
+func (x *SendLoginAlertEmailEvent) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *SendLoginAlertEmailEvent) ClearOccurredAt() {
+	x.xxx_hidden_OccurredAt = nil
+}
+
+func (x *SendLoginAlertEmailEvent) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
 }
 
 type SendLoginAlertEmailEvent_builder struct {
@@ -511,8 +567,8 @@ type SendLoginAlertEmailEvent_builder struct {
 	IpAddress  string
 	Location   string
 	Device     string
-	OccurredAt int64
-	CreatedAt  int64
+	OccurredAt *timestamppb.Timestamp
+	CreatedAt  *timestamppb.Timestamp
 }
 
 func (b0 SendLoginAlertEmailEvent_builder) Build() *SendLoginAlertEmailEvent {
@@ -534,32 +590,32 @@ var File_event_v1_mail_proto protoreflect.FileDescriptor
 
 const file_event_v1_mail_proto_rawDesc = "" +
 	"\n" +
-	"\x13event/v1/mail.proto\x12\x12muid.event.v1.mail\"8\n" +
+	"\x13event/v1/mail.proto\x12\x12muid.event.v1.mail\x1a\x1fgoogle/protobuf/timestamp.proto\"8\n" +
 	"\fEmailAddress\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name\"\xb6\x02\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\"\xd2\x02\n" +
 	"\fEmailMessage\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x120\n" +
 	"\x02to\x18\x03 \x03(\v2 .muid.event.v1.mail.EmailAddressR\x02to\x12\x18\n" +
 	"\asubject\x18\x04 \x01(\tR\asubject\x12\x1a\n" +
 	"\btemplate\x18\x05 \x01(\tR\btemplate\x12\x16\n" +
 	"\x06locale\x18\x06 \x01(\tR\x06locale\x12>\n" +
-	"\x04data\x18\a \x03(\v2*.muid.event.v1.mail.EmailMessage.DataEntryR\x04data\x12\x1d\n" +
+	"\x04data\x18\a \x03(\v2*.muid.event.v1.mail.EmailMessage.DataEntryR\x04data\x129\n" +
 	"\n" +
-	"created_at\x18\b \x01(\x03R\tcreatedAt\x1a7\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1a7\n" +
 	"\tDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc6\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfe\x01\n" +
 	"\x11SendOTPEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
 	"\x06locale\x18\x03 \x01(\tR\x06locale\x12\x12\n" +
-	"\x04code\x18\x04 \x01(\tR\x04code\x12\x1d\n" +
+	"\x04code\x18\x04 \x01(\tR\x04code\x129\n" +
 	"\n" +
-	"expires_at\x18\x05 \x01(\x03R\texpiresAt\x12!\n" +
-	"\fproduct_name\x18\x06 \x01(\tR\vproductName\x12\x1d\n" +
+	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12!\n" +
+	"\fproduct_name\x18\x06 \x01(\tR\vproductName\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\x03R\tcreatedAt\"\xeb\x01\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xa3\x02\n" +
 	"\x18SendLoginAlertEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
@@ -567,11 +623,11 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"\n" +
 	"ip_address\x18\x04 \x01(\tR\tipAddress\x12\x1a\n" +
 	"\blocation\x18\x05 \x01(\tR\blocation\x12\x16\n" +
-	"\x06device\x18\x06 \x01(\tR\x06device\x12\x1f\n" +
-	"\voccurred_at\x18\a \x01(\x03R\n" +
-	"occurredAt\x12\x1d\n" +
+	"\x06device\x18\x06 \x01(\tR\x06device\x12;\n" +
+	"\voccurred_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\x129\n" +
 	"\n" +
-	"created_at\x18\b \x01(\x03R\tcreatedAtB\xbb\x01\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\xbb\x01\n" +
 	"\x16com.muid.event.v1.mailB\tMailProtoP\x01Z*sanzi.io/muid/api/proto/event/v1/mail;mail\xa2\x02\x04MEVM\xaa\x02\x12Muid.Event.V1.Mail\xca\x02\x12Muid\\Event\\V1\\Mail\xe2\x02\x1eMuid\\Event\\V1\\Mail\\GPBMetadata\xea\x02\x15Muid::Event::V1::Mailb\x06proto3"
 
 var file_event_v1_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
@@ -581,15 +637,21 @@ var file_event_v1_mail_proto_goTypes = []any{
 	(*SendOTPEmailEvent)(nil),        // 2: muid.event.v1.mail.SendOTPEmailEvent
 	(*SendLoginAlertEmailEvent)(nil), // 3: muid.event.v1.mail.SendLoginAlertEmailEvent
 	nil,                              // 4: muid.event.v1.mail.EmailMessage.DataEntry
+	(*timestamppb.Timestamp)(nil),    // 5: google.protobuf.Timestamp
 }
 var file_event_v1_mail_proto_depIdxs = []int32{
 	0, // 0: muid.event.v1.mail.EmailMessage.to:type_name -> muid.event.v1.mail.EmailAddress
 	4, // 1: muid.event.v1.mail.EmailMessage.data:type_name -> muid.event.v1.mail.EmailMessage.DataEntry
-	2, // [2:2] is the sub-list for method output_type
-	2, // [2:2] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	5, // 2: muid.event.v1.mail.EmailMessage.created_at:type_name -> google.protobuf.Timestamp
+	5, // 3: muid.event.v1.mail.SendOTPEmailEvent.expires_at:type_name -> google.protobuf.Timestamp
+	5, // 4: muid.event.v1.mail.SendOTPEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	5, // 5: muid.event.v1.mail.SendLoginAlertEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	5, // 6: muid.event.v1.mail.SendLoginAlertEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	7, // [7:7] is the sub-list for method output_type
+	7, // [7:7] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_event_v1_mail_proto_init() }

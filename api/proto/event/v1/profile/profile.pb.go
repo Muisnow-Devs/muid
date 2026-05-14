@@ -9,7 +9,10 @@ package profileevent
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	fieldmaskpb "google.golang.org/protobuf/types/known/fieldmaskpb"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
+	claims "sanzi.io/muid/api/proto/shared/v1/claims"
 	unsafe "unsafe"
 )
 
@@ -20,62 +23,20 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type ProfileChangedEvent_ChangeType int32
-
-const (
-	ProfileChangedEvent_CHANGE_TYPE_UNSPECIFIED    ProfileChangedEvent_ChangeType = 0
-	ProfileChangedEvent_CHANGE_TYPE_CREATED        ProfileChangedEvent_ChangeType = 1
-	ProfileChangedEvent_CHANGE_TYPE_UPDATED        ProfileChangedEvent_ChangeType = 2
-	ProfileChangedEvent_CHANGE_TYPE_AVATAR_UPDATED ProfileChangedEvent_ChangeType = 3
-)
-
-// Enum value maps for ProfileChangedEvent_ChangeType.
-var (
-	ProfileChangedEvent_ChangeType_name = map[int32]string{
-		0: "CHANGE_TYPE_UNSPECIFIED",
-		1: "CHANGE_TYPE_CREATED",
-		2: "CHANGE_TYPE_UPDATED",
-		3: "CHANGE_TYPE_AVATAR_UPDATED",
-	}
-	ProfileChangedEvent_ChangeType_value = map[string]int32{
-		"CHANGE_TYPE_UNSPECIFIED":    0,
-		"CHANGE_TYPE_CREATED":        1,
-		"CHANGE_TYPE_UPDATED":        2,
-		"CHANGE_TYPE_AVATAR_UPDATED": 3,
-	}
-)
-
-func (x ProfileChangedEvent_ChangeType) Enum() *ProfileChangedEvent_ChangeType {
-	p := new(ProfileChangedEvent_ChangeType)
-	*p = x
-	return p
-}
-
-func (x ProfileChangedEvent_ChangeType) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (ProfileChangedEvent_ChangeType) Descriptor() protoreflect.EnumDescriptor {
-	return file_event_v1_profile_proto_enumTypes[0].Descriptor()
-}
-
-func (ProfileChangedEvent_ChangeType) Type() protoreflect.EnumType {
-	return &file_event_v1_profile_proto_enumTypes[0]
-}
-
-func (x ProfileChangedEvent_ChangeType) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
 // ProfileChangedEvent is published on NATS topic profile.change (see pkg/shared/topics).
+//
+// changed_fields uses proto snake_case names and each path is a single top-level segment
+// relative to muid.profile.v1.GetProfileResponse (e.g. "display_name", "avatar_url").
+// This matches UpdateProfile semantics: an update_mask entry such as "identity.email" or
+// "identity.name" is reported here as path "email" or "display_name" respectively.
 type ProfileChangedEvent struct {
-	state                     protoimpl.MessageState         `protogen:"opaque.v1"`
-	xxx_hidden_UserId         string                         `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
-	xxx_hidden_Email          string                         `protobuf:"bytes,2,opt,name=email,proto3"`
-	xxx_hidden_ChangeType     ProfileChangedEvent_ChangeType `protobuf:"varint,3,opt,name=change_type,json=changeType,proto3,enum=muid.event.v1.profile.ProfileChangedEvent_ChangeType"`
-	xxx_hidden_OccurredAtUnix int64                          `protobuf:"varint,4,opt,name=occurred_at_unix,json=occurredAtUnix,proto3"`
-	unknownFields             protoimpl.UnknownFields
-	sizeCache                 protoimpl.SizeCache
+	state                    protoimpl.MessageState      `protogen:"opaque.v1"`
+	xxx_hidden_UserId        string                      `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_ChangedFields *fieldmaskpb.FieldMask      `protobuf:"bytes,2,opt,name=changed_fields,json=changedFields,proto3"`
+	xxx_hidden_Changes       *claims.IdentityInformation `protobuf:"bytes,3,opt,name=changes,proto3"`
+	xxx_hidden_OccurredAt    *timestamppb.Timestamp      `protobuf:"bytes,4,opt,name=occurred_at,json=occurredAt,proto3"`
+	unknownFields            protoimpl.UnknownFields
+	sizeCache                protoimpl.SizeCache
 }
 
 func (x *ProfileChangedEvent) Reset() {
@@ -110,50 +71,83 @@ func (x *ProfileChangedEvent) GetUserId() string {
 	return ""
 }
 
-func (x *ProfileChangedEvent) GetEmail() string {
+func (x *ProfileChangedEvent) GetChangedFields() *fieldmaskpb.FieldMask {
 	if x != nil {
-		return x.xxx_hidden_Email
+		return x.xxx_hidden_ChangedFields
 	}
-	return ""
+	return nil
 }
 
-func (x *ProfileChangedEvent) GetChangeType() ProfileChangedEvent_ChangeType {
+func (x *ProfileChangedEvent) GetChanges() *claims.IdentityInformation {
 	if x != nil {
-		return x.xxx_hidden_ChangeType
+		return x.xxx_hidden_Changes
 	}
-	return ProfileChangedEvent_CHANGE_TYPE_UNSPECIFIED
+	return nil
 }
 
-func (x *ProfileChangedEvent) GetOccurredAtUnix() int64 {
+func (x *ProfileChangedEvent) GetOccurredAt() *timestamppb.Timestamp {
 	if x != nil {
-		return x.xxx_hidden_OccurredAtUnix
+		return x.xxx_hidden_OccurredAt
 	}
-	return 0
+	return nil
 }
 
 func (x *ProfileChangedEvent) SetUserId(v string) {
 	x.xxx_hidden_UserId = v
 }
 
-func (x *ProfileChangedEvent) SetEmail(v string) {
-	x.xxx_hidden_Email = v
+func (x *ProfileChangedEvent) SetChangedFields(v *fieldmaskpb.FieldMask) {
+	x.xxx_hidden_ChangedFields = v
 }
 
-func (x *ProfileChangedEvent) SetChangeType(v ProfileChangedEvent_ChangeType) {
-	x.xxx_hidden_ChangeType = v
+func (x *ProfileChangedEvent) SetChanges(v *claims.IdentityInformation) {
+	x.xxx_hidden_Changes = v
 }
 
-func (x *ProfileChangedEvent) SetOccurredAtUnix(v int64) {
-	x.xxx_hidden_OccurredAtUnix = v
+func (x *ProfileChangedEvent) SetOccurredAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_OccurredAt = v
+}
+
+func (x *ProfileChangedEvent) HasChangedFields() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ChangedFields != nil
+}
+
+func (x *ProfileChangedEvent) HasChanges() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Changes != nil
+}
+
+func (x *ProfileChangedEvent) HasOccurredAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_OccurredAt != nil
+}
+
+func (x *ProfileChangedEvent) ClearChangedFields() {
+	x.xxx_hidden_ChangedFields = nil
+}
+
+func (x *ProfileChangedEvent) ClearChanges() {
+	x.xxx_hidden_Changes = nil
+}
+
+func (x *ProfileChangedEvent) ClearOccurredAt() {
+	x.xxx_hidden_OccurredAt = nil
 }
 
 type ProfileChangedEvent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	UserId         string
-	Email          string
-	ChangeType     ProfileChangedEvent_ChangeType
-	OccurredAtUnix int64
+	UserId        string
+	ChangedFields *fieldmaskpb.FieldMask
+	Changes       *claims.IdentityInformation
+	OccurredAt    *timestamppb.Timestamp
 }
 
 func (b0 ProfileChangedEvent_builder) Build() *ProfileChangedEvent {
@@ -161,9 +155,9 @@ func (b0 ProfileChangedEvent_builder) Build() *ProfileChangedEvent {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_UserId = b.UserId
-	x.xxx_hidden_Email = b.Email
-	x.xxx_hidden_ChangeType = b.ChangeType
-	x.xxx_hidden_OccurredAtUnix = b.OccurredAtUnix
+	x.xxx_hidden_ChangedFields = b.ChangedFields
+	x.xxx_hidden_Changes = b.Changes
+	x.xxx_hidden_OccurredAt = b.OccurredAt
 	return m0
 }
 
@@ -171,34 +165,31 @@ var File_event_v1_profile_proto protoreflect.FileDescriptor
 
 const file_event_v1_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x16event/v1/profile.proto\x12\x15muid.event.v1.profile\"\xc3\x02\n" +
+	"\x16event/v1/profile.proto\x12\x15muid.event.v1.profile\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16shared/v1/claims.proto\"\xf4\x01\n" +
 	"\x13ProfileChangedEvent\x12\x17\n" +
-	"\auser_id\x18\x01 \x01(\tR\x06userId\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x12V\n" +
-	"\vchange_type\x18\x03 \x01(\x0e25.muid.event.v1.profile.ProfileChangedEvent.ChangeTypeR\n" +
-	"changeType\x12(\n" +
-	"\x10occurred_at_unix\x18\x04 \x01(\x03R\x0eoccurredAtUnix\"{\n" +
-	"\n" +
-	"ChangeType\x12\x1b\n" +
-	"\x17CHANGE_TYPE_UNSPECIFIED\x10\x00\x12\x17\n" +
-	"\x13CHANGE_TYPE_CREATED\x10\x01\x12\x17\n" +
-	"\x13CHANGE_TYPE_UPDATED\x10\x02\x12\x1e\n" +
-	"\x1aCHANGE_TYPE_AVATAR_UPDATED\x10\x03B\xd8\x01\n" +
+	"\auser_id\x18\x01 \x01(\tR\x06userId\x12A\n" +
+	"\x0echanged_fields\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\rchangedFields\x12D\n" +
+	"\achanges\x18\x03 \x01(\v2*.muid.shared.v1.claims.IdentityInformationR\achanges\x12;\n" +
+	"\voccurred_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAtB\xd8\x01\n" +
 	"\x19com.muid.event.v1.profileB\fProfileProtoP\x01Z5sanzi.io/muid/api/proto/event/v1/profile;profileevent\xa2\x02\x04MEVP\xaa\x02\x15Muid.Event.V1.Profile\xca\x02\x15Muid\\Event\\V1\\Profile\xe2\x02!Muid\\Event\\V1\\Profile\\GPBMetadata\xea\x02\x18Muid::Event::V1::Profileb\x06proto3"
 
-var file_event_v1_profile_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_event_v1_profile_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_event_v1_profile_proto_goTypes = []any{
-	(ProfileChangedEvent_ChangeType)(0), // 0: muid.event.v1.profile.ProfileChangedEvent.ChangeType
-	(*ProfileChangedEvent)(nil),         // 1: muid.event.v1.profile.ProfileChangedEvent
+	(*ProfileChangedEvent)(nil),        // 0: muid.event.v1.profile.ProfileChangedEvent
+	(*fieldmaskpb.FieldMask)(nil),      // 1: google.protobuf.FieldMask
+	(*claims.IdentityInformation)(nil), // 2: muid.shared.v1.claims.IdentityInformation
+	(*timestamppb.Timestamp)(nil),      // 3: google.protobuf.Timestamp
 }
 var file_event_v1_profile_proto_depIdxs = []int32{
-	0, // 0: muid.event.v1.profile.ProfileChangedEvent.change_type:type_name -> muid.event.v1.profile.ProfileChangedEvent.ChangeType
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 0: muid.event.v1.profile.ProfileChangedEvent.changed_fields:type_name -> google.protobuf.FieldMask
+	2, // 1: muid.event.v1.profile.ProfileChangedEvent.changes:type_name -> muid.shared.v1.claims.IdentityInformation
+	3, // 2: muid.event.v1.profile.ProfileChangedEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_event_v1_profile_proto_init() }
@@ -211,14 +202,13 @@ func file_event_v1_profile_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_event_v1_profile_proto_rawDesc), len(file_event_v1_profile_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_event_v1_profile_proto_goTypes,
 		DependencyIndexes: file_event_v1_profile_proto_depIdxs,
-		EnumInfos:         file_event_v1_profile_proto_enumTypes,
 		MessageInfos:      file_event_v1_profile_proto_msgTypes,
 	}.Build()
 	File_event_v1_profile_proto = out.File

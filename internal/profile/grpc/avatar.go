@@ -11,14 +11,16 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
-	profileevent "sanzi.io/muid/api/proto/event/v1/profile"
 	pb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/media"
 	"sanzi.io/muid/internal/profile/avatarkey"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
+	"sanzi.io/muid/internal/profile/updatemask"
 	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/storage"
@@ -98,7 +100,7 @@ func (g *GRPCHandler) StartAvatarUpload(
 	resp := &pb.StartAvatarUploadResponse{}
 	resp.SetUploadUrl(url)
 	resp.SetObjectKey(objectKey)
-	resp.SetExpiresAtUnix(expTime.Unix())
+	resp.SetExpiresAt(timestamppb.New(expTime.UTC()))
 	return resp, nil
 }
 
@@ -313,22 +315,20 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		)
 	}
 
-	p, err := g.db.UserProfile.Get(ctx, userID)
+	avPaths, err := updatemask.SortedUniqueGetProfileResponsePaths(
+		[]string{"avatar_url", "avatar_object_key"},
+	)
 	if err != nil {
 		return nil, grpcInternal(
 			ctx,
-			"avatar complete reload profile",
+			"avatar complete event paths",
 			err,
 			"user_id_prefix",
 			userIDPrefix(userID.String()),
 		)
 	}
-
-	if err := g.publishChange(
-		userID.String(),
-		p.EmailRef,
-		profileevent.ProfileChangedEvent_CHANGE_TYPE_AVATAR_UPDATED,
-	); err != nil {
+	changed := &fieldmaskpb.FieldMask{Paths: avPaths}
+	if err := g.publishChange(ctx, userID.String(), changed); err != nil {
 		return nil, grpcInternal(
 			ctx,
 			"avatar complete publish",

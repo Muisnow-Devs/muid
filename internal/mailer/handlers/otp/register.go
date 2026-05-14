@@ -39,7 +39,10 @@ func sendOTPEmail(
 	if product == "" {
 		product = "Muid"
 	}
-	expires := time.Unix(ev.GetExpiresAt(), 0).UTC().Format(time.RFC1123Z)
+	expires := time.Now().UTC().Format(time.RFC1123Z)
+	if ts := ev.GetExpiresAt(); ts != nil {
+		expires = ts.AsTime().UTC().Format(time.RFC1123Z)
+	}
 	locale := ev.GetLocale()
 
 	rendered, err := deps.Templates.Render(ctx, locale, "otp", struct {

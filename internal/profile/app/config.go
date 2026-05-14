@@ -5,7 +5,7 @@ import (
 	"io"
 
 	"sanzi.io/muid/internal/profile/ent"
-	"sanzi.io/muid/internal/profile/grpc"
+	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -28,9 +28,9 @@ type Config struct {
 	R2AccessKeyID     string `envconfig:"R2_ACCESS_KEY_ID"     default:""`
 	R2SecretAccessKey string `envconfig:"R2_SECRET_ACCESS_KEY" default:""`
 	// R2UploadBucket receives presigned client uploads (temporary staging).
-	R2UploadBucket string `envconfig:"R2_UPLOAD_BUCKET" default:""`
+	R2UploadBucket string `envconfig:"R2_UPLOAD_BUCKET"     default:""`
 	// R2AssetsBucket stores processed WebP avatars served via PublicAssetURL.
-	R2AssetsBucket string `envconfig:"R2_ASSETS_BUCKET" default:""`
+	R2AssetsBucket string `envconfig:"R2_ASSETS_BUCKET"     default:""`
 }
 
 type InfraDependencies struct {

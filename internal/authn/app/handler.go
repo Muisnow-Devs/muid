@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	"sanzi.io/muid/api/proto/authn/v1/basic"
@@ -149,8 +150,8 @@ func buildAuthChallenge(
 	now := time.Now()
 	ch := &challenge.AuthChallenge{}
 	ch.SetChallengeId(step.TransitionId)
-	ch.SetIssuedAt(now.Unix())
-	ch.SetExpiresAt(now.Add(15 * time.Minute).Unix())
+	ch.SetIssuedAt(timestamppb.New(now))
+	ch.SetExpiresAt(timestamppb.New(now.Add(15 * time.Minute)))
 
 	switch method {
 	case basic.AuthMethod_AUTH_METHOD_EMAIL_OTP:

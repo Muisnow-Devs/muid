@@ -1,6 +1,8 @@
 syntax = "proto3";
 
 package muid.authn.v1.challenge;
+import "google/protobuf/timestamp.proto";
+
 import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/challenge;challenge";
@@ -8,8 +10,8 @@ option go_package = "sanzi.io/muid/api/proto/authn/v1/challenge;challenge";
 message AuthChallenge {
   string challenge_id = 1 [(buf.validate.field).string.uuid = true];
 
-  int64 issued_at  = 2;
-  int64 expires_at = 3;
+  google.protobuf.Timestamp issued_at  = 2;
+  google.protobuf.Timestamp expires_at = 3;
 
   oneof challenge {
     EmailChallenge   email_challenge   = 4;

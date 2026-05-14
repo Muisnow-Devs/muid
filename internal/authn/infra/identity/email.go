@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	"sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/authn/infra/account"
 	idn "sanzi.io/muid/internal/identity"
@@ -158,8 +160,8 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	msg := &mail.SendOTPEmailEvent{}
 	msg.SetEmail(email)
 	msg.SetCode(code.OTP)
-	msg.SetExpiresAt(code.ExpiresAt.Unix())
-	msg.SetCreatedAt(created_at.Unix())
+	msg.SetExpiresAt(timestamppb.New(code.ExpiresAt.UTC()))
+	msg.SetCreatedAt(timestamppb.New(created_at.UTC()))
 
 	msgBytes, err := proto.Marshal(msg)
 	if err != nil {

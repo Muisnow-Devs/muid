@@ -11,9 +11,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	profileevent "sanzi.io/muid/api/proto/event/v1/profile"
 	pb "sanzi.io/muid/api/proto/profile/v1"
+	idclaims "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 	"sanzi.io/muid/internal/profile/updatemask"
@@ -31,43 +34,29 @@ func (g *GRPCHandler) CreateProfile(
 		return nil, status.Error(codes.InvalidArgument, "email is required")
 	}
 
-	claims := req.GetClaims()
-	anonymous := !claimsAreMeaningful(claims)
+	identity := req.GetIdentity()
 
 	userID := shared.UUIDV7()
 	local := emailLocalPart(email)
 
-	var displayName, username string
-	var oidcPictureURL string
-	if anonymous {
+	displayName := displayNameFromIdentity(identity, local)
+	if displayName == "" {
 		displayName = randomDisplayName()
-	} else {
-		displayName = displayNameFromClaims(claims, local)
-		if displayName == "" {
-			displayName = randomDisplayName()
-		}
-		if pic := avatarFromClaims(claims); pic != "" {
-			oidcPictureURL = pic
-		}
 	}
 
-	var err error
-	if anonymous {
-		username, err = g.allocateUsername(ctx, randomUsernameBase())
-	} else {
-		baseUser := sanitizeUsername(local)
-		if baseUser == "" {
-			baseUser = "user"
-		}
-		username, err = g.allocateUsername(ctx, baseUser)
+	var oidcPictureURL string
+	if pic := avatarFromIdentity(identity); pic != "" {
+		oidcPictureURL = pic
 	}
+
+	username, err := g.allocateUsername(ctx, randomUsernameBase())
 	if err != nil {
 		return nil, err
 	}
 
-	locale := ""
-	if !anonymous && claims != nil && claims.GetLocale() != "" {
-		locale = claims.GetLocale()
+	locale := "en"
+	if identity != nil && identity.GetLocale() != "" {
+		locale = identity.GetLocale()
 	}
 
 	tx, err := g.db.Tx(ctx)
@@ -132,11 +121,20 @@ func (g *GRPCHandler) CreateProfile(
 		g.avatarIngest.GoBootstrap(ctx, userID, oidcPictureURL)
 	}
 
-	if err := g.publishChange(
-		userID.String(),
-		email,
-		profileevent.ProfileChangedEvent_CHANGE_TYPE_CREATED,
-	); err != nil {
+	createPaths, err := updatemask.SortedUniqueGetProfileResponsePaths([]string{
+		"id", "email", "display_name", "username", "locale",
+	})
+	if err != nil {
+		return nil, grpcInternal(
+			ctx,
+			"profile create event paths",
+			err,
+			"user_id_prefix",
+			userIDPrefix(userID.String()),
+		)
+	}
+	changed := &fieldmaskpb.FieldMask{Paths: createPaths}
+	if err := g.publishChange(ctx, userID.String(), changed); err != nil {
 		return nil, grpcInternal(
 			ctx,
 			"profile create publish",
@@ -177,7 +175,7 @@ func (g *GRPCHandler) GetProfile(
 		)
 	}
 
-	locale := ""
+	locale := "en"
 	if p.Edges.Preference != nil {
 		locale = p.Edges.Preference.Locale
 	}
@@ -229,11 +227,6 @@ func (g *GRPCHandler) UpdateProfile(
 		}
 	}
 
-	prof := req.GetProfile()
-	if prof == nil {
-		prof = &pb.UpdateProfileFields{}
-	}
-
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
 		return nil, grpcInternal(
@@ -247,7 +240,7 @@ func (g *GRPCHandler) UpdateProfile(
 	defer func() { errutil.Discard(tx.Rollback()) }()
 
 	for _, p := range paths {
-		if err := profilePatchRegistry[p](ctx, g, tx, id, prof); err != nil {
+		if err := profilePatchRegistry[p](ctx, g, tx, id, req); err != nil {
 			return nil, err
 		}
 	}
@@ -262,22 +255,25 @@ func (g *GRPCHandler) UpdateProfile(
 		)
 	}
 
-	p, err := g.db.UserProfile.Get(ctx, id)
+	resPaths, err := updatemask.GetProfileResponsePathsFromUpdateRequestPaths(paths)
 	if err != nil {
 		return nil, grpcInternal(
 			ctx,
-			"profile update reload",
+			"profile update event paths",
 			err,
 			"profile_id_prefix",
 			userIDPrefix(id.String()),
 		)
 	}
+	changed := &fieldmaskpb.FieldMask{Paths: resPaths}
+	if shouldBootstrapAvatarAfterCommit(paths) {
+		pic := strings.TrimSpace(avatarFromIdentity(req.GetIdentity()))
+		if pic != "" && g.avatarIngest != nil {
+			g.avatarIngest.GoBootstrap(ctx, id, pic)
+		}
+	}
 
-	if err := g.publishChange(
-		id.String(),
-		p.EmailRef,
-		profileevent.ProfileChangedEvent_CHANGE_TYPE_UPDATED,
-	); err != nil {
+	if err := g.publishChange(ctx, id.String(), changed); err != nil {
 		return nil, grpcInternal(
 			ctx,
 			"profile update publish",
@@ -330,17 +326,83 @@ func (g *GRPCHandler) allocateUsername(ctx context.Context, base string) (string
 }
 
 func (g *GRPCHandler) publishChange(
-	userID, email string,
-	ct profileevent.ProfileChangedEvent_ChangeType,
+	ctx context.Context,
+	userID string,
+	changed *fieldmaskpb.FieldMask,
 ) error {
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		return err
+	}
 	msg := &profileevent.ProfileChangedEvent{}
 	msg.SetUserId(userID)
-	msg.SetEmail(email)
-	msg.SetChangeType(ct)
-	msg.SetOccurredAtUnix(time.Now().Unix())
+	msg.SetChangedFields(changed)
+	msg.SetOccurredAt(timestamppb.New(time.Now().UTC()))
+	ch, err := g.buildProfileChangedClaims(ctx, id, changed.GetPaths())
+	if err != nil {
+		return err
+	}
+	if ch != nil {
+		msg.SetChanges(ch)
+	}
 	b, err := proto.Marshal(msg)
 	if err != nil {
 		return err
 	}
 	return g.pub.Publish(topics.TopicProfileChange, b)
+}
+
+func (g *GRPCHandler) buildProfileChangedClaims(
+	ctx context.Context,
+	id uuid.UUID,
+	responsePaths []string,
+) (*idclaims.IdentityInformation, error) {
+	if len(responsePaths) == 0 {
+		return nil, nil
+	}
+	ch := &idclaims.IdentityInformation{}
+	p, err := g.db.UserProfile.Query().
+		Where(userprofile.ID(id)).
+		WithPreference().
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return nil, errors.New("profile missing for event payload")
+	}
+	if err != nil {
+		return nil, err
+	}
+	locale := "en"
+	if p.Edges.Preference != nil {
+		locale = p.Edges.Preference.Locale
+	}
+	avatarURL, _, err := g.queryDisplayAvatar(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	setAny := false
+	for _, path := range responsePaths {
+		switch path {
+		case "email":
+			ch.SetEmail(p.EmailRef)
+			setAny = true
+		case "locale":
+			ch.SetLocale(locale)
+			setAny = true
+		case "display_name":
+			ch.SetName(p.DisplayName)
+			setAny = true
+		case "username":
+			ch.SetUsername(p.Username)
+			setAny = true
+		case "avatar_url":
+			if avatarURL != "" {
+				ch.SetPicture(avatarURL)
+				setAny = true
+			}
+		}
+	}
+	if !setAny {
+		return nil, nil
+	}
+	return ch, nil
 }

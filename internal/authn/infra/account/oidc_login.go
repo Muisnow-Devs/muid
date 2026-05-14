@@ -49,7 +49,7 @@ func (s *Services) ResolveOIDCLogin(
 		return uuid.Nil, err
 	}
 
-	claims := &claimspb.IdentityClaims{}
+	claims := &claimspb.IdentityInformation{}
 	claims.SetEmail(email)
 	claims.SetEmailVerified(emailVerified)
 	if displayName != "" {

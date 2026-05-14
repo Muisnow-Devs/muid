@@ -7,19 +7,7 @@ import (
 	idclaims "sanzi.io/muid/api/proto/shared/v1/claims"
 )
 
-func claimsAreMeaningful(c *idclaims.IdentityClaims) bool {
-	if c == nil {
-		return false
-	}
-	return c.GetName() != "" ||
-		c.GetGivenName() != "" ||
-		c.GetFamilyName() != "" ||
-		c.GetPicture() != "" ||
-		c.GetLocale() != "" ||
-		c.GetEmail() != ""
-}
-
-func displayNameFromClaims(c *idclaims.IdentityClaims, fallbackEmailLocal string) string {
+func displayNameFromIdentity(c *idclaims.IdentityInformation, fallbackEmailLocal string) string {
 	if c == nil {
 		return ""
 	}
@@ -38,7 +26,7 @@ func displayNameFromClaims(c *idclaims.IdentityClaims, fallbackEmailLocal string
 	return ""
 }
 
-func avatarFromClaims(c *idclaims.IdentityClaims) string {
+func avatarFromIdentity(c *idclaims.IdentityInformation) string {
 	if c == nil {
 		return ""
 	}

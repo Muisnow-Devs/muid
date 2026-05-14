@@ -24,9 +24,15 @@ func NewProfileGRPC(config Config, handler pb.ProfileServiceServer) (*ProfileGRP
 		return nil, err
 	}
 
+	pvUnary, err := grpcutils.UnaryProtovalidateInterceptor()
+	if err != nil {
+		return nil, err
+	}
+
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
+			pvUnary,
 			grpcutils.RecoveryInterceptor,
 			grpcutils.LoggerInterceptor,
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),

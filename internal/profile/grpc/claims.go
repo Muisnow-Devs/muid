@@ -2,7 +2,6 @@ package profilegrpc
 
 import (
 	"strings"
-	"unicode"
 
 	idclaims "sanzi.io/muid/api/proto/shared/v1/claims"
 )
@@ -39,19 +38,4 @@ func emailLocalPart(email string) string {
 		return ""
 	}
 	return strings.TrimSpace(email[:at])
-}
-
-func sanitizeUsername(s string) string {
-	var b strings.Builder
-	s = strings.ToLower(strings.TrimSpace(s))
-	for _, r := range s {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_' || r == '-' {
-			b.WriteRune(r)
-		}
-	}
-	out := b.String()
-	if len(out) > 30 {
-		out = out[:30]
-	}
-	return out
 }

@@ -15,6 +15,7 @@ import (
 	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 	"sanzi.io/muid/internal/profile/updatemask"
+	"sanzi.io/muid/pkg/validation"
 )
 
 // profilePatchFn applies one allowlisted field inside an ent transaction.
@@ -48,10 +49,17 @@ func patchIdentityUsername(
 			"identity payload required for identity.username",
 		)
 	}
-	candidate := sanitizeUsername(idn.GetUsername())
-	if candidate == "" {
+	raw := strings.TrimSpace(idn.GetUsername())
+	if raw == "" {
 		return status.Error(codes.InvalidArgument, "username must not be empty")
 	}
+	if !validation.ValidUsername(raw) {
+		return status.Error(
+			codes.InvalidArgument,
+			"username must be 5–32 characters: letters, digits, underscore only",
+		)
+	}
+	candidate := strings.ToLower(raw)
 	taken, err := tx.UserProfile.Query().
 		Where(userprofile.UsernameEQ(candidate), userprofile.IDNEQ(id)).
 		Exist(ctx)

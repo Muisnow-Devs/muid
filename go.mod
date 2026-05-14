@@ -3,6 +3,7 @@ module sanzi.io/muid
 go 1.26.2
 
 require (
+	buf.build/go/protovalidate v1.2.0
 	entgo.io/ent v0.14.6
 	github.com/MuhammadSaim/goavatar v1.1.1
 	github.com/aws/aws-sdk-go-v2 v1.41.7
@@ -30,7 +31,9 @@ require (
 require (
 	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1 // indirect
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.11-20260415201107-50325440f8f2.1 // indirect
+	cel.dev/expr v0.25.1 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/apparentlymart/go-textseg/v15 v15.0.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.10 // indirect
 	github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.18.23 // indirect
@@ -48,6 +51,7 @@ require (
 	github.com/bmatcuk/doublestar v1.3.4 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-openapi/inflect v0.19.0 // indirect
+	github.com/google/cel-go v0.28.0 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.18.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
@@ -64,10 +68,12 @@ require (
 	github.com/zclconf/go-cty v1.14.4 // indirect
 	github.com/zclconf/go-cty-yaml v1.1.0 // indirect
 	golang.org/x/crypto v0.49.0 // indirect
+	golang.org/x/exp v0.0.0-20250813145105-42675adae3e6 // indirect
 	golang.org/x/mod v0.33.0 // indirect
 	golang.org/x/net v0.51.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
 	golang.org/x/text v0.35.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260120221211-b8f7ae30c516 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 
 	"sanzi.io/muid/pkg/errutil"
 )
@@ -49,9 +50,33 @@ func randomDisplayName() string {
 	return fmt.Sprintf("%s-%s-%02x", adjectives[ai], nouns[ni], suffix[0])
 }
 
+// randomUsernameBase returns a fresh candidate username: prefix "user_" (5 runes)
+// plus 16 lowercase hex digits (8 random bytes), total length 21 ∈ [5,32].
 func randomUsernameBase() string {
 	var b [8]byte
 	_, err := rand.Read(b[:])
 	errutil.Discard(err)
-	return "user-" + hex.EncodeToString(b[:])
+	return "user_" + hex.EncodeToString(b[:])
+}
+
+func generateUsernameCandidates(base string) []string {
+	candidates := make([]string, 0, 56)
+
+	candidates = append(candidates, base)
+
+	for i := 1; i <= 24; i++ {
+		candidates = append(
+			candidates,
+			base+"_"+strconv.Itoa(i),
+		)
+	}
+
+	for i := 0; i < 32; i++ {
+		candidates = append(
+			candidates,
+			randomUsernameBase(),
+		)
+	}
+
+	return candidates
 }

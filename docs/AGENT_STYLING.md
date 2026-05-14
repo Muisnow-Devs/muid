@@ -35,18 +35,19 @@ func NewRedisKVStore(redisURL string) *RedisKVStore { /* ... */ }
 ## Protobuf 與驗證
 
 - **套件命名**：`muid.<domain>.v1`（例如 `muid.profile.v1`）；**Go package** 使用 `option go_package` 中宣告的路徑與套件別名。
-- **驗證**：欄位規則優先使用 **`buf.validate`**（`import "buf/validate/validate.proto"`），與現有 `shared/v1/claims.proto` 等檔案一致。
+- **驗證**：欄位規則在 proto 以 **`buf.validate`**（`import "buf/validate/validate.proto"`）宣告，與現有 `shared/v1/claims.proto` 等檔案一致。**執行時**在 gRPC unary 入口由 **`pkg/grpc_utils.UnaryProtovalidateInterceptor`**（`buf.build/go/protovalidate`，即原 **protovalidate-go** 執行庫）驗證請求訊息；違規時對客戶端回 **`InvalidArgument`** 與固定訊息 `request validation failed`，伺服器 log 含 **`trace_id`** 與完整 violation 文字（不將 raw violation 塞進 status message）。`buf.yaml` 已依賴 **`buf.build/bufbuild/protovalidate`**；`buf.gen.yaml` 的 managed mode 須對該模組 **disable `go_package`**（與現況一致），以便 `buf generate` 與 Go 模組路徑相容。
 - **共享身分欄位**：`api/proto/shared/v1/claims.proto` 的 **`IdentityInformation`** 為 OIDC／建立設定檔／`UpdateProfile` 部分更新與 **`ProfileChangedEvent.changes`** 的**單一欄位形狀**；時間戳欄位（例如事件 **`occurred_at`**、avatar presign **`expires_at`**）使用 **`google.protobuf.Timestamp`**，避免以 `int64` epoch 承載需精確對齊的時間點。
+- **`IdentityInformation.username`**：Proto 以 **`pattern: "^[a-zA-Z0-9_]{5,32}$"`** 與 **`min_len: 5`**、**`max_len: 32`** 記錄字元集與長度（欄位未設定時不驗證；若帶入則須滿足 5–32）。**`UpdateProfile` 變更使用者名稱**時另以 **`pkg/validation.ValidUsername`**（常數 **`UsernameCharsetRegex`**，即 **`^[a-zA-Z0-9_]{5,32}$`**）在 Go 強制非空且長度 5–32；通過後以 **`strings.ToLower`** 寫入 DB 做大小寫正規化。
 - **選填語意**：需要「有無欄位」區別時使用 `optional`（例如未帶入 **`IdentityInformation`** 時由後端決定預設顯示名稱與頭像）。
 - **Profile 部分更新**：`UpdateProfile` 使用 `google.protobuf.FieldMask`（`update_mask`）與 **`optional IdentityInformation identity`**（`muid.shared.v1.claims`）；僅處理 allowlist 內的路徑。正規化後的 mask 路徑為 **`identity.<proto snake_case 欄位>`**（例如 `identity.email`、`identity.name`、`identity.username`；顯示名稱對應 proto 的 `name`／`given_name`／`family_name`，**沒有**獨立的 `display_name` 欄位於 `IdentityInformation`）。路徑解析與單元測試在 **`internal/profile/updatemask`**，實際寫入 DB 的 mutator 註冊在 **`internal/profile/grpc`** 的 `profilePatchRegistry`。
 - **Profile 頭像**：`GetProfile` 回傳的 `avatar_url` 由 **`UserAvatar`** 決定（同一 `user_id`、**`uploaded_at` 非空** 的列中 **`id` 最大** 者；`id` 為 UUID v7）。**`UserAvatar` 為 append-only**：完成上傳或 bootstrap 一律 **INSERT** 新列，**不以 UPDATE 覆寫既有列** 代表「更換頭像」。暫存列（`uploaded_at` 為空、僅供 presign 上傳）不參與顯示挑選；在 **`CreateProfile`** 完成前若尚未有已上傳列，`GetProfile` 依既有規則回退 **`goavatar` 產生的 PNG data URL**（種子為 profile `user_id` 字串）。
 - **`CreateProfile` 順序與非同步頭像**：RPC 在單一交易中先 **`INSERT user_profiles`**（含預先配置的 `id`＝新 `user_id`）、再 **`INSERT user_preferences`**，**`COMMIT` 成功後** 才對客戶端回傳成功。OIDC `picture`（若有）經 HTTPS 下載；否則或失敗時改以 **`goavatar`** 本機產生 PNG，再經驗證、轉 WebP、寫入 R2 與 **`INSERT user_avatars`**，由 **`internal/profile/avataringest`** 的 **`ExternalAvatarIngestor.GoBootstrap`** 排程（`go func`＋逾時 context＋panic recovery＋`traceid`）；該管線為 **profile 專用子系統**，**不是** gRPC handler 的核心職責，且 **不得** 在 handler 內 await，以免阻塞建立回應。
-- **`CreateProfile` 使用者名稱與顯示名稱**：`username` 一律以 **`randomUsernameBase`（`user-` + hex）** 經 **`allocateUsername`** 取得唯一值，**不**從 email local-part 推導；`display_name` 優先 **`displayNameFromIdentity`**（含 email local 後援），若仍為空則 **`randomDisplayName`**；`locale` 有 `identity` 且帶 **`locale`** 時採用，否則 **`en`**。
+- **`CreateProfile` 使用者名稱與顯示名稱**：`username` 一律以 **`randomUsernameBase`（`user_` + 8-byte hex，總長 21，落在 5–32）** 經 **`allocateUsername`**（僅嘗試 **`ValidUsername`** 通過的候選；衝突時 **`_` + 序號**）取得唯一值，**不**從 email local-part 推導，且字元僅為 **`[a-z0-9_]`**；`display_name` 優先 **`displayNameFromIdentity`**（含 email local 後援），若仍為空則 **`randomDisplayName`**；`locale` 有 `identity` 且帶 **`locale`** 時採用，否則 **`en`**。
 - **`UserAvatar` 不可變欄位**：`user_id`、`object_key`、`content_type` 在寫入後視為歷史列的一部分，**禁止**以 `UpdateOne` 或任何後續 UPDATE 變更；新狀態僅能靠新列表達（含 staging：每次 presign 嘗試為新列；完成上傳為另 insert 正式資產列，與 `CompleteAvatarUpload` 行為一致）。
 
 ## gRPC
 
-- **攔截器鏈**：與 `internal/authn/app/service.go` 相同，使用 `pkg/grpc_utils` 的 **`TraceUnaryInterceptor`**（注入 trace id，見 `pkg/traceid`）、`RecoveryInterceptor`、`LoggerInterceptor`、`TimeoutInterceptor`。
+- **攔截器鏈**：與 `internal/authn/app/service.go` 相同，使用 `pkg/grpc_utils` 的 **`TraceUnaryInterceptor`**（注入 trace id，見 `pkg/traceid`）、**`UnaryProtovalidateInterceptor`**（請求訊息 protovalidate）、`RecoveryInterceptor`、`LoggerInterceptor`、`TimeoutInterceptor`。
 - **逾時**：由設定的 `*_REQUEST_TIMEOUT_SECONDS`（authn 為 `AUTHN_`，profile 為 `PROFILE_`）控制。
 - **錯誤**：優先使用 `google.golang.org/grpc/status` 的標準 codes（例如 `InvalidArgument`、`NotFound`、`AlreadyExists`、`FailedPrecondition`）。**非預期**失敗回傳客戶端時應使用固定、不洩漏內部細節的訊息（例如 `internal error`），細節僅寫入伺服器 log（見下文「錯誤處理與 trace id」）。
 
@@ -172,8 +173,9 @@ NATS 事件 payload 使用 `api/proto/event/v1/profile.proto` 的 `ProfileChange
 
 ## 與本文件一起參考的程式入口
 
-- Profile gRPC 註冊：`internal/profile/app/service.go`
+- Profile gRPC 註冊：`internal/profile/app/service.go`（含 **`UnaryProtovalidateInterceptor`** 鏈）
 - Profile：`internal/profile/grpc`（套件 `profilegrpc`，gRPC RPC 與 gRPC 專用輔助）；`internal/profile/subscriber`（NATS 訂閱）；其餘組態／啟動／gRPC 伺服器包裝於 `internal/profile/app`。
+- gRPC 攔截器與 protovalidate：`pkg/grpc_utils/protovalidate.go`；使用者名稱字元集：`pkg/validation/username.go`。
 - Profile 啟動／基礎設施：`internal/profile/app/bootstrap.go`、`cmd/profile/main.go`
 - Authn 啟動／基礎設施：`internal/authn/app/bootstrap.go`、`cmd/authn/main.go`
 - Authn 內部基建（OTP／transition／identity providers）：`internal/authn/infra/kv`、`internal/authn/infra/identity`

@@ -3,7 +3,6 @@ package profilegrpc
 import (
 	"context"
 	"errors"
-	"strconv"
 	"strings"
 	"time"
 
@@ -23,6 +22,7 @@ import (
 	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/topics"
+	"sanzi.io/muid/pkg/validation"
 )
 
 func (g *GRPCHandler) CreateProfile(
@@ -288,41 +288,52 @@ func (g *GRPCHandler) UpdateProfile(
 	return resp, nil
 }
 
-func (g *GRPCHandler) allocateUsername(ctx context.Context, base string) (string, error) {
-	candidate := base
-	for i := 0; i < 24; i++ {
-		exists, err := g.db.UserProfile.Query().Where(userprofile.UsernameEQ(candidate)).Exist(ctx)
+func (g *GRPCHandler) allocateUsername(
+	ctx context.Context,
+	base string,
+) (string, error) {
+	candidates := generateUsernameCandidates(base)
+
+	for _, candidate := range candidates {
+		if !validation.ValidUsername(candidate) {
+			continue
+		}
+		available, err := g.isUsernameAvailable(ctx, candidate)
 		if err != nil {
-			return "", grpcInternal(
-				ctx,
-				"username availability",
-				err,
-				"candidate_prefix",
-				userIDPrefix(candidate),
-			)
+			return "", err
 		}
-		if !exists {
-			return candidate, nil
-		}
-		candidate = base + "-" + strconv.Itoa(i+1)
-	}
-	for range 32 {
-		candidate := randomUsernameBase()
-		exists, err := g.db.UserProfile.Query().Where(userprofile.UsernameEQ(candidate)).Exist(ctx)
-		if err != nil {
-			return "", grpcInternal(
-				ctx,
-				"username availability random",
-				err,
-				"candidate_prefix",
-				userIDPrefix(candidate),
-			)
-		}
-		if !exists {
+
+		if available {
 			return candidate, nil
 		}
 	}
-	return "", status.Error(codes.ResourceExhausted, "could not allocate a unique username")
+
+	return "", status.Error(
+		codes.ResourceExhausted,
+		"could not allocate unique username",
+	)
+}
+
+func (g *GRPCHandler) isUsernameAvailable(
+	ctx context.Context,
+	username string,
+) (bool, error) {
+	exists, err := g.db.UserProfile.
+		Query().
+		Where(userprofile.UsernameEQ(username)).
+		Exist(ctx)
+
+	if err != nil {
+		return false, grpcInternal(
+			ctx,
+			"username availability",
+			err,
+			"candidate_prefix",
+			userIDPrefix(username),
+		)
+	}
+
+	return !exists, nil
 }
 
 func (g *GRPCHandler) publishChange(

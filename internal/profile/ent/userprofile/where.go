@@ -71,6 +71,16 @@ func Username(v string) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldUsername, v))
 }
 
+// Locale applies equality check predicate on the "locale" field. It's identical to LocaleEQ.
+func Locale(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEQ(FieldLocale, v))
+}
+
+// Biography applies equality check predicate on the "biography" field. It's identical to BiographyEQ.
+func Biography(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEQ(FieldBiography, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldCreatedAt, v))
@@ -276,6 +286,136 @@ func UsernameContainsFold(v string) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldContainsFold(FieldUsername, v))
 }
 
+// LocaleEQ applies the EQ predicate on the "locale" field.
+func LocaleEQ(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEQ(FieldLocale, v))
+}
+
+// LocaleNEQ applies the NEQ predicate on the "locale" field.
+func LocaleNEQ(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldNEQ(FieldLocale, v))
+}
+
+// LocaleIn applies the In predicate on the "locale" field.
+func LocaleIn(vs ...string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldIn(FieldLocale, vs...))
+}
+
+// LocaleNotIn applies the NotIn predicate on the "locale" field.
+func LocaleNotIn(vs ...string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldNotIn(FieldLocale, vs...))
+}
+
+// LocaleGT applies the GT predicate on the "locale" field.
+func LocaleGT(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldGT(FieldLocale, v))
+}
+
+// LocaleGTE applies the GTE predicate on the "locale" field.
+func LocaleGTE(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldGTE(FieldLocale, v))
+}
+
+// LocaleLT applies the LT predicate on the "locale" field.
+func LocaleLT(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldLT(FieldLocale, v))
+}
+
+// LocaleLTE applies the LTE predicate on the "locale" field.
+func LocaleLTE(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldLTE(FieldLocale, v))
+}
+
+// LocaleContains applies the Contains predicate on the "locale" field.
+func LocaleContains(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldContains(FieldLocale, v))
+}
+
+// LocaleHasPrefix applies the HasPrefix predicate on the "locale" field.
+func LocaleHasPrefix(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldHasPrefix(FieldLocale, v))
+}
+
+// LocaleHasSuffix applies the HasSuffix predicate on the "locale" field.
+func LocaleHasSuffix(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldHasSuffix(FieldLocale, v))
+}
+
+// LocaleEqualFold applies the EqualFold predicate on the "locale" field.
+func LocaleEqualFold(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEqualFold(FieldLocale, v))
+}
+
+// LocaleContainsFold applies the ContainsFold predicate on the "locale" field.
+func LocaleContainsFold(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldContainsFold(FieldLocale, v))
+}
+
+// BiographyEQ applies the EQ predicate on the "biography" field.
+func BiographyEQ(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEQ(FieldBiography, v))
+}
+
+// BiographyNEQ applies the NEQ predicate on the "biography" field.
+func BiographyNEQ(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldNEQ(FieldBiography, v))
+}
+
+// BiographyIn applies the In predicate on the "biography" field.
+func BiographyIn(vs ...string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldIn(FieldBiography, vs...))
+}
+
+// BiographyNotIn applies the NotIn predicate on the "biography" field.
+func BiographyNotIn(vs ...string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldNotIn(FieldBiography, vs...))
+}
+
+// BiographyGT applies the GT predicate on the "biography" field.
+func BiographyGT(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldGT(FieldBiography, v))
+}
+
+// BiographyGTE applies the GTE predicate on the "biography" field.
+func BiographyGTE(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldGTE(FieldBiography, v))
+}
+
+// BiographyLT applies the LT predicate on the "biography" field.
+func BiographyLT(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldLT(FieldBiography, v))
+}
+
+// BiographyLTE applies the LTE predicate on the "biography" field.
+func BiographyLTE(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldLTE(FieldBiography, v))
+}
+
+// BiographyContains applies the Contains predicate on the "biography" field.
+func BiographyContains(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldContains(FieldBiography, v))
+}
+
+// BiographyHasPrefix applies the HasPrefix predicate on the "biography" field.
+func BiographyHasPrefix(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldHasPrefix(FieldBiography, v))
+}
+
+// BiographyHasSuffix applies the HasSuffix predicate on the "biography" field.
+func BiographyHasSuffix(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldHasSuffix(FieldBiography, v))
+}
+
+// BiographyEqualFold applies the EqualFold predicate on the "biography" field.
+func BiographyEqualFold(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldEqualFold(FieldBiography, v))
+}
+
+// BiographyContainsFold applies the ContainsFold predicate on the "biography" field.
+func BiographyContainsFold(v string) predicate.UserProfile {
+	return predicate.UserProfile(sql.FieldContainsFold(FieldBiography, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldCreatedAt, v))
@@ -354,29 +494,6 @@ func UpdatedAtLT(v time.Time) predicate.UserProfile {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldLTE(FieldUpdatedAt, v))
-}
-
-// HasPreference applies the HasEdge predicate on the "preference" edge.
-func HasPreference() predicate.UserProfile {
-	return predicate.UserProfile(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, PreferenceTable, PreferenceColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasPreferenceWith applies the HasEdge predicate on the "preference" edge with a given conditions (other predicates).
-func HasPreferenceWith(preds ...predicate.UserPreference) predicate.UserProfile {
-	return predicate.UserProfile(func(s *sql.Selector) {
-		step := newPreferenceStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
 }
 
 // HasAvatars applies the HasEdge predicate on the "avatars" edge.

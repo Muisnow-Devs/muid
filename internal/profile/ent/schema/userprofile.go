@@ -25,6 +25,9 @@ func (UserProfile) Fields() []ent.Field {
 		field.String("display_name").NotEmpty(),
 		field.String("username").NotEmpty().Unique(),
 
+		field.String("locale").Default("en").Comment("BCP-47 locale; empty means server default"),
+		field.String("biography").Default("").MaxLen(1024),
+
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}
@@ -41,7 +44,6 @@ func (UserProfile) Indexes() []ent.Index {
 // Edges of the UserProfile.
 func (UserProfile) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("preference", UserPreference.Type).Unique(),
 		// One profile has many UserAvatar rows (upload history). Canonical URL is resolved from
 		// the latest eligible row; see profilegrpc / UserAvatar schema comments.
 		edge.To("avatars", UserAvatar.Type),

@@ -21,23 +21,18 @@ const (
 	FieldDisplayName = "display_name"
 	// FieldUsername holds the string denoting the username field in the database.
 	FieldUsername = "username"
+	// FieldLocale holds the string denoting the locale field in the database.
+	FieldLocale = "locale"
+	// FieldBiography holds the string denoting the biography field in the database.
+	FieldBiography = "biography"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgePreference holds the string denoting the preference edge name in mutations.
-	EdgePreference = "preference"
 	// EdgeAvatars holds the string denoting the avatars edge name in mutations.
 	EdgeAvatars = "avatars"
 	// Table holds the table name of the userprofile in the database.
 	Table = "user_profiles"
-	// PreferenceTable is the table that holds the preference relation/edge.
-	PreferenceTable = "user_preferences"
-	// PreferenceInverseTable is the table name for the UserPreference entity.
-	// It exists in this package in order to avoid circular dependency with the "userpreference" package.
-	PreferenceInverseTable = "user_preferences"
-	// PreferenceColumn is the table column denoting the preference relation/edge.
-	PreferenceColumn = "user_id"
 	// AvatarsTable is the table that holds the avatars relation/edge.
 	AvatarsTable = "user_avatars"
 	// AvatarsInverseTable is the table name for the UserAvatar entity.
@@ -53,6 +48,8 @@ var Columns = []string{
 	FieldEmailRef,
 	FieldDisplayName,
 	FieldUsername,
+	FieldLocale,
+	FieldBiography,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -74,6 +71,12 @@ var (
 	DisplayNameValidator func(string) error
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	UsernameValidator func(string) error
+	// DefaultLocale holds the default value on creation for the "locale" field.
+	DefaultLocale string
+	// DefaultBiography holds the default value on creation for the "biography" field.
+	DefaultBiography string
+	// BiographyValidator is a validator for the "biography" field. It is called by the builders before save.
+	BiographyValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -107,6 +110,16 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUsername, opts...).ToFunc()
 }
 
+// ByLocale orders the results by the locale field.
+func ByLocale(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLocale, opts...).ToFunc()
+}
+
+// ByBiography orders the results by the biography field.
+func ByBiography(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldBiography, opts...).ToFunc()
+}
+
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
@@ -115,13 +128,6 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
-}
-
-// ByPreferenceField orders the results by preference field.
-func ByPreferenceField(field string, opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newPreferenceStep(), sql.OrderByField(field, opts...))
-	}
 }
 
 // ByAvatarsCount orders the results by avatars count.
@@ -136,13 +142,6 @@ func ByAvatars(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newAvatarsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
-}
-func newPreferenceStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(PreferenceInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2O, false, PreferenceTable, PreferenceColumn),
-	)
 }
 func newAvatarsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

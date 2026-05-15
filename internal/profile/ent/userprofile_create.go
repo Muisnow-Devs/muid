@@ -12,7 +12,6 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
-	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -38,6 +37,34 @@ func (_c *UserProfileCreate) SetDisplayName(v string) *UserProfileCreate {
 // SetUsername sets the "username" field.
 func (_c *UserProfileCreate) SetUsername(v string) *UserProfileCreate {
 	_c.mutation.SetUsername(v)
+	return _c
+}
+
+// SetLocale sets the "locale" field.
+func (_c *UserProfileCreate) SetLocale(v string) *UserProfileCreate {
+	_c.mutation.SetLocale(v)
+	return _c
+}
+
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (_c *UserProfileCreate) SetNillableLocale(v *string) *UserProfileCreate {
+	if v != nil {
+		_c.SetLocale(*v)
+	}
+	return _c
+}
+
+// SetBiography sets the "biography" field.
+func (_c *UserProfileCreate) SetBiography(v string) *UserProfileCreate {
+	_c.mutation.SetBiography(v)
+	return _c
+}
+
+// SetNillableBiography sets the "biography" field if the given value is not nil.
+func (_c *UserProfileCreate) SetNillableBiography(v *string) *UserProfileCreate {
+	if v != nil {
+		_c.SetBiography(*v)
+	}
 	return _c
 }
 
@@ -81,25 +108,6 @@ func (_c *UserProfileCreate) SetNillableID(v *uuid.UUID) *UserProfileCreate {
 		_c.SetID(*v)
 	}
 	return _c
-}
-
-// SetPreferenceID sets the "preference" edge to the UserPreference entity by ID.
-func (_c *UserProfileCreate) SetPreferenceID(id uuid.UUID) *UserProfileCreate {
-	_c.mutation.SetPreferenceID(id)
-	return _c
-}
-
-// SetNillablePreferenceID sets the "preference" edge to the UserPreference entity by ID if the given value is not nil.
-func (_c *UserProfileCreate) SetNillablePreferenceID(id *uuid.UUID) *UserProfileCreate {
-	if id != nil {
-		_c = _c.SetPreferenceID(*id)
-	}
-	return _c
-}
-
-// SetPreference sets the "preference" edge to the UserPreference entity.
-func (_c *UserProfileCreate) SetPreference(v *UserPreference) *UserProfileCreate {
-	return _c.SetPreferenceID(v.ID)
 }
 
 // AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by IDs.
@@ -152,6 +160,14 @@ func (_c *UserProfileCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *UserProfileCreate) defaults() {
+	if _, ok := _c.mutation.Locale(); !ok {
+		v := userprofile.DefaultLocale
+		_c.mutation.SetLocale(v)
+	}
+	if _, ok := _c.mutation.Biography(); !ok {
+		v := userprofile.DefaultBiography
+		_c.mutation.SetBiography(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := userprofile.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -190,6 +206,17 @@ func (_c *UserProfileCreate) check() error {
 	if v, ok := _c.mutation.Username(); ok {
 		if err := userprofile.UsernameValidator(v); err != nil {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
+		}
+	}
+	if _, ok := _c.mutation.Locale(); !ok {
+		return &ValidationError{Name: "locale", err: errors.New(`ent: missing required field "UserProfile.locale"`)}
+	}
+	if _, ok := _c.mutation.Biography(); !ok {
+		return &ValidationError{Name: "biography", err: errors.New(`ent: missing required field "UserProfile.biography"`)}
+	}
+	if v, ok := _c.mutation.Biography(); ok {
+		if err := userprofile.BiographyValidator(v); err != nil {
+			return &ValidationError{Name: "biography", err: fmt.Errorf(`ent: validator failed for field "UserProfile.biography": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
@@ -245,6 +272,14 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 		_spec.SetField(userprofile.FieldUsername, field.TypeString, value)
 		_node.Username = value
 	}
+	if value, ok := _c.mutation.Locale(); ok {
+		_spec.SetField(userprofile.FieldLocale, field.TypeString, value)
+		_node.Locale = value
+	}
+	if value, ok := _c.mutation.Biography(); ok {
+		_spec.SetField(userprofile.FieldBiography, field.TypeString, value)
+		_node.Biography = value
+	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(userprofile.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
@@ -252,22 +287,6 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(userprofile.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
-	}
-	if nodes := _c.mutation.PreferenceIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   userprofile.PreferenceTable,
-			Columns: []string{userprofile.PreferenceColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpreference.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.AvatarsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

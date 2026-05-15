@@ -14,8 +14,6 @@ type Tx struct {
 	config
 	// UserAvatar is the client for interacting with the UserAvatar builders.
 	UserAvatar *UserAvatarClient
-	// UserPreference is the client for interacting with the UserPreference builders.
-	UserPreference *UserPreferenceClient
 	// UserProfile is the client for interacting with the UserProfile builders.
 	UserProfile *UserProfileClient
 
@@ -150,7 +148,6 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.UserAvatar = NewUserAvatarClient(tx.config)
-	tx.UserPreference = NewUserPreferenceClient(tx.config)
 	tx.UserProfile = NewUserProfileClient(tx.config)
 }
 

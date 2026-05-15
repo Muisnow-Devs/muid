@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/schema"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
-	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -38,26 +37,6 @@ func init() {
 	useravatarDescID := useravatarFields[0].Descriptor()
 	// useravatar.DefaultID holds the default value on creation for the id field.
 	useravatar.DefaultID = useravatarDescID.Default.(func() uuid.UUID)
-	userpreferenceFields := schema.UserPreference{}.Fields()
-	_ = userpreferenceFields
-	// userpreferenceDescLocale is the schema descriptor for locale field.
-	userpreferenceDescLocale := userpreferenceFields[2].Descriptor()
-	// userpreference.DefaultLocale holds the default value on creation for the locale field.
-	userpreference.DefaultLocale = userpreferenceDescLocale.Default.(string)
-	// userpreferenceDescCreatedAt is the schema descriptor for created_at field.
-	userpreferenceDescCreatedAt := userpreferenceFields[3].Descriptor()
-	// userpreference.DefaultCreatedAt holds the default value on creation for the created_at field.
-	userpreference.DefaultCreatedAt = userpreferenceDescCreatedAt.Default.(func() time.Time)
-	// userpreferenceDescUpdatedAt is the schema descriptor for updated_at field.
-	userpreferenceDescUpdatedAt := userpreferenceFields[4].Descriptor()
-	// userpreference.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	userpreference.DefaultUpdatedAt = userpreferenceDescUpdatedAt.Default.(func() time.Time)
-	// userpreference.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	userpreference.UpdateDefaultUpdatedAt = userpreferenceDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// userpreferenceDescID is the schema descriptor for id field.
-	userpreferenceDescID := userpreferenceFields[0].Descriptor()
-	// userpreference.DefaultID holds the default value on creation for the id field.
-	userpreference.DefaultID = userpreferenceDescID.Default.(func() uuid.UUID)
 	userprofileFields := schema.UserProfile{}.Fields()
 	_ = userprofileFields
 	// userprofileDescEmailRef is the schema descriptor for email_ref field.
@@ -72,12 +51,22 @@ func init() {
 	userprofileDescUsername := userprofileFields[3].Descriptor()
 	// userprofile.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	userprofile.UsernameValidator = userprofileDescUsername.Validators[0].(func(string) error)
+	// userprofileDescLocale is the schema descriptor for locale field.
+	userprofileDescLocale := userprofileFields[4].Descriptor()
+	// userprofile.DefaultLocale holds the default value on creation for the locale field.
+	userprofile.DefaultLocale = userprofileDescLocale.Default.(string)
+	// userprofileDescBiography is the schema descriptor for biography field.
+	userprofileDescBiography := userprofileFields[5].Descriptor()
+	// userprofile.DefaultBiography holds the default value on creation for the biography field.
+	userprofile.DefaultBiography = userprofileDescBiography.Default.(string)
+	// userprofile.BiographyValidator is a validator for the "biography" field. It is called by the builders before save.
+	userprofile.BiographyValidator = userprofileDescBiography.Validators[0].(func(string) error)
 	// userprofileDescCreatedAt is the schema descriptor for created_at field.
-	userprofileDescCreatedAt := userprofileFields[4].Descriptor()
+	userprofileDescCreatedAt := userprofileFields[6].Descriptor()
 	// userprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userprofile.DefaultCreatedAt = userprofileDescCreatedAt.Default.(func() time.Time)
 	// userprofileDescUpdatedAt is the schema descriptor for updated_at field.
-	userprofileDescUpdatedAt := userprofileFields[5].Descriptor()
+	userprofileDescUpdatedAt := userprofileFields[7].Descriptor()
 	// userprofile.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userprofile.DefaultUpdatedAt = userprofileDescUpdatedAt.Default.(func() time.Time)
 	// userprofile.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

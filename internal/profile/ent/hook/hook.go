@@ -21,18 +21,6 @@ func (f UserAvatarFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserAvatarMutation", m)
 }
 
-// The UserPreferenceFunc type is an adapter to allow the use of ordinary
-// function as UserPreference mutator.
-type UserPreferenceFunc func(context.Context, *ent.UserPreferenceMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f UserPreferenceFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.UserPreferenceMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserPreferenceMutation", m)
-}
-
 // The UserProfileFunc type is an adapter to allow the use of ordinary
 // function as UserProfile mutator.
 type UserProfileFunc func(context.Context, *ent.UserProfileMutation) (ent.Value, error)

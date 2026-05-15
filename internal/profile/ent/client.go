@@ -17,7 +17,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
-	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -28,8 +27,6 @@ type Client struct {
 	Schema *migrate.Schema
 	// UserAvatar is the client for interacting with the UserAvatar builders.
 	UserAvatar *UserAvatarClient
-	// UserPreference is the client for interacting with the UserPreference builders.
-	UserPreference *UserPreferenceClient
 	// UserProfile is the client for interacting with the UserProfile builders.
 	UserProfile *UserProfileClient
 }
@@ -44,7 +41,6 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.UserAvatar = NewUserAvatarClient(c.config)
-	c.UserPreference = NewUserPreferenceClient(c.config)
 	c.UserProfile = NewUserProfileClient(c.config)
 }
 
@@ -136,11 +132,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:            ctx,
-		config:         cfg,
-		UserAvatar:     NewUserAvatarClient(cfg),
-		UserPreference: NewUserPreferenceClient(cfg),
-		UserProfile:    NewUserProfileClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		UserAvatar:  NewUserAvatarClient(cfg),
+		UserProfile: NewUserProfileClient(cfg),
 	}, nil
 }
 
@@ -158,11 +153,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:            ctx,
-		config:         cfg,
-		UserAvatar:     NewUserAvatarClient(cfg),
-		UserPreference: NewUserPreferenceClient(cfg),
-		UserProfile:    NewUserProfileClient(cfg),
+		ctx:         ctx,
+		config:      cfg,
+		UserAvatar:  NewUserAvatarClient(cfg),
+		UserProfile: NewUserProfileClient(cfg),
 	}, nil
 }
 
@@ -192,7 +186,6 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.UserAvatar.Use(hooks...)
-	c.UserPreference.Use(hooks...)
 	c.UserProfile.Use(hooks...)
 }
 
@@ -200,7 +193,6 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.UserAvatar.Intercept(interceptors...)
-	c.UserPreference.Intercept(interceptors...)
 	c.UserProfile.Intercept(interceptors...)
 }
 
@@ -209,8 +201,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *UserAvatarMutation:
 		return c.UserAvatar.mutate(ctx, m)
-	case *UserPreferenceMutation:
-		return c.UserPreference.mutate(ctx, m)
 	case *UserProfileMutation:
 		return c.UserProfile.mutate(ctx, m)
 	default:
@@ -367,155 +357,6 @@ func (c *UserAvatarClient) mutate(ctx context.Context, m *UserAvatarMutation) (V
 	}
 }
 
-// UserPreferenceClient is a client for the UserPreference schema.
-type UserPreferenceClient struct {
-	config
-}
-
-// NewUserPreferenceClient returns a client for the UserPreference from the given config.
-func NewUserPreferenceClient(c config) *UserPreferenceClient {
-	return &UserPreferenceClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `userpreference.Hooks(f(g(h())))`.
-func (c *UserPreferenceClient) Use(hooks ...Hook) {
-	c.hooks.UserPreference = append(c.hooks.UserPreference, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `userpreference.Intercept(f(g(h())))`.
-func (c *UserPreferenceClient) Intercept(interceptors ...Interceptor) {
-	c.inters.UserPreference = append(c.inters.UserPreference, interceptors...)
-}
-
-// Create returns a builder for creating a UserPreference entity.
-func (c *UserPreferenceClient) Create() *UserPreferenceCreate {
-	mutation := newUserPreferenceMutation(c.config, OpCreate)
-	return &UserPreferenceCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of UserPreference entities.
-func (c *UserPreferenceClient) CreateBulk(builders ...*UserPreferenceCreate) *UserPreferenceCreateBulk {
-	return &UserPreferenceCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *UserPreferenceClient) MapCreateBulk(slice any, setFunc func(*UserPreferenceCreate, int)) *UserPreferenceCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &UserPreferenceCreateBulk{err: fmt.Errorf("calling to UserPreferenceClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*UserPreferenceCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &UserPreferenceCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for UserPreference.
-func (c *UserPreferenceClient) Update() *UserPreferenceUpdate {
-	mutation := newUserPreferenceMutation(c.config, OpUpdate)
-	return &UserPreferenceUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *UserPreferenceClient) UpdateOne(_m *UserPreference) *UserPreferenceUpdateOne {
-	mutation := newUserPreferenceMutation(c.config, OpUpdateOne, withUserPreference(_m))
-	return &UserPreferenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *UserPreferenceClient) UpdateOneID(id uuid.UUID) *UserPreferenceUpdateOne {
-	mutation := newUserPreferenceMutation(c.config, OpUpdateOne, withUserPreferenceID(id))
-	return &UserPreferenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for UserPreference.
-func (c *UserPreferenceClient) Delete() *UserPreferenceDelete {
-	mutation := newUserPreferenceMutation(c.config, OpDelete)
-	return &UserPreferenceDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *UserPreferenceClient) DeleteOne(_m *UserPreference) *UserPreferenceDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *UserPreferenceClient) DeleteOneID(id uuid.UUID) *UserPreferenceDeleteOne {
-	builder := c.Delete().Where(userpreference.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &UserPreferenceDeleteOne{builder}
-}
-
-// Query returns a query builder for UserPreference.
-func (c *UserPreferenceClient) Query() *UserPreferenceQuery {
-	return &UserPreferenceQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeUserPreference},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a UserPreference entity by its id.
-func (c *UserPreferenceClient) Get(ctx context.Context, id uuid.UUID) (*UserPreference, error) {
-	return c.Query().Where(userpreference.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *UserPreferenceClient) GetX(ctx context.Context, id uuid.UUID) *UserPreference {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryUser queries the user edge of a UserPreference.
-func (c *UserPreferenceClient) QueryUser(_m *UserPreference) *UserProfileQuery {
-	query := (&UserProfileClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userpreference.Table, userpreference.FieldID, id),
-			sqlgraph.To(userprofile.Table, userprofile.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, true, userpreference.UserTable, userpreference.UserColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *UserPreferenceClient) Hooks() []Hook {
-	return c.hooks.UserPreference
-}
-
-// Interceptors returns the client interceptors.
-func (c *UserPreferenceClient) Interceptors() []Interceptor {
-	return c.inters.UserPreference
-}
-
-func (c *UserPreferenceClient) mutate(ctx context.Context, m *UserPreferenceMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&UserPreferenceCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&UserPreferenceUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&UserPreferenceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&UserPreferenceDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown UserPreference mutation op: %q", m.Op())
-	}
-}
-
 // UserProfileClient is a client for the UserProfile schema.
 type UserProfileClient struct {
 	config
@@ -624,22 +465,6 @@ func (c *UserProfileClient) GetX(ctx context.Context, id uuid.UUID) *UserProfile
 	return obj
 }
 
-// QueryPreference queries the preference edge of a UserProfile.
-func (c *UserProfileClient) QueryPreference(_m *UserProfile) *UserPreferenceQuery {
-	query := (&UserPreferenceClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userprofile.Table, userprofile.FieldID, id),
-			sqlgraph.To(userpreference.Table, userpreference.FieldID),
-			sqlgraph.Edge(sqlgraph.O2O, false, userprofile.PreferenceTable, userprofile.PreferenceColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryAvatars queries the avatars edge of a UserProfile.
 func (c *UserProfileClient) QueryAvatars(_m *UserProfile) *UserAvatarQuery {
 	query := (&UserAvatarClient{config: c.config}).Query()
@@ -684,9 +509,9 @@ func (c *UserProfileClient) mutate(ctx context.Context, m *UserProfileMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		UserAvatar, UserPreference, UserProfile []ent.Hook
+		UserAvatar, UserProfile []ent.Hook
 	}
 	inters struct {
-		UserAvatar, UserPreference, UserProfile []ent.Interceptor
+		UserAvatar, UserProfile []ent.Interceptor
 	}
 )

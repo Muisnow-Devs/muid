@@ -9,8 +9,5 @@ import (
 // UserAvatar is the predicate function for useravatar builders.
 type UserAvatar func(*sql.Selector)
 
-// UserPreference is the predicate function for userpreference builders.
-type UserPreference func(*sql.Selector)
-
 // UserProfile is the predicate function for userprofile builders.
 type UserProfile func(*sql.Selector)

@@ -10,7 +10,6 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -25,6 +24,10 @@ type UserProfile struct {
 	DisplayName string `json:"display_name,omitempty"`
 	// Username holds the value of the "username" field.
 	Username string `json:"username,omitempty"`
+	// BCP-47 locale; empty means server default
+	Locale string `json:"locale,omitempty"`
+	// Biography holds the value of the "biography" field.
+	Biography string `json:"biography,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -37,30 +40,17 @@ type UserProfile struct {
 
 // UserProfileEdges holds the relations/edges for other nodes in the graph.
 type UserProfileEdges struct {
-	// Preference holds the value of the preference edge.
-	Preference *UserPreference `json:"preference,omitempty"`
 	// Avatars holds the value of the avatars edge.
 	Avatars []*UserAvatar `json:"avatars,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
-}
-
-// PreferenceOrErr returns the Preference value or an error if the edge
-// was not loaded in eager-loading, or loaded but was not found.
-func (e UserProfileEdges) PreferenceOrErr() (*UserPreference, error) {
-	if e.Preference != nil {
-		return e.Preference, nil
-	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: userpreference.Label}
-	}
-	return nil, &NotLoadedError{edge: "preference"}
+	loadedTypes [1]bool
 }
 
 // AvatarsOrErr returns the Avatars value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserProfileEdges) AvatarsOrErr() ([]*UserAvatar, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		return e.Avatars, nil
 	}
 	return nil, &NotLoadedError{edge: "avatars"}
@@ -71,7 +61,7 @@ func (*UserProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userprofile.FieldEmailRef, userprofile.FieldDisplayName, userprofile.FieldUsername:
+		case userprofile.FieldEmailRef, userprofile.FieldDisplayName, userprofile.FieldUsername, userprofile.FieldLocale, userprofile.FieldBiography:
 			values[i] = new(sql.NullString)
 		case userprofile.FieldCreatedAt, userprofile.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -116,6 +106,18 @@ func (_m *UserProfile) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.Username = value.String
 			}
+		case userprofile.FieldLocale:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field locale", values[i])
+			} else if value.Valid {
+				_m.Locale = value.String
+			}
+		case userprofile.FieldBiography:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field biography", values[i])
+			} else if value.Valid {
+				_m.Biography = value.String
+			}
 		case userprofile.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -139,11 +141,6 @@ func (_m *UserProfile) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *UserProfile) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
-}
-
-// QueryPreference queries the "preference" edge of the UserProfile entity.
-func (_m *UserProfile) QueryPreference() *UserPreferenceQuery {
-	return NewUserProfileClient(_m.config).QueryPreference(_m)
 }
 
 // QueryAvatars queries the "avatars" edge of the UserProfile entity.
@@ -182,6 +179,12 @@ func (_m *UserProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("username=")
 	builder.WriteString(_m.Username)
+	builder.WriteString(", ")
+	builder.WriteString("locale=")
+	builder.WriteString(_m.Locale)
+	builder.WriteString(", ")
+	builder.WriteString("biography=")
+	builder.WriteString(_m.Biography)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

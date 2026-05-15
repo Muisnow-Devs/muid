@@ -29,6 +29,7 @@ type IdentityInformation struct {
 	xxx_hidden_FamilyName    *string                `protobuf:"bytes,4,opt,name=family_name,json=familyName,proto3,oneof"`
 	xxx_hidden_Picture       *string                `protobuf:"bytes,5,opt,name=picture,proto3,oneof"`
 	xxx_hidden_Locale        *string                `protobuf:"bytes,6,opt,name=locale,proto3,oneof"`
+	xxx_hidden_Bio           *string                `protobuf:"bytes,9,opt,name=bio,proto3,oneof"`
 	xxx_hidden_Email         *string                `protobuf:"bytes,7,opt,name=email,proto3,oneof"`
 	xxx_hidden_EmailVerified bool                   `protobuf:"varint,8,opt,name=email_verified,json=emailVerified,proto3,oneof"`
 	XXX_raceDetectHookData   protoimpl.RaceDetectHookData
@@ -122,6 +123,16 @@ func (x *IdentityInformation) GetLocale() string {
 	return ""
 }
 
+func (x *IdentityInformation) GetBio() string {
+	if x != nil {
+		if x.xxx_hidden_Bio != nil {
+			return *x.xxx_hidden_Bio
+		}
+		return ""
+	}
+	return ""
+}
+
 func (x *IdentityInformation) GetEmail() string {
 	if x != nil {
 		if x.xxx_hidden_Email != nil {
@@ -141,42 +152,47 @@ func (x *IdentityInformation) GetEmailVerified() bool {
 
 func (x *IdentityInformation) SetName(v string) {
 	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 9)
 }
 
 func (x *IdentityInformation) SetUsername(v string) {
 	x.xxx_hidden_Username = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 9)
 }
 
 func (x *IdentityInformation) SetGivenName(v string) {
 	x.xxx_hidden_GivenName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 9)
 }
 
 func (x *IdentityInformation) SetFamilyName(v string) {
 	x.xxx_hidden_FamilyName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 9)
 }
 
 func (x *IdentityInformation) SetPicture(v string) {
 	x.xxx_hidden_Picture = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 9)
 }
 
 func (x *IdentityInformation) SetLocale(v string) {
 	x.xxx_hidden_Locale = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 9)
+}
+
+func (x *IdentityInformation) SetBio(v string) {
+	x.xxx_hidden_Bio = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 9)
 }
 
 func (x *IdentityInformation) SetEmail(v string) {
 	x.xxx_hidden_Email = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 9)
 }
 
 func (x *IdentityInformation) SetEmailVerified(v bool) {
 	x.xxx_hidden_EmailVerified = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
 }
 
 func (x *IdentityInformation) HasName() bool {
@@ -221,18 +237,25 @@ func (x *IdentityInformation) HasLocale() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
 }
 
-func (x *IdentityInformation) HasEmail() bool {
+func (x *IdentityInformation) HasBio() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
-func (x *IdentityInformation) HasEmailVerified() bool {
+func (x *IdentityInformation) HasEmail() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+}
+
+func (x *IdentityInformation) HasEmailVerified() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *IdentityInformation) ClearName() {
@@ -265,13 +288,18 @@ func (x *IdentityInformation) ClearLocale() {
 	x.xxx_hidden_Locale = nil
 }
 
-func (x *IdentityInformation) ClearEmail() {
+func (x *IdentityInformation) ClearBio() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 6)
+	x.xxx_hidden_Bio = nil
+}
+
+func (x *IdentityInformation) ClearEmail() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
 	x.xxx_hidden_Email = nil
 }
 
 func (x *IdentityInformation) ClearEmailVerified() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
 	x.xxx_hidden_EmailVerified = false
 }
 
@@ -287,6 +315,7 @@ type IdentityInformation_builder struct {
 	FamilyName    *string
 	Picture       *string
 	Locale        *string
+	Bio           *string
 	Email         *string
 	EmailVerified *bool
 }
@@ -296,35 +325,39 @@ func (b0 IdentityInformation_builder) Build() *IdentityInformation {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 9)
 		x.xxx_hidden_Name = b.Name
 	}
 	if b.Username != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 9)
 		x.xxx_hidden_Username = b.Username
 	}
 	if b.GivenName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 9)
 		x.xxx_hidden_GivenName = b.GivenName
 	}
 	if b.FamilyName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 9)
 		x.xxx_hidden_FamilyName = b.FamilyName
 	}
 	if b.Picture != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 9)
 		x.xxx_hidden_Picture = b.Picture
 	}
 	if b.Locale != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 9)
 		x.xxx_hidden_Locale = b.Locale
 	}
+	if b.Bio != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 9)
+		x.xxx_hidden_Bio = b.Bio
+	}
 	if b.Email != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 9)
 		x.xxx_hidden_Email = b.Email
 	}
 	if b.EmailVerified != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
 		x.xxx_hidden_EmailVerified = *b.EmailVerified
 	}
 	return m0
@@ -334,7 +367,7 @@ var File_shared_v1_claims_proto protoreflect.FileDescriptor
 
 const file_shared_v1_claims_proto_rawDesc = "" +
 	"\n" +
-	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xd3\x03\n" +
+	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xfc\x03\n" +
 	"\x13IdentityInformation\x12 \n" +
 	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18 H\x00R\x04name\x88\x01\x01\x12@\n" +
 	"\busername\x18\x02 \x01(\tB\x1f\xbaH\x1cr\x1a\x10\x05\x18 2\x14^[a-zA-Z0-9_]{5,32}$H\x01R\busername\x88\x01\x01\x12+\n" +
@@ -343,16 +376,18 @@ const file_shared_v1_claims_proto_rawDesc = "" +
 	"\vfamily_name\x18\x04 \x01(\tB\a\xbaH\x04r\x02\x18@H\x03R\n" +
 	"familyName\x88\x01\x01\x12\x1d\n" +
 	"\apicture\x18\x05 \x01(\tH\x04R\apicture\x88\x01\x01\x12$\n" +
-	"\x06locale\x18\x06 \x01(\tB\a\xbaH\x04r\x02\x18 H\x05R\x06locale\x88\x01\x01\x12\"\n" +
-	"\x05email\x18\a \x01(\tB\a\xbaH\x04r\x02`\x01H\x06R\x05email\x88\x01\x01\x12*\n" +
-	"\x0eemail_verified\x18\b \x01(\bH\aR\remailVerified\x88\x01\x01B\a\n" +
+	"\x06locale\x18\x06 \x01(\tB\a\xbaH\x04r\x02\x18 H\x05R\x06locale\x88\x01\x01\x12\x1f\n" +
+	"\x03bio\x18\t \x01(\tB\b\xbaH\x05r\x03\x18\x80\bH\x06R\x03bio\x88\x01\x01\x12\"\n" +
+	"\x05email\x18\a \x01(\tB\a\xbaH\x04r\x02`\x01H\aR\x05email\x88\x01\x01\x12*\n" +
+	"\x0eemail_verified\x18\b \x01(\bH\bR\remailVerified\x88\x01\x01B\a\n" +
 	"\x05_nameB\v\n" +
 	"\t_usernameB\r\n" +
 	"\v_given_nameB\x0e\n" +
 	"\f_family_nameB\n" +
 	"\n" +
 	"\b_pictureB\t\n" +
-	"\a_localeB\b\n" +
+	"\a_localeB\x06\n" +
+	"\x04_bioB\b\n" +
 	"\x06_emailB\x11\n" +
 	"\x0f_email_verifiedB\xd1\x01\n" +
 	"\x19com.muid.shared.v1.claimsB\vClaimsProtoP\x01Z/sanzi.io/muid/api/proto/shared/v1/claims;claims\xa2\x02\x04MSVC\xaa\x02\x15Muid.Shared.V1.Claims\xca\x02\x15Muid\\Shared\\V1\\Claims\xe2\x02!Muid\\Shared\\V1\\Claims\\GPBMetadata\xea\x02\x18Muid::Shared::V1::Claimsb\x06proto3"

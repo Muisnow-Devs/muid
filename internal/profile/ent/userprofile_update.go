@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/predicate"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
-	"sanzi.io/muid/internal/profile/ent/userpreference"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -73,29 +72,38 @@ func (_u *UserProfileUpdate) SetNillableUsername(v *string) *UserProfileUpdate {
 	return _u
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (_u *UserProfileUpdate) SetUpdatedAt(v time.Time) *UserProfileUpdate {
-	_u.mutation.SetUpdatedAt(v)
+// SetLocale sets the "locale" field.
+func (_u *UserProfileUpdate) SetLocale(v string) *UserProfileUpdate {
+	_u.mutation.SetLocale(v)
 	return _u
 }
 
-// SetPreferenceID sets the "preference" edge to the UserPreference entity by ID.
-func (_u *UserProfileUpdate) SetPreferenceID(id uuid.UUID) *UserProfileUpdate {
-	_u.mutation.SetPreferenceID(id)
-	return _u
-}
-
-// SetNillablePreferenceID sets the "preference" edge to the UserPreference entity by ID if the given value is not nil.
-func (_u *UserProfileUpdate) SetNillablePreferenceID(id *uuid.UUID) *UserProfileUpdate {
-	if id != nil {
-		_u = _u.SetPreferenceID(*id)
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (_u *UserProfileUpdate) SetNillableLocale(v *string) *UserProfileUpdate {
+	if v != nil {
+		_u.SetLocale(*v)
 	}
 	return _u
 }
 
-// SetPreference sets the "preference" edge to the UserPreference entity.
-func (_u *UserProfileUpdate) SetPreference(v *UserPreference) *UserProfileUpdate {
-	return _u.SetPreferenceID(v.ID)
+// SetBiography sets the "biography" field.
+func (_u *UserProfileUpdate) SetBiography(v string) *UserProfileUpdate {
+	_u.mutation.SetBiography(v)
+	return _u
+}
+
+// SetNillableBiography sets the "biography" field if the given value is not nil.
+func (_u *UserProfileUpdate) SetNillableBiography(v *string) *UserProfileUpdate {
+	if v != nil {
+		_u.SetBiography(*v)
+	}
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *UserProfileUpdate) SetUpdatedAt(v time.Time) *UserProfileUpdate {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
 }
 
 // AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by IDs.
@@ -116,12 +124,6 @@ func (_u *UserProfileUpdate) AddAvatars(v ...*UserAvatar) *UserProfileUpdate {
 // Mutation returns the UserProfileMutation object of the builder.
 func (_u *UserProfileUpdate) Mutation() *UserProfileMutation {
 	return _u.mutation
-}
-
-// ClearPreference clears the "preference" edge to the UserPreference entity.
-func (_u *UserProfileUpdate) ClearPreference() *UserProfileUpdate {
-	_u.mutation.ClearPreference()
-	return _u
 }
 
 // ClearAvatars clears all "avatars" edges to the UserAvatar entity.
@@ -198,6 +200,11 @@ func (_u *UserProfileUpdate) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Biography(); ok {
+		if err := userprofile.BiographyValidator(v); err != nil {
+			return &ValidationError{Name: "biography", err: fmt.Errorf(`ent: validator failed for field "UserProfile.biography": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -222,37 +229,14 @@ func (_u *UserProfileUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(userprofile.FieldUsername, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Locale(); ok {
+		_spec.SetField(userprofile.FieldLocale, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Biography(); ok {
+		_spec.SetField(userprofile.FieldBiography, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userprofile.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.PreferenceCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   userprofile.PreferenceTable,
-			Columns: []string{userprofile.PreferenceColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpreference.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PreferenceIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   userprofile.PreferenceTable,
-			Columns: []string{userprofile.PreferenceColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpreference.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.AvatarsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -361,29 +345,38 @@ func (_u *UserProfileUpdateOne) SetNillableUsername(v *string) *UserProfileUpdat
 	return _u
 }
 
-// SetUpdatedAt sets the "updated_at" field.
-func (_u *UserProfileUpdateOne) SetUpdatedAt(v time.Time) *UserProfileUpdateOne {
-	_u.mutation.SetUpdatedAt(v)
+// SetLocale sets the "locale" field.
+func (_u *UserProfileUpdateOne) SetLocale(v string) *UserProfileUpdateOne {
+	_u.mutation.SetLocale(v)
 	return _u
 }
 
-// SetPreferenceID sets the "preference" edge to the UserPreference entity by ID.
-func (_u *UserProfileUpdateOne) SetPreferenceID(id uuid.UUID) *UserProfileUpdateOne {
-	_u.mutation.SetPreferenceID(id)
-	return _u
-}
-
-// SetNillablePreferenceID sets the "preference" edge to the UserPreference entity by ID if the given value is not nil.
-func (_u *UserProfileUpdateOne) SetNillablePreferenceID(id *uuid.UUID) *UserProfileUpdateOne {
-	if id != nil {
-		_u = _u.SetPreferenceID(*id)
+// SetNillableLocale sets the "locale" field if the given value is not nil.
+func (_u *UserProfileUpdateOne) SetNillableLocale(v *string) *UserProfileUpdateOne {
+	if v != nil {
+		_u.SetLocale(*v)
 	}
 	return _u
 }
 
-// SetPreference sets the "preference" edge to the UserPreference entity.
-func (_u *UserProfileUpdateOne) SetPreference(v *UserPreference) *UserProfileUpdateOne {
-	return _u.SetPreferenceID(v.ID)
+// SetBiography sets the "biography" field.
+func (_u *UserProfileUpdateOne) SetBiography(v string) *UserProfileUpdateOne {
+	_u.mutation.SetBiography(v)
+	return _u
+}
+
+// SetNillableBiography sets the "biography" field if the given value is not nil.
+func (_u *UserProfileUpdateOne) SetNillableBiography(v *string) *UserProfileUpdateOne {
+	if v != nil {
+		_u.SetBiography(*v)
+	}
+	return _u
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (_u *UserProfileUpdateOne) SetUpdatedAt(v time.Time) *UserProfileUpdateOne {
+	_u.mutation.SetUpdatedAt(v)
+	return _u
 }
 
 // AddAvatarIDs adds the "avatars" edge to the UserAvatar entity by IDs.
@@ -404,12 +397,6 @@ func (_u *UserProfileUpdateOne) AddAvatars(v ...*UserAvatar) *UserProfileUpdateO
 // Mutation returns the UserProfileMutation object of the builder.
 func (_u *UserProfileUpdateOne) Mutation() *UserProfileMutation {
 	return _u.mutation
-}
-
-// ClearPreference clears the "preference" edge to the UserPreference entity.
-func (_u *UserProfileUpdateOne) ClearPreference() *UserProfileUpdateOne {
-	_u.mutation.ClearPreference()
-	return _u
 }
 
 // ClearAvatars clears all "avatars" edges to the UserAvatar entity.
@@ -499,6 +486,11 @@ func (_u *UserProfileUpdateOne) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Biography(); ok {
+		if err := userprofile.BiographyValidator(v); err != nil {
+			return &ValidationError{Name: "biography", err: fmt.Errorf(`ent: validator failed for field "UserProfile.biography": %w`, err)}
+		}
+	}
 	return nil
 }
 
@@ -540,37 +532,14 @@ func (_u *UserProfileUpdateOne) sqlSave(ctx context.Context) (_node *UserProfile
 	if value, ok := _u.mutation.Username(); ok {
 		_spec.SetField(userprofile.FieldUsername, field.TypeString, value)
 	}
+	if value, ok := _u.mutation.Locale(); ok {
+		_spec.SetField(userprofile.FieldLocale, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Biography(); ok {
+		_spec.SetField(userprofile.FieldBiography, field.TypeString, value)
+	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userprofile.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.PreferenceCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   userprofile.PreferenceTable,
-			Columns: []string{userprofile.PreferenceColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpreference.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PreferenceIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2O,
-			Inverse: false,
-			Table:   userprofile.PreferenceTable,
-			Columns: []string{userprofile.PreferenceColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpreference.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.AvatarsCleared() {
 		edge := &sqlgraph.EdgeSpec{

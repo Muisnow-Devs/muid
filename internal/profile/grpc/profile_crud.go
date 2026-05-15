@@ -36,15 +36,13 @@ func (g *GRPCHandler) CreateProfile(
 	var (
 		displayName string
 		pictureURL  string
-		preference  *ent.UserPreference
+		locale      string
 	)
 
 	if identity != nil {
 		displayName = displayNameFromIdentity(identity, emailLocalPart(email))
 		pictureURL = avatarFromIdentity(identity)
-		preference = &ent.UserPreference{
-			Locale: strings.TrimSpace(identity.GetLocale()),
-		}
+		locale = strings.TrimSpace(identity.GetLocale())
 	}
 
 	usernameCandidate := generateUsernameCandidates(randomUsernameBase())
@@ -60,24 +58,36 @@ func (g *GRPCHandler) CreateProfile(
 
 	var user *ent.UserProfile
 	for _, candidate := range usernameCandidate {
+		exists, err := tx.UserProfile.Query().
+			Where(userprofile.UsernameEQ(candidate)).
+			Exist(ctx)
+		if err != nil {
+			return nil, grpcInternal(
+				ctx,
+				"profile create username existence check",
+				err,
+			)
+		}
+
+		if exists {
+			continue
+		}
+
 		user, err = tx.UserProfile.Create().
 			SetEmailRef(email).
+			SetLocale(locale).
 			SetDisplayName(displayName).
 			SetUsername(candidate).
-			SetPreference(preference).
 			Save(ctx)
 
 		if err == nil {
 			break
 		}
 
-		if !ent.IsConstraintError(err) {
-			continue
-		}
-
-		return nil, status.Error(
-			codes.ResourceExhausted,
-			"could not allocate unique username",
+		return nil, grpcInternal(
+			ctx,
+			"profile create",
+			err,
 		)
 	}
 
@@ -111,7 +121,6 @@ func (g *GRPCHandler) GetProfile(
 
 	p, err := g.db.UserProfile.Query().
 		Where(userprofile.ID(id)).
-		WithPreference().
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, status.Error(codes.NotFound, "profile not found")
@@ -125,11 +134,7 @@ func (g *GRPCHandler) GetProfile(
 		)
 	}
 
-	locale := "en"
-	if p.Edges.Preference != nil {
-		locale = p.Edges.Preference.Locale
-	}
-
+	locale := p.Locale
 	avatarURL, objectKey, err := g.queryDisplayAvatar(ctx, id)
 	if err != nil {
 		return nil, internalErrorWithUserId(
@@ -189,10 +194,29 @@ func (g *GRPCHandler) UpdateProfile(
 	}
 	defer func() { errutil.Discard(tx.Rollback()) }()
 
+	profile := tx.UserProfile.UpdateOneID(id)
 	for _, p := range paths {
-		if err := profilePatchRegistry[p](ctx, g, tx, id, req); err != nil {
+		if err := profilePatchRegistry[p](ctx, id, profile, req); err != nil {
 			return nil, err
 		}
+	}
+
+	err = profile.Exec(ctx)
+	if ent.IsNotFound(err) {
+		return nil, status.Error(codes.NotFound, "requested resource not found")
+	}
+
+	if ent.IsConstraintError(err) {
+		return nil, status.Error(codes.AlreadyExists, "conflicting update value already in use")
+	}
+
+	if err != nil {
+		return nil, internalErrorWithUserId(
+			ctx,
+			err,
+			"profile update save",
+			id,
+		)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -273,7 +297,6 @@ func (g *GRPCHandler) buildProfileChangedClaims(
 	ch := &idclaims.IdentityInformation{}
 	p, err := g.db.UserProfile.Query().
 		Where(userprofile.ID(id)).
-		WithPreference().
 		Only(ctx)
 	if ent.IsNotFound(err) {
 		return nil, errors.New("profile missing for event payload")
@@ -282,11 +305,7 @@ func (g *GRPCHandler) buildProfileChangedClaims(
 		return nil, err
 	}
 
-	locale := "en"
-	if p.Edges.Preference != nil {
-		locale = p.Edges.Preference.Locale
-	}
-
+	locale := p.Locale
 	avatarURL, _, err := g.queryDisplayAvatar(ctx, id)
 	if err != nil {
 		return nil, err

@@ -314,9 +314,6 @@ func (g *GRPCHandler) buildProfileChangedClaims(
 	setAny := false
 	for _, path := range responsePaths {
 		switch path {
-		case "email":
-			ch.SetEmail(p.EmailRef)
-			setAny = true
 		case "locale":
 			ch.SetLocale(locale)
 			setAny = true

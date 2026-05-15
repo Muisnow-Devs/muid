@@ -26,7 +26,6 @@ var errProfileUpdateUnsupportedPath = errors.New("unsupported update_mask path")
 // profilePatchRegistry is the security allowlist: only these mask paths run mutators.
 var profilePatchRegistry = map[string]profilePatchFn{
 	"identity.username":    patchIdentityUsername,
-	"identity.email":       patchIdentityEmail,
 	"identity.locale":      patchIdentityLocale,
 	"identity.name":        patchIdentityDisplayFromNameFields,
 	"identity.given_name":  patchIdentityDisplayFromNameFields,
@@ -63,26 +62,6 @@ func patchIdentityUsername(
 	candidate := strings.ToLower(raw)
 	profile.SetUsername(candidate)
 
-	return nil
-}
-
-func patchIdentityEmail(
-	ctx context.Context,
-	userID uuid.UUID,
-	profile *ent.UserProfileUpdateOne,
-	req *pb.UpdateProfileRequest,
-) error {
-	c := req.GetIdentity()
-	if c == nil {
-		return status.Error(codes.InvalidArgument, "identity payload required for identity.email")
-	}
-
-	email := strings.TrimSpace(strings.ToLower(c.GetEmail()))
-	if email == "" {
-		return status.Error(codes.InvalidArgument, "email must not be empty")
-	}
-
-	profile.SetEmailRef(email)
 	return nil
 }
 

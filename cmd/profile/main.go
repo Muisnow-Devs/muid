@@ -28,17 +28,17 @@ func run() error {
 	errChan := make(chan error, 1)
 	cfg, err := shared.LoadConfig[app.Config](app.ConfigEnvPrefix)
 	if err != nil {
-		errChan <- fmt.Errorf("load config: %w", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	infra, err := app.NewInfra(ctx, cfg)
 	if err != nil {
-		errChan <- fmt.Errorf("init infra: %w", err)
+		return fmt.Errorf("init infra: %w", err)
 	}
 
 	papp, err := app.NewProfileApp(infra)
 	if err != nil {
-		errChan <- fmt.Errorf("create app: %w", err)
+		return fmt.Errorf("create app: %w", err)
 	}
 	defer papp.Stop()
 

@@ -33,6 +33,7 @@ func (g *GRPCHandler) queryDisplayAvatar(
 		).
 		Order(useravatar.ByID(sql.OrderDesc())).
 		First(ctx)
+
 	if ent.IsNotFound(err) {
 		u, err := synthavatar.DataURL(userID)
 		if err != nil {
@@ -43,6 +44,7 @@ func (g *GRPCHandler) queryDisplayAvatar(
 	if err != nil {
 		return "", "", err
 	}
+
 	if strings.HasPrefix(av.ObjectKey, "virtual/") {
 		u, err := synthavatar.DataURL(userID)
 		if err != nil {
@@ -50,12 +52,15 @@ func (g *GRPCHandler) queryDisplayAvatar(
 		}
 		return u, "", nil
 	}
+
 	if g.avatars != nil && av.ObjectKey != "" {
 		return g.avatars.publicProdURL(av.ObjectKey), av.ObjectKey, nil
 	}
+
 	u, err := synthavatar.DataURL(userID)
 	if err != nil {
 		return "", "", err
 	}
+
 	return u, av.ObjectKey, nil
 }

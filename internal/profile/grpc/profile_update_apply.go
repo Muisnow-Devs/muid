@@ -3,6 +3,7 @@ package profilegrpc
 import (
 	"context"
 	"errors"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -32,7 +33,24 @@ var profilePatchRegistry = map[string]profilePatchFn{
 	"identity.name":        patchIdentityDisplayFromNameFields,
 	"identity.given_name":  patchIdentityDisplayFromNameFields,
 	"identity.family_name": patchIdentityDisplayFromNameFields,
-	"identity.picture":     patchIdentityPictureValidate,
+}
+
+func patchErrorHelper(ctx context.Context, action string, err error, userId uuid.UUID) error {
+	if ent.IsNotFound(err) {
+		return status.Error(codes.NotFound, "requested resource not found")
+	}
+
+	if ent.IsConstraintError(err) {
+		return status.Error(codes.AlreadyExists, "conflicting update value already in use")
+	}
+
+	return grpcInternal(
+		ctx,
+		action,
+		err,
+		"profile_id_prefix",
+		userIDPrefix(userId.String()),
+	)
 }
 
 func patchIdentityUsername(
@@ -49,16 +67,19 @@ func patchIdentityUsername(
 			"identity payload required for identity.username",
 		)
 	}
+
 	raw := strings.TrimSpace(idn.GetUsername())
 	if raw == "" {
 		return status.Error(codes.InvalidArgument, "username must not be empty")
 	}
+
 	if !validation.ValidUsername(raw) {
 		return status.Error(
 			codes.InvalidArgument,
 			"username must be 5–32 characters: letters, digits, underscore only",
 		)
 	}
+
 	candidate := strings.ToLower(raw)
 	taken, err := tx.UserProfile.Query().
 		Where(userprofile.UsernameEQ(candidate), userprofile.IDNEQ(id)).
@@ -75,21 +96,12 @@ func patchIdentityUsername(
 	if taken {
 		return status.Error(codes.AlreadyExists, "username already taken")
 	}
-	if _, err := tx.UserProfile.UpdateOneID(id).SetUsername(candidate).Save(ctx); err != nil {
-		if ent.IsNotFound(err) {
-			return status.Error(codes.NotFound, "profile not found")
-		}
-		if ent.IsConstraintError(err) {
-			return status.Error(codes.AlreadyExists, "username already taken")
-		}
-		return grpcInternal(
-			ctx,
-			"profile update username",
-			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
-		)
+
+	err = tx.UserProfile.UpdateOneID(id).SetUsername(candidate).Exec(ctx)
+	if err != nil {
+		return patchErrorHelper(ctx, "profile update username", err, id)
 	}
+
 	return nil
 }
 
@@ -104,10 +116,12 @@ func patchIdentityEmail(
 	if c == nil {
 		return status.Error(codes.InvalidArgument, "identity payload required for identity.email")
 	}
+
 	email := strings.TrimSpace(strings.ToLower(c.GetEmail()))
 	if email == "" {
 		return status.Error(codes.InvalidArgument, "email must not be empty")
 	}
+
 	taken, err := tx.UserProfile.Query().
 		Where(userprofile.EmailRefEQ(email), userprofile.IDNEQ(id)).
 		Exist(ctx)
@@ -123,21 +137,12 @@ func patchIdentityEmail(
 	if taken {
 		return status.Error(codes.AlreadyExists, "email already in use")
 	}
-	if _, err := tx.UserProfile.UpdateOneID(id).SetEmailRef(email).Save(ctx); err != nil {
-		if ent.IsNotFound(err) {
-			return status.Error(codes.NotFound, "profile not found")
-		}
-		if ent.IsConstraintError(err) {
-			return status.Error(codes.AlreadyExists, "email already in use")
-		}
-		return grpcInternal(
-			ctx,
-			"profile update email",
-			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
-		)
+
+	err = tx.UserProfile.UpdateOneID(id).SetEmailRef(email).Exec(ctx)
+	if err != nil {
+		return patchErrorHelper(ctx, "profile update email", err, id)
 	}
+
 	return nil
 }
 
@@ -152,23 +157,17 @@ func patchIdentityLocale(
 	if c == nil {
 		return status.Error(codes.InvalidArgument, "identity payload required for identity.locale")
 	}
+
 	loc := strings.TrimSpace(c.GetLocale())
-	n, err := tx.UserPreference.Update().
+	_, err := tx.UserPreference.Update().
 		Where(userpreference.HasUserWith(userprofile.ID(id))).
 		SetLocale(loc).
 		Save(ctx)
+
 	if err != nil {
-		return grpcInternal(
-			ctx,
-			"profile update preference",
-			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
-		)
+		return patchErrorHelper(ctx, "profile update locale", err, id)
 	}
-	if n == 0 {
-		return status.Error(codes.NotFound, "preference not found for profile")
-	}
+
 	return nil
 }
 
@@ -186,64 +185,23 @@ func patchIdentityDisplayFromNameFields(
 			"identity payload required for display name identity paths",
 		)
 	}
-	up, err := tx.UserProfile.Get(ctx, id)
-	if err != nil {
-		if ent.IsNotFound(err) {
-			return status.Error(codes.NotFound, "profile not found")
-		}
-		return grpcInternal(
-			ctx,
-			"profile update display load",
-			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
-		)
-	}
-	dn := displayNameFromIdentity(c, emailLocalPart(up.EmailRef))
-	if dn == "" {
-		return status.Error(codes.InvalidArgument, "resolved display name must not be empty")
-	}
-	if _, err := tx.UserProfile.UpdateOneID(id).SetDisplayName(dn).Save(ctx); err != nil {
-		if ent.IsNotFound(err) {
-			return status.Error(codes.NotFound, "profile not found")
-		}
-		return grpcInternal(
-			ctx,
-			"profile update display from identity",
-			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
-		)
-	}
-	return nil
-}
 
-func patchIdentityPictureValidate(
-	ctx context.Context,
-	g *GRPCHandler,
-	tx *ent.Tx,
-	id uuid.UUID,
-	req *pb.UpdateProfileRequest,
-) error {
-	pic := strings.TrimSpace(avatarFromIdentity(req.GetIdentity()))
-	if pic == "" {
-		return status.Error(codes.InvalidArgument, "picture must not be empty")
+	var username string
+	if c.GetName() != "" {
+		username = strings.TrimSpace(c.GetName())
+	} else if c.GetGivenName() != "" || c.GetFamilyName() != "" {
+		username = strings.TrimSpace(c.GetGivenName() + " " + c.GetFamilyName())
 	}
-	if g.avatarIngest == nil {
-		return status.Error(codes.FailedPrecondition, "avatar ingest not configured")
+
+	if username == "" {
+		return status.Error(codes.InvalidArgument, "no name fields provided for display name update")
 	}
-	if _, err := tx.UserProfile.Get(ctx, id); err != nil {
-		if ent.IsNotFound(err) {
-			return status.Error(codes.NotFound, "profile not found")
-		}
-		return grpcInternal(
-			ctx,
-			"profile update picture profile lookup",
-			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
-		)
+
+	err := tx.UserProfile.UpdateOneID(id).SetDisplayName(username).Exec(ctx)
+	if err != nil {
+		return patchErrorHelper(ctx, "profile update display name", err, id)
 	}
+
 	return nil
 }
 
@@ -252,19 +210,16 @@ func sortedPatchableProfileMaskPaths(mask *fieldmaskpb.FieldMask) ([]string, err
 	if err != nil {
 		return nil, err
 	}
+
 	for _, p := range paths {
 		if _, ok := profilePatchRegistry[p]; !ok {
 			return nil, errProfileUpdateUnsupportedPath
 		}
 	}
+
 	return paths, nil
 }
 
 func shouldBootstrapAvatarAfterCommit(paths []string) bool {
-	for _, p := range paths {
-		if p == "identity.picture" {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(paths, "identity.email")
 }

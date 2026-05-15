@@ -62,7 +62,3 @@ func (s *ProfileGRPC) Start(ctx context.Context) error {
 		return err
 	}
 }
-
-func (s *ProfileGRPC) Stop() {
-	s.grpcServer.GracefulStop()
-}

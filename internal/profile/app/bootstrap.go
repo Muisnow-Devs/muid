@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 
 	"entgo.io/ent/dialect"
 
@@ -11,8 +10,7 @@ import (
 	"sanzi.io/muid/infra/r2"
 	"sanzi.io/muid/internal/media"
 	"sanzi.io/muid/internal/profile/ent"
-	"sanzi.io/muid/internal/profile/grpc"
-	"sanzi.io/muid/internal/profile/subscriber"
+	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 )
@@ -105,18 +103,9 @@ func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
 }
 
 func (a *ProfileApp) Start(ctx context.Context) error {
-	go func() {
-		if err := subscriber.RunProfileSubscriber(
-			context.Background(),
-			a.infra.PubSub,
-		); err != nil {
-			log.Printf("profile subscriber: %v", err)
-		}
-	}()
 	return a.server.Start(ctx)
 }
 
 func (a *ProfileApp) Stop() {
-	a.server.Stop()
 	a.infra.Close()
 }

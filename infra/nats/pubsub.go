@@ -29,22 +29,29 @@ func (n *NATSPubSub) Publish(topic topics.Topic, message []byte) error {
 }
 
 func (n *NATSPubSub) Subscribe(
+	ctx context.Context,
 	topic topics.Topic,
 	opts pubsub.SubscribeOptions,
 	handler func(ctx context.Context, message []byte) error,
 ) error {
 	cb := func(msg *natsio.Msg) {
+		workCtx, cancel := context.WithTimeout(ctx, pubsub.SubscribeTaskTimeout)
+		defer cancel()
+
 		ctx := traceid.With(context.Background(), shared.UUIDV7().String())
-		if err := handler(ctx, msg.Data); err != nil {
+
+		if err := handler(workCtx, msg.Data); err != nil {
 			traceid.LogUnexpected(ctx, "nats subscriber", err.Error(), "topic", string(topic))
 		}
 	}
+
 	var err error
 	if opts.QueueGroup != "" {
 		_, err = n.conn.QueueSubscribe(string(topic), opts.QueueGroup, cb)
 	} else {
 		_, err = n.conn.Subscribe(string(topic), cb)
 	}
+
 	return err
 }
 

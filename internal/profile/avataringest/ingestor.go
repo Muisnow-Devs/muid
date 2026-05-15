@@ -3,6 +3,7 @@ package avataringest
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -165,35 +166,31 @@ func (i *ExternalAvatarIngestor) Go(
 	if i == nil {
 		return
 	}
-	tid, _ := traceid.FromContext(parentCtx)
-	base := context.Background()
-	if tid != "" {
-		base = traceid.With(base, tid)
-	}
-	uid := userID
-	prim := primaryURL
-	fb := fallbackURL
+
+	ctx := context.WithoutCancel(parentCtx)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+
 	go func() {
-		workCtx, cancel := context.WithTimeout(base, ingestTimeout)
 		defer cancel()
 		defer func() {
 			if r := recover(); r != nil {
 				traceid.LogUnexpected(
-					workCtx,
+					ctx,
 					"ExternalAvatarIngestor.panic",
 					fmt.Sprintf("%v", r),
 					"user_id_prefix",
-					userIDPrefix(uid.String()),
+					userIDPrefix(userID.String()),
 				)
 			}
 		}()
-		if err := i.IngestFromURL(workCtx, uid, prim, fb); err != nil {
+
+		if err := i.IngestFromURL(ctx, userID, primaryURL, fallbackURL); err != nil {
 			traceid.LogUnexpected(
-				workCtx,
+				ctx,
 				"ExternalAvatarIngestor.IngestFromURL",
 				err.Error(),
 				"user_id_prefix",
-				userIDPrefix(uid.String()),
+				userIDPrefix(userID.String()),
 			)
 		}
 	}()
@@ -209,49 +206,60 @@ func (i *ExternalAvatarIngestor) GoBootstrap(
 	if i == nil {
 		return
 	}
-	tid, _ := traceid.FromContext(parentCtx)
-	base := context.Background()
-	if tid != "" {
-		base = traceid.With(base, tid)
-	}
-	uid := userID
-	pic := strings.TrimSpace(oidcPictureURL)
+
+	ctx := context.WithoutCancel(parentCtx)
+	ctx, cancel := context.WithTimeout(ctx, ingestTimeout)
+
 	go func() {
-		workCtx, cancel := context.WithTimeout(base, ingestTimeout)
 		defer cancel()
 		defer func() {
 			if r := recover(); r != nil {
 				traceid.LogUnexpected(
-					workCtx,
+					ctx,
 					"ExternalAvatarIngestor.GoBootstrap.panic",
 					fmt.Sprintf("%v", r),
 					"user_id_prefix",
-					userIDPrefix(uid.String()),
+					userIDPrefix(userID.String()),
 				)
 			}
 		}()
 
-		tryURL := pic != "" && strings.HasPrefix(pic, "https://")
-		var err error
-		if tryURL {
-			rowID, objectKey, publicURL, byteSize, prepErr := i.prepareAndUpload(workCtx, uid, pic)
-			if prepErr == nil {
-				err = i.insertCommittedAvatar(workCtx, uid, rowID, objectKey, publicURL, byteSize)
-			} else {
-				err = prepErr
-			}
-		}
-		if !tryURL || err != nil {
-			err = i.IngestSyntheticLocal(workCtx, uid)
-		}
-		if err != nil {
-			traceid.LogUnexpected(
-				workCtx,
-				"ExternalAvatarIngestor.GoBootstrap",
-				err.Error(),
-				"user_id_prefix",
-				userIDPrefix(uid.String()),
-			)
-		}
+		i.backgroundIngest(
+			ctx,
+			userID,
+			strings.TrimSpace(oidcPictureURL),
+		)
 	}()
+}
+
+func (i *ExternalAvatarIngestor) backgroundIngest(
+	ctx context.Context,
+	uid uuid.UUID,
+	pic string,
+) {
+	u, err := url.Parse(pic)
+	tryURL := err == nil && u.Scheme == "https" && u.Host != ""
+
+	if tryURL {
+		rowID, objectKey, publicURL, byteSize, prepErr := i.prepareAndUpload(ctx, uid, pic)
+		if prepErr == nil {
+			err = i.insertCommittedAvatar(ctx, uid, rowID, objectKey, publicURL, byteSize)
+		} else {
+			err = prepErr
+		}
+	}
+
+	if !tryURL || err != nil {
+		err = i.IngestSyntheticLocal(ctx, uid)
+	}
+
+	if err != nil {
+		traceid.LogUnexpected(
+			ctx,
+			"ExternalAvatarIngestor.GoBootstrap",
+			err.Error(),
+			"user_id_prefix",
+			userIDPrefix(uid.String()),
+		)
+	}
 }

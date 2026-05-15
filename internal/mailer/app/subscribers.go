@@ -1,14 +1,16 @@
 package app
 
 import (
+	"context"
+
 	"sanzi.io/muid/internal/mailer/handlers"
 	"sanzi.io/muid/internal/mailer/handlers/loginalert"
 	"sanzi.io/muid/internal/mailer/handlers/otp"
 )
 
 // RegisterSubscribers wires pub/sub topics to mail handlers.
-func RegisterSubscribers(infra *InfraDependencies) error {
-	if err := handlers.RegisterTopicHandlers(infra.PubSub, handlers.MailerDeps{
+func RegisterSubscribers(ctx context.Context, infra *InfraDependencies) error {
+	if err := handlers.RegisterTopicHandlers(ctx, infra.PubSub, handlers.MailerDeps{
 		Mail:      infra.Mail,
 		Templates: infra.Templates,
 	},

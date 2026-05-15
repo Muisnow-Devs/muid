@@ -44,12 +44,11 @@ func patchErrorHelper(ctx context.Context, action string, err error, userId uuid
 		return status.Error(codes.AlreadyExists, "conflicting update value already in use")
 	}
 
-	return grpcInternal(
+	return internalErrorWithUserId(
 		ctx,
-		action,
 		err,
-		"profile_id_prefix",
-		userIDPrefix(userId.String()),
+		action,
+		userId,
 	)
 }
 
@@ -85,12 +84,11 @@ func patchIdentityUsername(
 		Where(userprofile.UsernameEQ(candidate), userprofile.IDNEQ(id)).
 		Exist(ctx)
 	if err != nil {
-		return grpcInternal(
+		return internalErrorWithUserId(
 			ctx,
-			"profile update username taken check",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile update username taken check",
+			id,
 		)
 	}
 	if taken {
@@ -126,12 +124,11 @@ func patchIdentityEmail(
 		Where(userprofile.EmailRefEQ(email), userprofile.IDNEQ(id)).
 		Exist(ctx)
 	if err != nil {
-		return grpcInternal(
+		return internalErrorWithUserId(
 			ctx,
-			"profile update email taken check",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile update email taken check",
+			id,
 		)
 	}
 	if taken {
@@ -194,7 +191,10 @@ func patchIdentityDisplayFromNameFields(
 	}
 
 	if username == "" {
-		return status.Error(codes.InvalidArgument, "no name fields provided for display name update")
+		return status.Error(
+			codes.InvalidArgument,
+			"no name fields provided for display name update",
+		)
 	}
 
 	err := tx.UserProfile.UpdateOneID(id).SetDisplayName(username).Exec(ctx)

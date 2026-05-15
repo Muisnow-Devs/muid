@@ -48,13 +48,7 @@ func (g *GRPCHandler) StartAvatarUpload(
 	if _, err := g.db.UserProfile.Get(ctx, userID); ent.IsNotFound(err) {
 		return nil, status.Error(codes.NotFound, "profile not found")
 	} else if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar start profile lookup",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar start profile lookup", userID)
 	}
 
 	ct := strings.TrimSpace(req.GetContentType())
@@ -70,13 +64,7 @@ func (g *GRPCHandler) StartAvatarUpload(
 	exp := 15 * time.Minute
 	url, expTime, err := g.avatars.Store.PresignPut(ctx, g.avatars.UploadBucket, objectKey, ct, exp)
 	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar presign put",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar presign put", userID)
 	}
 
 	sessID := shared.UUIDV7()
@@ -88,13 +76,7 @@ func (g *GRPCHandler) StartAvatarUpload(
 		SetByteSize(0).
 		Save(ctx)
 	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar start record pending",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar start record pending", userID)
 	}
 
 	resp := &pb.StartAvatarUploadResponse{}
@@ -133,13 +115,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		return nil, status.Error(codes.NotFound, "avatar row not found")
 	}
 	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar complete query row",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar complete query row", userID)
 	}
 	if av.ObjectKey != req.GetObjectKey() {
 		return nil, status.Error(
@@ -151,21 +127,22 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		return nil, status.Error(codes.FailedPrecondition, "upload session already completed")
 	}
 
-	head, err := g.avatars.Store.HeadObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
+	rc, head, err := g.avatars.Store.GetObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
 	if err != nil {
 		if errors.Is(err, storage.ErrObjectNotFound) {
 			return nil, status.Error(codes.FailedPrecondition, "object not found in storage")
 		}
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"avatar head staging",
 			err,
+			"avatar download staging",
+			userID,
 			"bucket",
 			g.avatars.UploadBucket,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
 		)
 	}
+	defer errutil.Close(rc)
+
 	if head.Size <= 0 || head.Size > media.MaxAvatarStagingBytes {
 		return nil, status.Errorf(codes.InvalidArgument, "unreasonable object size %d", head.Size)
 	}
@@ -177,29 +154,9 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		)
 	}
 
-	rc, _, err := g.avatars.Store.GetObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
-	if err != nil {
-		if errors.Is(err, storage.ErrObjectNotFound) {
-			return nil, status.Error(codes.FailedPrecondition, "object not found in storage")
-		}
-		return nil, grpcInternal(
-			ctx,
-			"avatar download staging",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
-	}
 	raw, err := readAllLimited(rc, head.Size+1)
-	errutil.Close(rc)
 	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar read staging",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar read staging", userID)
 	}
 	if int64(len(raw)) != head.Size {
 		return nil, status.Error(
@@ -217,13 +174,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		if isAvatarValidationErr(err) {
 			return nil, status.Error(codes.InvalidArgument, "invalid avatar image")
 		}
-		return nil, grpcInternal(
-			ctx,
-			"avatar staging validate",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar staging validate", userID)
 	}
 
 	webpBytes, err := g.avatarProc.ProcessToSquareWebP(raw, canonicalMIME)
@@ -231,13 +182,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		if isAvatarValidationErr(err) {
 			return nil, status.Error(codes.InvalidArgument, "invalid avatar image")
 		}
-		return nil, grpcInternal(
-			ctx,
-			"avatar raster process",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar raster process", userID)
 	}
 
 	finalRowID := shared.UUIDV7()
@@ -249,13 +194,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		webpBytes,
 		media.ContentTypeWebP,
 	); err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar store processed",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar store processed", userID)
 	}
 
 	publicURL := g.avatars.publicProdURL(prodKey)
@@ -263,13 +202,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar complete tx begin",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar complete tx begin", userID)
 	}
 	defer func() { errutil.Discard(tx.Rollback()) }()
 
@@ -282,61 +215,39 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		SetContentType(media.ContentTypeWebP).
 		SetPublicURL(publicURL).
 		Save(ctx); err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar complete insert row",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar complete insert row", userID)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar complete tx commit",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
+		return nil, internalErrorWithUserId(ctx, err, "avatar complete tx commit", userID)
 	}
 
-	if err := g.avatars.Store.DeleteObject(
-		ctx,
-		g.avatars.UploadBucket,
-		req.GetObjectKey(),
-	); err != nil {
+	// Async non-blocking operations for cleanup and publishing
+	go func() {
+		bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
 		tid, _ := traceid.FromContext(ctx)
-		log.Printf(
-			"avatar: delete staging object trace_id=%s object_key=%s err=%v",
-			tid,
-			req.GetObjectKey(),
-			err,
-		)
-	}
+		bgCtx = traceid.With(bgCtx, tid)
 
-	avPaths, err := updatemask.SortedUniqueGetProfileResponsePaths(
-		[]string{"avatar_url", "avatar_object_key"},
-	)
-	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar complete event paths",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
+		err := g.avatars.Store.DeleteObject(bgCtx, g.avatars.UploadBucket, req.GetObjectKey())
+		if err != nil {
+			log.Printf(
+				"avatar: delete staging object trace_id=%s object_key=%s err=%v",
+				tid,
+				req.GetObjectKey(),
+				err,
+			)
+		}
+
+		avPaths, err := updatemask.SortedUniqueGetProfileResponsePaths(
+			[]string{"avatar_url", "avatar_object_key"},
 		)
-	}
-	changed := &fieldmaskpb.FieldMask{Paths: avPaths}
-	if err := g.publishChange(ctx, userID.String(), changed); err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"avatar complete publish",
-			err,
-			"user_id_prefix",
-			userIDPrefix(userID.String()),
-		)
-	}
+		if err == nil {
+			changed := &fieldmaskpb.FieldMask{Paths: avPaths}
+			g.publishChange(bgCtx, userID.String(), changed)
+		}
+	}()
 
 	resp := &pb.CompleteAvatarUploadResponse{}
 	resp.SetAvatarUrl(publicURL)

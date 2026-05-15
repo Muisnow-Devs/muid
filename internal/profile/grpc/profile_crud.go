@@ -81,14 +81,12 @@ func (g *GRPCHandler) CreateProfile(
 		)
 	}
 
-	userIdPre := userIDPrefix(user.ID.String())
 	if err := tx.Commit(); err != nil {
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"profile create tx commit",
 			err,
-			"user_id_prefix",
-			userIdPre,
+			"profile create tx commit",
+			user.ID,
 		)
 	}
 
@@ -119,12 +117,11 @@ func (g *GRPCHandler) GetProfile(
 		return nil, status.Error(codes.NotFound, "profile not found")
 	}
 	if err != nil {
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"profile get query",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile get query",
+			id,
 		)
 	}
 
@@ -135,12 +132,11 @@ func (g *GRPCHandler) GetProfile(
 
 	avatarURL, objectKey, err := g.queryDisplayAvatar(ctx, id)
 	if err != nil {
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"profile get avatar",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile get avatar",
+			id,
 		)
 	}
 
@@ -184,12 +180,11 @@ func (g *GRPCHandler) UpdateProfile(
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"profile update tx begin",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile update tx begin",
+			id,
 		)
 	}
 	defer func() { errutil.Discard(tx.Rollback()) }()
@@ -201,25 +196,24 @@ func (g *GRPCHandler) UpdateProfile(
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"profile update tx commit",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile update tx commit",
+			id,
 		)
 	}
 
 	resPaths, err := updatemask.GetProfileResponsePathsFromUpdateRequestPaths(paths)
 	if err != nil {
-		return nil, grpcInternal(
+		return nil, internalErrorWithUserId(
 			ctx,
-			"profile update event paths",
 			err,
-			"profile_id_prefix",
-			userIDPrefix(id.String()),
+			"profile update event paths",
+			id,
 		)
 	}
+
 	changed := &fieldmaskpb.FieldMask{Paths: resPaths}
 	if shouldBootstrapAvatarAfterCommit(paths) {
 		pic := strings.TrimSpace(avatarFromIdentity(req.GetIdentity()))

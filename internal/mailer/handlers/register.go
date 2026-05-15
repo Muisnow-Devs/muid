@@ -8,7 +8,12 @@ import (
 
 // RegisterTopicHandlers subscribes each handler on its topic. Non-nil errors from
 // Handle are logged by the [pubsub.PubSub] implementation (e.g. NATS) with the topic name.
-func RegisterTopicHandlers(ctx context.Context, ps pubsub.PubSub, deps MailerDeps, hs ...TopicHandler) error {
+func RegisterTopicHandlers(
+	ctx context.Context,
+	ps pubsub.PubSub,
+	deps MailerDeps,
+	hs ...TopicHandler,
+) error {
 	for _, h := range hs {
 		topic := h.Topic()
 

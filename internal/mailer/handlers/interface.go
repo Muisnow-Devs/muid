@@ -20,5 +20,23 @@ type MailerDeps struct {
 type TopicHandler interface {
 	Topic() topics.Topic
 	SubscribeOptions() pubsub.SubscribeOptions
-	Handle(ctx context.Context, deps MailerDeps, payload []byte) error
+	Handle(
+		ctx context.Context,
+		templates templates.MailRenderer,
+		payload []byte,
+	) (mailer.Message, error)
+}
+
+type TopicOTP struct {
+	OTP        string
+	ExpiryTime string
+}
+
+type TopicLoginAlert struct {
+	Device    string
+	Location  string
+	IPAddress string
+	Time      string
+
+	SecureAccountLink string
 }

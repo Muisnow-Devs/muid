@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"context"
+	"errors"
 
+	"sanzi.io/muid/pkg/shared/mailer"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -22,7 +24,7 @@ func RegisterTopicHandlers(
 			topic,
 			h.SubscribeOptions(),
 			func(ctx context.Context, message []byte) error {
-				return h.Handle(ctx, deps, message)
+				return handleEvent(ctx, message, deps, h)
 			},
 		)
 
@@ -30,5 +32,24 @@ func RegisterTopicHandlers(
 			return &SubscribeTopicError{Topic: topic, Err: err}
 		}
 	}
+	return nil
+}
+
+func handleEvent(ctx context.Context, message []byte, deps MailerDeps, handler TopicHandler) error {
+	result, err := handler.Handle(ctx, deps.Templates, message)
+	if err != nil {
+		return err
+	}
+
+	err = deps.Mail.Send(ctx, result)
+	if errors.Is(err, mailer.ErrInvalidEmailAddress) ||
+		errors.Is(err, mailer.ErrEmptyEmailContent) {
+		return err
+	}
+
+	if err != nil {
+		return errors.Join(mailer.ErrEmailSendFailed, err)
+	}
+
 	return nil
 }

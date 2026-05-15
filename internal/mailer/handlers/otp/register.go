@@ -2,13 +2,11 @@ package otp
 
 import (
 	"context"
-	"errors"
 	"time"
-
-	"google.golang.org/protobuf/proto"
 
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/mailer/handlers"
+	"sanzi.io/muid/internal/templates"
 	"sanzi.io/muid/pkg/shared/mailer"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
@@ -19,57 +17,41 @@ type Handler struct{}
 
 func (Handler) Topic() topics.Topic                       { return topics.TopicSendOTP }
 func (Handler) SubscribeOptions() pubsub.SubscribeOptions { return pubsub.SubscribeOptions{} }
-func (Handler) Handle(ctx context.Context, deps handlers.MailerDeps, payload []byte) error {
-	var ev mailpb.SendOTPEmailEvent
-	if err := proto.Unmarshal(payload, &ev); err != nil {
-		return errors.Join(handlers.ErrMalformedMailEventPayload, err)
-	}
-	return sendOTPEmail(ctx, deps, &ev)
-}
 
-func sendOTPEmail(
+func (Handler) Handle(
 	ctx context.Context,
-	deps handlers.MailerDeps,
-	ev *mailpb.SendOTPEmailEvent,
-) error {
-	if ev.GetEmail() == "" || ev.GetCode() == "" {
-		return mailer.ErrInvalidEmailAddress
+	templates templates.MailRenderer,
+	payload []byte,
+) (mailer.Message, error) {
+	var ev mailpb.SendOTPEmailEvent
+	err := handlers.UnmarshalMailEventPayload(payload, &ev)
+	if err != nil {
+		return mailer.Message{}, err
 	}
-	product := ev.GetProductName()
-	if product == "" {
-		product = "Muid"
+
+	email := ev.GetEmail()
+	if email == "" || ev.GetCode() == "" {
+		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
+
 	expires := time.Now().UTC().Format(time.RFC1123Z)
 	if ts := ev.GetExpiresAt(); ts != nil {
 		expires = ts.AsTime().UTC().Format(time.RFC1123Z)
 	}
 	locale := ev.GetLocale()
 
-	rendered, err := deps.Templates.Render(ctx, locale, "otp", struct {
-		OTP         string
-		ExpiryTime  string
-		ProductName string
-	}{
-		OTP:         ev.GetCode(),
-		ExpiryTime:  expires,
-		ProductName: product,
+	rendered, err := templates.Render(ctx, locale, "otp", handlers.TopicOTP{
+		OTP:        ev.GetCode(),
+		ExpiryTime: expires,
 	})
 	if err != nil {
-		return err
+		return mailer.Message{}, err
 	}
 
-	msg := mailer.Message{
-		To:       []string{ev.GetEmail()},
+	return mailer.Message{
+		To:       []string{email},
 		Subject:  rendered.Subject,
 		TextBody: rendered.Text,
 		HTMLBody: rendered.HTML,
-	}
-	if err := deps.Mail.Send(ctx, msg); err != nil {
-		if errors.Is(err, mailer.ErrInvalidEmailAddress) ||
-			errors.Is(err, mailer.ErrEmptyEmailContent) {
-			return err
-		}
-		return errors.Join(mailer.ErrEmailSendFailed, err)
-	}
-	return nil
+	}, nil
 }

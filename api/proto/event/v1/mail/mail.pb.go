@@ -247,16 +247,15 @@ func (b0 EmailMessage_builder) Build() *EmailMessage {
 }
 
 type SendOTPEmailEvent struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id          string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	xxx_hidden_Email       string                 `protobuf:"bytes,2,opt,name=email,proto3"`
-	xxx_hidden_Locale      string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
-	xxx_hidden_Code        string                 `protobuf:"bytes,4,opt,name=code,proto3"`
-	xxx_hidden_ExpiresAt   *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3"`
-	xxx_hidden_ProductName string                 `protobuf:"bytes,6,opt,name=product_name,json=productName,proto3"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id        string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Email     string                 `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_Locale    string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
+	xxx_hidden_Code      string                 `protobuf:"bytes,4,opt,name=code,proto3"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_CreatedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *SendOTPEmailEvent) Reset() {
@@ -319,13 +318,6 @@ func (x *SendOTPEmailEvent) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
-func (x *SendOTPEmailEvent) GetProductName() string {
-	if x != nil {
-		return x.xxx_hidden_ProductName
-	}
-	return ""
-}
-
 func (x *SendOTPEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_CreatedAt
@@ -351,10 +343,6 @@ func (x *SendOTPEmailEvent) SetCode(v string) {
 
 func (x *SendOTPEmailEvent) SetExpiresAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_ExpiresAt = v
-}
-
-func (x *SendOTPEmailEvent) SetProductName(v string) {
-	x.xxx_hidden_ProductName = v
 }
 
 func (x *SendOTPEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
@@ -386,13 +374,12 @@ func (x *SendOTPEmailEvent) ClearCreatedAt() {
 type SendOTPEmailEvent_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id          string
-	Email       string
-	Locale      string
-	Code        string
-	ExpiresAt   *timestamppb.Timestamp
-	ProductName string
-	CreatedAt   *timestamppb.Timestamp
+	Id        string
+	Email     string
+	Locale    string
+	Code      string
+	ExpiresAt *timestamppb.Timestamp
+	CreatedAt *timestamppb.Timestamp
 }
 
 func (b0 SendOTPEmailEvent_builder) Build() *SendOTPEmailEvent {
@@ -404,7 +391,6 @@ func (b0 SendOTPEmailEvent_builder) Build() *SendOTPEmailEvent {
 	x.xxx_hidden_Locale = b.Locale
 	x.xxx_hidden_Code = b.Code
 	x.xxx_hidden_ExpiresAt = b.ExpiresAt
-	x.xxx_hidden_ProductName = b.ProductName
 	x.xxx_hidden_CreatedAt = b.CreatedAt
 	return m0
 }
@@ -417,8 +403,10 @@ type SendLoginAlertEmailEvent struct {
 	xxx_hidden_IpAddress  string                 `protobuf:"bytes,4,opt,name=ip_address,json=ipAddress,proto3"`
 	xxx_hidden_Location   string                 `protobuf:"bytes,5,opt,name=location,proto3"`
 	xxx_hidden_Device     string                 `protobuf:"bytes,6,opt,name=device,proto3"`
-	xxx_hidden_OccurredAt *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=occurred_at,json=occurredAt,proto3"`
-	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_UserAgent  string                 `protobuf:"bytes,7,opt,name=user_agent,json=userAgent,proto3"`
+	xxx_hidden_SecureLink string                 `protobuf:"bytes,8,opt,name=secure_link,json=secureLink,proto3"`
+	xxx_hidden_OccurredAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=occurred_at,json=occurredAt,proto3"`
+	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -490,6 +478,20 @@ func (x *SendLoginAlertEmailEvent) GetDevice() string {
 	return ""
 }
 
+func (x *SendLoginAlertEmailEvent) GetUserAgent() string {
+	if x != nil {
+		return x.xxx_hidden_UserAgent
+	}
+	return ""
+}
+
+func (x *SendLoginAlertEmailEvent) GetSecureLink() string {
+	if x != nil {
+		return x.xxx_hidden_SecureLink
+	}
+	return ""
+}
+
 func (x *SendLoginAlertEmailEvent) GetOccurredAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.xxx_hidden_OccurredAt
@@ -526,6 +528,14 @@ func (x *SendLoginAlertEmailEvent) SetLocation(v string) {
 
 func (x *SendLoginAlertEmailEvent) SetDevice(v string) {
 	x.xxx_hidden_Device = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetUserAgent(v string) {
+	x.xxx_hidden_UserAgent = v
+}
+
+func (x *SendLoginAlertEmailEvent) SetSecureLink(v string) {
+	x.xxx_hidden_SecureLink = v
 }
 
 func (x *SendLoginAlertEmailEvent) SetOccurredAt(v *timestamppb.Timestamp) {
@@ -567,6 +577,8 @@ type SendLoginAlertEmailEvent_builder struct {
 	IpAddress  string
 	Location   string
 	Device     string
+	UserAgent  string
+	SecureLink string
 	OccurredAt *timestamppb.Timestamp
 	CreatedAt  *timestamppb.Timestamp
 }
@@ -581,6 +593,8 @@ func (b0 SendLoginAlertEmailEvent_builder) Build() *SendLoginAlertEmailEvent {
 	x.xxx_hidden_IpAddress = b.IpAddress
 	x.xxx_hidden_Location = b.Location
 	x.xxx_hidden_Device = b.Device
+	x.xxx_hidden_UserAgent = b.UserAgent
+	x.xxx_hidden_SecureLink = b.SecureLink
 	x.xxx_hidden_OccurredAt = b.OccurredAt
 	x.xxx_hidden_CreatedAt = b.CreatedAt
 	return m0
@@ -605,17 +619,16 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1a7\n" +
 	"\tDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xfe\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdb\x01\n" +
 	"\x11SendOTPEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
 	"\x06locale\x18\x03 \x01(\tR\x06locale\x12\x12\n" +
 	"\x04code\x18\x04 \x01(\tR\x04code\x129\n" +
 	"\n" +
-	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12!\n" +
-	"\fproduct_name\x18\x06 \x01(\tR\vproductName\x129\n" +
+	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xa3\x02\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xe3\x02\n" +
 	"\x18SendLoginAlertEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
@@ -623,11 +636,16 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"\n" +
 	"ip_address\x18\x04 \x01(\tR\tipAddress\x12\x1a\n" +
 	"\blocation\x18\x05 \x01(\tR\blocation\x12\x16\n" +
-	"\x06device\x18\x06 \x01(\tR\x06device\x12;\n" +
-	"\voccurred_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"\x06device\x18\x06 \x01(\tR\x06device\x12\x1d\n" +
+	"\n" +
+	"user_agent\x18\a \x01(\tR\tuserAgent\x12\x1f\n" +
+	"\vsecure_link\x18\b \x01(\tR\n" +
+	"secureLink\x12;\n" +
+	"\voccurred_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"occurredAt\x129\n" +
 	"\n" +
-	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\xbb\x01\n" +
+	"created_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\xbb\x01\n" +
 	"\x16com.muid.event.v1.mailB\tMailProtoP\x01Z*sanzi.io/muid/api/proto/event/v1/mail;mail\xa2\x02\x04MEVM\xaa\x02\x12Muid.Event.V1.Mail\xca\x02\x12Muid\\Event\\V1\\Mail\xe2\x02\x1eMuid\\Event\\V1\\Mail\\GPBMetadata\xea\x02\x15Muid::Event::V1::Mailb\x06proto3"
 
 var file_event_v1_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 5)

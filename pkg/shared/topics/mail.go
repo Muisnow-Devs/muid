@@ -6,4 +6,9 @@ const (
 	TopicSendNotSpecifiedEmail MailTopic = "mail.send.email"
 	TopicSendOTP               MailTopic = "mail.send.otp"
 	TopicSendLoginAlert        MailTopic = "mail.send.login_alert"
+	TopicEmailChanged          MailTopic = "mail.send.email_changed"
+	TopicPasskeyAdded          MailTopic = "mail.send.passkey_added"
+	TopicPasskeyRemoved        MailTopic = "mail.send.passkey_removed"
+
+	TopicOIDCClientGranted MailTopic = "mail.oidc.client_granted"
 )

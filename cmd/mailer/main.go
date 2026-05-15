@@ -30,17 +30,17 @@ func run() error {
 
 	cfg, err := shared.LoadConfig[app.Config](app.ConfigEnvPrefix)
 	if err != nil {
-		errChan <- fmt.Errorf("load config: %w", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	infra, err := app.NewInfra(cfg)
 	if err != nil {
-		errChan <- fmt.Errorf("init infra: %w", err)
+		return fmt.Errorf("init infra: %w", err)
 	}
 	defer func() { errutil.Discard(infra.Close()) }()
 
 	if err := app.RegisterSubscribers(ctx, infra); err != nil {
-		errChan <- fmt.Errorf("register subscribers: %w", err)
+		return fmt.Errorf("register subscribers: %w", err)
 	}
 
 	select {

@@ -1,5 +1,5 @@
 {
-    "subject": "New sign-in detected",
+    "subject": "[MuID] New sign-in detected",
     "title": "New sign-in detected",
     "description": "We noticed a new sign-in to your account from a device or location we haven't seen recently.",
     "information_device": "Device:",

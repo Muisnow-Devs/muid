@@ -16,5 +16,4 @@ type MailerConfig struct {
 	From     string
 	Username string
 	Password string
-	SSL      bool
 }

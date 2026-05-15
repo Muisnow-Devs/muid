@@ -5,6 +5,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
     <title>{{ t "subject" }}</title>
     <style>
         body {
@@ -56,7 +58,6 @@
         }
 
         .details-row {
-            margin-bottom: 12px;
             font-size: 15px;
             display: flex;
         }
@@ -70,6 +71,14 @@
             color: #111111;
             min-width: 100px;
             display: inline-block;
+        }
+
+        .details-highlight {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 6px;
+            color: #111111;
+            margin: 0;
         }
 
         .details-value {
@@ -103,14 +112,19 @@
             margin-bottom: 8px;
             font-size: 14px;
         }
+
+        a {
+            color: unset;
+            text-decoration: none;
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <div class="logo">
-            <img src="https://objects.sanziusercontent.com/full_logo.webp" alt="Muisnow Devs" width="150" height="50"
-                style="border: 0; outline: none; text-decoration: none;" />
+            <img src="https://objects.sanziusercontent.com/sanzi_images/main_full.png" alt="Muisnow Devs" width="150"
+                height="50" style="border: 0; outline: none; text-decoration: none;" />
         </div>
 
         {{ template "content" . }}

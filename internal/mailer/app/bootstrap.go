@@ -51,7 +51,6 @@ func NewInfra(cfg Config) (*InfraDependencies, error) {
 		From:     cfg.SMTPFrom,
 		Username: cfg.SMTPUsername,
 		Password: cfg.SMTPPassword,
-		SSL:      cfg.SMTPSSL,
 	})
 	if err != nil {
 		errutil.CloseIf(pubSub)

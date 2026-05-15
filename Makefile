@@ -1,4 +1,4 @@
-.PHONY: all build clean authn authz profile gateway mailer
+.PHONY: all build clean authn authz profile gateway mailer test-publish-tools
 
 # Output directory for binaries
 BIN_DIR := bin
@@ -7,6 +7,9 @@ GO_ENV := CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
 # List of services to build
 SERVICES := authn authz profile gateway mailer
+
+# NATS publishers for manual mailer testing (native GOOS/GOARCH)
+TEST_PUBLISH_TOOLS := test-publish-otp test-publish-login-alert
 
 all: build
 
@@ -23,6 +26,14 @@ $(SERVICES): proto
 proto:
 	buf build
 	buf generate --template buf.gen.yaml
+
+# Build mailer NATS test publishers (host platform)
+test-publish-tools: $(TEST_PUBLISH_TOOLS)
+
+$(TEST_PUBLISH_TOOLS):
+	@echo "Building $@..."
+	@mkdir -p $(BIN_DIR)
+	$(GO_CC) build -o $(BIN_DIR)/$@ ./test/$@
 
 # Clean build artifacts
 clean: clean-bin clean-protos

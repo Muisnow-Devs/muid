@@ -12,5 +12,4 @@ type Config struct {
 	SMTPFrom     string `envconfig:"SMTP_FROM"     required:"true"`
 	SMTPUsername string `envconfig:"SMTP_USERNAME"                 default:""`
 	SMTPPassword string `envconfig:"SMTP_PASSWORD"                 default:""`
-	SMTPSSL      bool   `envconfig:"SMTP_SSL"                      default:"false"`
 }

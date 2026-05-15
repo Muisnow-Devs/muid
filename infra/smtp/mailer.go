@@ -19,9 +19,12 @@ func NewSMTPMailer(smtpConfig MailerConfig) (Mailer, error) {
 		mail.WithPort(smtpConfig.Port),
 		mail.WithUsername(smtpConfig.Username),
 		mail.WithPassword(smtpConfig.Password),
+
+		mail.WithTLSPolicy(mail.TLSMandatory),
+		mail.WithSMTPAuth(mail.SMTPAuthPlain),
 	}
 
-	if smtpConfig.SSL {
+	if smtpConfig.Port == 465 {
 		options = append(options, mail.WithSSL())
 	}
 
@@ -52,10 +55,10 @@ func (s *SMTPMailer) Send(ctx context.Context, msg sharedmailer.Message) error {
 	}
 
 	if msg.HTMLBody != "" {
-		email.SetBodyString(mail.TypeTextHTML, msg.HTMLBody)
+		email.AddAlternativeString(mail.TypeTextHTML, msg.HTMLBody)
 	}
 
-	return s.client.Send(email)
+	return s.client.DialAndSend(email)
 }
 
 func (s *SMTPMailer) Close() error {

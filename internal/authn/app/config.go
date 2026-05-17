@@ -48,6 +48,15 @@ type Config struct {
 	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"            default:""`
 	// ProfileGRPCTimeoutSeconds bounds each outbound Profile RPC from authn.
 	ProfileGRPCTimeoutSeconds int `envconfig:"PROFILE_GRPC_TIMEOUT_SECONDS" default:"10"`
+
+	// Outbound Profile client resilience (retry + circuit breaker); see pkg/grpc_utils.
+	ProfileGRPCMaxRetries              int  `envconfig:"PROFILE_GRPC_MAX_RETRIES"                 default:"2"`
+	ProfileGRPCRetryBackoffMillis      int  `envconfig:"PROFILE_GRPC_RETRY_BACKOFF_MILLIS"        default:"100"`
+	ProfileGRPCRetryMaxBackoffMillis   int  `envconfig:"PROFILE_GRPC_RETRY_MAX_BACKOFF_MILLIS"    default:"2000"`
+	ProfileGRPCCBEnabled               bool `envconfig:"PROFILE_GRPC_CB_ENABLED"                  default:"true"`
+	ProfileGRPCCBConsecutiveFailures   int  `envconfig:"PROFILE_GRPC_CB_CONSECUTIVE_FAILURES"     default:"5"`
+	ProfileGRPCCBOpenSeconds           int  `envconfig:"PROFILE_GRPC_CB_OPEN_SECONDS"             default:"30"`
+	ProfileGRPCCBHalfOpenMaxRequests   int  `envconfig:"PROFILE_GRPC_CB_HALF_OPEN_MAX_REQUESTS"   default:"3"`
 }
 
 type InfraDependencies struct {

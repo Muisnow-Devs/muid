@@ -16,14 +16,42 @@ import (
 
 var errAvatarFetchHostBlocked = errors.New("avatar fetch: host or IP not allowed")
 
+// avatarFetchHostLookup is swapped in tests to mock DNS resolution.
+var avatarFetchHostLookup = func(ctx context.Context, host string) ([]net.IP, error) {
+	return net.DefaultResolver.LookupIP(ctx, "ip", host)
+}
+
+func avatarFetchIPBlocked(ip net.IP) bool {
+	if ip == nil {
+		return true
+	}
+	return ip.IsUnspecified() ||
+		ip.IsLoopback() ||
+		ip.IsPrivate() ||
+		ip.IsLinkLocalUnicast() ||
+		ip.IsMulticast() ||
+		!ip.IsGlobalUnicast()
+}
+
+func validateAvatarFetchResolvedIPs(ips []net.IP) error {
+	if len(ips) == 0 {
+		return errAvatarFetchHostBlocked
+	}
+	for _, ip := range ips {
+		if avatarFetchIPBlocked(ip) {
+			return errAvatarFetchHostBlocked
+		}
+	}
+	return nil
+}
+
 func validateAvatarFetchHost(host string) error {
 	h := strings.ToLower(strings.TrimSpace(host))
 	if h == "" {
 		return errAvatarFetchHostBlocked
 	}
 	if ip := net.ParseIP(h); ip != nil {
-		if ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsMulticast() ||
-			!ip.IsGlobalUnicast() {
+		if avatarFetchIPBlocked(ip) {
 			return errAvatarFetchHostBlocked
 		}
 		return nil
@@ -42,6 +70,23 @@ func validateAvatarFetchHost(host string) error {
 	}
 }
 
+// ensureAvatarFetchHostResolved performs DNS resolution and rejects hosts that map to
+// non-public addresses (SSRF protection). Literal IPs are validated by validateAvatarFetchHost only.
+func ensureAvatarFetchHostResolved(ctx context.Context, host string) error {
+	h := strings.TrimSpace(host)
+	if h == "" {
+		return errAvatarFetchHostBlocked
+	}
+	if net.ParseIP(h) != nil {
+		return nil
+	}
+	ips, err := avatarFetchHostLookup(ctx, h)
+	if err != nil {
+		return fmt.Errorf("avatar fetch: resolve host: %w", err)
+	}
+	return validateAvatarFetchResolvedIPs(ips)
+}
+
 // fetchHTTPSAvatarSource downloads an avatar raster source over HTTPS with a byte cap.
 // Response body length must match Content-Length when that header is present and valid.
 func fetchHTTPSAvatarSource(ctx context.Context, rawURL string) ([]byte, string, error) {
@@ -50,6 +95,9 @@ func fetchHTTPSAvatarSource(ctx context.Context, rawURL string) ([]byte, string,
 		return nil, "", fmt.Errorf("avatar fetch: require https URL with host")
 	}
 	if err := validateAvatarFetchHost(parsed.Hostname()); err != nil {
+		return nil, "", err
+	}
+	if err := ensureAvatarFetchHostResolved(ctx, parsed.Hostname()); err != nil {
 		return nil, "", err
 	}
 

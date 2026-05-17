@@ -9,7 +9,6 @@ import (
 
 	"entgo.io/ent/dialect"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/infra/nats"
@@ -19,7 +18,7 @@ import (
 	"sanzi.io/muid/internal/authn/infra/kv"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
-	"sanzi.io/muid/pkg/traceid"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
 // NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and the identity manager.
@@ -62,11 +61,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	var profileConn *grpc.ClientConn
 	var profileCli profilepb.ProfileServiceClient
 	if addr := strings.TrimSpace(cfg.ProfileGRPCAddr); addr != "" {
-		profileConn, err = grpc.NewClient(
-			addr,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithUnaryInterceptor(traceid.UnaryClientInterceptor()),
-		)
+		profileConn, err = grpcutils.DialInsecureClient(addr, profileGRPCResilience(cfg))
 		if err != nil {
 			errutil.Close(entClient)
 			errutil.CloseIf(pubSub)
@@ -112,4 +107,45 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		entClient:       entClient,
 		profileConn:     profileConn,
 	}, nil
+}
+
+func profileGRPCResilience(cfg Config) grpcutils.ClientResilienceConfig {
+	maxRetries := cfg.ProfileGRPCMaxRetries
+	if maxRetries < 0 {
+		maxRetries = 0
+	}
+	cbFailures := uint32(cfg.ProfileGRPCCBConsecutiveFailures)
+	if cbFailures == 0 {
+		cbFailures = 5
+	}
+	halfOpen := uint32(cfg.ProfileGRPCCBHalfOpenMaxRequests)
+	if halfOpen == 0 {
+		halfOpen = 3
+	}
+	openSec := cfg.ProfileGRPCCBOpenSeconds
+	if openSec <= 0 {
+		openSec = 30
+	}
+	backoffMs := cfg.ProfileGRPCRetryBackoffMillis
+	if backoffMs <= 0 {
+		backoffMs = 100
+	}
+	maxBackoffMs := cfg.ProfileGRPCRetryMaxBackoffMillis
+	if maxBackoffMs <= 0 {
+		maxBackoffMs = 2000
+	}
+	return grpcutils.ClientResilienceConfig{
+		Retry: grpcutils.RetryConfig{
+			MaxRetries:   maxRetries,
+			BaseBackoff:  time.Duration(backoffMs) * time.Millisecond,
+			MaxBackoff:   time.Duration(maxBackoffMs) * time.Millisecond,
+		},
+		CircuitBreaker: grpcutils.CircuitBreakerConfig{
+			Enabled:             cfg.ProfileGRPCCBEnabled,
+			Name:                "authn-profile",
+			MaxRequests:         halfOpen,
+			ConsecutiveFailures: cbFailures,
+			OpenTimeout:         time.Duration(openSec) * time.Second,
+		},
+	}
 }

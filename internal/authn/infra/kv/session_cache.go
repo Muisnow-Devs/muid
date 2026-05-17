@@ -35,29 +35,34 @@ func (c *KVSessionCache) Get(
 	selectorKey string,
 ) (session.CachedSession, error) {
 	data, err := c.client.Get(ctx, c.cacheKey(selectorKey))
+	if errors.Is(err, kv.ErrKeyNotFound) {
+		return session.CachedSession{}, session.ErrSessionNotFound
+	}
 	if err != nil {
-		if errors.Is(err, kv.ErrKeyNotFound) {
-			return session.CachedSession{}, session.ErrSessionNotFound
-		}
 		return session.CachedSession{}, err
 	}
+
 	var rec sessionCacheRecord
 	if err := json.Unmarshal(data, &rec); err != nil {
 		return session.CachedSession{}, err
 	}
+
 	sid, err := uuid.Parse(rec.SessionID)
 	if err != nil {
 		return session.CachedSession{}, err
 	}
+
 	uid, err := uuid.Parse(rec.UserID)
 	if err != nil {
 		return session.CachedSession{}, err
 	}
+
 	exp := time.Unix(rec.ExpiresAt, 0)
 	if time.Now().After(exp) {
 		_ = c.Delete(ctx, selectorKey)
 		return session.CachedSession{}, session.ErrSessionExpired
 	}
+
 	var validatorHash [32]byte
 	if len(rec.ValidatorHash) == len(validatorHash) {
 		copy(validatorHash[:], rec.ValidatorHash)
@@ -73,13 +78,7 @@ func (c *KVSessionCache) Get(
 
 func sessionCacheTTL(expiresAt time.Time) time.Duration {
 	ttl := time.Until(expiresAt)
-	if ttl <= 0 {
-		return 0
-	}
-	if ttl > session.MaxSessionCacheTTL {
-		return session.MaxSessionCacheTTL
-	}
-	return ttl
+	return min(ttl, session.MaxSessionCacheTTL)
 }
 
 func (c *KVSessionCache) Set(
@@ -91,16 +90,19 @@ func (c *KVSessionCache) Set(
 	if ttl <= 0 {
 		return session.ErrSessionExpired
 	}
+
 	rec := sessionCacheRecord{
 		SessionID:     sess.SessionID.String(),
 		UserID:        sess.UserID.String(),
 		ExpiresAt:     sess.ExpiresAt.Unix(),
 		ValidatorHash: sess.ValidatorHash[:],
 	}
+
 	data, err := json.Marshal(rec)
 	if err != nil {
 		return err
 	}
+
 	return c.client.Set(ctx, c.cacheKey(selectorKey), data, ttl)
 }
 

@@ -408,12 +408,12 @@ func (_q *UserRefQuery) WithFederatedIdentities(opts ...func(*UserFederatedIdent
 // Example:
 //
 //	var v []struct {
-//		Username string `json:"username,omitempty"`
+//		Email string `json:"email,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.UserRef.Query().
-//		GroupBy(userref.FieldUsername).
+//		GroupBy(userref.FieldEmail).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *UserRefQuery) GroupBy(field string, fields ...string) *UserRefGroupBy {
@@ -431,11 +431,11 @@ func (_q *UserRefQuery) GroupBy(field string, fields ...string) *UserRefGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Username string `json:"username,omitempty"`
+//		Email string `json:"email,omitempty"`
 //	}
 //
 //	client.UserRef.Query().
-//		Select(userref.FieldUsername).
+//		Select(userref.FieldEmail).
 //		Scan(ctx, &v)
 func (_q *UserRefQuery) Select(fields ...string) *UserRefSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

@@ -50,7 +50,21 @@ func init() {
 	// userprofileDescUsername is the schema descriptor for username field.
 	userprofileDescUsername := userprofileFields[3].Descriptor()
 	// userprofile.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
-	userprofile.UsernameValidator = userprofileDescUsername.Validators[0].(func(string) error)
+	userprofile.UsernameValidator = func() func(string) error {
+		validators := userprofileDescUsername.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(username string) error {
+			for _, fn := range fns {
+				if err := fn(username); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// userprofileDescLocale is the schema descriptor for locale field.
 	userprofileDescLocale := userprofileFields[4].Descriptor()
 	// userprofile.DefaultLocale holds the default value on creation for the locale field.

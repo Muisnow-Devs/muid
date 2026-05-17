@@ -10,10 +10,11 @@ import (
 	webp "github.com/skrashevich/go-webp"
 	xdraw "golang.org/x/image/draw"
 
-	_ "golang.org/x/image/webp"
 	_ "image/gif"
 	_ "image/jpeg"
 	_ "image/png"
+
+	_ "golang.org/x/image/webp"
 )
 
 // avatarOutputPixels is the max width/height of the square WebP stored on the CDN.
@@ -95,10 +96,7 @@ func squareCenterCropNRGBA(src image.Image) *image.NRGBA {
 	if w <= 0 || h <= 0 {
 		return image.NewNRGBA(image.Rect(0, 0, 1, 1))
 	}
-	side := w
-	if h < side {
-		side = h
-	}
+	side := min(h, w)
 	x0 := b.Min.X + (w-side)/2
 	y0 := b.Min.Y + (h-side)/2
 	dstR := image.Rect(0, 0, side, side)

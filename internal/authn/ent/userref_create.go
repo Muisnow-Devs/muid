@@ -25,20 +25,6 @@ type UserRefCreate struct {
 	hooks    []Hook
 }
 
-// SetUsername sets the "username" field.
-func (_c *UserRefCreate) SetUsername(v string) *UserRefCreate {
-	_c.mutation.SetUsername(v)
-	return _c
-}
-
-// SetNillableUsername sets the "username" field if the given value is not nil.
-func (_c *UserRefCreate) SetNillableUsername(v *string) *UserRefCreate {
-	if v != nil {
-		_c.SetUsername(*v)
-	}
-	return _c
-}
-
 // SetEmail sets the "email" field.
 func (_c *UserRefCreate) SetEmail(v string) *UserRefCreate {
 	_c.mutation.SetEmail(v)
@@ -248,10 +234,6 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := _c.mutation.Username(); ok {
-		_spec.SetField(userref.FieldUsername, field.TypeString, value)
-		_node.Username = value
 	}
 	if value, ok := _c.mutation.Email(); ok {
 		_spec.SetField(userref.FieldEmail, field.TypeString, value)

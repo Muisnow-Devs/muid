@@ -51,9 +51,9 @@ func randomDisplayName() string {
 }
 
 // randomUsernameBase returns a fresh candidate username: prefix "user_" (5 runes)
-// plus 16 lowercase hex digits (8 random bytes), total length 21 ∈ [5,32].
+// plus 8 lowercase hex digits (4 random bytes), total length 13 ∈ [5,16].
 func randomUsernameBase() string {
-	var b [8]byte
+	var b [4]byte
 	_, err := rand.Read(b[:])
 	errutil.Discard(err)
 	return "user_" + hex.EncodeToString(b[:])

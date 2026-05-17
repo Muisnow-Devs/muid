@@ -157,7 +157,6 @@ var (
 	// UserRefsColumns holds the columns for the "user_refs" table.
 	UserRefsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "username", Type: field.TypeString, Unique: true, Nullable: true},
 		{Name: "email", Type: field.TypeString, Unique: true},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -170,14 +169,9 @@ var (
 		PrimaryKey: []*schema.Column{UserRefsColumns[0]},
 		Indexes: []*schema.Index{
 			{
-				Name:    "userref_username",
-				Unique:  false,
-				Columns: []*schema.Column{UserRefsColumns[1]},
-			},
-			{
 				Name:    "userref_email",
 				Unique:  false,
-				Columns: []*schema.Column{UserRefsColumns[2]},
+				Columns: []*schema.Column{UserRefsColumns[1]},
 			},
 		},
 	}

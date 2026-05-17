@@ -19,7 +19,6 @@ type UserRef struct {
 func (UserRef) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Immutable(),
-		field.String("username").Optional().Unique(),
 		field.String("email").NotEmpty().Unique(),
 
 		field.Time("last_login_at").Optional(),
@@ -31,7 +30,6 @@ func (UserRef) Fields() []ent.Field {
 
 func (UserRef) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("username"),
 		index.Fields("email"),
 	}
 }

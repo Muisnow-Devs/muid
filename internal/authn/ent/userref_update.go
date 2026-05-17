@@ -33,26 +33,6 @@ func (_u *UserRefUpdate) Where(ps ...predicate.UserRef) *UserRefUpdate {
 	return _u
 }
 
-// SetUsername sets the "username" field.
-func (_u *UserRefUpdate) SetUsername(v string) *UserRefUpdate {
-	_u.mutation.SetUsername(v)
-	return _u
-}
-
-// SetNillableUsername sets the "username" field if the given value is not nil.
-func (_u *UserRefUpdate) SetNillableUsername(v *string) *UserRefUpdate {
-	if v != nil {
-		_u.SetUsername(*v)
-	}
-	return _u
-}
-
-// ClearUsername clears the value of the "username" field.
-func (_u *UserRefUpdate) ClearUsername() *UserRefUpdate {
-	_u.mutation.ClearUsername()
-	return _u
-}
-
 // SetEmail sets the "email" field.
 func (_u *UserRefUpdate) SetEmail(v string) *UserRefUpdate {
 	_u.mutation.SetEmail(v)
@@ -300,12 +280,6 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			}
 		}
 	}
-	if value, ok := _u.mutation.Username(); ok {
-		_spec.SetField(userref.FieldUsername, field.TypeString, value)
-	}
-	if _u.mutation.UsernameCleared() {
-		_spec.ClearField(userref.FieldUsername, field.TypeString)
-	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(userref.FieldEmail, field.TypeString, value)
 	}
@@ -516,26 +490,6 @@ type UserRefUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserRefMutation
-}
-
-// SetUsername sets the "username" field.
-func (_u *UserRefUpdateOne) SetUsername(v string) *UserRefUpdateOne {
-	_u.mutation.SetUsername(v)
-	return _u
-}
-
-// SetNillableUsername sets the "username" field if the given value is not nil.
-func (_u *UserRefUpdateOne) SetNillableUsername(v *string) *UserRefUpdateOne {
-	if v != nil {
-		_u.SetUsername(*v)
-	}
-	return _u
-}
-
-// ClearUsername clears the value of the "username" field.
-func (_u *UserRefUpdateOne) ClearUsername() *UserRefUpdateOne {
-	_u.mutation.ClearUsername()
-	return _u
 }
 
 // SetEmail sets the "email" field.
@@ -814,12 +768,6 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.Username(); ok {
-		_spec.SetField(userref.FieldUsername, field.TypeString, value)
-	}
-	if _u.mutation.UsernameCleared() {
-		_spec.ClearField(userref.FieldUsername, field.TypeString)
 	}
 	if value, ok := _u.mutation.Email(); ok {
 		_spec.SetField(userref.FieldEmail, field.TypeString, value)

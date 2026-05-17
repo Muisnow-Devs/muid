@@ -8,9 +8,9 @@ option go_package = "sanzi.io/muid/api/proto/shared/v1/claims;claims";
 message IdentityInformation {
   // This should acts like display_name
   optional string name = 1 [(buf.validate.field).string.max_len = 32];
-  // This should acts like username, but is never derived from email local part; always auto-allocated to a random value (e.g. user_ + hex) if not provided, and immutable after creation.
-  // Charset at runtime: ASCII letters, digits, underscore; length 5–32 when set. See pkg/validation for update rules.
-  optional string username = 2 [(buf.validate.field).string = { min_len: 5, max_len: 32, pattern: "^[a-zA-Z0-9_]{5,32}$" }];
+  // Stored username; set only via profile update (identity.username). CreateProfile always auto-allocates; omit on create/OIDC bootstrap payloads.
+  // Charset: lowercase letters, digits, underscore, period; length 5–16 when set; must not start with _ or .
+  optional string username = 2 [(buf.validate.field).string = { min_len: 5, max_len: 16, pattern: "^[a-z0-9][a-z0-9_.]{4,15}$" }];
   optional string given_name = 3 [(buf.validate.field).string.max_len = 64];
   optional string family_name = 4 [(buf.validate.field).string.max_len = 64];
 

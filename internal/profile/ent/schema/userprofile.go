@@ -9,6 +9,7 @@ import (
 	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 	"sanzi.io/muid/pkg/shared"
+	"sanzi.io/muid/pkg/validation"
 )
 
 // UserProfile holds the schema definition for the UserProfile entity.
@@ -23,7 +24,7 @@ func (UserProfile) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Immutable().Default(shared.UUIDV7),
 		field.String("email_ref").NotEmpty().Unique(),
 		field.String("display_name").NotEmpty(),
-		field.String("username").NotEmpty().Unique(),
+		field.String("username").NotEmpty().Unique().Validate(validation.CheckUsername),
 
 		field.String("locale").Default("en").Comment("BCP-47 locale; empty means server default"),
 		field.String("biography").Default("").MaxLen(1024),

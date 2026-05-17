@@ -55,7 +55,7 @@ func patchIdentityUsername(
 	if !validation.ValidUsername(raw) {
 		return status.Error(
 			codes.InvalidArgument,
-			"username must be 5-32 characters: letters, digits, underscore only",
+			"username must be 5-16 characters: lowercase letters, digits, underscore, period; cannot start with underscore or period",
 		)
 	}
 

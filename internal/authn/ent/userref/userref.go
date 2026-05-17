@@ -14,8 +14,6 @@ const (
 	Label = "user_ref"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldUsername holds the string denoting the username field in the database.
-	FieldUsername = "username"
 	// FieldEmail holds the string denoting the email field in the database.
 	FieldEmail = "email"
 	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
@@ -67,7 +65,6 @@ const (
 // Columns holds all SQL columns for userref fields.
 var Columns = []string{
 	FieldID,
-	FieldUsername,
 	FieldEmail,
 	FieldLastLoginAt,
 	FieldCreatedAt,
@@ -101,11 +98,6 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
-}
-
-// ByUsername orders the results by the username field.
-func ByUsername(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUsername, opts...).ToFunc()
 }
 
 // ByEmail orders the results by the email field.

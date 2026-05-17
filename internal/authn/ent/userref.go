@@ -18,8 +18,6 @@ type UserRef struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// Username holds the value of the "username" field.
-	Username string `json:"username,omitempty"`
 	// Email holds the value of the "email" field.
 	Email string `json:"email,omitempty"`
 	// LastLoginAt holds the value of the "last_login_at" field.
@@ -90,7 +88,7 @@ func (*UserRef) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userref.FieldUsername, userref.FieldEmail:
+		case userref.FieldEmail:
 			values[i] = new(sql.NullString)
 		case userref.FieldLastLoginAt, userref.FieldCreatedAt, userref.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -116,12 +114,6 @@ func (_m *UserRef) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
-			}
-		case userref.FieldUsername:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field username", values[i])
-			} else if value.Valid {
-				_m.Username = value.String
 			}
 		case userref.FieldEmail:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -203,9 +195,6 @@ func (_m *UserRef) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserRef(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("username=")
-	builder.WriteString(_m.Username)
-	builder.WriteString(", ")
 	builder.WriteString("email=")
 	builder.WriteString(_m.Email)
 	builder.WriteString(", ")

@@ -201,15 +201,15 @@ func init() {
 	userrefFields := schema.UserRef{}.Fields()
 	_ = userrefFields
 	// userrefDescEmail is the schema descriptor for email field.
-	userrefDescEmail := userrefFields[2].Descriptor()
+	userrefDescEmail := userrefFields[1].Descriptor()
 	// userref.EmailValidator is a validator for the "email" field. It is called by the builders before save.
 	userref.EmailValidator = userrefDescEmail.Validators[0].(func(string) error)
 	// userrefDescCreatedAt is the schema descriptor for created_at field.
-	userrefDescCreatedAt := userrefFields[4].Descriptor()
+	userrefDescCreatedAt := userrefFields[3].Descriptor()
 	// userref.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userref.DefaultCreatedAt = userrefDescCreatedAt.Default.(func() time.Time)
 	// userrefDescUpdatedAt is the schema descriptor for updated_at field.
-	userrefDescUpdatedAt := userrefFields[5].Descriptor()
+	userrefDescUpdatedAt := userrefFields[4].Descriptor()
 	// userref.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userref.DefaultUpdatedAt = userrefDescUpdatedAt.Default.(func() time.Time)
 	// userref.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

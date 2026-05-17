@@ -364,8 +364,8 @@ type IdentityInformation_builder struct {
 
 	// This should acts like display_name
 	Name *string
-	// This should acts like username, but is never derived from email local part; always auto-allocated to a random value (e.g. user_ + hex) if not provided, and immutable after creation.
-	// Charset at runtime: ASCII letters, digits, underscore; length 5–32 when set. See pkg/validation for update rules.
+	// Stored username; set only via profile update (identity.username). CreateProfile always auto-allocates; omit on create/OIDC bootstrap payloads.
+	// Charset: lowercase letters, digits, underscore, period; length 5–16 when set; must not start with _ or .
 	Username      *string
 	GivenName     *string
 	FamilyName    *string
@@ -434,10 +434,10 @@ var File_shared_v1_claims_proto protoreflect.FileDescriptor
 
 const file_shared_v1_claims_proto_rawDesc = "" +
 	"\n" +
-	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xa2\x05\n" +
+	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xa8\x05\n" +
 	"\x13IdentityInformation\x12 \n" +
-	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18 H\x00R\x04name\x88\x01\x01\x12@\n" +
-	"\busername\x18\x02 \x01(\tB\x1f\xbaH\x1cr\x1a\x10\x05\x18 2\x14^[a-zA-Z0-9_]{5,32}$H\x01R\busername\x88\x01\x01\x12+\n" +
+	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18 H\x00R\x04name\x88\x01\x01\x12F\n" +
+	"\busername\x18\x02 \x01(\tB%\xbaH\"r \x10\x05\x18\x102\x1a^[a-z0-9][a-z0-9_.]{4,15}$H\x01R\busername\x88\x01\x01\x12+\n" +
 	"\n" +
 	"given_name\x18\x03 \x01(\tB\a\xbaH\x04r\x02\x18@H\x02R\tgivenName\x88\x01\x01\x12-\n" +
 	"\vfamily_name\x18\x04 \x01(\tB\a\xbaH\x04r\x02\x18@H\x03R\n" +

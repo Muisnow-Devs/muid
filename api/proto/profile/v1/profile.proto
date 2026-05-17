@@ -39,7 +39,7 @@ message GetProfileResponse {
   string id                = 1;
   string email             = 2;
   string display_name      = 3;
-  string username          = 4;
+  string username          = 4 [(buf.validate.field).string = { min_len: 5, max_len: 16, pattern: "^[a-z0-9][a-z0-9_.]{4,15}$" }];
   string avatar_url        = 5;
   string locale            = 6;
   string avatar_object_key = 7;

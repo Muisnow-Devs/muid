@@ -3,12 +3,17 @@ package identity
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"sanzi.io/muid/api/proto/event/v1/mail"
+	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
+	"sanzi.io/muid/internal/authn/ent"
+	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/infra/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
@@ -20,20 +25,23 @@ import (
 const (
 	OTPLifetime         = 5 * time.Minute
 	EmailPayloadKeyCode = "code"
+
+	emailIntentLogin       = "login"
+	emailIntentChangeEmail = "change_email"
 )
 
 type EmailIdentityProvider struct {
 	otpStore        otp.OTPStore
 	transitionStore session.AuthTransitionStore
 	pubSub          pubsub.PubSub
-	accounts        *account.Services
+	accounts        *account.Accounts
 }
 
 func NewEmailIdentityProvider(
 	otpStore otp.OTPStore,
 	transitionStore session.AuthTransitionStore,
 	pubSub pubsub.PubSub,
-	accounts *account.Services,
+	accounts *account.Accounts,
 ) idn.IdentityProvider {
 	return &EmailIdentityProvider{
 		otpStore:        otpStore,
@@ -55,13 +63,79 @@ func (p *EmailIdentityProvider) Start(
 		return idn.StepResult{}, err
 	}
 
-	sess, err := p.createTransitionSession(ctx, input.Identifier)
+	intent := input.Intent
+	if intent == idn.IntentUnspecified {
+		intent = idn.IntentLogin
+	}
+
+	email := strings.TrimSpace(strings.ToLower(input.Identifier))
+
+	if intent == idn.IntentLinkAccount {
+		return p.startChangeEmail(ctx, input, email)
+	}
+
+	sess, err := p.createTransitionSession(ctx, email, emailIntentLogin, "", "")
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	err = p.generateAndSendOTP(ctx, sess.Id, input.Identifier)
+	err = p.generateAndSendOTP(ctx, sess.Id, email)
 	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	return idn.StepResult{
+		TransitionId: sess.Id,
+		Type:         idn.StepInput,
+	}, nil
+}
+
+func (p *EmailIdentityProvider) startChangeEmail(
+	ctx context.Context,
+	input idn.StartInput,
+	newEmail string,
+) (idn.StepResult, error) {
+	linkRes, err := resolveLinkSession(
+		ctx,
+		p.accounts,
+		idn.IntentLinkAccount,
+		input.LinkSessionToken,
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	ref, err := p.accounts.Store.DB.UserRef.Get(ctx, linkRes.UserID)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+	if strings.EqualFold(ref.Email, newEmail) {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrInvalidInput,
+			errors.New("new email matches current email"),
+		)
+	}
+
+	other, err := p.accounts.Store.DB.UserRef.Query().Where(userref.EmailEQ(newEmail)).Only(ctx)
+	if err != nil && !ent.IsNotFound(err) {
+		return idn.StepResult{}, err
+	}
+	if other != nil {
+		return idn.StepResult{}, idn.ErrEmailAlreadyInUse
+	}
+
+	sess, err := p.createTransitionSession(
+		ctx,
+		newEmail,
+		emailIntentChangeEmail,
+		linkRes.UserID.String(),
+		ref.Email,
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	if err := p.generateAndSendOTP(ctx, sess.Id, newEmail); err != nil {
 		return idn.StepResult{}, err
 	}
 
@@ -75,6 +149,10 @@ func (p *EmailIdentityProvider) Continue(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
+	if idn.FinishRegisterRequested(input.Payload) {
+		return p.continueFinishEmailRegister(ctx, input)
+	}
+
 	code, err := p.parseEmailContinuePayload(input.Payload)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -90,30 +168,134 @@ func (p *EmailIdentityProvider) Continue(
 		return idn.StepResult{}, err
 	}
 
-	if sess.Store.Flow != session.FlowKindEmailOTP || sess.Store.Email == nil {
-		return idn.StepResult{}, errors.Join(
-			idn.ErrInvalidSessionState,
-			errors.New("expected email_otp transition"),
-		)
+	emailFlow, ok := sess.Store.EmailFlow()
+	if !ok {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
 
-	email := sess.Store.Email.Email
-	userID, err := p.accounts.ResolveEmailLogin(ctx, email)
-	if err != nil {
-		return idn.StepResult{}, err
+	switch emailFlow.Intent {
+	case emailIntentChangeEmail:
+		return p.continueChangeEmail(ctx, input, sess)
+	default:
+		return p.continueLogin(ctx, sess)
+	}
+}
+
+func (p *EmailIdentityProvider) continueChangeEmail(
+	ctx context.Context,
+	input idn.ContinueInput,
+	sess session.AuthSession,
+) (idn.StepResult, error) {
+	emailFlow, ok := sess.Store.EmailFlow()
+	if !ok {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
 
-	authResult, err := p.accounts.IssueAuthenticatedSession(ctx, userID)
+	uid, err := parseUUID(emailFlow.SubjectUserID)
 	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
+	}
+
+	newEmail := emailFlow.Email
+	if _, err := p.accounts.Email.ChangeUserEmail(ctx, p.pubSub, uid, newEmail); err != nil {
 		return idn.StepResult{}, err
 	}
 
 	p.transitionStore.Delete(ctx, sess.Id)
 
+	wire := strings.TrimSpace(input.LinkSessionToken)
+	if wire != "" {
+		res, err := p.accounts.Session.ResolveSessionToken(ctx, wire)
+		if err != nil {
+			return idn.StepResult{}, err
+		}
+		if res.UserID != uid {
+			return idn.StepResult{}, idn.ErrLinkUnauthorized
+		}
+	}
+
+	return idn.StepResult{Type: idn.StepLinked}, nil
+}
+
+func (p *EmailIdentityProvider) continueLogin(
+	ctx context.Context,
+	sess session.AuthSession,
+) (idn.StepResult, error) {
+	emailFlow, ok := sess.Store.EmailFlow()
+	if !ok {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+	email := emailFlow.Email
+
+	userID, found, err := p.accounts.Email.LookupUserByEmail(ctx, email)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	if !found {
+		claims := &claimspb.IdentityInformation{}
+		claims.SetEmail(email)
+		claims.SetEmailVerified(true)
+		reg := &idn.RegisterRequired{Identity: claims}
+
+		store := sess.Store.WithRegisterPending(session.RegisterPendingClaimsFromProto(claims))
+		if err := p.transitionStore.Update(ctx, sess.Id, store); err != nil {
+			return idn.StepResult{}, err
+		}
+
+		return idn.StepResult{
+			TransitionId:     sess.Id,
+			Type:             idn.StepRegisterRequired,
+			RegisterRequired: reg,
+		}, nil
+	}
+
+	p.transitionStore.Delete(ctx, sess.Id)
+
 	return idn.StepResult{
-		Type:                idn.StepComplete,
-		AuthenticatedResult: authResult,
+		Type: idn.StepAuthenticated,
+		Authenticated: &idn.AuthenticatedIdentity{
+			UserID: userID.String(),
+		},
 	}, nil
+}
+
+func (p *EmailIdentityProvider) continueFinishEmailRegister(
+	ctx context.Context,
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
+	sess, err := p.transitionStore.Get(ctx, input.TransitionId)
+	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrSessionNotFound, err)
+	}
+
+	pending, ok := sess.Store.PendingRegisterState()
+	if !ok || pending.ProvisionedUserID == "" {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+
+	provisioned, err := parseUUID(pending.ProvisionedUserID)
+	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
+	}
+
+	email := strings.TrimSpace(strings.ToLower(pending.Claims.Email))
+	if email == "" {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+
+	linked, found, err := p.accounts.Email.LookupUserByEmail(ctx, email)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+	if !found {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrInvalidSessionState,
+			errors.New("email not linked after provision"),
+		)
+	}
+
+	return finishRegisterAfterLink(ctx, p.transitionStore, sess.Id, linked, provisioned)
 }
 
 func validateEmailStartInput(input idn.StartInput) error {
@@ -128,15 +310,14 @@ func validateEmailStartInput(input idn.StartInput) error {
 
 func (p *EmailIdentityProvider) createTransitionSession(
 	ctx context.Context,
-	email string,
+	email, intent, subjectUserID, oldEmail string,
 ) (session.AuthSession, error) {
-	store := session.SessionStore{
-		Flow: session.FlowKindEmailOTP,
-		Step: AuthStepStart,
-		Email: &session.EmailOTPFlow{
-			Email: email,
-		},
-	}
+	store := session.EmailOTPStore(session.StepStart, &session.EmailOTPFlow{
+		Email:         email,
+		Intent:        intent,
+		SubjectUserID: subjectUserID,
+		OldEmail:      oldEmail,
+	})
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
@@ -218,4 +399,8 @@ func (p *EmailIdentityProvider) verifyOTP(
 	}
 
 	return nil
+}
+
+func parseUUID(s string) (uuid.UUID, error) {
+	return uuid.Parse(strings.TrimSpace(s))
 }

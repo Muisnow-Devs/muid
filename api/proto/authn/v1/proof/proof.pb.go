@@ -367,6 +367,7 @@ func (b0 OAuthProof_builder) Build() *OAuthProof {
 type PasskeyProof struct {
 	state                                      protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_CredentialAssertionResponseJson string                 `protobuf:"bytes,1,opt,name=credential_assertion_response_json,json=credentialAssertionResponseJson,proto3"`
+	xxx_hidden_CredentialCreationResponseJson  string                 `protobuf:"bytes,2,opt,name=credential_creation_response_json,json=credentialCreationResponseJson,proto3"`
 	unknownFields                              protoimpl.UnknownFields
 	sizeCache                                  protoimpl.SizeCache
 }
@@ -403,14 +404,26 @@ func (x *PasskeyProof) GetCredentialAssertionResponseJson() string {
 	return ""
 }
 
+func (x *PasskeyProof) GetCredentialCreationResponseJson() string {
+	if x != nil {
+		return x.xxx_hidden_CredentialCreationResponseJson
+	}
+	return ""
+}
+
 func (x *PasskeyProof) SetCredentialAssertionResponseJson(v string) {
 	x.xxx_hidden_CredentialAssertionResponseJson = v
+}
+
+func (x *PasskeyProof) SetCredentialCreationResponseJson(v string) {
+	x.xxx_hidden_CredentialCreationResponseJson = v
 }
 
 type PasskeyProof_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	CredentialAssertionResponseJson string
+	CredentialCreationResponseJson  string
 }
 
 func (b0 PasskeyProof_builder) Build() *PasskeyProof {
@@ -418,6 +431,7 @@ func (b0 PasskeyProof_builder) Build() *PasskeyProof {
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_CredentialAssertionResponseJson = b.CredentialAssertionResponseJson
+	x.xxx_hidden_CredentialCreationResponseJson = b.CredentialCreationResponseJson
 	return m0
 }
 
@@ -439,9 +453,10 @@ const file_authn_v1_proof_proto_rawDesc = "" +
 	"\n" +
 	"OAuthProof\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
-	"\x05state\x18\x02 \x01(\tR\x05state\"[\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"\xa6\x01\n" +
 	"\fPasskeyProof\x12K\n" +
-	"\"credential_assertion_response_json\x18\x01 \x01(\tR\x1fcredentialAssertionResponseJsonB\xc3\x01\n" +
+	"\"credential_assertion_response_json\x18\x01 \x01(\tR\x1fcredentialAssertionResponseJson\x12I\n" +
+	"!credential_creation_response_json\x18\x02 \x01(\tR\x1ecredentialCreationResponseJsonB\xc3\x01\n" +
 	"\x17com.muid.authn.v1.proofB\n" +
 	"ProofProtoP\x01Z,sanzi.io/muid/api/proto/authn/v1/proof;proof\xa2\x02\x04MAVP\xaa\x02\x13Muid.Authn.V1.Proof\xca\x02\x13Muid\\Authn\\V1\\Proof\xe2\x02\x1fMuid\\Authn\\V1\\Proof\\GPBMetadata\xea\x02\x16Muid::Authn::V1::Proofb\x06proto3"
 

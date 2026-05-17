@@ -103,6 +103,9 @@ func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
 }
 
 func (a *ProfileApp) Start(ctx context.Context) error {
+	if err := registerSubscribers(ctx, a.infra); err != nil {
+		return err
+	}
 	return a.server.Start(ctx)
 }
 

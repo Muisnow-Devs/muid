@@ -57,10 +57,11 @@ type InfraDependencies struct {
 
 	OTPStore        otp.OTPStore
 	TransitionStore session.AuthTransitionStore
+	SessionCache    session.SessionCache
 	PubSub          pubsub.PubSub
 	IdentityManager *identity.IdentityManager
 
-	Accounts *account.Services
+	Accounts *account.Accounts
 
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn

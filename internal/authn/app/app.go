@@ -44,11 +44,11 @@ func InitializeIdentityManager(
 	transitionStore session.AuthTransitionStore,
 	otpStore otp.OTPStore,
 	pubSub pubsub.PubSub,
-	accounts *account.Services,
+	accounts *account.Accounts,
 ) (*identity.IdentityManager, error) {
 	providers := []identity.IdentityProvider{
 		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, accounts),
-		implIdentity.NewPasskeyIdentityProvider(transitionStore, accounts),
+		implIdentity.NewPasskeyIdentityProvider(transitionStore, accounts, pubSub),
 	}
 
 	oidcProviders := []implIdentity.OIDCProviderConfig{

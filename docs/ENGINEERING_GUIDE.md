@@ -179,7 +179,7 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 |-------|------------|---------|
 | Protobuf | `snake_case` field | `user_id` |
 | JSON / `json_name` | camelCase | `userId` |
-| Hand-written Go | `userID` / `UserID` | `userID := uuid.Parse(...)` |
+| Hand-written Go | `userId` / `UserId` | `userId := uuid.Parse(...)` |
 
 Generated Go getters for `user_id` often appear as **`GetUserId()`**; Ent uses **`UserID`** for `field.UUID("user_id", …)`. Keep **semantic** “one user id” consistency; avoid legacy names like `profile_id` for the same concept.
 

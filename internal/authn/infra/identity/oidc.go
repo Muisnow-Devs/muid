@@ -5,8 +5,10 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
+	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"sanzi.io/muid/internal/authn/infra/account"
 	idn "sanzi.io/muid/internal/identity"
@@ -27,7 +29,7 @@ const (
 
 type OIDCIdentityProvider struct {
 	transitionStore session.AuthTransitionStore
-	accounts        *account.Services
+	accounts        *account.Accounts
 
 	providerName string
 	provider     *oidc.Provider
@@ -62,7 +64,7 @@ func NewOIDCProvider(
 	ctx context.Context,
 	config OIDCProviderConfig,
 	transitionStore session.AuthTransitionStore,
-	accounts *account.Services,
+	accounts *account.Accounts,
 ) (idn.IdentityProvider, error) {
 	provider, err := oidc.NewProvider(ctx, config.Issuer)
 	if err != nil {
@@ -100,14 +102,10 @@ func (p *OIDCIdentityProvider) Start(
 	state := p.generateRandomState()
 	verifier := oauth2.GenerateVerifier()
 
-	store := session.SessionStore{
-		Flow: session.FlowKindOIDC,
-		Step: AuthStepStart,
-		OIDC: &session.OIDCFlow{
-			OAuthState:       state,
-			PKCECodeVerifier: verifier,
-		},
-	}
+	store := session.OIDCStore(session.StepStart, &session.OIDCFlow{
+		OAuthState:       state,
+		PKCECodeVerifier: verifier,
+	})
 
 	sess, err := p.transitionStore.Create(ctx, p.providerName, store)
 	if err != nil {
@@ -131,6 +129,10 @@ func (p *OIDCIdentityProvider) Continue(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
+	if idn.FinishRegisterRequested(input.Payload) {
+		return p.continueFinishOIDCRegister(ctx, input)
+	}
+
 	req, err := p.parseContinuePayload(input.Payload)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -141,23 +143,21 @@ func (p *OIDCIdentityProvider) Continue(
 		return idn.StepResult{}, err
 	}
 
-	if sess.Store.Flow != session.FlowKindOIDC || sess.Store.OIDC == nil {
-		return idn.StepResult{}, errors.Join(
-			idn.ErrInvalidSessionState,
-			errors.New("expected oidc transition"),
-		)
+	oidcFlow, ok := sess.Store.OIDCFlowState()
+	if !ok {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
 
 	claims, err := p.exchangeAndVerify(
 		ctx,
 		req.Code,
-		sess.Store.OIDC.PKCECodeVerifier,
+		oidcFlow.PKCECodeVerifier,
 	)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	userID, err := p.accounts.ResolveOIDCLogin(
+	userID, reg, err := p.accounts.OIDC.LookupOIDCLogin(
 		ctx,
 		p.providerName,
 		claims.Subject,
@@ -176,20 +176,70 @@ func (p *OIDCIdentityProvider) Continue(
 		)
 	}
 
-	authResult, err := p.accounts.IssueAuthenticatedSession(ctx, userID)
-	if err != nil {
-		return idn.StepResult{}, errors.Join(
-			idn.ErrAuthenticationFailed,
-			err,
+	if reg != nil {
+		store := sess.Store.WithRegisterPending(
+			session.RegisterPendingClaimsFromProto(reg.Identity),
 		)
+		if err := p.transitionStore.Update(ctx, sess.Id, store); err != nil {
+			return idn.StepResult{}, err
+		}
+
+		return idn.StepResult{
+			TransitionId:     sess.Id,
+			Type:             idn.StepRegisterRequired,
+			RegisterRequired: reg,
+		}, nil
 	}
 
 	p.transitionStore.Delete(ctx, sess.Id)
 
 	return idn.StepResult{
-		Type:                idn.StepComplete,
-		AuthenticatedResult: authResult,
+		Type: idn.StepAuthenticated,
+		Authenticated: &idn.AuthenticatedIdentity{
+			UserID: userID.String(),
+		},
 	}, nil
+}
+
+func (p *OIDCIdentityProvider) continueFinishOIDCRegister(
+	ctx context.Context,
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
+	sess, err := p.transitionStore.Get(ctx, input.TransitionId)
+	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrSessionNotFound, err)
+	}
+
+	pending, ok := sess.Store.PendingRegisterState()
+	if !ok || pending.ProvisionedUserID == "" {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+
+	provisioned, err := uuid.Parse(strings.TrimSpace(pending.ProvisionedUserID))
+	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
+	}
+
+	claims := pending.Claims
+	provider := strings.TrimSpace(claims.FederatedProvider)
+	subject := strings.TrimSpace(claims.FederatedSubject)
+	if provider == "" || subject == "" {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+
+	linked, err := ensureFederatedLink(
+		ctx,
+		p.accounts.Store.DB,
+		provider,
+		subject,
+		provisioned,
+		claims,
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	return finishRegisterAfterLink(ctx, p.transitionStore, sess.Id, linked, provisioned)
 }
 
 type continueRequest struct {
@@ -200,18 +250,12 @@ type continueRequest struct {
 func (*OIDCIdentityProvider) parseContinuePayload(payload map[string]any) (continueRequest, error) {
 	code, ok := payload[OIDCPayloadKeyCode].(string)
 	if !ok || code == "" {
-		return continueRequest{}, errors.Join(
-			idn.ErrInvalidInput,
-			errors.New("missing code"),
-		)
+		return continueRequest{}, idn.ErrInvalidInput
 	}
 
 	state, ok := payload[OIDCPayloadKeyState].(string)
 	if !ok || state == "" {
-		return continueRequest{}, errors.Join(
-			idn.ErrInvalidInput,
-			errors.New("missing state"),
-		)
+		return continueRequest{}, idn.ErrInvalidInput
 	}
 
 	return continueRequest{
@@ -233,11 +277,9 @@ func (p *OIDCIdentityProvider) validateTransition(
 		)
 	}
 
-	if sess.Store.OIDC == nil || sess.Store.OIDC.OAuthState != state {
-		return session.AuthSession{}, errors.Join(
-			idn.ErrInvalidSessionState,
-			errors.New("state mismatch"),
-		)
+	oidcFlow, ok := sess.Store.OIDCFlowState()
+	if !ok || oidcFlow.OAuthState != state {
+		return session.AuthSession{}, idn.ErrInvalidSessionState
 	}
 
 	return sess, nil

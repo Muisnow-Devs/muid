@@ -16,6 +16,7 @@ import (
 	"sanzi.io/muid/api/proto/authn/v1/challenge"
 	proofpb "sanzi.io/muid/api/proto/authn/v1/proof"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
+	"sanzi.io/muid/internal/authn/infra/account"
 	implIdentity "sanzi.io/muid/internal/authn/infra/identity"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
@@ -28,6 +29,7 @@ type GRPCHandler struct {
 	optStore        otp.OTPStore
 	idm             *identity.IdentityManager
 	transitionStore session.AuthTransitionStore
+	accounts        *account.Accounts
 }
 
 func CreateGRPCHandler(infra *InfraDependencies) pb.AuthnServiceServer {
@@ -35,6 +37,7 @@ func CreateGRPCHandler(infra *InfraDependencies) pb.AuthnServiceServer {
 		optStore:        infra.OTPStore,
 		idm:             infra.IdentityManager,
 		transitionStore: infra.TransitionStore,
+		accounts:        infra.Accounts,
 	}
 }
 
@@ -56,8 +59,10 @@ func (g *GRPCHandler) StartAuthSession(
 	}
 
 	step, err := prov.Start(ctx, identity.StartInput{
-		Provider:   providerName,
-		Identifier: strings.TrimSpace(req.GetIdentifier()),
+		Provider:         providerName,
+		Identifier:       strings.TrimSpace(req.GetIdentifier()),
+		Intent:           protoIntent(req.GetIntent()),
+		LinkSessionToken: sessionTokenValue(req.GetSessionToken()),
 	})
 	if err != nil {
 		return nil, mapStartError(err)
@@ -106,24 +111,15 @@ func (g *GRPCHandler) ContinueAuthSession(
 	}
 
 	step, err := prov.Continue(ctx, identity.ContinueInput{
-		TransitionId: tid,
-		Payload:      payload,
+		TransitionId:     tid,
+		Payload:          payload,
+		LinkSessionToken: sessionTokenValue(req.GetSessionToken()),
 	})
 	if err != nil {
 		return mapContinueError(tid, err)
 	}
 
-	if step.Type != identity.StepComplete || step.AuthenticatedResult == nil {
-		return nil, status.Error(codes.Internal, "provider did not complete authentication")
-	}
-
-	authOK := &sessionpb.AuthSuccess{}
-	authOK.SetResult(step.AuthenticatedResult)
-	resp := &pb.ContinueAuthSessionResponse{}
-	resp.SetTransitionId(tid)
-	resp.SetStatus(basic.AuthStatus_AUTH_STATE_AUTHENTICATED)
-	resp.SetAuthSuccess(authOK)
-	return resp, nil
+	return g.finishAuthStep(ctx, req, sess, step)
 }
 
 func providerNameForMethod(m basic.AuthMethod, identifier string) (string, error) {
@@ -155,11 +151,12 @@ func buildAuthChallenge(
 
 	switch method {
 	case basic.AuthMethod_AUTH_METHOD_EMAIL_OTP:
-		if sess.Store.Email == nil {
+		emailFlow, ok := sess.Store.EmailFlow()
+		if !ok {
 			return nil, fmt.Errorf("missing email transition data")
 		}
 		ec := &challenge.EmailChallenge{}
-		ec.SetEmailMasked(maskEmail(sess.Store.Email.Email))
+		ec.SetEmailMasked(maskEmail(emailFlow.Email))
 		ec.SetResendCooldownMillis(60_000)
 		ch.SetEmailChallenge(ec)
 	case basic.AuthMethod_AUTH_METHOD_OAUTH:
@@ -170,10 +167,13 @@ func buildAuthChallenge(
 	case basic.AuthMethod_AUTH_METHOD_PASSKEY:
 		pc := &challenge.PasskeyChallenge{}
 		pc.SetState(step.TransitionId)
-		pc.SetPublicKeyCredentialRequestOptionsJson(
-			step.PasskeyPublicKeyCredentialRequestOptionsJSON,
-		)
-		pc.SetTimeoutMillis(step.PasskeyTimeoutMillis)
+		if step.Payload != nil && step.Payload.Passkey != nil {
+			pk := step.Payload.Passkey
+			pc.SetPublicKeyCredentialRequestOptionsJson(
+				pk.PublicKeyCredentialRequestOptionsJSON,
+			)
+			pc.SetTimeoutMillis(pk.TimeoutMillis)
+		}
 		ch.SetPasskeyChallenge(pc)
 	default:
 		return nil, fmt.Errorf("unsupported method for challenge mapping")
@@ -210,18 +210,32 @@ func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
 		}, nil
 	}
 	if pp := proof.GetPasskeyProof(); pp != nil {
-		return map[string]any{
-			"credential_assertion_response_json": pp.GetCredentialAssertionResponseJson(),
-		}, nil
+		out := map[string]any{}
+		if s := pp.GetCredentialAssertionResponseJson(); s != "" {
+			out["credential_assertion_response_json"] = s
+		}
+		if s := pp.GetCredentialCreationResponseJson(); s != "" {
+			out["credential_creation_response_json"] = s
+		}
+		if len(out) == 0 {
+			return nil, status.Error(codes.InvalidArgument, "passkey proof missing credential json")
+		}
+		return out, nil
 	}
 	return nil, status.Error(codes.InvalidArgument, "unsupported proof type")
 }
 
 func mapStartError(err error) error {
-	if errors.Is(err, identity.ErrInvalidInput) {
+	switch {
+	case errors.Is(err, identity.ErrInvalidInput):
 		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, identity.ErrLinkUnauthorized):
+		return status.Error(codes.PermissionDenied, "valid session required")
+	case errors.Is(err, identity.ErrEmailAlreadyInUse):
+		return status.Error(codes.AlreadyExists, "email already in use")
+	default:
+		return status.Error(codes.Internal, err.Error())
 	}
-	return status.Error(codes.Internal, err.Error())
 }
 
 func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, error) {
@@ -236,6 +250,24 @@ func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, e
 		return authFailureResponse(tid,
 			"No user account is linked to this passkey credential.",
 			ErrCodePasskeyNotLinked,
+		), nil
+	case errors.Is(err, identity.ErrLinkUnauthorized):
+		return authFailureResponse(
+			tid,
+			"A valid session is required for this operation.",
+			ErrCodeLinkUnauthorized,
+		), nil
+	case errors.Is(err, identity.ErrEmailAlreadyInUse):
+		return authFailureResponse(
+			tid,
+			"That email address is already in use.",
+			ErrCodeEmailAlreadyInUse,
+		), nil
+	case errors.Is(err, identity.ErrPasskeyAlreadyRegistered):
+		return authFailureResponse(
+			tid,
+			"This passkey is already registered.",
+			ErrCodePasskeyAlreadyRegistered,
 		), nil
 	case errors.Is(err, identity.ErrAuthenticationFailed):
 		return authFailureResponse(tid, err.Error(), ErrCodeAuthenticationFailed), nil
@@ -257,19 +289,40 @@ func authFailureResponse(tid, reason, code string) *pb.ContinueAuthSessionRespon
 	fail := &sessionpb.AuthFailure{}
 	fail.SetReason(reason)
 	fail.SetErrorCode(code)
+
 	out := &pb.ContinueAuthSessionResponse{}
 	out.SetTransitionId(tid)
 	out.SetStatus(basic.AuthStatus_AUTH_STATE_FAILED)
 	out.SetAuthFailure(fail)
+
 	return out
 }
 
 // GetAuthorizedSession implements [authn.AuthnServiceServer].
 func (g *GRPCHandler) GetAuthorizedSession(
-	context.Context,
-	*pb.GetSessionRequest,
+	ctx context.Context,
+	req *pb.GetSessionRequest,
 ) (*pb.GetSessionResponse, error) {
-	panic("unimplemented")
+	wire := sessionTokenValue(req.GetSessionToken())
+	if wire == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing session token")
+	}
+
+	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
+	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
+		out := &pb.GetSessionResponse{}
+		out.SetValid(false)
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	out := &pb.GetSessionResponse{}
+	out.SetValid(true)
+	out.SetSession(g.accounts.Session.AuthenticatedResultFromResolved(wire, res))
+
+	return out, nil
 }
 
 // GetPublicKeys implements [authn.AuthnServiceServer].
@@ -338,8 +391,44 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 
 // RevokeSession implements [authn.AuthnServiceServer].
 func (g *GRPCHandler) RevokeSession(
-	context.Context,
-	*pb.RevokeSessionRequest,
+	ctx context.Context,
+	req *pb.RevokeSessionRequest,
 ) (*pb.RevokeSessionResponse, error) {
-	panic("unimplemented")
+	wire := sessionTokenValue(req.GetSessionToken())
+	if wire == "" {
+		return nil, status.Error(codes.InvalidArgument, "missing session token")
+	}
+
+	err := g.accounts.Session.RevokeSessionToken(ctx, wire)
+	if errors.Is(err, session.ErrSessionNotFound) {
+		return nil, status.Error(codes.NotFound, "session not found")
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	out := &pb.RevokeSessionResponse{}
+	out.SetSuccess(true)
+
+	return out, nil
+}
+
+func protoIntent(i basic.AuthIntent) identity.AuthIntent {
+	switch i {
+	case basic.AuthIntent_AUTH_INTENT_LINK_ACCOUNT:
+		return identity.IntentLinkAccount
+	case basic.AuthIntent_AUTH_INTENT_REAUTHENTICATE:
+		return identity.IntentReauthenticate
+	case basic.AuthIntent_AUTH_INTENT_LOGIN:
+		return identity.IntentLogin
+	default:
+		return identity.IntentLogin
+	}
+}
+
+func sessionTokenValue(tok *sessionpb.SessionToken) string {
+	if tok == nil {
+		return ""
+	}
+	return strings.TrimSpace(tok.GetValue())
 }

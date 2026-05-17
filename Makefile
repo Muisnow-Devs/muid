@@ -9,7 +9,7 @@ GO_ENV := CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 SERVICES := authn authz profile gateway mailer
 
 # NATS publishers for manual mailer testing (native GOOS/GOARCH)
-TEST_PUBLISH_TOOLS := test-publish-otp test-publish-login-alert
+TEST_PUBLISH_TOOLS := test-publish-otp test-publish-login-alert test-publish-email-changed test-publish-passkey-added
 
 all: build
 
@@ -33,7 +33,7 @@ test-publish-tools: $(TEST_PUBLISH_TOOLS)
 $(TEST_PUBLISH_TOOLS):
 	@echo "Building $@..."
 	@mkdir -p $(BIN_DIR)
-	$(GO_CC) build -o $(BIN_DIR)/$@ ./test/$@
+	$(GO_CC) build -o $(BIN_DIR)/$@ ./cmd/test/$@
 
 # Clean build artifacts
 clean: clean-bin clean-protos

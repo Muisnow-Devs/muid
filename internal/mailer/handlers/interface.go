@@ -32,6 +32,17 @@ type TopicOTP struct {
 	ExpiryTime string
 }
 
+type TopicEmailChanged struct {
+	OldEmail string
+	NewEmail string
+	Time     string
+}
+
+type TopicPasskeyAdded struct {
+	PasskeyName string
+	Time        string
+}
+
 type TopicLoginAlert struct {
 	Device    string
 	Location  string

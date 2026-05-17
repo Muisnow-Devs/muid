@@ -41,6 +41,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	}
 
 	transitionStore := kv.NewKVAuthTransitionStore(redisKV)
+	sessionCache := kv.NewKVSessionCache(redisKV)
 
 	fatalCleanup := func() {
 		errutil.CloseIf(pubSub)
@@ -75,11 +76,13 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		profileCli = profilepb.NewProfileServiceClient(profileConn)
 	}
 
-	accounts := &account.Services{
+	store := &account.Store{
 		DB:                 entClient,
 		Profile:            profileCli,
 		ProfileCallTimeout: time.Duration(cfg.ProfileGRPCTimeoutSeconds) * time.Second,
+		SessionCache:       sessionCache,
 	}
+	accounts := account.New(store)
 
 	ipm, err := InitializeIdentityManager(
 		ctx,
@@ -102,6 +105,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		Redis:           redisKV,
 		OTPStore:        otpStore,
 		TransitionStore: transitionStore,
+		SessionCache:    sessionCache,
 		PubSub:          pubSub,
 		IdentityManager: ipm,
 		Accounts:        accounts,

@@ -29,11 +29,13 @@ const (
 )
 
 type StartAuthSessionRequest struct {
-	state                 protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Method     basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod"`
-	xxx_hidden_Identifier string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Method       basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod"`
+	xxx_hidden_Identifier   string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
+	xxx_hidden_Intent       basic.AuthIntent       `protobuf:"varint,3,opt,name=intent,proto3,enum=muid.authn.v1.basic.AuthIntent"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,4,opt,name=session_token,json=sessionToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
 }
 
 func (x *StartAuthSessionRequest) Reset() {
@@ -75,6 +77,20 @@ func (x *StartAuthSessionRequest) GetIdentifier() string {
 	return ""
 }
 
+func (x *StartAuthSessionRequest) GetIntent() basic.AuthIntent {
+	if x != nil {
+		return x.xxx_hidden_Intent
+	}
+	return basic.AuthIntent(0)
+}
+
+func (x *StartAuthSessionRequest) GetSessionToken() *session.SessionToken {
+	if x != nil {
+		return x.xxx_hidden_SessionToken
+	}
+	return nil
+}
+
 func (x *StartAuthSessionRequest) SetMethod(v basic.AuthMethod) {
 	x.xxx_hidden_Method = v
 }
@@ -83,11 +99,34 @@ func (x *StartAuthSessionRequest) SetIdentifier(v string) {
 	x.xxx_hidden_Identifier = v
 }
 
+func (x *StartAuthSessionRequest) SetIntent(v basic.AuthIntent) {
+	x.xxx_hidden_Intent = v
+}
+
+func (x *StartAuthSessionRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *StartAuthSessionRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *StartAuthSessionRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
 type StartAuthSessionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Method     basic.AuthMethod
 	Identifier string
+	// intent defaults to AUTH_INTENT_LOGIN when unset.
+	Intent basic.AuthIntent
+	// Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
+	SessionToken *session.SessionToken
 }
 
 func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
@@ -96,6 +135,8 @@ func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
 	_, _ = b, x
 	x.xxx_hidden_Method = b.Method
 	x.xxx_hidden_Identifier = b.Identifier
+	x.xxx_hidden_Intent = b.Intent
+	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -185,6 +226,7 @@ type ContinueAuthSessionRequest struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_TransitionId string                 `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
 	xxx_hidden_Proof        *proof.AuthProof       `protobuf:"bytes,2,opt,name=proof,proto3"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,3,opt,name=session_token,json=sessionToken,proto3"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -228,12 +270,23 @@ func (x *ContinueAuthSessionRequest) GetProof() *proof.AuthProof {
 	return nil
 }
 
+func (x *ContinueAuthSessionRequest) GetSessionToken() *session.SessionToken {
+	if x != nil {
+		return x.xxx_hidden_SessionToken
+	}
+	return nil
+}
+
 func (x *ContinueAuthSessionRequest) SetTransitionId(v string) {
 	x.xxx_hidden_TransitionId = v
 }
 
 func (x *ContinueAuthSessionRequest) SetProof(v *proof.AuthProof) {
 	x.xxx_hidden_Proof = v
+}
+
+func (x *ContinueAuthSessionRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
 }
 
 func (x *ContinueAuthSessionRequest) HasProof() bool {
@@ -243,8 +296,19 @@ func (x *ContinueAuthSessionRequest) HasProof() bool {
 	return x.xxx_hidden_Proof != nil
 }
 
+func (x *ContinueAuthSessionRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
 func (x *ContinueAuthSessionRequest) ClearProof() {
 	x.xxx_hidden_Proof = nil
+}
+
+func (x *ContinueAuthSessionRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
 }
 
 type ContinueAuthSessionRequest_builder struct {
@@ -252,6 +316,8 @@ type ContinueAuthSessionRequest_builder struct {
 
 	TransitionId string
 	Proof        *proof.AuthProof
+	// Optional; required to return session context after AUTH_INTENT_LINK_ACCOUNT completes.
+	SessionToken *session.SessionToken
 }
 
 func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest {
@@ -260,6 +326,7 @@ func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest
 	_, _ = b, x
 	x.xxx_hidden_TransitionId = b.TransitionId
 	x.xxx_hidden_Proof = b.Proof
+	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -2002,18 +2069,21 @@ var File_authn_v1_authn_proto protoreflect.FileDescriptor
 
 const file_authn_v1_authn_proto_rawDesc = "" +
 	"\n" +
-	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a\x14authn/v1/basic.proto\x1a\x1cauthn/v1/certification.proto\x1a\x18authn/v1/challenge.proto\x1a\x15authn/v1/client.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\"|\n" +
+	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a\x14authn/v1/basic.proto\x1a\x1cauthn/v1/certification.proto\x1a\x18authn/v1/challenge.proto\x1a\x15authn/v1/client.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\"\xff\x01\n" +
 	"\x17StartAuthSessionRequest\x127\n" +
 	"\x06method\x18\x01 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthMethodR\x06method\x12(\n" +
 	"\n" +
 	"identifier\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\x80\x02R\n" +
-	"identifier\"\x8f\x01\n" +
+	"identifier\x127\n" +
+	"\x06intent\x18\x03 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthIntentR\x06intent\x12H\n" +
+	"\rsession_token\x18\x04 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\x8f\x01\n" +
 	"\x18StartAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x12D\n" +
-	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\x81\x01\n" +
+	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\xcb\x01\n" +
 	"\x1aContinueAuthSessionRequest\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x124\n" +
-	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xfc\x02\n" +
+	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\x12H\n" +
+	"\rsession_token\x18\x03 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\xfc\x02\n" +
 	"\x1bContinueAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x127\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthStatusR\x06status\x12Y\n" +
@@ -2125,67 +2195,71 @@ var file_authn_v1_authn_proto_goTypes = []any{
 	(*OIDCRotateAndGetAccessTokenRequest)(nil),  // 22: muid.authn.v1.OIDCRotateAndGetAccessTokenRequest
 	(*OIDCRotateAndGetAccessTokenResponse)(nil), // 23: muid.authn.v1.OIDCRotateAndGetAccessTokenResponse
 	(basic.AuthMethod)(0),                       // 24: muid.authn.v1.basic.AuthMethod
-	(*challenge.AuthChallenge)(nil),             // 25: muid.authn.v1.challenge.AuthChallenge
-	(*proof.AuthProof)(nil),                     // 26: muid.authn.v1.proof.AuthProof
-	(basic.AuthStatus)(0),                       // 27: muid.authn.v1.basic.AuthStatus
-	(*session.ChallengeRequired)(nil),           // 28: muid.authn.v1.session.ChallengeRequired
-	(*session.AuthSuccess)(nil),                 // 29: muid.authn.v1.session.AuthSuccess
-	(*session.AuthFailure)(nil),                 // 30: muid.authn.v1.session.AuthFailure
-	(*certification.PublicKey)(nil),             // 31: muid.authn.v1.certification.PublicKey
-	(*session.SessionToken)(nil),                // 32: muid.authn.v1.session.SessionToken
-	(*session.AuthenticatedResult)(nil),         // 33: muid.authn.v1.session.AuthenticatedResult
-	(*timestamppb.Timestamp)(nil),               // 34: google.protobuf.Timestamp
-	(*client.AuthorizedClient)(nil),             // 35: muid.authn.v1.client.AuthorizedClient
+	(basic.AuthIntent)(0),                       // 25: muid.authn.v1.basic.AuthIntent
+	(*session.SessionToken)(nil),                // 26: muid.authn.v1.session.SessionToken
+	(*challenge.AuthChallenge)(nil),             // 27: muid.authn.v1.challenge.AuthChallenge
+	(*proof.AuthProof)(nil),                     // 28: muid.authn.v1.proof.AuthProof
+	(basic.AuthStatus)(0),                       // 29: muid.authn.v1.basic.AuthStatus
+	(*session.ChallengeRequired)(nil),           // 30: muid.authn.v1.session.ChallengeRequired
+	(*session.AuthSuccess)(nil),                 // 31: muid.authn.v1.session.AuthSuccess
+	(*session.AuthFailure)(nil),                 // 32: muid.authn.v1.session.AuthFailure
+	(*certification.PublicKey)(nil),             // 33: muid.authn.v1.certification.PublicKey
+	(*session.AuthenticatedResult)(nil),         // 34: muid.authn.v1.session.AuthenticatedResult
+	(*timestamppb.Timestamp)(nil),               // 35: google.protobuf.Timestamp
+	(*client.AuthorizedClient)(nil),             // 36: muid.authn.v1.client.AuthorizedClient
 }
 var file_authn_v1_authn_proto_depIdxs = []int32{
 	24, // 0: muid.authn.v1.StartAuthSessionRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
-	25, // 1: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	26, // 2: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
-	27, // 3: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
-	28, // 4: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
-	29, // 5: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
-	30, // 6: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
-	31, // 7: muid.authn.v1.GetPublicKeysResponse.public_keys:type_name -> muid.authn.v1.certification.PublicKey
-	32, // 8: muid.authn.v1.GetSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	33, // 9: muid.authn.v1.GetSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
-	32, // 10: muid.authn.v1.RevokeFederatedIdentityRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	34, // 11: muid.authn.v1.OIDCIntrospectTokenResponse.created_at:type_name -> google.protobuf.Timestamp
-	34, // 12: muid.authn.v1.OIDCIntrospectTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	32, // 13: muid.authn.v1.OIDCGrantConsentRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	32, // 14: muid.authn.v1.OIDCRevokeConsentRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	32, // 15: muid.authn.v1.OIDCListGrantedConsentsRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	35, // 16: muid.authn.v1.OIDCListGrantedConsentsResponse.clients:type_name -> muid.authn.v1.client.AuthorizedClient
-	32, // 17: muid.authn.v1.RevokeSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	34, // 18: muid.authn.v1.OIDCRotateAndGetAccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 19: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
-	2,  // 20: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
-	4,  // 21: muid.authn.v1.AuthnService.GetPublicKeys:input_type -> muid.authn.v1.GetPublicKeysRequest
-	8,  // 22: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
-	6,  // 23: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetSessionRequest
-	18, // 24: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
-	16, // 25: muid.authn.v1.AuthnService.OIDCListGrantedConsents:input_type -> muid.authn.v1.OIDCListGrantedConsentsRequest
-	12, // 26: muid.authn.v1.AuthnService.OIDCGrantConsent:input_type -> muid.authn.v1.OIDCGrantConsentRequest
-	14, // 27: muid.authn.v1.AuthnService.OIDCRevokeConsent:input_type -> muid.authn.v1.OIDCRevokeConsentRequest
-	10, // 28: muid.authn.v1.AuthnService.OIDCIntrospectToken:input_type -> muid.authn.v1.OIDCIntrospectTokenRequest
-	20, // 29: muid.authn.v1.AuthnService.OIDCRevokeRefreshToken:input_type -> muid.authn.v1.OIDCRevokeRefreshTokenRequest
-	22, // 30: muid.authn.v1.AuthnService.OIDCRotateAndGetAccessToken:input_type -> muid.authn.v1.OIDCRotateAndGetAccessTokenRequest
-	1,  // 31: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
-	3,  // 32: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
-	5,  // 33: muid.authn.v1.AuthnService.GetPublicKeys:output_type -> muid.authn.v1.GetPublicKeysResponse
-	9,  // 34: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
-	7,  // 35: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetSessionResponse
-	19, // 36: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
-	17, // 37: muid.authn.v1.AuthnService.OIDCListGrantedConsents:output_type -> muid.authn.v1.OIDCListGrantedConsentsResponse
-	13, // 38: muid.authn.v1.AuthnService.OIDCGrantConsent:output_type -> muid.authn.v1.OIDCGrantConsentResponse
-	15, // 39: muid.authn.v1.AuthnService.OIDCRevokeConsent:output_type -> muid.authn.v1.OIDCRevokeConsentResponse
-	11, // 40: muid.authn.v1.AuthnService.OIDCIntrospectToken:output_type -> muid.authn.v1.OIDCIntrospectTokenResponse
-	21, // 41: muid.authn.v1.AuthnService.OIDCRevokeRefreshToken:output_type -> muid.authn.v1.OIDCRevokeRefreshTokenResponse
-	23, // 42: muid.authn.v1.AuthnService.OIDCRotateAndGetAccessToken:output_type -> muid.authn.v1.OIDCRotateAndGetAccessTokenResponse
-	31, // [31:43] is the sub-list for method output_type
-	19, // [19:31] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	25, // 1: muid.authn.v1.StartAuthSessionRequest.intent:type_name -> muid.authn.v1.basic.AuthIntent
+	26, // 2: muid.authn.v1.StartAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	27, // 3: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	28, // 4: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
+	26, // 5: muid.authn.v1.ContinueAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	29, // 6: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
+	30, // 7: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
+	31, // 8: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
+	32, // 9: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
+	33, // 10: muid.authn.v1.GetPublicKeysResponse.public_keys:type_name -> muid.authn.v1.certification.PublicKey
+	26, // 11: muid.authn.v1.GetSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	34, // 12: muid.authn.v1.GetSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
+	26, // 13: muid.authn.v1.RevokeFederatedIdentityRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	35, // 14: muid.authn.v1.OIDCIntrospectTokenResponse.created_at:type_name -> google.protobuf.Timestamp
+	35, // 15: muid.authn.v1.OIDCIntrospectTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	26, // 16: muid.authn.v1.OIDCGrantConsentRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	26, // 17: muid.authn.v1.OIDCRevokeConsentRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	26, // 18: muid.authn.v1.OIDCListGrantedConsentsRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	36, // 19: muid.authn.v1.OIDCListGrantedConsentsResponse.clients:type_name -> muid.authn.v1.client.AuthorizedClient
+	26, // 20: muid.authn.v1.RevokeSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	35, // 21: muid.authn.v1.OIDCRotateAndGetAccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 22: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
+	2,  // 23: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
+	4,  // 24: muid.authn.v1.AuthnService.GetPublicKeys:input_type -> muid.authn.v1.GetPublicKeysRequest
+	8,  // 25: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
+	6,  // 26: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetSessionRequest
+	18, // 27: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
+	16, // 28: muid.authn.v1.AuthnService.OIDCListGrantedConsents:input_type -> muid.authn.v1.OIDCListGrantedConsentsRequest
+	12, // 29: muid.authn.v1.AuthnService.OIDCGrantConsent:input_type -> muid.authn.v1.OIDCGrantConsentRequest
+	14, // 30: muid.authn.v1.AuthnService.OIDCRevokeConsent:input_type -> muid.authn.v1.OIDCRevokeConsentRequest
+	10, // 31: muid.authn.v1.AuthnService.OIDCIntrospectToken:input_type -> muid.authn.v1.OIDCIntrospectTokenRequest
+	20, // 32: muid.authn.v1.AuthnService.OIDCRevokeRefreshToken:input_type -> muid.authn.v1.OIDCRevokeRefreshTokenRequest
+	22, // 33: muid.authn.v1.AuthnService.OIDCRotateAndGetAccessToken:input_type -> muid.authn.v1.OIDCRotateAndGetAccessTokenRequest
+	1,  // 34: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
+	3,  // 35: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
+	5,  // 36: muid.authn.v1.AuthnService.GetPublicKeys:output_type -> muid.authn.v1.GetPublicKeysResponse
+	9,  // 37: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
+	7,  // 38: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetSessionResponse
+	19, // 39: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
+	17, // 40: muid.authn.v1.AuthnService.OIDCListGrantedConsents:output_type -> muid.authn.v1.OIDCListGrantedConsentsResponse
+	13, // 41: muid.authn.v1.AuthnService.OIDCGrantConsent:output_type -> muid.authn.v1.OIDCGrantConsentResponse
+	15, // 42: muid.authn.v1.AuthnService.OIDCRevokeConsent:output_type -> muid.authn.v1.OIDCRevokeConsentResponse
+	11, // 43: muid.authn.v1.AuthnService.OIDCIntrospectToken:output_type -> muid.authn.v1.OIDCIntrospectTokenResponse
+	21, // 44: muid.authn.v1.AuthnService.OIDCRevokeRefreshToken:output_type -> muid.authn.v1.OIDCRevokeRefreshTokenResponse
+	23, // 45: muid.authn.v1.AuthnService.OIDCRotateAndGetAccessToken:output_type -> muid.authn.v1.OIDCRotateAndGetAccessTokenResponse
+	34, // [34:46] is the sub-list for method output_type
+	22, // [22:34] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_authn_proto_init() }

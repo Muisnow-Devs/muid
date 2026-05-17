@@ -37,6 +37,31 @@ message SendOTPEmailEvent {
   google.protobuf.Timestamp created_at = 6;
 }
 
+message SendEmailChangedEvent {
+  string id = 1;
+
+  string email  = 2;
+  string locale = 3;
+
+  string old_email = 4;
+  string new_email = 5;
+
+  google.protobuf.Timestamp occurred_at = 6;
+  google.protobuf.Timestamp created_at  = 7;
+}
+
+message SendPasskeyAddedEmailEvent {
+  string id = 1;
+
+  string email  = 2;
+  string locale = 3;
+
+  string passkey_name = 4;
+
+  google.protobuf.Timestamp occurred_at = 5;
+  google.protobuf.Timestamp created_at  = 6;
+}
+
 message SendLoginAlertEmailEvent {
   string id = 1;
 

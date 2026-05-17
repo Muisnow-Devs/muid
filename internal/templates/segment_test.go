@@ -72,6 +72,14 @@ func TestRender_templatePathValidation(t *testing.T) {
 		SecureAccountLink: "https://example.com/account",
 	}
 
+	passkeyAddedData := struct {
+		PasskeyName string
+		Time        string
+	}{
+		PasskeyName: "MacBook Touch ID",
+		Time:        "now",
+	}
+
 	t.Run("benign locale and page succeed", func(t *testing.T) {
 		t.Parallel()
 
@@ -83,6 +91,11 @@ func TestRender_templatePathValidation(t *testing.T) {
 		_, err = loader.Render(ctx, "zh-TW", "login_alert", loginAlertData)
 		if err != nil {
 			t.Fatalf("Render(zh-TW, login_alert): %v", err)
+		}
+
+		_, err = loader.Render(ctx, "en", "passkey_added", passkeyAddedData)
+		if err != nil {
+			t.Fatalf("Render(en, passkey_added): %v", err)
 		}
 	})
 

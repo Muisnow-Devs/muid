@@ -21,7 +21,7 @@ type AuthSession struct {
 	ExpiresAt int64
 }
 
-// AuthFlowKind discriminates which flow payload is active in [SessionStore].
+// AuthFlowKind discriminates which flow payload is active in [FlowState].
 // Only one of Email, OIDC, or Passkey should be non-nil for a given session.
 type AuthFlowKind string
 
@@ -35,6 +35,11 @@ const (
 // EmailOTPFlow holds email OTP transition state.
 type EmailOTPFlow struct {
 	Email string `json:"email"`
+	// Intent is login or change_email when linking.
+	Intent string `json:"intent,omitempty"`
+	// SubjectUserID is the authenticated user performing a change_email flow.
+	SubjectUserID string `json:"subject_user_id,omitempty"`
+	OldEmail      string `json:"old_email,omitempty"`
 }
 
 // OIDCFlow holds OIDC/PKCE transition state.
@@ -47,17 +52,36 @@ type OIDCFlow struct {
 type PasskeyFlow struct {
 	ChallengeB64 string `json:"challenge_b64"`
 	RPID         string `json:"rp_id"`
+	// Mode is login (assertion) or register (link new passkey).
+	Mode string `json:"mode,omitempty"`
+	// SubjectUserID is set for register/link flows.
+	SubjectUserID string `json:"subject_user_id,omitempty"`
+}
+
+// RegisterPendingClaims mirrors shared IdentityInformation fields stored on the transition.
+type RegisterPendingClaims struct {
+	Email             string `json:"email"`
+	EmailVerified     bool   `json:"email_verified,omitempty"`
+	FederatedProvider string `json:"federated_provider,omitempty"`
+	FederatedSubject  string `json:"federated_subject,omitempty"`
+	Name              string `json:"name,omitempty"`
+	Picture           string `json:"picture,omitempty"`
+}
+
+// RegisterPending holds signup claims and, after login-flow provision, the new user id.
+type RegisterPending struct {
+	Claims            RegisterPendingClaims `json:"claims"`
+	ProvisionedUserID string                `json:"provisioned_user_id,omitempty"`
 }
 
 type SessionStore struct {
-	Attempts int    `json:"attempts"`
-	Step     string `json:"step"`
+	Attempts int      `json:"attempts"`
+	Step     AuthStep `json:"step"`
 
-	Flow AuthFlowKind `json:"flow"`
+	Flow FlowState `json:"flow"`
 
-	Email   *EmailOTPFlow `json:"email,omitempty"`
-	OIDC    *OIDCFlow     `json:"oidc,omitempty"`
-	Passkey *PasskeyFlow  `json:"passkey,omitempty"`
+	// PendingRegister is set when a provider needs login-flow provision before finish linking.
+	PendingRegister *RegisterPending `json:"pending_register,omitempty"`
 }
 
 type AuthTransitionStore interface {

@@ -1,0 +1,6 @@
+{
+    "subject": "[MuID] A passkey was added to your account",
+    "title": "Passkey added",
+    "description": "A passkey named \"%s\" was added to your account on %s.",
+    "additional_info": "If you did not add this passkey, secure your account immediately."
+}

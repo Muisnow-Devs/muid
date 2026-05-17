@@ -45,6 +45,10 @@ service AuthnService {
 message StartAuthSessionRequest {
   muid.authn.v1.basic.AuthMethod method     = 1;
   string                         identifier = 2 [(buf.validate.field).string.max_len = 256];
+  // intent defaults to AUTH_INTENT_LOGIN when unset.
+  muid.authn.v1.basic.AuthIntent intent = 3;
+  // Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
+  muid.authn.v1.session.SessionToken session_token = 4;
 }
 
 message StartAuthSessionResponse {
@@ -55,6 +59,8 @@ message StartAuthSessionResponse {
 message ContinueAuthSessionRequest {
   string                        transition_id = 1 [(buf.validate.field).string.uuid = true];
   muid.authn.v1.proof.AuthProof proof         = 2;
+  // Optional; required to return session context after AUTH_INTENT_LINK_ACCOUNT completes.
+  muid.authn.v1.session.SessionToken session_token = 3;
 }
 
 message ContinueAuthSessionResponse {
@@ -85,7 +91,7 @@ message GetSessionResponse {
 
 message RevokeFederatedIdentityRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string provider      = 2;
+  string                             provider      = 2;
 }
 
 message RevokeFederatedIdentityResponse {
@@ -112,8 +118,8 @@ message OIDCIntrospectTokenResponse {
 
 message OIDCGrantConsentRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string          client_id     = 2;
-  repeated string scopes        = 3;
+  string                             client_id     = 2;
+  repeated string                    scopes        = 3;
 }
 
 message OIDCGrantConsentResponse {
@@ -122,7 +128,7 @@ message OIDCGrantConsentResponse {
 
 message OIDCRevokeConsentRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string client_id     = 2;
+  string                             client_id     = 2;
 }
 
 message OIDCRevokeConsentResponse {

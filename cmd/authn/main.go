@@ -29,18 +29,18 @@ func run() error {
 
 	cfg, err := shared.LoadConfig[app.Config](app.ConfigEnvPrefix)
 	if err != nil {
-		errChan <- fmt.Errorf("load config: %w", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
 	infra, err := app.NewAuthnInfra(ctx, cfg)
 	if err != nil {
-		errChan <- fmt.Errorf("init infra: %w", err)
+		return fmt.Errorf("init infra: %w", err)
 	}
 
 	authnApp, err := app.NewAuthnApp(ctx, infra)
 	if err != nil {
 		infra.Close()
-		errChan <- fmt.Errorf("create app: %w", err)
+		return fmt.Errorf("create app: %w", err)
 	}
 
 	go func() {

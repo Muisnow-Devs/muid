@@ -21,6 +21,18 @@ func (f UserAvatarFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserAvatarMutation", m)
 }
 
+// The UserOriginalIdentityFunc type is an adapter to allow the use of ordinary
+// function as UserOriginalIdentity mutator.
+type UserOriginalIdentityFunc func(context.Context, *ent.UserOriginalIdentityMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserOriginalIdentityFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserOriginalIdentityMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserOriginalIdentityMutation", m)
+}
+
 // The UserProfileFunc type is an adapter to allow the use of ordinary
 // function as UserProfile mutator.
 type UserProfileFunc func(context.Context, *ent.UserProfileMutation) (ent.Value, error)

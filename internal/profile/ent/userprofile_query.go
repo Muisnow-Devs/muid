@@ -15,17 +15,20 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/predicate"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
+	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
 // UserProfileQuery is the builder for querying UserProfile entities.
 type UserProfileQuery struct {
 	config
-	ctx         *QueryContext
-	order       []userprofile.OrderOption
-	inters      []Interceptor
-	predicates  []predicate.UserProfile
-	withAvatars *UserAvatarQuery
+	ctx                  *QueryContext
+	order                []userprofile.OrderOption
+	inters               []Interceptor
+	predicates           []predicate.UserProfile
+	withAvatars          *UserAvatarQuery
+	withOriginalIdentity *UserOriginalIdentityQuery
+	withFKs              bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -77,6 +80,28 @@ func (_q *UserProfileQuery) QueryAvatars() *UserAvatarQuery {
 			sqlgraph.From(userprofile.Table, userprofile.FieldID, selector),
 			sqlgraph.To(useravatar.Table, useravatar.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userprofile.AvatarsTable, userprofile.AvatarsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOriginalIdentity chains the current query on the "original_identity" edge.
+func (_q *UserProfileQuery) QueryOriginalIdentity() *UserOriginalIdentityQuery {
+	query := (&UserOriginalIdentityClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userprofile.Table, userprofile.FieldID, selector),
+			sqlgraph.To(useroriginalidentity.Table, useroriginalidentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, userprofile.OriginalIdentityTable, userprofile.OriginalIdentityColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -271,12 +296,13 @@ func (_q *UserProfileQuery) Clone() *UserProfileQuery {
 		return nil
 	}
 	return &UserProfileQuery{
-		config:      _q.config,
-		ctx:         _q.ctx.Clone(),
-		order:       append([]userprofile.OrderOption{}, _q.order...),
-		inters:      append([]Interceptor{}, _q.inters...),
-		predicates:  append([]predicate.UserProfile{}, _q.predicates...),
-		withAvatars: _q.withAvatars.Clone(),
+		config:               _q.config,
+		ctx:                  _q.ctx.Clone(),
+		order:                append([]userprofile.OrderOption{}, _q.order...),
+		inters:               append([]Interceptor{}, _q.inters...),
+		predicates:           append([]predicate.UserProfile{}, _q.predicates...),
+		withAvatars:          _q.withAvatars.Clone(),
+		withOriginalIdentity: _q.withOriginalIdentity.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -291,6 +317,17 @@ func (_q *UserProfileQuery) WithAvatars(opts ...func(*UserAvatarQuery)) *UserPro
 		opt(query)
 	}
 	_q.withAvatars = query
+	return _q
+}
+
+// WithOriginalIdentity tells the query-builder to eager-load the nodes that are connected to
+// the "original_identity" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserProfileQuery) WithOriginalIdentity(opts ...func(*UserOriginalIdentityQuery)) *UserProfileQuery {
+	query := (&UserOriginalIdentityClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOriginalIdentity = query
 	return _q
 }
 
@@ -371,11 +408,19 @@ func (_q *UserProfileQuery) prepareQuery(ctx context.Context) error {
 func (_q *UserProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*UserProfile, error) {
 	var (
 		nodes       = []*UserProfile{}
+		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
+		loadedTypes = [2]bool{
 			_q.withAvatars != nil,
+			_q.withOriginalIdentity != nil,
 		}
 	)
+	if _q.withOriginalIdentity != nil {
+		withFKs = true
+	}
+	if withFKs {
+		_spec.Node.Columns = append(_spec.Node.Columns, userprofile.ForeignKeys...)
+	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*UserProfile).scanValues(nil, columns)
 	}
@@ -398,6 +443,12 @@ func (_q *UserProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 		if err := _q.loadAvatars(ctx, query, nodes,
 			func(n *UserProfile) { n.Edges.Avatars = []*UserAvatar{} },
 			func(n *UserProfile, e *UserAvatar) { n.Edges.Avatars = append(n.Edges.Avatars, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOriginalIdentity; query != nil {
+		if err := _q.loadOriginalIdentity(ctx, query, nodes, nil,
+			func(n *UserProfile, e *UserOriginalIdentity) { n.Edges.OriginalIdentity = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -431,6 +482,38 @@ func (_q *UserProfileQuery) loadAvatars(ctx context.Context, query *UserAvatarQu
 			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserProfileQuery) loadOriginalIdentity(ctx context.Context, query *UserOriginalIdentityQuery, nodes []*UserProfile, init func(*UserProfile), assign func(*UserProfile, *UserOriginalIdentity)) error {
+	ids := make([]int, 0, len(nodes))
+	nodeids := make(map[int][]*UserProfile)
+	for i := range nodes {
+		if nodes[i].user_profile_original_identity == nil {
+			continue
+		}
+		fk := *nodes[i].user_profile_original_identity
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(useroriginalidentity.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "user_profile_original_identity" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
 	}
 	return nil
 }

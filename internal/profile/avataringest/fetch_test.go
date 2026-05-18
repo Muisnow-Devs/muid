@@ -121,39 +121,39 @@ func TestEnsureAvatarFetchHostResolved(t *testing.T) {
 			lookup: lookupOK([]net.IP{public}),
 		},
 		{
-			name:   "hostname_private",
-			host:   "internal.example",
-			lookup: lookupOK([]net.IP{net.ParseIP("10.0.0.1")}),
+			name:    "hostname_private",
+			host:    "internal.example",
+			lookup:  lookupOK([]net.IP{net.ParseIP("10.0.0.1")}),
 			wantErr: errAvatarFetchHostBlocked,
 		},
 		{
-			name:   "hostname_loopback",
-			host:   "loopback.example",
-			lookup: lookupOK([]net.IP{net.ParseIP("127.0.0.1")}),
+			name:    "hostname_loopback",
+			host:    "loopback.example",
+			lookup:  lookupOK([]net.IP{net.ParseIP("127.0.0.1")}),
 			wantErr: errAvatarFetchHostBlocked,
 		},
 		{
-			name:   "hostname_metadata_ip",
-			host:   "metadata.example",
-			lookup: lookupOK([]net.IP{net.ParseIP("169.254.169.254")}),
+			name:    "hostname_metadata_ip",
+			host:    "metadata.example",
+			lookup:  lookupOK([]net.IP{net.ParseIP("169.254.169.254")}),
 			wantErr: errAvatarFetchHostBlocked,
 		},
 		{
-			name:   "hostname_ipv6_loopback",
-			host:   "v6loop.example",
-			lookup: lookupOK([]net.IP{net.ParseIP("::1")}),
+			name:    "hostname_ipv6_loopback",
+			host:    "v6loop.example",
+			lookup:  lookupOK([]net.IP{net.ParseIP("::1")}),
 			wantErr: errAvatarFetchHostBlocked,
 		},
 		{
-			name:   "hostname_any_private_record",
-			host:   "mixed.example",
-			lookup: lookupOK([]net.IP{public, net.ParseIP("192.168.1.1")}),
+			name:    "hostname_any_private_record",
+			host:    "mixed.example",
+			lookup:  lookupOK([]net.IP{public, net.ParseIP("192.168.1.1")}),
 			wantErr: errAvatarFetchHostBlocked,
 		},
 		{
-			name:   "hostname_no_records",
-			host:   "empty.example",
-			lookup: lookupOK(nil),
+			name:    "hostname_no_records",
+			host:    "empty.example",
+			lookup:  lookupOK(nil),
 			wantErr: errAvatarFetchHostBlocked,
 		},
 		{
@@ -174,7 +174,8 @@ func TestEnsureAvatarFetchHostResolved(t *testing.T) {
 			case tc.wantErr != nil && err == nil:
 				t.Fatalf("expected error %v, got nil", tc.wantErr)
 			case tc.wantErr != nil && !errors.Is(err, tc.wantErr):
-				if tc.wantErr.Error() != "" && err != nil && err.Error() == "avatar fetch: resolve host: "+tc.wantErr.Error() {
+				if tc.wantErr.Error() != "" && err != nil &&
+					err.Error() == "avatar fetch: resolve host: "+tc.wantErr.Error() {
 					return
 				}
 				if !errors.Is(err, tc.wantErr) {

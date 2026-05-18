@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
+	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -123,6 +124,25 @@ func (_c *UserProfileCreate) AddAvatars(v ...*UserAvatar) *UserProfileCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddAvatarIDs(ids...)
+}
+
+// SetOriginalIdentityID sets the "original_identity" edge to the UserOriginalIdentity entity by ID.
+func (_c *UserProfileCreate) SetOriginalIdentityID(id int) *UserProfileCreate {
+	_c.mutation.SetOriginalIdentityID(id)
+	return _c
+}
+
+// SetNillableOriginalIdentityID sets the "original_identity" edge to the UserOriginalIdentity entity by ID if the given value is not nil.
+func (_c *UserProfileCreate) SetNillableOriginalIdentityID(id *int) *UserProfileCreate {
+	if id != nil {
+		_c = _c.SetOriginalIdentityID(*id)
+	}
+	return _c
+}
+
+// SetOriginalIdentity sets the "original_identity" edge to the UserOriginalIdentity entity.
+func (_c *UserProfileCreate) SetOriginalIdentity(v *UserOriginalIdentity) *UserProfileCreate {
+	return _c.SetOriginalIdentityID(v.ID)
 }
 
 // Mutation returns the UserProfileMutation object of the builder.
@@ -302,6 +322,23 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OriginalIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   userprofile.OriginalIdentityTable,
+			Columns: []string{userprofile.OriginalIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useroriginalidentity.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.user_profile_original_identity = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

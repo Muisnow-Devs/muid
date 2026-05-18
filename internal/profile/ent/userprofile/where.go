@@ -519,6 +519,29 @@ func HasAvatarsWith(preds ...predicate.UserAvatar) predicate.UserProfile {
 	})
 }
 
+// HasOriginalIdentity applies the HasEdge predicate on the "original_identity" edge.
+func HasOriginalIdentity() predicate.UserProfile {
+	return predicate.UserProfile(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, OriginalIdentityTable, OriginalIdentityColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOriginalIdentityWith applies the HasEdge predicate on the "original_identity" edge with a given conditions (other predicates).
+func HasOriginalIdentityWith(preds ...predicate.UserOriginalIdentity) predicate.UserProfile {
+	return predicate.UserProfile(func(s *sql.Selector) {
+		step := newOriginalIdentityStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserProfile) predicate.UserProfile {
 	return predicate.UserProfile(sql.AndPredicates(predicates...))

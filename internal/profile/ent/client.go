@@ -17,6 +17,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
+	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -27,6 +28,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// UserAvatar is the client for interacting with the UserAvatar builders.
 	UserAvatar *UserAvatarClient
+	// UserOriginalIdentity is the client for interacting with the UserOriginalIdentity builders.
+	UserOriginalIdentity *UserOriginalIdentityClient
 	// UserProfile is the client for interacting with the UserProfile builders.
 	UserProfile *UserProfileClient
 }
@@ -41,6 +44,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.UserAvatar = NewUserAvatarClient(c.config)
+	c.UserOriginalIdentity = NewUserOriginalIdentityClient(c.config)
 	c.UserProfile = NewUserProfileClient(c.config)
 }
 
@@ -132,10 +136,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:         ctx,
-		config:      cfg,
-		UserAvatar:  NewUserAvatarClient(cfg),
-		UserProfile: NewUserProfileClient(cfg),
+		ctx:                  ctx,
+		config:               cfg,
+		UserAvatar:           NewUserAvatarClient(cfg),
+		UserOriginalIdentity: NewUserOriginalIdentityClient(cfg),
+		UserProfile:          NewUserProfileClient(cfg),
 	}, nil
 }
 
@@ -153,10 +158,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:         ctx,
-		config:      cfg,
-		UserAvatar:  NewUserAvatarClient(cfg),
-		UserProfile: NewUserProfileClient(cfg),
+		ctx:                  ctx,
+		config:               cfg,
+		UserAvatar:           NewUserAvatarClient(cfg),
+		UserOriginalIdentity: NewUserOriginalIdentityClient(cfg),
+		UserProfile:          NewUserProfileClient(cfg),
 	}, nil
 }
 
@@ -186,6 +192,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.UserAvatar.Use(hooks...)
+	c.UserOriginalIdentity.Use(hooks...)
 	c.UserProfile.Use(hooks...)
 }
 
@@ -193,6 +200,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.UserAvatar.Intercept(interceptors...)
+	c.UserOriginalIdentity.Intercept(interceptors...)
 	c.UserProfile.Intercept(interceptors...)
 }
 
@@ -201,6 +209,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *UserAvatarMutation:
 		return c.UserAvatar.mutate(ctx, m)
+	case *UserOriginalIdentityMutation:
+		return c.UserOriginalIdentity.mutate(ctx, m)
 	case *UserProfileMutation:
 		return c.UserProfile.mutate(ctx, m)
 	default:
@@ -357,6 +367,155 @@ func (c *UserAvatarClient) mutate(ctx context.Context, m *UserAvatarMutation) (V
 	}
 }
 
+// UserOriginalIdentityClient is a client for the UserOriginalIdentity schema.
+type UserOriginalIdentityClient struct {
+	config
+}
+
+// NewUserOriginalIdentityClient returns a client for the UserOriginalIdentity from the given config.
+func NewUserOriginalIdentityClient(c config) *UserOriginalIdentityClient {
+	return &UserOriginalIdentityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `useroriginalidentity.Hooks(f(g(h())))`.
+func (c *UserOriginalIdentityClient) Use(hooks ...Hook) {
+	c.hooks.UserOriginalIdentity = append(c.hooks.UserOriginalIdentity, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `useroriginalidentity.Intercept(f(g(h())))`.
+func (c *UserOriginalIdentityClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserOriginalIdentity = append(c.inters.UserOriginalIdentity, interceptors...)
+}
+
+// Create returns a builder for creating a UserOriginalIdentity entity.
+func (c *UserOriginalIdentityClient) Create() *UserOriginalIdentityCreate {
+	mutation := newUserOriginalIdentityMutation(c.config, OpCreate)
+	return &UserOriginalIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserOriginalIdentity entities.
+func (c *UserOriginalIdentityClient) CreateBulk(builders ...*UserOriginalIdentityCreate) *UserOriginalIdentityCreateBulk {
+	return &UserOriginalIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserOriginalIdentityClient) MapCreateBulk(slice any, setFunc func(*UserOriginalIdentityCreate, int)) *UserOriginalIdentityCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserOriginalIdentityCreateBulk{err: fmt.Errorf("calling to UserOriginalIdentityClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserOriginalIdentityCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserOriginalIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserOriginalIdentity.
+func (c *UserOriginalIdentityClient) Update() *UserOriginalIdentityUpdate {
+	mutation := newUserOriginalIdentityMutation(c.config, OpUpdate)
+	return &UserOriginalIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserOriginalIdentityClient) UpdateOne(_m *UserOriginalIdentity) *UserOriginalIdentityUpdateOne {
+	mutation := newUserOriginalIdentityMutation(c.config, OpUpdateOne, withUserOriginalIdentity(_m))
+	return &UserOriginalIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserOriginalIdentityClient) UpdateOneID(id int) *UserOriginalIdentityUpdateOne {
+	mutation := newUserOriginalIdentityMutation(c.config, OpUpdateOne, withUserOriginalIdentityID(id))
+	return &UserOriginalIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserOriginalIdentity.
+func (c *UserOriginalIdentityClient) Delete() *UserOriginalIdentityDelete {
+	mutation := newUserOriginalIdentityMutation(c.config, OpDelete)
+	return &UserOriginalIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserOriginalIdentityClient) DeleteOne(_m *UserOriginalIdentity) *UserOriginalIdentityDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserOriginalIdentityClient) DeleteOneID(id int) *UserOriginalIdentityDeleteOne {
+	builder := c.Delete().Where(useroriginalidentity.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserOriginalIdentityDeleteOne{builder}
+}
+
+// Query returns a query builder for UserOriginalIdentity.
+func (c *UserOriginalIdentityClient) Query() *UserOriginalIdentityQuery {
+	return &UserOriginalIdentityQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserOriginalIdentity},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserOriginalIdentity entity by its id.
+func (c *UserOriginalIdentityClient) Get(ctx context.Context, id int) (*UserOriginalIdentity, error) {
+	return c.Query().Where(useroriginalidentity.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserOriginalIdentityClient) GetX(ctx context.Context, id int) *UserOriginalIdentity {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a UserOriginalIdentity.
+func (c *UserOriginalIdentityClient) QueryUser(_m *UserOriginalIdentity) *UserProfileQuery {
+	query := (&UserProfileClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useroriginalidentity.Table, useroriginalidentity.FieldID, id),
+			sqlgraph.To(userprofile.Table, userprofile.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, useroriginalidentity.UserTable, useroriginalidentity.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UserOriginalIdentityClient) Hooks() []Hook {
+	return c.hooks.UserOriginalIdentity
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserOriginalIdentityClient) Interceptors() []Interceptor {
+	return c.inters.UserOriginalIdentity
+}
+
+func (c *UserOriginalIdentityClient) mutate(ctx context.Context, m *UserOriginalIdentityMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserOriginalIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserOriginalIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserOriginalIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserOriginalIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserOriginalIdentity mutation op: %q", m.Op())
+	}
+}
+
 // UserProfileClient is a client for the UserProfile schema.
 type UserProfileClient struct {
 	config
@@ -481,6 +640,22 @@ func (c *UserProfileClient) QueryAvatars(_m *UserProfile) *UserAvatarQuery {
 	return query
 }
 
+// QueryOriginalIdentity queries the original_identity edge of a UserProfile.
+func (c *UserProfileClient) QueryOriginalIdentity(_m *UserProfile) *UserOriginalIdentityQuery {
+	query := (&UserOriginalIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userprofile.Table, userprofile.FieldID, id),
+			sqlgraph.To(useroriginalidentity.Table, useroriginalidentity.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, userprofile.OriginalIdentityTable, userprofile.OriginalIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserProfileClient) Hooks() []Hook {
 	return c.hooks.UserProfile
@@ -509,9 +684,9 @@ func (c *UserProfileClient) mutate(ctx context.Context, m *UserProfileMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		UserAvatar, UserProfile []ent.Hook
+		UserAvatar, UserOriginalIdentity, UserProfile []ent.Hook
 	}
 	inters struct {
-		UserAvatar, UserProfile []ent.Interceptor
+		UserAvatar, UserOriginalIdentity, UserProfile []ent.Interceptor
 	}
 )

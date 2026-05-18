@@ -31,6 +31,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeAvatars holds the string denoting the avatars edge name in mutations.
 	EdgeAvatars = "avatars"
+	// EdgeOriginalIdentity holds the string denoting the original_identity edge name in mutations.
+	EdgeOriginalIdentity = "original_identity"
 	// Table holds the table name of the userprofile in the database.
 	Table = "user_profiles"
 	// AvatarsTable is the table that holds the avatars relation/edge.
@@ -40,6 +42,13 @@ const (
 	AvatarsInverseTable = "user_avatars"
 	// AvatarsColumn is the table column denoting the avatars relation/edge.
 	AvatarsColumn = "user_id"
+	// OriginalIdentityTable is the table that holds the original_identity relation/edge.
+	OriginalIdentityTable = "user_profiles"
+	// OriginalIdentityInverseTable is the table name for the UserOriginalIdentity entity.
+	// It exists in this package in order to avoid circular dependency with the "useroriginalidentity" package.
+	OriginalIdentityInverseTable = "user_original_identities"
+	// OriginalIdentityColumn is the table column denoting the original_identity relation/edge.
+	OriginalIdentityColumn = "user_profile_original_identity"
 )
 
 // Columns holds all SQL columns for userprofile fields.
@@ -54,10 +63,21 @@ var Columns = []string{
 	FieldUpdatedAt,
 }
 
+// ForeignKeys holds the SQL foreign-keys that are owned by the "user_profiles"
+// table and are not defined as standalone fields in the schema.
+var ForeignKeys = []string{
+	"user_profile_original_identity",
+}
+
 // ValidColumn reports if the column name is valid (part of the table columns).
 func ValidColumn(column string) bool {
 	for i := range Columns {
 		if column == Columns[i] {
+			return true
+		}
+	}
+	for i := range ForeignKeys {
+		if column == ForeignKeys[i] {
 			return true
 		}
 	}
@@ -143,10 +163,24 @@ func ByAvatars(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newAvatarsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOriginalIdentityField orders the results by original_identity field.
+func ByOriginalIdentityField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOriginalIdentityStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newAvatarsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(AvatarsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, AvatarsTable, AvatarsColumn),
+	)
+}
+func newOriginalIdentityStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OriginalIdentityInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, OriginalIdentityTable, OriginalIdentityColumn),
 	)
 }

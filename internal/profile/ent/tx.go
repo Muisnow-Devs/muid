@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// UserAvatar is the client for interacting with the UserAvatar builders.
 	UserAvatar *UserAvatarClient
+	// UserOriginalIdentity is the client for interacting with the UserOriginalIdentity builders.
+	UserOriginalIdentity *UserOriginalIdentityClient
 	// UserProfile is the client for interacting with the UserProfile builders.
 	UserProfile *UserProfileClient
 
@@ -148,6 +150,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.UserAvatar = NewUserAvatarClient(tx.config)
+	tx.UserOriginalIdentity = NewUserOriginalIdentityClient(tx.config)
 	tx.UserProfile = NewUserProfileClient(tx.config)
 }
 

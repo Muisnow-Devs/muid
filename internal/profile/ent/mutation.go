@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/predicate"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
+	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -26,8 +27,9 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeUserAvatar  = "UserAvatar"
-	TypeUserProfile = "UserProfile"
+	TypeUserAvatar           = "UserAvatar"
+	TypeUserOriginalIdentity = "UserOriginalIdentity"
+	TypeUserProfile          = "UserProfile"
 )
 
 // UserAvatarMutation represents an operation that mutates the UserAvatar nodes in the graph.
@@ -817,26 +819,421 @@ func (m *UserAvatarMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown UserAvatar edge %s", name)
 }
 
+// UserOriginalIdentityMutation represents an operation that mutates the UserOriginalIdentity nodes in the graph.
+type UserOriginalIdentityMutation struct {
+	config
+	op                Op
+	typ               string
+	id                *int
+	original_identity *string
+	clearedFields     map[string]struct{}
+	user              *uuid.UUID
+	cleareduser       bool
+	done              bool
+	oldValue          func(context.Context) (*UserOriginalIdentity, error)
+	predicates        []predicate.UserOriginalIdentity
+}
+
+var _ ent.Mutation = (*UserOriginalIdentityMutation)(nil)
+
+// useroriginalidentityOption allows management of the mutation configuration using functional options.
+type useroriginalidentityOption func(*UserOriginalIdentityMutation)
+
+// newUserOriginalIdentityMutation creates new mutation for the UserOriginalIdentity entity.
+func newUserOriginalIdentityMutation(c config, op Op, opts ...useroriginalidentityOption) *UserOriginalIdentityMutation {
+	m := &UserOriginalIdentityMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeUserOriginalIdentity,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withUserOriginalIdentityID sets the ID field of the mutation.
+func withUserOriginalIdentityID(id int) useroriginalidentityOption {
+	return func(m *UserOriginalIdentityMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *UserOriginalIdentity
+		)
+		m.oldValue = func(ctx context.Context) (*UserOriginalIdentity, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().UserOriginalIdentity.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withUserOriginalIdentity sets the old UserOriginalIdentity of the mutation.
+func withUserOriginalIdentity(node *UserOriginalIdentity) useroriginalidentityOption {
+	return func(m *UserOriginalIdentityMutation) {
+		m.oldValue = func(context.Context) (*UserOriginalIdentity, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m UserOriginalIdentityMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m UserOriginalIdentityMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *UserOriginalIdentityMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *UserOriginalIdentityMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().UserOriginalIdentity.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetOriginalIdentity sets the "original_identity" field.
+func (m *UserOriginalIdentityMutation) SetOriginalIdentity(s string) {
+	m.original_identity = &s
+}
+
+// OriginalIdentity returns the value of the "original_identity" field in the mutation.
+func (m *UserOriginalIdentityMutation) OriginalIdentity() (r string, exists bool) {
+	v := m.original_identity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOriginalIdentity returns the old "original_identity" field's value of the UserOriginalIdentity entity.
+// If the UserOriginalIdentity object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserOriginalIdentityMutation) OldOriginalIdentity(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOriginalIdentity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOriginalIdentity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOriginalIdentity: %w", err)
+	}
+	return oldValue.OriginalIdentity, nil
+}
+
+// ResetOriginalIdentity resets all changes to the "original_identity" field.
+func (m *UserOriginalIdentityMutation) ResetOriginalIdentity() {
+	m.original_identity = nil
+}
+
+// SetUserID sets the "user" edge to the UserProfile entity by id.
+func (m *UserOriginalIdentityMutation) SetUserID(id uuid.UUID) {
+	m.user = &id
+}
+
+// ClearUser clears the "user" edge to the UserProfile entity.
+func (m *UserOriginalIdentityMutation) ClearUser() {
+	m.cleareduser = true
+}
+
+// UserCleared reports if the "user" edge to the UserProfile entity was cleared.
+func (m *UserOriginalIdentityMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserID returns the "user" edge ID in the mutation.
+func (m *UserOriginalIdentityMutation) UserID() (id uuid.UUID, exists bool) {
+	if m.user != nil {
+		return *m.user, true
+	}
+	return
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *UserOriginalIdentityMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *UserOriginalIdentityMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the UserOriginalIdentityMutation builder.
+func (m *UserOriginalIdentityMutation) Where(ps ...predicate.UserOriginalIdentity) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the UserOriginalIdentityMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *UserOriginalIdentityMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.UserOriginalIdentity, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *UserOriginalIdentityMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *UserOriginalIdentityMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (UserOriginalIdentity).
+func (m *UserOriginalIdentityMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *UserOriginalIdentityMutation) Fields() []string {
+	fields := make([]string, 0, 1)
+	if m.original_identity != nil {
+		fields = append(fields, useroriginalidentity.FieldOriginalIdentity)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *UserOriginalIdentityMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case useroriginalidentity.FieldOriginalIdentity:
+		return m.OriginalIdentity()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *UserOriginalIdentityMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case useroriginalidentity.FieldOriginalIdentity:
+		return m.OldOriginalIdentity(ctx)
+	}
+	return nil, fmt.Errorf("unknown UserOriginalIdentity field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserOriginalIdentityMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case useroriginalidentity.FieldOriginalIdentity:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOriginalIdentity(v)
+		return nil
+	}
+	return fmt.Errorf("unknown UserOriginalIdentity field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *UserOriginalIdentityMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *UserOriginalIdentityMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *UserOriginalIdentityMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown UserOriginalIdentity numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *UserOriginalIdentityMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *UserOriginalIdentityMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *UserOriginalIdentityMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown UserOriginalIdentity nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *UserOriginalIdentityMutation) ResetField(name string) error {
+	switch name {
+	case useroriginalidentity.FieldOriginalIdentity:
+		m.ResetOriginalIdentity()
+		return nil
+	}
+	return fmt.Errorf("unknown UserOriginalIdentity field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *UserOriginalIdentityMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.user != nil {
+		edges = append(edges, useroriginalidentity.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *UserOriginalIdentityMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case useroriginalidentity.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *UserOriginalIdentityMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *UserOriginalIdentityMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *UserOriginalIdentityMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareduser {
+		edges = append(edges, useroriginalidentity.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *UserOriginalIdentityMutation) EdgeCleared(name string) bool {
+	switch name {
+	case useroriginalidentity.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *UserOriginalIdentityMutation) ClearEdge(name string) error {
+	switch name {
+	case useroriginalidentity.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown UserOriginalIdentity unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *UserOriginalIdentityMutation) ResetEdge(name string) error {
+	switch name {
+	case useroriginalidentity.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown UserOriginalIdentity edge %s", name)
+}
+
 // UserProfileMutation represents an operation that mutates the UserProfile nodes in the graph.
 type UserProfileMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uuid.UUID
-	email_ref      *string
-	display_name   *string
-	username       *string
-	locale         *string
-	biography      *string
-	created_at     *time.Time
-	updated_at     *time.Time
-	clearedFields  map[string]struct{}
-	avatars        map[uuid.UUID]struct{}
-	removedavatars map[uuid.UUID]struct{}
-	clearedavatars bool
-	done           bool
-	oldValue       func(context.Context) (*UserProfile, error)
-	predicates     []predicate.UserProfile
+	op                       Op
+	typ                      string
+	id                       *uuid.UUID
+	email_ref                *string
+	display_name             *string
+	username                 *string
+	locale                   *string
+	biography                *string
+	created_at               *time.Time
+	updated_at               *time.Time
+	clearedFields            map[string]struct{}
+	avatars                  map[uuid.UUID]struct{}
+	removedavatars           map[uuid.UUID]struct{}
+	clearedavatars           bool
+	original_identity        *int
+	clearedoriginal_identity bool
+	done                     bool
+	oldValue                 func(context.Context) (*UserProfile, error)
+	predicates               []predicate.UserProfile
 }
 
 var _ ent.Mutation = (*UserProfileMutation)(nil)
@@ -1249,6 +1646,45 @@ func (m *UserProfileMutation) ResetAvatars() {
 	m.removedavatars = nil
 }
 
+// SetOriginalIdentityID sets the "original_identity" edge to the UserOriginalIdentity entity by id.
+func (m *UserProfileMutation) SetOriginalIdentityID(id int) {
+	m.original_identity = &id
+}
+
+// ClearOriginalIdentity clears the "original_identity" edge to the UserOriginalIdentity entity.
+func (m *UserProfileMutation) ClearOriginalIdentity() {
+	m.clearedoriginal_identity = true
+}
+
+// OriginalIdentityCleared reports if the "original_identity" edge to the UserOriginalIdentity entity was cleared.
+func (m *UserProfileMutation) OriginalIdentityCleared() bool {
+	return m.clearedoriginal_identity
+}
+
+// OriginalIdentityID returns the "original_identity" edge ID in the mutation.
+func (m *UserProfileMutation) OriginalIdentityID() (id int, exists bool) {
+	if m.original_identity != nil {
+		return *m.original_identity, true
+	}
+	return
+}
+
+// OriginalIdentityIDs returns the "original_identity" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OriginalIdentityID instead. It exists only for internal usage by the builders.
+func (m *UserProfileMutation) OriginalIdentityIDs() (ids []int) {
+	if id := m.original_identity; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOriginalIdentity resets all changes to the "original_identity" edge.
+func (m *UserProfileMutation) ResetOriginalIdentity() {
+	m.original_identity = nil
+	m.clearedoriginal_identity = false
+}
+
 // Where appends a list predicates to the UserProfileMutation builder.
 func (m *UserProfileMutation) Where(ps ...predicate.UserProfile) {
 	m.predicates = append(m.predicates, ps...)
@@ -1484,9 +1920,12 @@ func (m *UserProfileMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserProfileMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.avatars != nil {
 		edges = append(edges, userprofile.EdgeAvatars)
+	}
+	if m.original_identity != nil {
+		edges = append(edges, userprofile.EdgeOriginalIdentity)
 	}
 	return edges
 }
@@ -1501,13 +1940,17 @@ func (m *UserProfileMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case userprofile.EdgeOriginalIdentity:
+		if id := m.original_identity; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserProfileMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.removedavatars != nil {
 		edges = append(edges, userprofile.EdgeAvatars)
 	}
@@ -1530,9 +1973,12 @@ func (m *UserProfileMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserProfileMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
 	if m.clearedavatars {
 		edges = append(edges, userprofile.EdgeAvatars)
+	}
+	if m.clearedoriginal_identity {
+		edges = append(edges, userprofile.EdgeOriginalIdentity)
 	}
 	return edges
 }
@@ -1543,6 +1989,8 @@ func (m *UserProfileMutation) EdgeCleared(name string) bool {
 	switch name {
 	case userprofile.EdgeAvatars:
 		return m.clearedavatars
+	case userprofile.EdgeOriginalIdentity:
+		return m.clearedoriginal_identity
 	}
 	return false
 }
@@ -1551,6 +1999,9 @@ func (m *UserProfileMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *UserProfileMutation) ClearEdge(name string) error {
 	switch name {
+	case userprofile.EdgeOriginalIdentity:
+		m.ClearOriginalIdentity()
+		return nil
 	}
 	return fmt.Errorf("unknown UserProfile unique edge %s", name)
 }
@@ -1561,6 +2012,9 @@ func (m *UserProfileMutation) ResetEdge(name string) error {
 	switch name {
 	case userprofile.EdgeAvatars:
 		m.ResetAvatars()
+		return nil
+	case userprofile.EdgeOriginalIdentity:
+		m.ResetOriginalIdentity()
 		return nil
 	}
 	return fmt.Errorf("unknown UserProfile edge %s", name)

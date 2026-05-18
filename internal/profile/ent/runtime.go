@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/schema"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
+	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 )
 
@@ -37,6 +38,12 @@ func init() {
 	useravatarDescID := useravatarFields[0].Descriptor()
 	// useravatar.DefaultID holds the default value on creation for the id field.
 	useravatar.DefaultID = useravatarDescID.Default.(func() uuid.UUID)
+	useroriginalidentityFields := schema.UserOriginalIdentity{}.Fields()
+	_ = useroriginalidentityFields
+	// useroriginalidentityDescOriginalIdentity is the schema descriptor for original_identity field.
+	useroriginalidentityDescOriginalIdentity := useroriginalidentityFields[0].Descriptor()
+	// useroriginalidentity.OriginalIdentityValidator is a validator for the "original_identity" field. It is called by the builders before save.
+	useroriginalidentity.OriginalIdentityValidator = useroriginalidentityDescOriginalIdentity.Validators[0].(func(string) error)
 	userprofileFields := schema.UserProfile{}.Fields()
 	_ = userprofileFields
 	// userprofileDescEmailRef is the schema descriptor for email_ref field.

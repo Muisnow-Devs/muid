@@ -48,5 +48,6 @@ func (UserProfile) Edges() []ent.Edge {
 		// One profile has many UserAvatar rows (upload history). Canonical URL is resolved from
 		// the latest eligible row; see profilegrpc / UserAvatar schema comments.
 		edge.To("avatars", UserAvatar.Type),
+		edge.To("original_identity", UserOriginalIdentity.Type).Unique().Immutable(),
 	}
 }

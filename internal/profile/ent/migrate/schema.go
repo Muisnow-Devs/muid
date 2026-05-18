@@ -40,6 +40,26 @@ var (
 			},
 		},
 	}
+	// UserOriginalIdentitiesColumns holds the columns for the "user_original_identities" table.
+	UserOriginalIdentitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "original_identity", Type: field.TypeString, Unique: true},
+		{Name: "user_original_identity_user", Type: field.TypeUUID},
+	}
+	// UserOriginalIdentitiesTable holds the schema information for the "user_original_identities" table.
+	UserOriginalIdentitiesTable = &schema.Table{
+		Name:       "user_original_identities",
+		Columns:    UserOriginalIdentitiesColumns,
+		PrimaryKey: []*schema.Column{UserOriginalIdentitiesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_original_identities_user_profiles_user",
+				Columns:    []*schema.Column{UserOriginalIdentitiesColumns[2]},
+				RefColumns: []*schema.Column{UserProfilesColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// UserProfilesColumns holds the columns for the "user_profiles" table.
 	UserProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -50,12 +70,21 @@ var (
 		{Name: "biography", Type: field.TypeString, Size: 1024, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "user_profile_original_identity", Type: field.TypeInt, Nullable: true},
 	}
 	// UserProfilesTable holds the schema information for the "user_profiles" table.
 	UserProfilesTable = &schema.Table{
 		Name:       "user_profiles",
 		Columns:    UserProfilesColumns,
 		PrimaryKey: []*schema.Column{UserProfilesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_profiles_user_original_identities_original_identity",
+				Columns:    []*schema.Column{UserProfilesColumns[8]},
+				RefColumns: []*schema.Column{UserOriginalIdentitiesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
 		Indexes: []*schema.Index{
 			{
 				Name:    "userprofile_email_ref",
@@ -72,10 +101,13 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		UserAvatarsTable,
+		UserOriginalIdentitiesTable,
 		UserProfilesTable,
 	}
 )
 
 func init() {
 	UserAvatarsTable.ForeignKeys[0].RefTable = UserProfilesTable
+	UserOriginalIdentitiesTable.ForeignKeys[0].RefTable = UserProfilesTable
+	UserProfilesTable.ForeignKeys[0].RefTable = UserOriginalIdentitiesTable
 }

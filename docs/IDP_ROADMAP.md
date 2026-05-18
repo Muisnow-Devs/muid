@@ -15,6 +15,7 @@ This document outlines the design, architecture, and step-by-step instructions f
   - Provides a secure internal UI/gateway for managing users, OAuth2 clients, and system configurations.
   - Aggregates performance analytics, login success/failure rates, risk model triggers, and general IdP observability.
 - **Internal Services**:
+  - **`audit`**: Asynchronous event consumer (via NATS) that logs every system change and access event for compliance, offloading write penalties from the critical path.
   - **`authn`**: Will handle core authorization grants, token generation, token validation, and identity risk modeling (e.g., dynamic PoW captcha difficulty, account soft-locking).
   - **`authz`**: Will handle scope mapping, OAuth2 client registry, user grants, permission control, and group/team management.
   - **`profile`**: Will supply claims for the OIDC `userinfo` endpoint.
@@ -120,10 +121,23 @@ An internal admin gateway/dashboard is necessary to monitor IdP health, analyze 
   - Build an internal dashboard (e.g., using a frontend framework or a template-rendered Go app under `internal/templates`) to visualize performance metrics.
   - Provide UI interactions for searching audit logs, viewing connected apps per user, and viewing risk assessment statistics.
 
-### Phase 8: Auditing & Testing
+### Phase 8: Audit Log Service (Asynchronous)
 
-- [ ] **8.1 OIDC Conformance**
+An independent, event-driven service to securely record all system changes and access logs without impacting core API performance.
+
+- [ ] **8.1 Audit Service Bootstrapping**
+  - Scaffold `cmd/audit/main.go` using the standard setup and define the persistence layer (e.g., append-only Postgres tables).
+- [ ] **8.2 Event Sourcing (NATS) Integration**
+  - Emit lightweight events (via NATS) from `authn`, `authz`, `profile`, and `gateway` for all mutations and critical actions.
+  - Develop a NATS subscriber in the `audit` service that solely listens to these topics and bulk-writes them to the datastore.
+- [ ] **8.3 Query API & Retention**
+  - Provide an internal gRPC API for the Admin Dashboard to query logs based on `user_id`, `client_id`, or `event_type`.
+  - Implement a data retention policy/cron to archive or prune logs older than a specific threshold.
+
+### Phase 9: Conformance & Testing
+
+- [ ] **9.1 OIDC Conformance**
   - Write standard integration tests for full auth-code flow.
   - Use `golang.org/x/oauth2` in test setups to ensure the Gateway behaves like a standard provider.
-- [ ] **8.2 Secret Rotation Testing**
+- [ ] **9.2 Secret Rotation Testing**
   - Add mocked tests (using `infra/mocked`) ensuring tokens minted by an "old" key validate successfully if the key is still in the overlap window, and fail if the key moves to the archived state.

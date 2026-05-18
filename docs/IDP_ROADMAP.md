@@ -11,6 +11,9 @@ This document outlines the design, architecture, and step-by-step instructions f
 - **Secret Management (JWK & rotation)**:
   - Uses **Google Secret Manager (GSM)**.
   - Generates, stores, and rotates RSA key pairs used for signing JWTs/OIDC tokens.
+- **Admin/Internal Dashboard**:
+  - Provides a secure internal UI/gateway for managing users, OAuth2 clients, and system configurations.
+  - Aggregates performance analytics, login success/failure rates, risk model triggers, and general IdP observability.
 - **Internal Services**:
   - **`authn`**: Will handle core authorization grants, token generation, token validation, and identity risk modeling (e.g., dynamic PoW captcha difficulty, account soft-locking).
   - **`authz`**: Will handle scope mapping, OAuth2 client registry, user grants, permission control, and group/team management.
@@ -103,10 +106,24 @@ The `authz` service handles fine-grained access control, OAuth2 clients, and use
   - Develop Group/Team management, allowing users to be organized into teams.
   - Allow permissions and roles to be granted at a group level and inherited by members.
 
-### Phase 7: Auditing & Testing
+### Phase 7: Internal Management & Performance Analytics
 
-- [ ] **7.1 OIDC Conformance**
+An internal admin gateway/dashboard is necessary to monitor IdP health, analyze performance, and troubleshoot user issues.
+
+- [ ] **7.1 Admin Gateway & API**
+  - Implement a separated admin-only API (potentially under a different port or path, protected by strictly internal network rules and heavy authz).
+  - Create endpoints for managing OAuth2 Clients, adjusting risk model parameters, and manually overriding user states (e.g., resolving a soft-lock).
+- [ ] **7.2 Observability & Analytics Integration**
+  - Expose Prometheus/OpenTelemetry metrics for login attempts, token issuance rates, error rates, and API latency.
+  - Integrate distributed tracing for the gateway-to-backend flows to monitor system bottlenecks.
+- [ ] **7.3 Admin UI / Dashboard**
+  - Build an internal dashboard (e.g., using a frontend framework or a template-rendered Go app under `internal/templates`) to visualize performance metrics.
+  - Provide UI interactions for searching audit logs, viewing connected apps per user, and viewing risk assessment statistics.
+
+### Phase 8: Auditing & Testing
+
+- [ ] **8.1 OIDC Conformance**
   - Write standard integration tests for full auth-code flow.
   - Use `golang.org/x/oauth2` in test setups to ensure the Gateway behaves like a standard provider.
-- [ ] **7.2 Secret Rotation Testing**
+- [ ] **8.2 Secret Rotation Testing**
   - Add mocked tests (using `infra/mocked`) ensuring tokens minted by an "old" key validate successfully if the key is still in the overlap window, and fail if the key moves to the archived state.

@@ -18,7 +18,7 @@ type AuthnApp struct {
 
 func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, error) {
 	handler := CreateGRPCHandler(infra)
-	service, err := NewAuthnService(infra.GlobalConfig, handler)
+	service, err := NewAuthnService(infra.GlobalConfig, handler, nil)
 	if err != nil {
 		return nil, err
 	}

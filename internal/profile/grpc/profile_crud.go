@@ -19,9 +19,10 @@ import (
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 	"sanzi.io/muid/internal/profile/updatemask"
-	"sanzi.io/muid/pkg/errutil"
+	"sanzi.io/muid/pkg/enttx"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/shared/tracing"
 	"sanzi.io/muid/pkg/shared/topics"
 )
 
@@ -48,49 +49,49 @@ func (g *GRPCHandler) CreateProfile(
 	}
 
 	usernameCandidate := generateUsernameCandidates(randomUsernameBase())
-	tx, err := g.db.Tx(ctx)
-	if err != nil {
-		log.LogUnexpected(ctx, "profile create tx begin", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-	defer func() { errutil.Discard(tx.Rollback()) }()
+	ctx = tracing.WithSpanName(ctx, "profile.create_profile.tx")
+	user, err := enttx.Run(ctx, g.db.Tx, func(ctx context.Context, tx *ent.Tx) (*ent.UserProfile, error) {
+		var user *ent.UserProfile
+		for _, candidate := range usernameCandidate {
+			exists, err := tx.UserProfile.Query().
+				Where(userprofile.UsernameEQ(candidate)).
+				Exist(ctx)
+			if err != nil {
+				log.LogUnexpected(ctx, "profile create username existence check", err.Error())
+				return nil, grpcutils.GRPCInternalError()
+			}
 
-	var user *ent.UserProfile
-	for _, candidate := range usernameCandidate {
-		exists, err := tx.UserProfile.Query().
-			Where(userprofile.UsernameEQ(candidate)).
-			Exist(ctx)
-		if err != nil {
-			log.LogUnexpected(ctx, "profile create username existence check", err.Error())
+			if exists {
+				continue
+			}
+
+			user, err = tx.UserProfile.Create().
+				SetEmailRef(email).
+				SetLocale(locale).
+				SetDisplayName(displayName).
+				SetUsername(candidate).
+				Save(ctx)
+
+			if err == nil {
+				break
+			}
+
+			log.LogUnexpected(ctx, "profile create", err.Error())
 			return nil, grpcutils.GRPCInternalError()
 		}
-
-		if exists {
-			continue
-		}
-
-		user, err = tx.UserProfile.Create().
-			SetEmailRef(email).
-			SetLocale(locale).
-			SetDisplayName(displayName).
-			SetUsername(candidate).
-			Save(ctx)
-
-		if err == nil {
-			break
-		}
-
-		log.LogUnexpected(ctx, "profile create", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-
-	err = tx.Commit()
+		return user, nil
+	})
 	if err != nil {
-		log.LogUnexpected(
-			log.WithAttrs(ctx, log.ProfileID(user.ID)),
-			"profile create tx commit",
-			err.Error(),
-		)
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		reason := "profile create tx begin"
+		logCtx := ctx
+		if user != nil {
+			reason = "profile create tx commit"
+			logCtx = log.WithAttrs(ctx, log.ProfileID(user.ID))
+		}
+		log.LogUnexpected(logCtx, reason, err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
 
@@ -178,38 +179,36 @@ func (g *GRPCHandler) UpdateProfile(
 		}
 	}
 
-	tx, err := g.db.Tx(ctx)
-	if err != nil {
-		log.LogUnexpected(ctx, "profile update tx begin", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-	defer func() { errutil.Discard(tx.Rollback()) }()
+	ctx = tracing.WithSpanName(ctx, "profile.update_profile.tx")
+	err = enttx.Do(ctx, g.db.Tx, func(ctx context.Context, tx *ent.Tx) error {
+		profile := tx.UserProfile.UpdateOneID(id)
+		for _, p := range paths {
+			err = profilePatchRegistry[p](ctx, id, profile, req)
+			if err != nil {
+				return err
+			}
+		}
 
-	profile := tx.UserProfile.UpdateOneID(id)
-	for _, p := range paths {
-		err = profilePatchRegistry[p](ctx, id, profile, req)
+		err = profile.Exec(ctx)
+		if ent.IsNotFound(err) {
+			return status.Error(codes.NotFound, "requested resource not found")
+		}
+
+		if ent.IsConstraintError(err) {
+			return status.Error(codes.AlreadyExists, "conflicting update value already in use")
+		}
+
 		if err != nil {
+			log.LogUnexpected(ctx, "profile update save", err.Error())
+			return grpcutils.GRPCInternalError()
+		}
+		return nil
+	})
+	if err != nil {
+		if _, ok := status.FromError(err); ok {
 			return nil, err
 		}
-	}
-
-	err = profile.Exec(ctx)
-	if ent.IsNotFound(err) {
-		return nil, status.Error(codes.NotFound, "requested resource not found")
-	}
-
-	if ent.IsConstraintError(err) {
-		return nil, status.Error(codes.AlreadyExists, "conflicting update value already in use")
-	}
-
-	if err != nil {
-		log.LogUnexpected(ctx, "profile update save", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		log.LogUnexpected(ctx, "profile update tx commit", err.Error())
+		log.LogUnexpected(ctx, "profile update tx", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
 
@@ -240,6 +239,9 @@ func (g *GRPCHandler) publishChange(
 	userID string,
 	changed *fieldmaskpb.FieldMask,
 ) error {
+	ctx, span := tracing.StartSpan(ctx, "profile.publish_change")
+	defer span.End()
+
 	id, err := uuid.Parse(userID)
 	if err != nil {
 		return err
@@ -263,7 +265,11 @@ func (g *GRPCHandler) publishChange(
 		return err
 	}
 
-	return g.pub.Publish(topics.TopicProfileChange, b)
+	err = g.pub.Publish(topics.TopicProfileChange, b)
+	if err != nil {
+		span.RecordError(err)
+	}
+	return err
 }
 
 func (g *GRPCHandler) buildProfileChangedClaims(

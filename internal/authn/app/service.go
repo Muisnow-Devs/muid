@@ -11,6 +11,7 @@ import (
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 type AuthnService struct {
@@ -18,7 +19,11 @@ type AuthnService struct {
 	listener   net.Listener
 }
 
-func NewAuthnService(config Config, handler authn.AuthnServiceServer) (*AuthnService, error) {
+func NewAuthnService(config Config, handler authn.AuthnServiceServer, tracer tracing.Tracer) (*AuthnService, error) {
+	if tracer == nil {
+		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
+	}
+
 	listener, err := net.Listen("tcp", ":"+fmt.Sprint(config.Port))
 	if err != nil {
 		return nil, err
@@ -32,6 +37,7 @@ func NewAuthnService(config Config, handler authn.AuthnServiceServer) (*AuthnSer
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
+			grpcutils.UnaryTracingInterceptor(tracer),
 			pvUnary,
 			AuthnRequestContextInterceptor(),
 			grpcutils.RecoveryInterceptor,

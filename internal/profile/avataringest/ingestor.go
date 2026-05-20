@@ -16,6 +16,7 @@ import (
 	"sanzi.io/muid/internal/profile/synthavatar"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 const ingestTimeout = 3 * time.Minute
@@ -72,6 +73,7 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(
 	}
 	rowID = shared.UUIDV7()
 	objectKey = avatarkey.ProductionWebPObjectKey(userID.String(), rowID.String())
+	ctx, putSpan := tracing.StartSpan(ctx, "avataringest.upload")
 	err = i.store.PutObject(
 		ctx,
 		i.assetsBucket,
@@ -79,6 +81,7 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(
 		webp,
 		media.ContentTypeWebP,
 	)
+	putSpan.End()
 	if err != nil {
 		return uuid.Nil, "", "", 0, err
 	}
@@ -191,6 +194,9 @@ func (i *ExternalAvatarIngestor) GoBootstrap(
 	}
 
 	ctx := context.WithoutCancel(parentCtx)
+	if tr, ok := tracing.TracerFromContext(parentCtx); ok {
+		ctx = tracing.ContextWithTracer(ctx, tr)
+	}
 	ctx, cancel := context.WithTimeout(ctx, ingestTimeout)
 	ctx = log.WithAttrs(ctx, log.UserID(userID))
 
@@ -205,6 +211,9 @@ func (i *ExternalAvatarIngestor) GoBootstrap(
 				)
 			}
 		}()
+
+		ctx, span := tracing.StartSpan(ctx, "avataringest.bootstrap")
+		defer span.End()
 
 		i.backgroundIngest(
 			ctx,
@@ -223,7 +232,9 @@ func (i *ExternalAvatarIngestor) backgroundIngest(
 	tryURL := err == nil && u.Scheme == "https" && u.Host != ""
 
 	if tryURL {
+		ctx, prepSpan := tracing.StartSpan(ctx, "avataringest.prepare_upload")
 		rowID, objectKey, publicURL, byteSize, prepErr := i.prepareAndUpload(ctx, uid, pic)
+		prepSpan.End()
 		if prepErr == nil {
 			err = i.insertCommittedAvatar(ctx, uid, rowID, objectKey, publicURL, byteSize)
 		} else {

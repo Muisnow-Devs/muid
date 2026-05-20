@@ -15,6 +15,7 @@ import (
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/usersession"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 type sessionService struct {
@@ -109,6 +110,9 @@ func (s *sessionService) ResolveSessionToken(
 	ctx context.Context,
 	wireToken string,
 ) (ResolvedSession, error) {
+	ctx, span := tracing.StartSpan(ctx, "authn.resolve_session")
+	defer span.End()
+
 	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
 	if err != nil {
 		return ResolvedSession{}, err
@@ -121,7 +125,9 @@ func (s *sessionService) ResolveSessionToken(
 	validatorHash := sha256.Sum256(validatorSecret)
 
 	if s.store.SessionCache != nil {
+		ctx, cacheSpan := tracing.StartSpan(ctx, "authn.session_cache.get")
 		cached, cacheErr := s.store.SessionCache.Get(ctx, wireToken)
+		cacheSpan.End()
 		if cacheErr == nil {
 			return ResolvedSession{
 				SessionID: cached.SessionID,
@@ -146,12 +152,14 @@ func (s *sessionService) ResolveSessionToken(
 	}
 	sum := validatorHash
 
+	ctx, dbSpan := tracing.StartSpan(ctx, "authn.session_db.lookup")
 	row, err := s.store.DB.UserSession.Query().
 		Where(
 			usersession.SelectorEQ(selector),
 			usersession.ValidatorHashEQ(sum[:]),
 		).
 		Only(ctx)
+	dbSpan.End()
 	if ent.IsNotFound(err) {
 		return ResolvedSession{}, session.ErrSessionNotFound
 	}

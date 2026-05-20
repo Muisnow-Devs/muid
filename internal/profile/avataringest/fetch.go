@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"sanzi.io/muid/internal/media"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 var errAvatarFetchHostBlocked = errors.New("avatar fetch: host or IP not allowed")
@@ -90,6 +91,9 @@ func ensureAvatarFetchHostResolved(ctx context.Context, host string) error {
 // fetchHTTPSAvatarSource downloads an avatar raster source over HTTPS with a byte cap.
 // Response body length must match Content-Length when that header is present and valid.
 func fetchHTTPSAvatarSource(ctx context.Context, rawURL string) ([]byte, string, error) {
+	ctx, span := tracing.StartSpan(ctx, "avataringest.download")
+	defer span.End()
+
 	parsed, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
 		return nil, "", fmt.Errorf("avatar fetch: require https URL with host")

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/kv"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 const (
@@ -85,6 +86,9 @@ func (k *KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
 }
 
 func (k *KVAuthTransitionStore) Get(ctx context.Context, id string) (session.AuthSession, error) {
+	ctx, span := tracing.StartSpan(ctx, "authn.transition.get")
+	defer span.End()
+
 	key := k.key(id)
 	data, err := k.client.Get(ctx, key)
 	if errors.Is(err, kv.ErrKeyNotFound) {

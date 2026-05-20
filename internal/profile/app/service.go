@@ -12,6 +12,7 @@ import (
 	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 type ProfileGRPC struct {
@@ -19,7 +20,10 @@ type ProfileGRPC struct {
 	listener   net.Listener
 }
 
-func NewProfileGRPC(config Config, handler pb.ProfileServiceServer) (*ProfileGRPC, error) {
+func NewProfileGRPC(config Config, handler pb.ProfileServiceServer, tracer tracing.Tracer) (*ProfileGRPC, error) {
+	if tracer == nil {
+		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
+	}
 	listener, err := net.Listen("tcp", ":"+fmt.Sprint(config.Port))
 	if err != nil {
 		return nil, err
@@ -33,6 +37,7 @@ func NewProfileGRPC(config Config, handler pb.ProfileServiceServer) (*ProfileGRP
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
+			grpcutils.UnaryTracingInterceptor(tracer),
 			pvUnary,
 			profilegrpc.ProfileRequestContextInterceptor(),
 			grpcutils.RecoveryInterceptor,

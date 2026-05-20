@@ -20,11 +20,13 @@ import (
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 	"sanzi.io/muid/internal/profile/updatemask"
+	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/storage"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 const msgInvalidUserID = "invalid user id"
@@ -63,7 +65,12 @@ func (g *GRPCHandler) StartAvatarUpload(
 
 	objectKey := avatarkey.StagingObjectKey(userID.String(), shared.UUIDV7().String())
 	exp := 15 * time.Minute
+	ctx, span := tracing.StartSpan(ctx, "profile.avatar.presign_put")
+	defer span.End()
 	url, expTime, err := g.avatars.Store.PresignPut(ctx, g.avatars.UploadBucket, objectKey, ct, exp)
+	if err != nil {
+		span.RecordError(err)
+	}
 	if err != nil {
 		log.LogUnexpected(ctx, "avatar presign put", err.Error())
 		return nil, grpcutils.GRPCInternalError()
@@ -131,7 +138,12 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		return nil, status.Error(codes.FailedPrecondition, "upload session already completed")
 	}
 
+	ctx, getSpan := tracing.StartSpan(ctx, "profile.avatar.get_object")
+	defer getSpan.End()
 	rc, head, err := g.avatars.Store.GetObject(ctx, g.avatars.UploadBucket, req.GetObjectKey())
+	if err != nil {
+		getSpan.RecordError(err)
+	}
 	if err != nil {
 		if errors.Is(err, storage.ErrObjectNotFound) {
 			return nil, status.Error(codes.FailedPrecondition, "object not found in storage")
@@ -178,7 +190,12 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
+	ctx, procSpan := tracing.StartSpan(ctx, "profile.avatar.raster_process")
+	defer procSpan.End()
 	webpBytes, err := g.avatarProc.ProcessToSquareWebP(raw, canonicalMIME)
+	if err != nil {
+		procSpan.RecordError(err)
+	}
 	if err != nil {
 		if isAvatarValidationErr(err) {
 			return nil, status.Error(codes.InvalidArgument, "invalid avatar image")
@@ -189,6 +206,8 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 
 	finalRowID := shared.UUIDV7()
 	prodKey := avatarkey.ProductionWebPObjectKey(userID.String(), finalRowID.String())
+	ctx, putSpan := tracing.StartSpan(ctx, "profile.avatar.put_object")
+	defer putSpan.End()
 	err = g.avatars.Store.PutObject(
 		ctx,
 		g.avatars.AssetsBucket,
@@ -197,6 +216,9 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		media.ContentTypeWebP,
 	)
 	if err != nil {
+		putSpan.RecordError(err)
+	}
+	if err != nil {
 		log.LogUnexpected(ctx, "avatar store processed", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
@@ -204,29 +226,27 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 	publicURL := g.avatars.publicProdURL(prodKey)
 	now := time.Now()
 
-	tx, err := g.db.Tx(ctx)
+	ctx = tracing.WithSpanName(ctx, "profile.complete_avatar_upload.tx")
+	err = enttx.Do(ctx, g.db.Tx, func(ctx context.Context, tx *ent.Tx) error {
+		if _, err := tx.UserAvatar.Create().
+			SetID(finalRowID).
+			SetUserID(userID).
+			SetObjectKey(prodKey).
+			SetUploadedAt(now).
+			SetByteSize(int64(len(webpBytes))).
+			SetContentType(media.ContentTypeWebP).
+			SetPublicURL(publicURL).
+			Save(ctx); err != nil {
+			log.LogUnexpected(ctx, "avatar complete insert row", err.Error())
+			return grpcutils.GRPCInternalError()
+		}
+		return nil
+	})
 	if err != nil {
-		log.LogUnexpected(ctx, "avatar complete tx begin", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-	defer func() { errutil.Discard(tx.Rollback()) }()
-
-	if _, err := tx.UserAvatar.Create().
-		SetID(finalRowID).
-		SetUserID(userID).
-		SetObjectKey(prodKey).
-		SetUploadedAt(now).
-		SetByteSize(int64(len(webpBytes))).
-		SetContentType(media.ContentTypeWebP).
-		SetPublicURL(publicURL).
-		Save(ctx); err != nil {
-		log.LogUnexpected(ctx, "avatar complete insert row", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		log.LogUnexpected(ctx, "avatar complete tx commit", err.Error())
+		if _, ok := status.FromError(err); ok {
+			return nil, err
+		}
+		log.LogUnexpected(ctx, "avatar complete tx", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
 

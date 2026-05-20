@@ -21,6 +21,7 @@ import (
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 const (
@@ -430,7 +431,9 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 		return err
 	}
 
+	ctx, pubSpan := tracing.StartSpan(ctx, "authn.otp.publish")
 	err = p.pubSub.Publish(topics.TopicSendOTP, msgBytes)
+	pubSpan.End()
 	if err != nil {
 		return err
 	}

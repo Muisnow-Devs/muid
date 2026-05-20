@@ -7,6 +7,7 @@ import (
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 func (s *Store) provisionFromProfile(
@@ -31,7 +32,12 @@ func (s *Store) provisionFromProfile(
 		req.SetIdentity(claims)
 	}
 
+	pctx, span := tracing.StartSpan(pctx, "authn.profile.create_profile")
+	defer span.End()
 	resp, err := s.Profile.CreateProfile(pctx, req)
+	if err != nil {
+		span.RecordError(err)
+	}
 	if err != nil {
 		return uuid.Nil, err
 	}

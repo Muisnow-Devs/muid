@@ -12,6 +12,7 @@ import (
 
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/pkg/shared/kv"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 const (
@@ -101,6 +102,9 @@ func (store *KVOTPStore) CreateOTP(
 	recipient string,
 	expiration time.Duration,
 ) (otp.OTPChallenge, error) {
+	ctx, span := tracing.StartSpan(ctx, "authn.otp.create")
+	defer span.End()
+
 	normalizedRecipient := normalizeOTPRecipient(recipient)
 
 	if store.sendCooldown > 0 {
@@ -228,6 +232,9 @@ func (store *KVOTPStore) VerifyOTP(
 	ctx context.Context,
 	transitionId, code string,
 ) error {
+	ctx, span := tracing.StartSpan(ctx, "authn.otp.verify")
+	defer span.End()
+
 	if code == "" || len(code) != OTPLength {
 		return otp.ErrOTPInvalid
 	}

@@ -25,7 +25,7 @@ There is no separate frontend design system in this repo; the “contract surfac
 | **`cmd/<service>/main.go`** | Process entrypoints. Present today: **`authn`**, **`profile`**, **`mailer`**. |
 | **`internal/<domain>/`** | Domain logic per service (`internal/authn`, `internal/profile`, `internal/mailer`, plus shared packages like `internal/session`, `internal/identity`, `internal/media`, `internal/templates`). |
 | **`infra/<backend>/`** | Reusable infrastructure: **interfaces in `interface.go`**, implementations in sibling files (`infra/redis`, `infra/nats`, `infra/smtp`, `infra/r2`, `infra/secretmanager`, `infra/mocked`, …). |
-| **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). Contracts such as **`pkg/shared/secretmanager.SecretManager`** live under **`pkg/shared/<name>/`**. |
+| **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/enttx`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). Contracts such as **`pkg/shared/secretmanager.SecretManager`** live under **`pkg/shared/<name>/`**. |
 | **`api/proto/`** | Protobuf definitions; generated `*.pb.go` under **`api/`** after `buf generate`. |
 
 **Authn-only infrastructure** (OTP, transition store, OIDC/email/passkey providers tightly coupled to auth flows) lives under **`internal/authn/infra/`** (`kv/`, `identity/`). Do **not** move those into top-level **`infra/*`**.
@@ -66,16 +66,30 @@ Use **`github.com/kelseyhightower/envconfig`** via **`pkg/shared.LoadConfig[T](p
 
 Unary servers in **authn** and **profile** use **`google.golang.org/grpc.ChainUnaryInterceptor`** in this order:
 
-1. **`grpcutils.TraceUnaryInterceptor`** — injects trace id (`pkg/log` reads **`x-trace-id`** then **`x-request-id`**, else new UUID string via `shared.UUIDV7()`).
-2. **`grpcutils.UnaryProtovalidateInterceptor`** — buf validate / protovalidate; fixed client message on violations.
-3. **Request context** — **`profilegrpc.ProfileRequestContextInterceptor`** or **`app.AuthnRequestContextInterceptor`**: after protovalidate, parse profile user ids / authn wire session tokens, attach **`log.WithAttrs`**, store typed values on context; return **`InvalidArgument`** before the handler on parse failures.
-4. **`grpcutils.RecoveryInterceptor`**
-5. **`grpcutils.LoggerInterceptor`**
-6. **`grpcutils.TimeoutInterceptor`** — timeout from `RequestTimeoutSeconds` in service config (`AUTHN_REQUEST_TIMEOUT_SECONDS`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, …).
+1. **`grpcutils.TraceUnaryInterceptor`** — injects log correlation id (`pkg/log` reads **`x-trace-id`** then **`x-request-id`**, else new UUID string via `shared.UUIDV7()`).
+2. **`grpcutils.UnaryTracingInterceptor(tracer)`** — OpenTelemetry-style RPC spans via swappable **`pkg/shared/tracing.Tracer`** ([`infra/otel`](../../infra/otel) in prod, **`tracing.NewNoopTracer`** in tests/dev; pass `Debug: true` on noop for span lifecycle debug logs). Place after step 1 so spans include `muid.log_trace_id`. Constructor: **`oteltrace.NewTracer(oteltrace.Config{ServiceName, Enabled, Exporter: otlp|stdout|noop, OTLPEndpoint, Debug})`**.
+3. **`grpcutils.UnaryProtovalidateInterceptor`** — buf validate / protovalidate; fixed client message on violations.
+4. **Request context** — **`profilegrpc.ProfileRequestContextInterceptor`** or **`app.AuthnRequestContextInterceptor`**: after protovalidate, parse profile user ids / authn wire session tokens, attach **`log.WithAttrs`**, store typed values on context; return **`InvalidArgument`** before the handler on parse failures.
+5. **`grpcutils.RecoveryInterceptor`**
+6. **`grpcutils.LoggerInterceptor`**
+7. **`grpcutils.TimeoutInterceptor`** — timeout from `RequestTimeoutSeconds` in service config (`AUTHN_REQUEST_TIMEOUT_SECONDS`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, …).
 
 Shared factory: **`grpcutils.UnaryRequestContextInterceptor`** — per-method enrichers keyed by `FullMethod`.
 
 Reference implementations: **`internal/authn/app/service.go`**, **`internal/profile/app/service.go`**.
+
+---
+
+## Distributed tracing
+
+- **Contract:** **`pkg/shared/tracing`** (`Tracer`, `Span`, `Attr`, `SpanOption`, stable errors in **`errors.go`**).
+- **Implementations:** **`tracing.NewNoopTracer`** (tests, disabled); **`infra/otel`** (`oteltrace.NewTracer`) with OTLP HTTP or stdout exporters.
+- **gRPC:** **`grpcutils.UnaryTracingInterceptor`** / **`UnaryTracingClientInterceptor`** (client stub).
+- **Correlation:** log **`trace_id`** (`pkg/log`) is separate from OTel W3C trace id; linked on OTel spans as **`muid.log_trace_id`**.
+
+### Instrumenting critical paths
+
+Unary servers install the tracer on context (`tracing.ContextWithTracer`) before the RPC span. Handlers and shared helpers start child spans with **`tracing.StartSpan(ctx, "operation.name")`** (uses the context tracer, or noop when absent). Expensive work to cover: Ent transactions (**`tracing.WithSpanName(ctx, "profile.create_profile.tx")`** before **`enttx.Run`** — `enttx` reads the name and wraps commit/rollback), object storage (R2 presign/get/put), Redis/KV (OTP, transitions, session cache), outbound gRPC (authn → profile), NATS publish, and background avatar ingest (copy tracer from parent ctx in goroutines). Prefer a few well-named spans per RPC over annotating every helper.
 
 ---
 
@@ -105,6 +119,7 @@ Use **`errutil.Discard`**, **`errutil.Close`**, **`errutil.CloseIf`** instead of
 
 - **`pkg/sqldb`:** `OpenPostgres`, `EntDriverName()` (`pgx` stdlib driver registration via side-effect import). Ping after open; close on ping failure.
 - **`pkg/entpostgres`:** **`OpenEntPostgres`** wraps `sqldb` + `entgo.io/ent/dialect/sql.OpenDB(dialect.Postgres, db)` + domain **`NewClient(…, Driver(drv))`**, then **`SchemaCreateBestEffort`**. Sentinels: **`ErrOpenPostgres`**, **`ErrSchemaCreate`** (often **`errors.Join`** with the driver error). On fatal schema failure, **`errutil.Close(client)`** runs before `onFatalCleanup`.
+- **`pkg/enttx`:** **`Run` / `Do`** wrap **`client.Tx(ctx)`** — defer **`Rollback`**, **`Commit`** on success; pass **`g.db.Tx`** as `begin` and use the transactional client in the callback.
 - **`SchemaCreateBestEffort`:** treats “already exists” / “duplicate” substrings as reuse (log + nil); other errors return **`errors.Join(ErrSchemaCreate, err)`** without closing the client.
 - **Ent generate:** `internal/authn/ent/generate.go` and `internal/profile/ent/generate.go` contain `//go:generate go run entgo.io/ent/cmd/ent generate ./schema`.
 

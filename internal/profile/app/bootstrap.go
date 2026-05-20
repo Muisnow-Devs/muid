@@ -92,10 +92,12 @@ func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
 		infra.Avatars,
 		media.NewWebPRasterAvatarProcessor(),
 	)
-	svc, err := NewProfileGRPC(infra.GlobalConfig, h)
+
+	svc, err := NewProfileGRPC(infra.GlobalConfig, h, nil)
 	if err != nil {
 		return nil, err
 	}
+
 	return &ProfileApp{
 		server: svc,
 		infra:  infra,

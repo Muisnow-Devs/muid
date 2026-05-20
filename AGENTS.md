@@ -12,7 +12,7 @@ This repository is the **muid** Go monorepo (`module sanzi.io/muid`): gRPC servi
 - **Reuse before duplication:** extend or refactor shared helpers and existing modules (e.g. `pkg/*`, `infra/*`). Do **not** add a parallel “smaller duplicate” for the same concern (second HTTP client wrapper, second validation layer, …) unless the same change migrates callers off the old path.
 - **Simple, obvious design:** prefer straightforward control flow, shallow modules, and clear data ownership; avoid clever patterns that hide behavior.
 - **Names and splits:** name files, functions, and packages after domain behavior; split oversized files by concern when readability or debugging suffers.
-- **Flat control flow:** prefer early returns, small private functions, typed handlers (`TopicHandler`-style), and composition helpers (`pkg/entpostgres.OpenEntPostgres`-style) over deeply nested lambdas or goroutine callbacks. Treat deep nesting as a smell—flatten when the logic is hard to follow at a glance (guideline, not a tool rule).
+- **Flat control flow:** prefer early returns, small private functions, typed handlers (`TopicHandler`-style), and composition helpers (`pkg/entpostgres.OpenEntPostgres`-style) over deeply nested lambdas or goroutine callbacks. Treat deep nesting as a smell—flatten when the logic is hard to follow at a glance, including in error branches (see **Do** and `.cursor/rules/muid.mdc` **Errors (inner vs boundary)**). Guideline, not a tool rule.
 
 ## Build, generate, test
 
@@ -43,6 +43,9 @@ Config is loaded with `pkg/shared.LoadConfig[T](prefix)` and `github.com/kelseyh
 - Chain gRPC unary interceptors like **`internal/authn/app/service.go`** / **`internal/profile/app/service.go`**: `TraceUnaryInterceptor` → `UnaryProtovalidateInterceptor` → `RecoveryInterceptor` → `LoggerInterceptor` → `TimeoutInterceptor`.
 - For unexpected failures at RPC boundaries: log with **`pkg/traceid.LogUnexpected`** (safe fields only); return **`grpcutils.GRPCInternalError()`** (fixed **`internal error`**) to clients.
 - Use **`errutil.Discard`**, **`errutil.Close`**, **`errutil.CloseIf`** instead of ad‑hoc `_ = close()` patterns in defer/cleanup paths.
+- In functions with **multiple error checks**, use assign-then-check (`result, err = fn()` then `if err != nil { … }`) instead of repeated `if err := fn(); err != nil {`.
+- **Single-shot** `if err := fn(); err != nil { … }` is fine for one call or trivial cleanup.
+- Keep **error branches flat** (early returns, guards, small helpers); avoid nested `if err` / `errors.Is` ladders. Inner vs boundary error semantics: `.cursor/rules/muid.mdc` **Errors (inner vs boundary)**.
 
 ## Do not
 

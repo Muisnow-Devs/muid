@@ -87,10 +87,10 @@ func (k *KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
 func (k *KVAuthTransitionStore) Get(ctx context.Context, id string) (session.AuthSession, error) {
 	key := k.key(id)
 	data, err := k.client.Get(ctx, key)
+	if errors.Is(err, kv.ErrKeyNotFound) {
+		return session.AuthSession{}, session.ErrSessionNotFound
+	}
 	if err != nil {
-		if errors.Is(err, kv.ErrKeyNotFound) {
-			return session.AuthSession{}, session.ErrSessionNotFound
-		}
 		return session.AuthSession{}, err
 	}
 

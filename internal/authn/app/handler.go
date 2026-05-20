@@ -256,13 +256,13 @@ func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
 	}
 	if ep := proof.GetEmailProof(); ep != nil {
 		payload, err := implIdentity.EmailProofToPayload(ep)
-		if err != nil {
-			if errors.Is(err, identity.ErrInvalidInput) {
-				return nil, status.Error(codes.InvalidArgument, err.Error())
-			}
-			return nil, status.Error(codes.Internal, err.Error())
+		if err == nil {
+			return payload, nil
 		}
-		return payload, nil
+		if errors.Is(err, identity.ErrInvalidInput) {
+			return nil, status.Error(codes.InvalidArgument, err.Error())
+		}
+		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if op := proof.GetOauthProof(); op != nil {
 		return map[string]any{

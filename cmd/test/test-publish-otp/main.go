@@ -109,7 +109,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
-	if err := ps.Publish(topics.TopicSendOTP, payload); err != nil {
+	err = ps.Publish(topics.TopicSendOTP, payload)
+	if err != nil {
 		return fmt.Errorf("publish: %w", err)
 	}
 

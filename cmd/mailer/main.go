@@ -39,7 +39,8 @@ func run() error {
 	}
 	defer func() { errutil.Discard(infra.Close()) }()
 
-	if err := app.RegisterSubscribers(ctx, infra); err != nil {
+	err = app.RegisterSubscribers(ctx, infra)
+	if err != nil {
 		return fmt.Errorf("register subscribers: %w", err)
 	}
 

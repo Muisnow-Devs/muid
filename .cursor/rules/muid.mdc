@@ -10,7 +10,7 @@ alwaysApply: true
 - **Reuse before duplication:** extend or refactor shared helpers and existing modules (e.g. `pkg/*`, `infra/*`). Do **not** add a parallel “smaller duplicate” for the same concern (second HTTP client wrapper, second validation layer, …) unless the same change migrates callers off the old path.
 - **Simple, obvious design:** prefer straightforward control flow, shallow modules, and clear data ownership; avoid clever patterns that hide behavior.
 - **Names and splits:** name files, functions, and packages after domain behavior; split oversized files by concern when readability or debugging suffers.
-- **Flat control flow:** prefer early returns, small private functions, typed handlers (`TopicHandler`-style), and composition helpers (`pkg/entpostgres.OpenEntPostgres`-style) over deeply nested lambdas or goroutine callbacks. Treat deep nesting as a smell—flatten when the logic is hard to follow at a glance (guideline, not a tool rule).
+- **Flat control flow:** prefer early returns, small private functions, typed handlers (`TopicHandler`-style), and composition helpers (`pkg/entpostgres.OpenEntPostgres`-style) over deeply nested lambdas or goroutine callbacks. Treat deep nesting as a smell—flatten when the logic is hard to follow at a glance, including in error branches (see **Errors** below). Guideline, not a tool rule.
 
 ## Module and API surface
 
@@ -64,6 +64,9 @@ Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go
 
 - Inner layers: prefer **sentinels**, **typed errors**, **`errors.Join`** — avoid deep `fmt.Errorf("%w", …)` chains. Single top-level boundaries (`cmd/*/main`, similar) may wrap once for operational context.
 - Stable semantics (e.g. `storage.ErrObjectNotFound`): return the sentinel directly unless that layer is the intentional wrapping boundary.
+- **Multiple error checks in one function:** assign, then check — do not repeat inline `if err := fn(); err != nil {`. Use `result, err = something()` then `if err != nil { … }` (handle expected errors or return).
+- **Single-shot inline is fine** when there is only one such call or trivial cleanup, e.g. `if err := run(); err != nil { return err }`.
+- **Flat error branches:** early return, guard clauses, or small private helpers — not nested `if err != nil { if errors.Is(...) { … } }` ladders. Do not over-abstract one-liners.
 
 ## PostgreSQL and Ent
 

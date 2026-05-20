@@ -20,7 +20,8 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	}
 
 	var decoded SessionStore
-	if err := json.Unmarshal(data, &decoded); err != nil {
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
@@ -39,7 +40,8 @@ func TestSessionStore_JSON_legacyFlatFlowKind(t *testing.T) {
 	legacy := `{"attempts":1,"step":"start","flow":"email_otp","email":{"email":"a@b.c","intent":"login"}}`
 
 	var decoded SessionStore
-	if err := json.Unmarshal([]byte(legacy), &decoded); err != nil {
+	err := json.Unmarshal([]byte(legacy), &decoded)
+	if err != nil {
 		t.Fatalf("unmarshal legacy: %v", err)
 	}
 

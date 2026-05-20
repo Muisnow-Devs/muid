@@ -100,7 +100,8 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
-	if err := ps.Publish(topics.TopicPasskeyAdded, payload); err != nil {
+	err = ps.Publish(topics.TopicPasskeyAdded, payload)
+	if err != nil {
 		return fmt.Errorf("publish: %w", err)
 	}
 

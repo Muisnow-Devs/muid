@@ -159,7 +159,8 @@ func TestKVOTPStore_SendCooldown_BlocksSecondCreate(t *testing.T) {
 		t.Fatalf("expected ErrOTPSendRateLimited, got %v", err)
 	}
 
-	if err := store.RevokeOTP(ctx, session); err != nil {
+	err = store.RevokeOTP(ctx, session)
+	if err != nil {
 		t.Fatalf("revoke: %v", err)
 	}
 
@@ -238,11 +239,13 @@ func TestKVOTPStore_CreateOTP_RevokesPreviousCodeOnResend(t *testing.T) {
 		t.Fatal("expected a new OTP code after resend")
 	}
 
-	if err := store.VerifyOTP(ctx, session, first.OTP); err != otp.ErrOTPInvalid {
+	err = store.VerifyOTP(ctx, session, first.OTP)
+	if err != otp.ErrOTPInvalid {
 		t.Fatalf("old OTP should be revoked, got %v", err)
 	}
 
-	if err := store.VerifyOTP(ctx, session, second.OTP); err != nil {
+	err = store.VerifyOTP(ctx, session, second.OTP)
+	if err != nil {
 		t.Fatalf("new OTP should verify, got %v", err)
 	}
 }
@@ -263,7 +266,8 @@ func TestKVOTPStore_CreateOTP_RateLimitedDoesNotRevoke(t *testing.T) {
 		t.Fatalf("expected ErrOTPSendRateLimited, got %v", err)
 	}
 
-	if err := store.VerifyOTP(ctx, session, code.OTP); err != nil {
+	err = store.VerifyOTP(ctx, session, code.OTP)
+	if err != nil {
 		t.Fatalf("original OTP should still verify after rate-limited resend, got %v", err)
 	}
 }

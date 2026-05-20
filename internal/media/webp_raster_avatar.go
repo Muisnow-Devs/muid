@@ -40,7 +40,8 @@ func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(
 	if !AllowedRasterContentType(contentType) {
 		return nil, &UnsupportedRasterContentTypeError{ContentType: contentType}
 	}
-	if err := validateRasterProcessInput(raw, contentType); err != nil {
+	err := validateRasterProcessInput(raw, contentType)
+	if err != nil {
 		return nil, err
 	}
 	img, _, err := image.Decode(bytes.NewReader(raw))
@@ -50,7 +51,8 @@ func (p *WebPRasterAvatarProcessor) ProcessToSquareWebP(
 	sq := squareCenterCropNRGBA(img)
 	scaled := scaleToSquareMax(sq, avatarOutputPixels)
 	var buf bytes.Buffer
-	if err := webp.Encode(&buf, scaled, &webp.Options{Lossy: true, Quality: 82}); err != nil {
+	err = webp.Encode(&buf, scaled, &webp.Options{Lossy: true, Quality: 82})
+	if err != nil {
 		return nil, errors.Join(ErrWebPEncodeFailed, err)
 	}
 	return buf.Bytes(), nil

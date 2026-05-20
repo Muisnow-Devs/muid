@@ -251,7 +251,8 @@ func (p *PasskeyProvider) continueLogin(
 		)
 	}
 
-	if err := verifyPasskeyChallengeBinding(rawJSON, pkFlow.ChallengeB64); err != nil {
+	err := verifyPasskeyChallengeBinding(rawJSON, pkFlow.ChallengeB64)
+	if err != nil {
 		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
 	}
 
@@ -294,7 +295,8 @@ func (p *PasskeyProvider) continueRegister(
 		)
 	}
 
-	if err := verifyPasskeyCreationChallengeBinding(rawJSON, pkFlow.ChallengeB64); err != nil {
+	err := verifyPasskeyCreationChallengeBinding(rawJSON, pkFlow.ChallengeB64)
+	if err != nil {
 		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
 	}
 
@@ -313,7 +315,7 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
 	}
 
-	if err := p.accounts.Passkey.LinkPasskey(
+	err = p.accounts.Passkey.LinkPasskey(
 		ctx,
 		p.pubSub,
 		uid,
@@ -322,7 +324,8 @@ func (p *PasskeyProvider) continueRegister(
 		pkFlow.RPID,
 		string(userpasskey.DeviceTypeMultiDevice),
 		"Passkey",
-	); err != nil {
+	)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
 
@@ -348,7 +351,8 @@ func verifyPasskeyChallengeBinding(assertionJSON, expectedChallengeB64 string) e
 			ClientDataJSON string `json:"clientDataJSON"`
 		} `json:"response"`
 	}
-	if err := json.Unmarshal([]byte(assertionJSON), &outer); err != nil {
+	err := json.Unmarshal([]byte(assertionJSON), &outer)
+	if err != nil {
 		return fmt.Errorf("assertion json: %w", err)
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(outer.Response.ClientDataJSON)
@@ -359,7 +363,8 @@ func verifyPasskeyChallengeBinding(assertionJSON, expectedChallengeB64 string) e
 		Challenge string `json:"challenge"`
 		Type      string `json:"type"`
 	}
-	if err := json.Unmarshal(raw, &cd); err != nil {
+	err = json.Unmarshal(raw, &cd)
+	if err != nil {
 		return fmt.Errorf("client data: %w", err)
 	}
 	if cd.Type != "webauthn.get" {
@@ -376,7 +381,8 @@ func extractCredentialID(assertionJSON string) ([]byte, error) {
 		RawID string `json:"rawId"`
 		ID    string `json:"id"`
 	}
-	if err := json.Unmarshal([]byte(assertionJSON), &outer); err != nil {
+	err := json.Unmarshal([]byte(assertionJSON), &outer)
+	if err != nil {
 		return nil, err
 	}
 	b64 := outer.RawID

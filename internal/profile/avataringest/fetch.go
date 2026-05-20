@@ -94,10 +94,12 @@ func fetchHTTPSAvatarSource(ctx context.Context, rawURL string) ([]byte, string,
 	if err != nil || parsed.Scheme != "https" || parsed.Host == "" {
 		return nil, "", fmt.Errorf("avatar fetch: require https URL with host")
 	}
-	if err := validateAvatarFetchHost(parsed.Hostname()); err != nil {
+	err = validateAvatarFetchHost(parsed.Hostname())
+	if err != nil {
 		return nil, "", err
 	}
-	if err := ensureAvatarFetchHostResolved(ctx, parsed.Hostname()); err != nil {
+	err = ensureAvatarFetchHostResolved(ctx, parsed.Hostname())
+	if err != nil {
 		return nil, "", err
 	}
 

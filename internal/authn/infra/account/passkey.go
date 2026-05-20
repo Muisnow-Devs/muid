@@ -46,14 +46,15 @@ func (p *passkeyService) LinkPasskey(
 		return idn.ErrPasskeyAlreadyRegistered
 	}
 
-	if err := p.store.DB.UserPasskey.Create().
+	err = p.store.DB.UserPasskey.Create().
 		SetUserID(userID).
 		SetCredentialID(credentialID).
 		SetPublicKey(publicKey).
 		SetRpID(rpID).
 		SetDeviceType(parseDeviceType(deviceType)).
 		SetName(name).
-		Exec(ctx); err != nil {
+		Exec(ctx)
+	if err != nil {
 		return err
 	}
 

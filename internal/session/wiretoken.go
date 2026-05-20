@@ -32,10 +32,11 @@ func ParseWireSessionToken(wire string) (selectorB64, validatorB64 string, err e
 	if len(selectorB64) != SelectorB64Length || len(validatorB64) != ValidatorB64Length {
 		return "", "", fmt.Errorf("%w: unexpected segment lengths", ErrInvalidWireSessionToken)
 	}
-	if _, err := base64.RawURLEncoding.DecodeString(selectorB64); err != nil {
+	if _, err = base64.RawURLEncoding.DecodeString(selectorB64); err != nil {
 		return "", "", errors.Join(ErrInvalidWireSessionToken, err)
 	}
-	if _, err := base64.RawURLEncoding.DecodeString(validatorB64); err != nil {
+	_, err = base64.RawURLEncoding.DecodeString(validatorB64)
+	if err != nil {
 		return "", "", errors.Join(ErrInvalidWireSessionToken, err)
 	}
 	return selectorB64, validatorB64, nil

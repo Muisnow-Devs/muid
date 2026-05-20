@@ -37,12 +37,14 @@ func (s *sessionService) IssueAuthenticatedSession(
 	userID uuid.UUID,
 ) (*sessionpb.AuthenticatedResult, error) {
 	selectorBytes := make([]byte, 16)
-	if _, err := rand.Read(selectorBytes); err != nil {
+	_, err := rand.Read(selectorBytes)
+	if err != nil {
 		return nil, err
 	}
 
 	validatorSecret := make([]byte, 32)
-	if _, err := rand.Read(validatorSecret); err != nil {
+	_, err = rand.Read(validatorSecret)
+	if err != nil {
 		return nil, err
 	}
 
@@ -72,7 +74,8 @@ func (s *sessionService) IssueAuthenticatedSession(
 		return nil, err
 	}
 
-	if err := s.store.touchLastLogin(ctx, userID); err != nil {
+	err = s.store.touchLastLogin(ctx, userID)
+	if err != nil {
 		return nil, err
 	}
 

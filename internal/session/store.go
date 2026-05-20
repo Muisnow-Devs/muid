@@ -87,7 +87,8 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 		OIDC    *OIDCFlow     `json:"oidc,omitempty"`
 		Passkey *PasskeyFlow  `json:"passkey,omitempty"`
 	}
-	if err := json.Unmarshal(data, &raw); err != nil {
+	err := json.Unmarshal(data, &raw)
+	if err != nil {
 		return err
 	}
 

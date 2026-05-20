@@ -91,7 +91,8 @@ func (g *GRPCHandler) CreateProfile(
 		)
 	}
 
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return nil, internalErrorWithUserId(
 			ctx,
 			err,
@@ -196,7 +197,8 @@ func (g *GRPCHandler) UpdateProfile(
 
 	profile := tx.UserProfile.UpdateOneID(id)
 	for _, p := range paths {
-		if err := profilePatchRegistry[p](ctx, id, profile, req); err != nil {
+		err = profilePatchRegistry[p](ctx, id, profile, req)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -219,7 +221,8 @@ func (g *GRPCHandler) UpdateProfile(
 		)
 	}
 
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return nil, internalErrorWithUserId(
 			ctx,
 			err,

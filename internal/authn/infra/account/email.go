@@ -67,15 +67,18 @@ func (e *emailService) ChangeUserEmail(
 		return "", idn.ErrEmailAlreadyInUse
 	}
 
-	if err := e.store.DB.UserRef.UpdateOneID(userID).SetEmail(newEmail).Exec(ctx); err != nil {
+	err = e.store.DB.UserRef.UpdateOneID(userID).SetEmail(newEmail).Exec(ctx)
+	if err != nil {
 		return "", err
 	}
 
 	if pub != nil {
-		if err := publishEmailChanged(pub, oldEmail, newEmail); err != nil {
+		err = publishEmailChanged(pub, oldEmail, newEmail)
+		if err != nil {
 			return oldEmail, err
 		}
-		if err := publishProfileEmailChange(pub, userID, newEmail); err != nil {
+		err = publishProfileEmailChange(pub, userID, newEmail)
+		if err != nil {
 			return oldEmail, err
 		}
 	}

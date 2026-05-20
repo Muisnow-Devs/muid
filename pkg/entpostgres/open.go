@@ -38,7 +38,8 @@ func OpenEntPostgres[Client io.Closer](
 	drv := entsql.OpenDB(dialect.Postgres, db)
 	client := newClient(drv)
 
-	if err := SchemaCreateBestEffort(ctx, schema(client), schemaLogPrefix); err != nil {
+	err = SchemaCreateBestEffort(ctx, schema(client), schemaLogPrefix)
+	if err != nil {
 		errutil.Close(client)
 		if onFatalCleanup != nil {
 			onFatalCleanup()

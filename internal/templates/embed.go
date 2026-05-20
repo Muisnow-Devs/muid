@@ -211,7 +211,8 @@ func (l *TemplateLoader) renderSubject(messages map[string]string, data any) (st
 		return "", errors.Join(ErrTemplateSubjectParseFailed, err)
 	}
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, data); err != nil {
+	err = tmpl.Execute(&buf, data)
+	if err != nil {
 		return "", errors.Join(ErrTemplateSubjectExecFailed, err)
 	}
 	return strings.TrimSpace(buf.String()), nil
@@ -223,11 +224,13 @@ func (l *TemplateLoader) Render(
 	page string,
 	data any,
 ) (*RenderedMail, error) {
-	if err := validateTemplateSegment(locale, "locale"); err != nil {
+	err := validateTemplateSegment(locale, "locale")
+	if err != nil {
 		return nil, err
 	}
 
-	if err := validateTemplateSegment(page, "page"); err != nil {
+	err = validateTemplateSegment(page, "page")
+	if err != nil {
 		return nil, err
 	}
 
@@ -271,7 +274,8 @@ func (l *TemplateLoader) Render(
 		return err
 	})
 
-	if err := g.Wait(); err != nil {
+	err = g.Wait()
+	if err != nil {
 		return nil, err
 	}
 

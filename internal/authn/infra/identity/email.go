@@ -100,7 +100,8 @@ func (p *EmailIdentityProvider) Start(
 	ctx context.Context,
 	input idn.StartInput,
 ) (idn.StepResult, error) {
-	if err := validateEmailStartInput(input); err != nil {
+	err := validateEmailStartInput(input)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
 
@@ -176,7 +177,8 @@ func (p *EmailIdentityProvider) startChangeEmail(
 		return idn.StepResult{}, err
 	}
 
-	if err := p.generateAndSendOTP(ctx, sess.Id, newEmail); err != nil {
+	err = p.generateAndSendOTP(ctx, sess.Id, newEmail)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
 
@@ -242,7 +244,8 @@ func (p *EmailIdentityProvider) continueChangeEmail(
 	}
 
 	newEmail := emailFlow.Email
-	if _, err := p.accounts.Email.ChangeUserEmail(ctx, p.pubSub, uid, newEmail); err != nil {
+	_, err = p.accounts.Email.ChangeUserEmail(ctx, p.pubSub, uid, newEmail)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
 
@@ -284,7 +287,8 @@ func (p *EmailIdentityProvider) continueResendOTP(
 	if email == "" {
 		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
-	if err := p.generateAndSendOTP(ctx, sess.Id, email); err != nil {
+	err = p.generateAndSendOTP(ctx, sess.Id, email)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
 	return idn.StepResult{
@@ -315,7 +319,8 @@ func (p *EmailIdentityProvider) continueLogin(
 		reg := &idn.RegisterRequired{Identity: claims}
 
 		store := sess.Store.WithRegisterPending(session.RegisterPendingClaimsFromProto(claims))
-		if err := p.transitionStore.Update(ctx, sess.Id, store); err != nil {
+		err = p.transitionStore.Update(ctx, sess.Id, store)
+		if err != nil {
 			return idn.StepResult{}, err
 		}
 
@@ -425,7 +430,8 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 		return err
 	}
 
-	if err := p.pubSub.Publish(topics.TopicSendOTP, msgBytes); err != nil {
+	err = p.pubSub.Publish(topics.TopicSendOTP, msgBytes)
+	if err != nil {
 		return err
 	}
 

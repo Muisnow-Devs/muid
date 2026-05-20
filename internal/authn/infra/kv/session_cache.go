@@ -72,7 +72,8 @@ func (c *KVSessionCache) getBySelector(
 	}
 
 	var rec sessionCacheRecord
-	if err := json.Unmarshal(data, &rec); err != nil {
+	err = json.Unmarshal(data, &rec)
+	if err != nil {
 		return session.CachedSession{}, err
 	}
 

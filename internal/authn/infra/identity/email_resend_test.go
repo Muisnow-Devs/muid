@@ -81,7 +81,8 @@ func TestEmailIdentityProvider_Continue_Resend_ReusesTransition(t *testing.T) {
 		t.Fatalf("after resend publish calls: %d", pub.publishCalls)
 	}
 
-	if err := otpSt.VerifyOTP(ctx, sess.Id, first.OTP); err != otp.ErrOTPInvalid {
+	err = otpSt.VerifyOTP(ctx, sess.Id, first.OTP)
+	if err != otp.ErrOTPInvalid {
 		t.Fatalf("resend should revoke previous OTP, got %v", err)
 	}
 
@@ -181,7 +182,8 @@ func TestEmailIdentityProvider_Continue_Resend_RateLimited(t *testing.T) {
 		t.Fatalf("expected ErrOTPSendRateLimited, got %v", err)
 	}
 
-	if err := otpSt.VerifyOTP(ctx, sess.Id, code.OTP); err != nil {
+	err = otpSt.VerifyOTP(ctx, sess.Id, code.OTP)
+	if err != nil {
 		t.Fatalf("rate-limited resend should keep original OTP, got %v", err)
 	}
 }

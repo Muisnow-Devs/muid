@@ -83,25 +83,29 @@ type InfraDependencies struct {
 func (d *InfraDependencies) Close() error {
 	var errs []error
 	if d.profileConn != nil {
-		if err := d.profileConn.Close(); err != nil {
+		err := d.profileConn.Close()
+		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if d.entClient != nil {
-		if err := d.entClient.Close(); err != nil {
+		err := d.entClient.Close()
+		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if d.PubSub != nil {
 		if c, ok := d.PubSub.(io.Closer); ok {
-			if err := c.Close(); err != nil {
+			err := c.Close()
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
 	}
 	if d.Redis != nil {
 		if c, ok := d.Redis.(io.Closer); ok {
-			if err := c.Close(); err != nil {
+			err := c.Close()
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}

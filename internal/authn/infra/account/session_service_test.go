@@ -274,7 +274,8 @@ func TestRevokeSessionToken_thenResolveNotFound(t *testing.T) {
 	}
 	wire := issued.GetSessionContext().GetSessionToken().GetValue()
 
-	if err := svc.RevokeSessionToken(ctx, wire); err != nil {
+	err = svc.RevokeSessionToken(ctx, wire)
+	if err != nil {
 		t.Fatalf("revoke: %v", err)
 	}
 	_, err = svc.ResolveSessionToken(ctx, wire)
@@ -309,7 +310,8 @@ func TestRevokeSessionToken_wrongValidatorNotFound(t *testing.T) {
 	wireBad := selB64 + "." + base64.RawURLEncoding.EncodeToString(wrongValidator)
 
 	svc := &sessionService{store: &Store{DB: client}}
-	if err := svc.RevokeSessionToken(ctx, wireBad); !errors.Is(err, session.ErrSessionNotFound) {
+	err = svc.RevokeSessionToken(ctx, wireBad)
+	if !errors.Is(err, session.ErrSessionNotFound) {
 		t.Fatalf("revoke wrong validator: got %v", err)
 	}
 }
@@ -438,7 +440,8 @@ func seedExpiredSessionCacheRecord(
 		t.Fatal(err)
 	}
 	key := "muid:auth:session:sel:" + selectorB64
-	if err := store.Set(context.Background(), key, data, time.Hour); err != nil {
+	err = store.Set(context.Background(), key, data, time.Hour)
+	if err != nil {
 		t.Fatal(err)
 	}
 	return store

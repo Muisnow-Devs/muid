@@ -79,13 +79,14 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(
 	}
 	rowID = shared.UUIDV7()
 	objectKey = avatarkey.ProductionWebPObjectKey(userID.String(), rowID.String())
-	if err := i.store.PutObject(
+	err = i.store.PutObject(
 		ctx,
 		i.assetsBucket,
 		objectKey,
 		webp,
 		media.ContentTypeWebP,
-	); err != nil {
+	)
+	if err != nil {
 		return uuid.Nil, "", "", 0, err
 	}
 	publicURL = i.publicProdURL(objectKey)

@@ -24,14 +24,16 @@ func (d *InfraDependencies) Close() error {
 	var errs []error
 	if d.PubSub != nil {
 		if c, ok := d.PubSub.(io.Closer); ok {
-			if err := c.Close(); err != nil {
+			err := c.Close()
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}
 	}
 	if d.Mail != nil {
 		if c, ok := d.Mail.(interface{ Close() error }); ok {
-			if err := c.Close(); err != nil {
+			err := c.Close()
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}

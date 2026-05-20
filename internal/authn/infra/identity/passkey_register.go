@@ -15,7 +15,8 @@ func verifyPasskeyCreationChallengeBinding(creationJSON, expectedChallengeB64 st
 			ClientDataJSON string `json:"clientDataJSON"`
 		} `json:"response"`
 	}
-	if err := json.Unmarshal([]byte(creationJSON), &outer); err != nil {
+	err := json.Unmarshal([]byte(creationJSON), &outer)
+	if err != nil {
 		return fmt.Errorf("creation json: %w", err)
 	}
 	raw, err := base64.RawURLEncoding.DecodeString(outer.Response.ClientDataJSON)
@@ -26,7 +27,8 @@ func verifyPasskeyCreationChallengeBinding(creationJSON, expectedChallengeB64 st
 		Challenge string `json:"challenge"`
 		Type      string `json:"type"`
 	}
-	if err := json.Unmarshal(raw, &cd); err != nil {
+	err = json.Unmarshal(raw, &cd)
+	if err != nil {
 		return fmt.Errorf("client data: %w", err)
 	}
 	if cd.Type != "webauthn.create" {
@@ -43,7 +45,8 @@ func extractCreationCredentialID(creationJSON string) ([]byte, error) {
 		RawID string `json:"rawId"`
 		ID    string `json:"id"`
 	}
-	if err := json.Unmarshal([]byte(creationJSON), &outer); err != nil {
+	err := json.Unmarshal([]byte(creationJSON), &outer)
+	if err != nil {
 		return nil, err
 	}
 	b64 := outer.RawID
@@ -69,7 +72,8 @@ func extractAttestationObject(creationJSON string) ([]byte, error) {
 			AttestationObject string `json:"attestationObject"`
 		} `json:"response"`
 	}
-	if err := json.Unmarshal([]byte(creationJSON), &outer); err != nil {
+	err := json.Unmarshal([]byte(creationJSON), &outer)
+	if err != nil {
 		return nil, err
 	}
 	if outer.Response.AttestationObject == "" {

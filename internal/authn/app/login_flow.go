@@ -50,7 +50,8 @@ func (g *GRPCHandler) completeRegisterRequired(
 	}
 
 	store := sess.Store.WithProvisionedUserID(uid.String())
-	if err := g.transitionStore.Update(ctx, tid, store); err != nil {
+	err = g.transitionStore.Update(ctx, tid, store)
+	if err != nil {
 		return nil, status.Error(codes.Internal, "update transition after provision")
 	}
 

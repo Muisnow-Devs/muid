@@ -200,7 +200,8 @@ func TestKVSessionCacheGetRejectsExpiredEntry(t *testing.T) {
 		t.Fatal(err)
 	}
 	key := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
-	if err := store.Set(ctx, key, data, time.Hour); err != nil {
+	err = store.Set(ctx, key, data, time.Hour)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -226,7 +227,8 @@ func TestKVSessionCacheGetRejectsMalformedJSON(t *testing.T) {
 		t.Fatal(err)
 	}
 	key := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
-	if err := store.Set(ctx, key, []byte("{not-json"), time.Hour); err != nil {
+	err = store.Set(ctx, key, []byte("{not-json"), time.Hour)
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -260,7 +262,8 @@ func TestKVSessionCacheGetRejectsInvalidUUIDFields(t *testing.T) {
 		t.Fatal(err)
 	}
 	key := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
-	if err := store.Set(ctx, key, data, time.Hour); err != nil {
+	err = store.Set(ctx, key, data, time.Hour)
+	if err != nil {
 		t.Fatal(err)
 	}
 

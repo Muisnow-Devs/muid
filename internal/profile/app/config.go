@@ -45,13 +45,15 @@ type InfraDependencies struct {
 func (d *InfraDependencies) Close() error {
 	var errs []error
 	if d.Ent != nil {
-		if err := d.Ent.Close(); err != nil {
+		err := d.Ent.Close()
+		if err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if d.PubSub != nil {
 		if c, ok := d.PubSub.(io.Closer); ok {
-			if err := c.Close(); err != nil {
+			err := c.Close()
+			if err != nil {
 				errs = append(errs, err)
 			}
 		}

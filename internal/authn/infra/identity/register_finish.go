@@ -76,7 +76,8 @@ func ensureFederatedLink(
 	if pic := strings.TrimSpace(claims.Picture); pic != "" {
 		b = b.SetNillableAvatarURL(&pic)
 	}
-	if err := b.Exec(ctx); err != nil {
+	err = b.Exec(ctx)
+	if err != nil {
 		return uuid.Nil, err
 	}
 	return provisioned, nil

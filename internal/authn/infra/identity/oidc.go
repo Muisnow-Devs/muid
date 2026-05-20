@@ -180,7 +180,8 @@ func (p *OIDCIdentityProvider) Continue(
 		store := sess.Store.WithRegisterPending(
 			session.RegisterPendingClaimsFromProto(reg.Identity),
 		)
-		if err := p.transitionStore.Update(ctx, sess.Id, store); err != nil {
+		err = p.transitionStore.Update(ctx, sess.Id, store)
+		if err != nil {
 			return idn.StepResult{}, err
 		}
 
@@ -333,7 +334,8 @@ func (p *OIDCIdentityProvider) verifyIDToken(
 	}
 
 	var claims OIDCClaims
-	if err := idToken.Claims(&claims); err != nil {
+	err = idToken.Claims(&claims)
+	if err != nil {
 		return OIDCClaims{}, err
 	}
 

@@ -187,13 +187,14 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 
 	finalRowID := shared.UUIDV7()
 	prodKey := avatarkey.ProductionWebPObjectKey(userID.String(), finalRowID.String())
-	if err := g.avatars.Store.PutObject(
+	err = g.avatars.Store.PutObject(
 		ctx,
 		g.avatars.AssetsBucket,
 		prodKey,
 		webpBytes,
 		media.ContentTypeWebP,
-	); err != nil {
+	)
+	if err != nil {
 		return nil, internalErrorWithUserId(ctx, err, "avatar store processed", userID)
 	}
 
@@ -218,7 +219,8 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		return nil, internalErrorWithUserId(ctx, err, "avatar complete insert row", userID)
 	}
 
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return nil, internalErrorWithUserId(ctx, err, "avatar complete tx commit", userID)
 	}
 

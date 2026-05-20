@@ -41,10 +41,11 @@ func (s *Store) provisionFromProfile(
 		return uuid.Nil, err
 	}
 
-	if err := s.DB.UserRef.Create().
+	err = s.DB.UserRef.Create().
 		SetID(uid).
 		SetEmail(email).
-		Exec(ctx); err != nil {
+		Exec(ctx)
+	if err != nil {
 		return uuid.Nil, err
 	}
 

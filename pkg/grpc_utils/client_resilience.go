@@ -152,7 +152,8 @@ func UnaryRetryInterceptor(cfg RetryConfig) grpc.UnaryClientInterceptor {
 		var lastErr error
 		for attempt := 1; attempt <= maxAttempts; attempt++ {
 			if attempt > 1 {
-				if err := waitRetry(ctx, retryDelay(cfg, attempt-1)); err != nil {
+				err := waitRetry(ctx, retryDelay(cfg, attempt-1))
+				if err != nil {
 					return err
 				}
 			}
@@ -182,7 +183,8 @@ func UnaryCircuitBreakerInterceptor(cb *gobreaker.CircuitBreaker) grpc.UnaryClie
 		opts ...grpc.CallOption,
 	) error {
 		_, err := cb.Execute(func() (any, error) {
-			if err := invoker(ctx, method, req, reply, cc, opts...); err != nil {
+			err := invoker(ctx, method, req, reply, cc, opts...)
+			if err != nil {
 				return nil, err
 			}
 			return nil, nil

@@ -104,18 +104,21 @@ func (store *KVOTPStore) CreateOTP(
 	normalizedRecipient := normalizeOTPRecipient(recipient)
 
 	if store.sendCooldown > 0 {
-		if err := store.checkSendCooldown(ctx, transitionId); err != nil {
+		err := store.checkSendCooldown(ctx, transitionId)
+		if err != nil {
 			return otp.OTPChallenge{}, err
 		}
 		if normalizedRecipient != "" {
-			if err := store.checkRecipientSendCooldown(ctx, normalizedRecipient); err != nil {
+			err = store.checkRecipientSendCooldown(ctx, normalizedRecipient)
+			if err != nil {
 				return otp.OTPChallenge{}, err
 			}
 		}
 	}
 
 	// Send is allowed; drop any existing challenge before issuing a new code.
-	if err := store.RevokeOTP(ctx, transitionId); err != nil {
+	err := store.RevokeOTP(ctx, transitionId)
+	if err != nil {
 		return otp.OTPChallenge{}, err
 	}
 
@@ -151,7 +154,13 @@ func (store *KVOTPStore) CreateOTP(
 			return otp.OTPChallenge{}, err
 		}
 		recipientTTL := store.recipientStateKVTTL(expiration)
-		if err := store.client.Set(ctx, store.recipientCooldownKey(normalizedRecipient), recipientJSON, recipientTTL); err != nil {
+		err = store.client.Set(
+			ctx,
+			store.recipientCooldownKey(normalizedRecipient),
+			recipientJSON,
+			recipientTTL,
+		)
+		if err != nil {
 			return otp.OTPChallenge{}, err
 		}
 	}
@@ -172,7 +181,8 @@ func (store *KVOTPStore) checkSendCooldown(ctx context.Context, transitionId str
 	}
 
 	var info OTPInformation
-	if err := json.Unmarshal(data, &info); err != nil {
+	err = json.Unmarshal(data, &info)
+	if err != nil {
 		return err
 	}
 
@@ -199,7 +209,8 @@ func (store *KVOTPStore) checkRecipientSendCooldown(
 	}
 
 	var info recipientSendState
-	if err := json.Unmarshal(data, &info); err != nil {
+	err = json.Unmarshal(data, &info)
+	if err != nil {
 		return err
 	}
 
@@ -231,7 +242,8 @@ func (store *KVOTPStore) VerifyOTP(
 	}
 
 	var info OTPInformation
-	if err := json.Unmarshal(data, &info); err != nil {
+	err = json.Unmarshal(data, &info)
+	if err != nil {
 		return err
 	}
 

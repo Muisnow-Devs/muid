@@ -24,8 +24,8 @@ There is no separate frontend design system in this repo; the “contract surfac
 |------|------|
 | **`cmd/<service>/main.go`** | Process entrypoints. Present today: **`authn`**, **`profile`**, **`mailer`**. |
 | **`internal/<domain>/`** | Domain logic per service (`internal/authn`, `internal/profile`, `internal/mailer`, plus shared packages like `internal/session`, `internal/identity`, `internal/media`, `internal/templates`). |
-| **`infra/<backend>/`** | Reusable infrastructure: **interfaces in `interface.go`**, implementations in sibling files (`infra/redis`, `infra/nats`, `infra/smtp`, `infra/r2`, `infra/mocked`, …). |
-| **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). |
+| **`infra/<backend>/`** | Reusable infrastructure: **interfaces in `interface.go`**, implementations in sibling files (`infra/redis`, `infra/nats`, `infra/smtp`, `infra/r2`, `infra/secretmanager`, `infra/mocked`, …). |
+| **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). Contracts such as **`pkg/shared/secretmanager.SecretManager`** live under **`pkg/shared/<name>/`**. |
 | **`api/proto/`** | Protobuf definitions; generated `*.pb.go` under **`api/`** after `buf generate`. |
 
 **Authn-only infrastructure** (OTP, transition store, OIDC/email/passkey providers tightly coupled to auth flows) lives under **`internal/authn/infra/`** (`kv/`, `identity/`). Do **not** move those into top-level **`infra/*`**.
@@ -57,6 +57,8 @@ Use **`github.com/kelseyhightower/envconfig`** via **`pkg/shared.LoadConfig[T](p
 **Profile (`PROFILE_`):** `DATABASE_URL`, `NATS_URL`, `REQUEST_TIMEOUT_SECONDS`, R2 and `PUBLIC_ASSETS_URL` fields (see `internal/profile/app/config.go`).
 
 **Mailer (`MAILER_`):** `NATS_URL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_FROM`, optional `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_SSL` (see `internal/mailer/app/config.go`).
+
+**Google Secret Manager (future service wiring):** contract **`pkg/shared/secretmanager`** (`SecretManager`, `SecretRef`, stable errors). GCP implementation **`infra/secretmanager`** — **`NewGCPSecretManager(ctx, GCPConfig{ProjectID, CredentialsFile})`** returns **`secretmanager.SecretManager`** (type alias to shared). Not loaded via `LoadConfig` yet; when wired, use env such as **`GSM_PROJECT_ID`** / **`GSM_CREDENTIALS_FILE`** (or `AUTHN_GSM_*` if authn-owned).
 
 ---
 

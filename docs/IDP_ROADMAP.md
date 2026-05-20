@@ -2,6 +2,14 @@
 
 This document outlines the design, architecture, and step-by-step instructions for completing the Identity Provider (IdP) capabilities in the `muid` monorepo.
 
+For more context, mark used below use this format:
+
+Mark | Description
+---- | ----------------
+[ ]  | Not implemented
+[-]  | Partially implemented / in progress
+[X]  | Fully implemented
+
 ## 1. Architecture Overview
 
 - **Gateway (`cmd/gateway`)**:
@@ -58,8 +66,8 @@ While GraphQL is the primary structural API, an IdP *must* support standard OAut
 
 All signing keys exist in Google Secret Manager. We need an interface under `infra/gsm` to interact with it.
 
-- [ ] **3.1 SecretStore Interface**
-  - Define `infra/secretmanager/interface.go` for symmetric/asymmetric key handling.
+- [-] **3.1 SecretStore Interface**
+  - Define `pkg/shared/secretmanager` for symmetric/asymmetric key handling; GCP impl in `infra/secretmanager`.
   - Implement `GetLatestPrivateKey()`, `GetPublicJWKS()`.
 - [ ] **3.2 Caching Layer**
   - JWKS reads from GSM should be cached in-memory or Redis (with a proper TTL) inside the gateway to prevent quota exhaustion and reduce latency for `jwks.json`.

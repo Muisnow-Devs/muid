@@ -38,7 +38,7 @@ func (g *GRPCHandler) CreateProfile(
 	var (
 		displayName string
 		pictureURL  string
-		locale      string
+		locale      = "en"
 	)
 
 	if identity != nil {
@@ -87,7 +87,7 @@ func (g *GRPCHandler) CreateProfile(
 	err = tx.Commit()
 	if err != nil {
 		log.LogUnexpected(
-			log.WithAttrs(ctx, log.UserIDPrefix(user.ID.String())),
+			log.WithAttrs(ctx, log.ProfileID(user.ID)),
 			"profile create tx commit",
 			err.Error(),
 		)
@@ -124,7 +124,11 @@ func (g *GRPCHandler) GetProfile(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	locale := p.Locale
+	locale := "en"
+	if strings.TrimSpace(p.Locale) != "" {
+		locale = p.Locale
+	}
+
 	avatarURL, objectKey, err := g.queryDisplayAvatar(ctx, id)
 	if err != nil {
 		log.LogUnexpected(ctx, "profile get avatar", err.Error())

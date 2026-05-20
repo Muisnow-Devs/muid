@@ -91,7 +91,7 @@ When **`interface.go`** defines the public contract for a package, **caller-visi
 ### Expected vs unexpected
 
 - **Expected:** validation, business rules, not-found where that is part of the contract — map to appropriate **`grpc/codes`** and stable, non-sensitive status messages.
-- **Unexpected:** DB/network/SDK bugs — at the handler or nearest boundary, call **`log.LogUnexpected`** with a short `reason`, safe `detail` (often `err.Error()` only when safe), and **`...slog.Attr`** (e.g. `slog.String("method", …)`, **`log.UserIDPrefix`**, or **`log.WithAttrs`** on ctx for fields reused across logs). Return **`grpcutils.GRPCInternalError()`** so the client sees **`codes.Internal`** and the literal **`internal error`**, consistent with **`RecoveryInterceptor`**.
+- **Unexpected:** DB/network/SDK bugs — at the handler or nearest boundary, call **`log.LogUnexpected`** with a short `reason`, safe `detail` (often `err.Error()` only when safe), and **`...slog.Attr`** (e.g. `slog.String("method", …)`, **`log.ProfileID`** / **`log.UserID`** / **`log.TransitionID`** (`uuid.UUID`) on ctx via **`log.WithAttrs`**, or per-call attrs). Return **`grpcutils.GRPCInternalError()`** so the client sees **`codes.Internal`** and the literal **`internal error`**, consistent with **`RecoveryInterceptor`**.
 
 ### Cleanup
 

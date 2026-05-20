@@ -56,9 +56,9 @@ Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go
 
 ## Trace id
 
-- **`pkg/log`**: trace id (`FromContext` / `TraceIDFromContext`, `With`), context logger (`Logger`, `WithLogger`, `Default` / `SetDefault`), **`WithAttrs`**, **`UserIDPrefix`**, **`LogUnexpected`** (`...slog.Attr` only — no string pairs). Use **`pkg/log`** instead of stdlib **`log`**.
+- **`pkg/log`**: trace id (`FromContext` / `TraceIDFromContext`, `With` — **string**, e.g. Cloudflare), context logger (`Logger`, `WithLogger`, `Default` / `SetDefault`), **`WithAttrs`**, **`ProfileID`** / **`UserID`** / **`TransitionID`** (**`uuid.UUID`** params), **`LogUnexpected`** (`...slog.Attr` only — no string pairs). Use **`pkg/log`** instead of stdlib **`log`**.
 - Server: metadata **`x-trace-id`** then **`x-request-id`**; else new id (`pkg/log` + `pkg/shared` UUID v7).
-- Unexpected errors: **`log.LogUnexpected`** with short `reason`, safe `detail`, and **non-sensitive** `...slog.Attr` (or **`log.WithAttrs`** on ctx); helpers like **`log.UserIDPrefix`**.
+- Unexpected errors: **`log.LogUnexpected`** with short `reason`, safe `detail`, and **non-sensitive** `...slog.Attr` (or **`log.WithAttrs`** on ctx with **`log.ProfileID`** / **`log.UserID`** / **`log.TransitionID`**).
 - Handlers: unexpected domain failures → **`grpcutils.GRPCInternalError()`** (`internal error`), aligned with recovery behavior.
 
 ## Errors (inner vs boundary)

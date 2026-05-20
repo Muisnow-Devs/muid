@@ -232,7 +232,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 
 	// Async non-blocking operations for cleanup and publishing
 	go func() {
-		bgCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		bgCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
 		defer cancel()
 
 		tid, _ := log.FromContext(ctx)

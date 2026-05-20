@@ -72,7 +72,7 @@ func enrichProfileUserID(ctx context.Context, raw, invalidMsg string) (context.C
 	if err != nil {
 		return ctx, status.Error(codes.InvalidArgument, invalidMsg)
 	}
-	ctx = log.WithAttrs(ctx, log.UserIDPrefix(id.String()))
+	ctx = log.WithAttrs(ctx, log.ProfileID(id))
 	ctx = context.WithValue(ctx, profileUserIDKey{}, id)
 	return ctx, nil
 }

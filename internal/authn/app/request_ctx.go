@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"log/slog"
 	"strings"
 
 	"github.com/google/uuid"
@@ -71,7 +70,7 @@ func enrichContinueAuthSession(ctx context.Context, _ string, req any) (context.
 	if err != nil {
 		return ctx, status.Error(codes.InvalidArgument, "invalid transition id")
 	}
-	ctx = log.WithAttrs(ctx, transitionIDPrefix(tid.String()))
+	ctx = log.WithAttrs(ctx, log.TransitionID(tid))
 	ctx = context.WithValue(ctx, transitionIDKey{}, tid)
 
 	return enrichOptionalWireSession(ctx, r.GetSessionToken())
@@ -138,10 +137,3 @@ func transitionIDString(ctx context.Context, req *pb.ContinueAuthSessionRequest)
 	return strings.TrimSpace(req.GetTransitionId())
 }
 
-func transitionIDPrefix(transitionID string) slog.Attr {
-	const prefixLen = 8
-	if len(transitionID) >= prefixLen {
-		return slog.String("transition_id_prefix", transitionID[:prefixLen])
-	}
-	return slog.String("transition_id_prefix", transitionID)
-}

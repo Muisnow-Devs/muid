@@ -39,9 +39,9 @@ func (n *NATSPubSub) Subscribe(
 		workCtx, cancel := context.WithTimeout(ctx, pubsub.SubscribeTaskTimeout)
 		defer cancel()
 
-		ctx := log.With(context.Background(), shared.UUIDV7().String())
+		ctx := log.With(workCtx, shared.UUIDV7().String())
 
-		if err := handler(workCtx, msg.Data); err != nil {
+		if err := handler(ctx, msg.Data); err != nil {
 			log.LogUnexpected(
 				ctx,
 				"nats subscriber",

@@ -163,7 +163,7 @@ func (i *ExternalAvatarIngestor) Go(
 
 	ctx := context.WithoutCancel(parentCtx)
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	ctx = log.WithAttrs(ctx, log.UserIDPrefix(userID.String()))
+	ctx = log.WithAttrs(ctx, log.UserID(userID))
 
 	go func() {
 		defer cancel()
@@ -192,7 +192,7 @@ func (i *ExternalAvatarIngestor) GoBootstrap(
 
 	ctx := context.WithoutCancel(parentCtx)
 	ctx, cancel := context.WithTimeout(ctx, ingestTimeout)
-	ctx = log.WithAttrs(ctx, log.UserIDPrefix(userID.String()))
+	ctx = log.WithAttrs(ctx, log.UserID(userID))
 
 	go func() {
 		defer cancel()

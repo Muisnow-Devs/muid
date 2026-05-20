@@ -3,6 +3,8 @@ package log
 import (
 	"context"
 	"log/slog"
+
+	"github.com/google/uuid"
 )
 
 type attrsKey struct{}
@@ -35,10 +37,17 @@ func attrsAsAny(attrs []slog.Attr) []any {
 	return out
 }
 
-// UserIDPrefix logs a non-identifying prefix of a user id (first 8 runes when available).
-func UserIDPrefix(userID string) slog.Attr {
-	if len(userID) >= 8 {
-		return slog.String("user_id_prefix", userID[:8])
-	}
-	return slog.String("user_id_prefix", userID)
+// ProfileID logs a full profile id (UUID).
+func ProfileID(id uuid.UUID) slog.Attr {
+	return slog.String("profile_id", id.String())
+}
+
+// UserID logs a full user id (UUID).
+func UserID(id uuid.UUID) slog.Attr {
+	return slog.String("user_id", id.String())
+}
+
+// TransitionID logs a full auth transition id (UUID).
+func TransitionID(id uuid.UUID) slog.Attr {
+	return slog.String("transition_id", id.String())
 }

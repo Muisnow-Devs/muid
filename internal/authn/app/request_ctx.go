@@ -136,4 +136,3 @@ func transitionIDString(ctx context.Context, req *pb.ContinueAuthSessionRequest)
 	}
 	return strings.TrimSpace(req.GetTransitionId())
 }
-

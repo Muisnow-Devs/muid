@@ -125,6 +125,10 @@ func (g *GRPCHandler) ContinueAuthSession(
 		return mapContinueError(tid, err)
 	}
 
+	if step.Type == identity.StepInput {
+		return g.continueAwaitingChallenge(tid, sess, step)
+	}
+
 	return g.finishAuthStep(ctx, req, sess, step)
 }
 
@@ -188,6 +192,51 @@ func buildAuthChallenge(
 	return ch, nil
 }
 
+func authMethodForProvider(provider string) (basic.AuthMethod, error) {
+	switch provider {
+	case "email":
+		return basic.AuthMethod_AUTH_METHOD_EMAIL_OTP, nil
+	case "passkey":
+		return basic.AuthMethod_AUTH_METHOD_PASSKEY, nil
+	default:
+		if provider == "" {
+			return basic.AuthMethod_AUTH_METHOD_UNSPECIFIED, fmt.Errorf(
+				"missing transition provider",
+			)
+		}
+		return basic.AuthMethod_AUTH_METHOD_OAUTH, nil
+	}
+}
+
+func (g *GRPCHandler) continueAwaitingChallenge(
+	tid string,
+	sess session.AuthSession,
+	step identity.StepResult,
+) (*pb.ContinueAuthSessionResponse, error) {
+	if strings.TrimSpace(step.TransitionId) != "" && step.TransitionId != tid {
+		return nil, status.Error(codes.Internal, "transition mismatch after continue")
+	}
+
+	method, err := authMethodForProvider(sess.Provider)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	ch, err := buildAuthChallenge(method, sess, step, g.otpResendCooldownMillis)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	cr := &sessionpb.ChallengeRequired{}
+	cr.SetChallenge(ch)
+
+	out := &pb.ContinueAuthSessionResponse{}
+	out.SetTransitionId(tid)
+	out.SetStatus(basic.AuthStatus_AUTH_STATE_CHALLENGE_REQUIRED)
+	out.SetChallengeRequired(cr)
+	return out, nil
+}
+
 func maskEmail(email string) string {
 	email = strings.TrimSpace(email)
 	at := strings.LastIndex(email, "@")
@@ -206,9 +255,14 @@ func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
 		return nil, status.Error(codes.InvalidArgument, "missing proof")
 	}
 	if ep := proof.GetEmailProof(); ep != nil {
-		return map[string]any{
-			implIdentity.EmailPayloadKeyCode: ep.GetOtpCode(),
-		}, nil
+		payload, err := implIdentity.EmailProofToPayload(ep)
+		if err != nil {
+			if errors.Is(err, identity.ErrInvalidInput) {
+				return nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		return payload, nil
 	}
 	if op := proof.GetOauthProof(); op != nil {
 		return map[string]any{
@@ -282,6 +336,8 @@ func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, e
 		return authFailureResponse(tid, err.Error(), ErrCodeAuthenticationFailed), nil
 	case errors.Is(err, identity.ErrInvalidInput):
 		return authFailureResponse(tid, err.Error(), ErrCodeInvalidInput), nil
+	case errors.Is(err, otp.ErrOTPSendRateLimited):
+		return nil, status.Error(codes.ResourceExhausted, "OTP send rate limited; try again later")
 	case errors.Is(err, identity.ErrSessionNotFound):
 		return nil, status.Error(codes.NotFound, "transition not found")
 	case errors.Is(err, identity.ErrInvalidSessionState):

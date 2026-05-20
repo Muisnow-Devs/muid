@@ -13,9 +13,15 @@ message AuthProof {
   }
 }
 
+// EmailProof carries either a code check or a resend request for the same transition.
 message EmailProof {
-  string otp_code = 1 [(buf.validate.field).string.len = 6];
+  oneof step {
+    string otp_code = 1 [(buf.validate.field).string.len = 6];
+    EmailResendOtp resend = 2;
+  }
 }
+
+message EmailResendOtp {}
 
 message OAuthProof {
   string code  = 1;

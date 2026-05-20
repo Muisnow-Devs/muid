@@ -6,6 +6,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"sanzi.io/muid/internal/session"
 )
 
 func validWireToken(t *testing.T) string {
@@ -54,47 +56,55 @@ func TestParseSessionToken_rejectsInvalidWire(t *testing.T) {
 		wire    string
 		wantErr error
 	}{
-		{name: "empty", wire: "", wantErr: errInvalidSessionToken},
-		{name: "whitespace only", wire: "   \t\n", wantErr: errInvalidSessionToken},
-		{name: "single segment", wire: "bad", wantErr: errInvalidSessionToken},
-		{name: "three segments", wire: "a.b.c", wantErr: errInvalidSessionToken},
-		{name: "empty segments", wire: ".", wantErr: errInvalidSessionToken},
-		{name: "selector too short", wire: "abc." + validVal, wantErr: errInvalidSessionToken},
-		{name: "validator too short", wire: validSel + ".abc", wantErr: errInvalidSessionToken},
+		{name: "empty", wire: "", wantErr: session.ErrInvalidWireSessionToken},
+		{name: "whitespace only", wire: "   \t\n", wantErr: session.ErrInvalidWireSessionToken},
+		{name: "single segment", wire: "bad", wantErr: session.ErrInvalidWireSessionToken},
+		{name: "three segments", wire: "a.b.c", wantErr: session.ErrInvalidWireSessionToken},
+		{name: "empty segments", wire: ".", wantErr: session.ErrInvalidWireSessionToken},
+		{
+			name:    "selector too short",
+			wire:    "abc." + validVal,
+			wantErr: session.ErrInvalidWireSessionToken,
+		},
+		{
+			name:    "validator too short",
+			wire:    validSel + ".abc",
+			wantErr: session.ErrInvalidWireSessionToken,
+		},
 		{
 			name:    "selector too long",
 			wire:    longSegment + "." + validVal,
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 		{
 			name:    "invalid base64 in selector",
 			wire:    strings.Repeat("!", SelectorB64Length) + "." + validVal,
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 		{
 			name:    "invalid base64 in validator",
 			wire:    validSel + "." + strings.Repeat("?", ValidatorB64Length),
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 		{
 			name:    "oversize wire",
 			wire:    valid + strings.Repeat("A", 256),
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 		{
 			name:    "extra dot suffix",
 			wire:    valid + ".extra",
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 		{
 			name:    "embedded newline",
 			wire:    validSel + "\n." + validVal,
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 		{
 			name:    "null byte in selector segment",
 			wire:    validSel[:1] + "\x00" + validSel[2:] + "." + validVal,
-			wantErr: errInvalidSessionToken,
+			wantErr: session.ErrInvalidWireSessionToken,
 		},
 	}
 
@@ -134,7 +144,7 @@ func TestDecodeSelectorAndValidator_rejectWrongDecodedLength(t *testing.T) {
 	shortSelB64 := base64.RawURLEncoding.EncodeToString(shortSel)
 
 	_, err := decodeSelector(shortSelB64)
-	if err == nil || !errors.Is(err, errInvalidSessionToken) {
+	if err == nil || !errors.Is(err, session.ErrInvalidWireSessionToken) {
 		t.Fatalf("short selector decode: got %v", err)
 	}
 
@@ -145,7 +155,7 @@ func TestDecodeSelectorAndValidator_rejectWrongDecodedLength(t *testing.T) {
 	shortValB64 := base64.RawURLEncoding.EncodeToString(shortVal)
 
 	_, err = decodeValidatorSecret(shortValB64)
-	if err == nil || !errors.Is(err, errInvalidSessionToken) {
+	if err == nil || !errors.Is(err, session.ErrInvalidWireSessionToken) {
 		t.Fatalf("short validator decode: got %v", err)
 	}
 }

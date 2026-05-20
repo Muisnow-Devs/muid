@@ -1,6 +1,7 @@
 package account
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -18,27 +19,58 @@ type mapSessionCache struct {
 }
 
 func (m *mapSessionCache) Get(
-	_ context.Context,
-	selectorKey string,
+	ctx context.Context,
+	wireToken string,
 ) (session.CachedSession, error) {
-	sess, ok := m.entries[selectorKey]
+	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
+	if err != nil {
+		return session.CachedSession{}, err
+	}
+	sess, ok := m.entries[selectorB64]
 	if !ok {
 		return session.CachedSession{}, session.ErrSessionNotFound
+	}
+	secret, err := session.DecodeWireValidatorSecret(validatorB64)
+	if err != nil {
+		return session.CachedSession{}, err
+	}
+	want := sha256.Sum256(secret)
+	if len(sess.ValidatorHash) != len(want) {
+		return session.CachedSession{}, session.ErrSessionCacheRejected
+	}
+	if !bytes.Equal(sess.ValidatorHash[:], want[:]) {
+		return session.CachedSession{}, session.ErrSessionCacheRejected
 	}
 	return sess, nil
 }
 
 func (m *mapSessionCache) Set(
-	_ context.Context,
-	selectorKey string,
+	ctx context.Context,
+	wireToken string,
 	sess session.CachedSession,
 ) error {
-	m.entries[selectorKey] = sess
+	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
+	if err != nil {
+		return err
+	}
+	secret, err := session.DecodeWireValidatorSecret(validatorB64)
+	if err != nil {
+		return err
+	}
+	want := sha256.Sum256(secret)
+	if len(sess.ValidatorHash) != len(want) || !bytes.Equal(sess.ValidatorHash[:], want[:]) {
+		return errors.New("session cache set: validator hash does not match wire token")
+	}
+	m.entries[selectorB64] = sess
 	return nil
 }
 
-func (m *mapSessionCache) Delete(_ context.Context, selectorKey string) error {
-	delete(m.entries, selectorKey)
+func (m *mapSessionCache) Delete(ctx context.Context, wireToken string) error {
+	selectorB64, _, err := session.ParseWireSessionToken(wireToken)
+	if err != nil {
+		return err
+	}
+	delete(m.entries, selectorB64)
 	return nil
 }
 

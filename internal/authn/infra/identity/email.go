@@ -10,6 +10,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	proofpb "sanzi.io/muid/api/proto/authn/v1/proof"
 	"sanzi.io/muid/api/proto/event/v1/mail"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/ent"
@@ -23,12 +24,52 @@ import (
 )
 
 const (
-	OTPLifetime         = 5 * time.Minute
-	EmailPayloadKeyCode = "code"
+	OTPLifetime           = 5 * time.Minute
+	EmailPayloadKeyCode   = "code"
+	EmailPayloadKeyResend = "__email_resend_otp"
 
 	emailIntentLogin       = "login"
 	emailIntentChangeEmail = "change_email"
 )
+
+// EmailProofToPayload maps wire email proof to provider Continue payload keys.
+func EmailProofToPayload(ep *proofpb.EmailProof) (map[string]any, error) {
+	if ep == nil {
+		return nil, errors.Join(
+			idn.ErrInvalidInput,
+			errors.New("missing email proof"),
+		)
+	}
+	switch ep.WhichStep() {
+	case proofpb.EmailProof_OtpCode_case:
+		return map[string]any{
+			EmailPayloadKeyCode: ep.GetOtpCode(),
+		}, nil
+	case proofpb.EmailProof_Resend_case:
+		if !ep.HasResend() {
+			return nil, errors.Join(
+				idn.ErrInvalidInput,
+				errors.New("invalid email resend proof"),
+			)
+		}
+		return map[string]any{
+			EmailPayloadKeyResend: true,
+		}, nil
+	default:
+		return nil, errors.Join(
+			idn.ErrInvalidInput,
+			errors.New("email proof step missing"),
+		)
+	}
+}
+
+func emailResendRequested(payload map[string]any) bool {
+	if payload == nil {
+		return false
+	}
+	v, ok := payload[EmailPayloadKeyResend].(bool)
+	return ok && v
+}
 
 type EmailIdentityProvider struct {
 	otpStore        otp.OTPStore
@@ -153,6 +194,10 @@ func (p *EmailIdentityProvider) Continue(
 		return p.continueFinishEmailRegister(ctx, input)
 	}
 
+	if emailResendRequested(input.Payload) {
+		return p.continueResendOTP(ctx, input)
+	}
+
 	code, err := p.parseEmailContinuePayload(input.Payload)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -215,6 +260,37 @@ func (p *EmailIdentityProvider) continueChangeEmail(
 	}
 
 	return idn.StepResult{Type: idn.StepLinked}, nil
+}
+
+func (p *EmailIdentityProvider) continueResendOTP(
+	ctx context.Context,
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
+	sess, err := p.validateSession(ctx, input.TransitionId)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+	if sess.Store.Step != session.StepStart {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrInvalidSessionState,
+			errors.New("OTP resend is only allowed before the code is accepted"),
+		)
+	}
+	emailFlow, ok := sess.Store.EmailFlow()
+	if !ok {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+	email := strings.TrimSpace(strings.ToLower(emailFlow.Email))
+	if email == "" {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+	if err := p.generateAndSendOTP(ctx, sess.Id, email); err != nil {
+		return idn.StepResult{}, err
+	}
+	return idn.StepResult{
+		TransitionId: sess.Id,
+		Type:         idn.StepInput,
+	}, nil
 }
 
 func (p *EmailIdentityProvider) continueLogin(

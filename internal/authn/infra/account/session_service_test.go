@@ -331,7 +331,7 @@ func TestResolveSessionToken_malformedVsWrongValidatorErrors(t *testing.T) {
 	ctx := context.Background()
 
 	_, malformedErr := svc.ResolveSessionToken(ctx, "not-a-token")
-	if !errors.Is(malformedErr, errInvalidSessionToken) {
+	if !errors.Is(malformedErr, session.ErrInvalidWireSessionToken) {
 		t.Fatalf("malformed: got %v", malformedErr)
 	}
 

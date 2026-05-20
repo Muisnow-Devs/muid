@@ -1,7 +1,6 @@
 package account
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -78,7 +77,7 @@ func (s *sessionService) IssueAuthenticatedSession(
 	}
 
 	if s.store.SessionCache != nil {
-		_ = s.store.SessionCache.Set(ctx, selectorB64, session.CachedSession{
+		s.store.SessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     row.ID,
 			UserID:        userID,
 			ExpiresAt:     expires,
@@ -102,7 +101,7 @@ func (s *sessionService) IssueAuthenticatedSession(
 	return out, nil
 }
 
-// ResolveSessionToken validates a wire session token (cache then database).
+// ResolveSessionToken validates a wire session token (validated Redis cache, then database).
 func (s *sessionService) ResolveSessionToken(
 	ctx context.Context,
 	wireToken string,
@@ -119,21 +118,22 @@ func (s *sessionService) ResolveSessionToken(
 	validatorHash := sha256.Sum256(validatorSecret)
 
 	if s.store.SessionCache != nil {
-		if cached, err := s.store.SessionCache.Get(ctx, selectorB64); err == nil {
-			if len(cached.ValidatorHash) == len(validatorHash) &&
-				bytes.Equal(cached.ValidatorHash[:], validatorHash[:]) {
-				return ResolvedSession{
-					SessionID: cached.SessionID,
-					UserID:    cached.UserID,
-					ExpiresAt: cached.ExpiresAt,
-					IssuedAt:  cached.ExpiresAt.Add(-defaultSessionLifetime),
-				}, nil
-			}
-			if len(cached.ValidatorHash) == len(validatorHash) {
-				return ResolvedSession{}, session.ErrSessionNotFound
-			}
-		} else if !errorsIsSessionMiss(err) {
-			return ResolvedSession{}, err
+		cached, cacheErr := s.store.SessionCache.Get(ctx, wireToken)
+		if cacheErr == nil {
+			return ResolvedSession{
+				SessionID: cached.SessionID,
+				UserID:    cached.UserID,
+				ExpiresAt: cached.ExpiresAt,
+				IssuedAt:  cached.ExpiresAt.Add(-defaultSessionLifetime),
+			}, nil
+		}
+
+		if errors.Is(cacheErr, session.ErrSessionCacheRejected) {
+			return ResolvedSession{}, session.ErrSessionNotFound
+		}
+
+		if !errorsIsSessionMiss(cacheErr) {
+			return ResolvedSession{}, cacheErr
 		}
 	}
 
@@ -169,7 +169,7 @@ func (s *sessionService) ResolveSessionToken(
 		IssuedAt:  row.CreatedAt,
 	}
 	if s.store.SessionCache != nil {
-		_ = s.store.SessionCache.Set(ctx, selectorB64, session.CachedSession{
+		s.store.SessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     res.SessionID,
 			UserID:        res.UserID,
 			ExpiresAt:     res.ExpiresAt,
@@ -214,7 +214,7 @@ func (s *sessionService) RevokeSessionToken(ctx context.Context, wireToken strin
 	}
 
 	if s.store.SessionCache != nil {
-		s.store.SessionCache.Delete(ctx, selectorB64)
+		s.store.SessionCache.Delete(ctx, wireToken)
 	}
 
 	return nil

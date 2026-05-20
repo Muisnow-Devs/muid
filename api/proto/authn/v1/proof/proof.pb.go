@@ -236,11 +236,12 @@ func (*authProof_OauthProof) isAuthProof_Proof() {}
 
 func (*authProof_PasskeyProof) isAuthProof_Proof() {}
 
+// EmailProof carries either a code check or a resend request for the same transition.
 type EmailProof struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_OtpCode string                 `protobuf:"bytes,1,opt,name=otp_code,json=otpCode,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Step isEmailProof_Step      `protobuf_oneof:"step"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *EmailProof) Reset() {
@@ -270,26 +271,179 @@ func (x *EmailProof) ProtoReflect() protoreflect.Message {
 
 func (x *EmailProof) GetOtpCode() string {
 	if x != nil {
-		return x.xxx_hidden_OtpCode
+		if x, ok := x.xxx_hidden_Step.(*emailProof_OtpCode); ok {
+			return x.OtpCode
+		}
 	}
 	return ""
 }
 
+func (x *EmailProof) GetResend() *EmailResendOtp {
+	if x != nil {
+		if x, ok := x.xxx_hidden_Step.(*emailProof_Resend); ok {
+			return x.Resend
+		}
+	}
+	return nil
+}
+
 func (x *EmailProof) SetOtpCode(v string) {
-	x.xxx_hidden_OtpCode = v
+	x.xxx_hidden_Step = &emailProof_OtpCode{v}
+}
+
+func (x *EmailProof) SetResend(v *EmailResendOtp) {
+	if v == nil {
+		x.xxx_hidden_Step = nil
+		return
+	}
+	x.xxx_hidden_Step = &emailProof_Resend{v}
+}
+
+func (x *EmailProof) HasStep() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Step != nil
+}
+
+func (x *EmailProof) HasOtpCode() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Step.(*emailProof_OtpCode)
+	return ok
+}
+
+func (x *EmailProof) HasResend() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Step.(*emailProof_Resend)
+	return ok
+}
+
+func (x *EmailProof) ClearStep() {
+	x.xxx_hidden_Step = nil
+}
+
+func (x *EmailProof) ClearOtpCode() {
+	if _, ok := x.xxx_hidden_Step.(*emailProof_OtpCode); ok {
+		x.xxx_hidden_Step = nil
+	}
+}
+
+func (x *EmailProof) ClearResend() {
+	if _, ok := x.xxx_hidden_Step.(*emailProof_Resend); ok {
+		x.xxx_hidden_Step = nil
+	}
+}
+
+const EmailProof_Step_not_set_case case_EmailProof_Step = 0
+const EmailProof_OtpCode_case case_EmailProof_Step = 1
+const EmailProof_Resend_case case_EmailProof_Step = 2
+
+func (x *EmailProof) WhichStep() case_EmailProof_Step {
+	if x == nil {
+		return EmailProof_Step_not_set_case
+	}
+	switch x.xxx_hidden_Step.(type) {
+	case *emailProof_OtpCode:
+		return EmailProof_OtpCode_case
+	case *emailProof_Resend:
+		return EmailProof_Resend_case
+	default:
+		return EmailProof_Step_not_set_case
+	}
 }
 
 type EmailProof_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	OtpCode string
+	// Fields of oneof xxx_hidden_Step:
+	OtpCode *string
+	Resend  *EmailResendOtp
+	// -- end of xxx_hidden_Step
 }
 
 func (b0 EmailProof_builder) Build() *EmailProof {
 	m0 := &EmailProof{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_OtpCode = b.OtpCode
+	if b.OtpCode != nil {
+		x.xxx_hidden_Step = &emailProof_OtpCode{*b.OtpCode}
+	}
+	if b.Resend != nil {
+		x.xxx_hidden_Step = &emailProof_Resend{b.Resend}
+	}
+	return m0
+}
+
+type case_EmailProof_Step protoreflect.FieldNumber
+
+func (x case_EmailProof_Step) String() string {
+	md := file_authn_v1_proof_proto_msgTypes[1].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isEmailProof_Step interface {
+	isEmailProof_Step()
+}
+
+type emailProof_OtpCode struct {
+	OtpCode string `protobuf:"bytes,1,opt,name=otp_code,json=otpCode,proto3,oneof"`
+}
+
+type emailProof_Resend struct {
+	Resend *EmailResendOtp `protobuf:"bytes,2,opt,name=resend,proto3,oneof"`
+}
+
+func (*emailProof_OtpCode) isEmailProof_Step() {}
+
+func (*emailProof_Resend) isEmailProof_Step() {}
+
+type EmailResendOtp struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EmailResendOtp) Reset() {
+	*x = EmailResendOtp{}
+	mi := &file_authn_v1_proof_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EmailResendOtp) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EmailResendOtp) ProtoMessage() {}
+
+func (x *EmailResendOtp) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_proof_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type EmailResendOtp_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 EmailResendOtp_builder) Build() *EmailResendOtp {
+	m0 := &EmailResendOtp{}
+	b, x := &b0, m0
+	_, _ = b, x
 	return m0
 }
 
@@ -303,7 +457,7 @@ type OAuthProof struct {
 
 func (x *OAuthProof) Reset() {
 	*x = OAuthProof{}
-	mi := &file_authn_v1_proof_proto_msgTypes[2]
+	mi := &file_authn_v1_proof_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -315,7 +469,7 @@ func (x *OAuthProof) String() string {
 func (*OAuthProof) ProtoMessage() {}
 
 func (x *OAuthProof) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_proof_proto_msgTypes[2]
+	mi := &file_authn_v1_proof_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -374,7 +528,7 @@ type PasskeyProof struct {
 
 func (x *PasskeyProof) Reset() {
 	*x = PasskeyProof{}
-	mi := &file_authn_v1_proof_proto_msgTypes[3]
+	mi := &file_authn_v1_proof_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -386,7 +540,7 @@ func (x *PasskeyProof) String() string {
 func (*PasskeyProof) ProtoMessage() {}
 
 func (x *PasskeyProof) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_proof_proto_msgTypes[3]
+	mi := &file_authn_v1_proof_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -446,10 +600,13 @@ const file_authn_v1_proof_proto_rawDesc = "" +
 	"\voauth_proof\x18\x02 \x01(\v2\x1f.muid.authn.v1.proof.OAuthProofH\x00R\n" +
 	"oauthProof\x12H\n" +
 	"\rpasskey_proof\x18\x03 \x01(\v2!.muid.authn.v1.proof.PasskeyProofH\x00R\fpasskeyProofB\a\n" +
-	"\x05proof\"1\n" +
+	"\x05proof\"z\n" +
 	"\n" +
-	"EmailProof\x12#\n" +
-	"\botp_code\x18\x01 \x01(\tB\b\xbaH\x05r\x03\x98\x01\x06R\aotpCode\"6\n" +
+	"EmailProof\x12%\n" +
+	"\botp_code\x18\x01 \x01(\tB\b\xbaH\x05r\x03\x98\x01\x06H\x00R\aotpCode\x12=\n" +
+	"\x06resend\x18\x02 \x01(\v2#.muid.authn.v1.proof.EmailResendOtpH\x00R\x06resendB\x06\n" +
+	"\x04step\"\x10\n" +
+	"\x0eEmailResendOtp\"6\n" +
 	"\n" +
 	"OAuthProof\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
@@ -460,22 +617,24 @@ const file_authn_v1_proof_proto_rawDesc = "" +
 	"\x17com.muid.authn.v1.proofB\n" +
 	"ProofProtoP\x01Z,sanzi.io/muid/api/proto/authn/v1/proof;proof\xa2\x02\x04MAVP\xaa\x02\x13Muid.Authn.V1.Proof\xca\x02\x13Muid\\Authn\\V1\\Proof\xe2\x02\x1fMuid\\Authn\\V1\\Proof\\GPBMetadata\xea\x02\x16Muid::Authn::V1::Proofb\x06proto3"
 
-var file_authn_v1_proof_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_authn_v1_proof_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_authn_v1_proof_proto_goTypes = []any{
-	(*AuthProof)(nil),    // 0: muid.authn.v1.proof.AuthProof
-	(*EmailProof)(nil),   // 1: muid.authn.v1.proof.EmailProof
-	(*OAuthProof)(nil),   // 2: muid.authn.v1.proof.OAuthProof
-	(*PasskeyProof)(nil), // 3: muid.authn.v1.proof.PasskeyProof
+	(*AuthProof)(nil),      // 0: muid.authn.v1.proof.AuthProof
+	(*EmailProof)(nil),     // 1: muid.authn.v1.proof.EmailProof
+	(*EmailResendOtp)(nil), // 2: muid.authn.v1.proof.EmailResendOtp
+	(*OAuthProof)(nil),     // 3: muid.authn.v1.proof.OAuthProof
+	(*PasskeyProof)(nil),   // 4: muid.authn.v1.proof.PasskeyProof
 }
 var file_authn_v1_proof_proto_depIdxs = []int32{
 	1, // 0: muid.authn.v1.proof.AuthProof.email_proof:type_name -> muid.authn.v1.proof.EmailProof
-	2, // 1: muid.authn.v1.proof.AuthProof.oauth_proof:type_name -> muid.authn.v1.proof.OAuthProof
-	3, // 2: muid.authn.v1.proof.AuthProof.passkey_proof:type_name -> muid.authn.v1.proof.PasskeyProof
-	3, // [3:3] is the sub-list for method output_type
-	3, // [3:3] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	3, // 1: muid.authn.v1.proof.AuthProof.oauth_proof:type_name -> muid.authn.v1.proof.OAuthProof
+	4, // 2: muid.authn.v1.proof.AuthProof.passkey_proof:type_name -> muid.authn.v1.proof.PasskeyProof
+	2, // 3: muid.authn.v1.proof.EmailProof.resend:type_name -> muid.authn.v1.proof.EmailResendOtp
+	4, // [4:4] is the sub-list for method output_type
+	4, // [4:4] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_proof_proto_init() }
@@ -488,13 +647,17 @@ func file_authn_v1_proof_proto_init() {
 		(*authProof_OauthProof)(nil),
 		(*authProof_PasskeyProof)(nil),
 	}
+	file_authn_v1_proof_proto_msgTypes[1].OneofWrappers = []any{
+		(*emailProof_OtpCode)(nil),
+		(*emailProof_Resend)(nil),
+	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_proof_proto_rawDesc), len(file_authn_v1_proof_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

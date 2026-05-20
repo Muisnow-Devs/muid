@@ -114,6 +114,11 @@ func (store *KVOTPStore) CreateOTP(
 		}
 	}
 
+	// Send is allowed; drop any existing challenge before issuing a new code.
+	if err := store.RevokeOTP(ctx, transitionId); err != nil {
+		return otp.OTPChallenge{}, err
+	}
+
 	otpCode, err := generateOTP(OTPLength)
 	if err != nil {
 		return otp.OTPChallenge{}, err

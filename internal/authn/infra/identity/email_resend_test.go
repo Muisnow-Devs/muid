@@ -60,7 +60,8 @@ func TestEmailIdentityProvider_Continue_Resend_ReusesTransition(t *testing.T) {
 		t.Fatalf("create transition: %v", err)
 	}
 
-	if _, err := otpSt.CreateOTP(ctx, sess.Id, "user@example.com", OTPLifetime); err != nil {
+	first, err := otpSt.CreateOTP(ctx, sess.Id, "user@example.com", OTPLifetime)
+	if err != nil {
 		t.Fatalf("seed otp: %v", err)
 	}
 
@@ -78,6 +79,10 @@ func TestEmailIdentityProvider_Continue_Resend_ReusesTransition(t *testing.T) {
 	}
 	if pub.publishCalls != 1 {
 		t.Fatalf("after resend publish calls: %d", pub.publishCalls)
+	}
+
+	if err := otpSt.VerifyOTP(ctx, sess.Id, first.OTP); err != otp.ErrOTPInvalid {
+		t.Fatalf("resend should revoke previous OTP, got %v", err)
 	}
 
 	got, err := trans.Get(ctx, sess.Id)
@@ -158,7 +163,8 @@ func TestEmailIdentityProvider_Continue_Resend_RateLimited(t *testing.T) {
 		t.Fatalf("create transition: %v", err)
 	}
 
-	if _, err := otpSt.CreateOTP(ctx, sess.Id, "user@example.com", OTPLifetime); err != nil {
+	code, err := otpSt.CreateOTP(ctx, sess.Id, "user@example.com", OTPLifetime)
+	if err != nil {
 		t.Fatalf("seed otp: %v", err)
 	}
 
@@ -173,5 +179,9 @@ func TestEmailIdentityProvider_Continue_Resend_RateLimited(t *testing.T) {
 	}
 	if !errors.Is(err, otp.ErrOTPSendRateLimited) {
 		t.Fatalf("expected ErrOTPSendRateLimited, got %v", err)
+	}
+
+	if err := otpSt.VerifyOTP(ctx, sess.Id, code.OTP); err != nil {
+		t.Fatalf("rate-limited resend should keep original OTP, got %v", err)
 	}
 }

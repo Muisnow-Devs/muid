@@ -219,6 +219,55 @@ func TestKVOTPStore_SendCooldown_NormalizesEmailForCooldown(t *testing.T) {
 	}
 }
 
+func TestKVOTPStore_CreateOTP_RevokesPreviousCodeOnResend(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	ctx := context.Background()
+	session := "session-123"
+
+	first, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	second, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("second CreateOTP: %v", err)
+	}
+	if second.OTP == first.OTP {
+		t.Fatal("expected a new OTP code after resend")
+	}
+
+	if err := store.VerifyOTP(ctx, session, first.OTP); err != otp.ErrOTPInvalid {
+		t.Fatalf("old OTP should be revoked, got %v", err)
+	}
+
+	if err := store.VerifyOTP(ctx, session, second.OTP); err != nil {
+		t.Fatalf("new OTP should verify, got %v", err)
+	}
+}
+
+func TestKVOTPStore_CreateOTP_RateLimitedDoesNotRevoke(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	ctx := context.Background()
+	session := "session-123"
+
+	code, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if !errors.Is(err, otp.ErrOTPSendRateLimited) {
+		t.Fatalf("expected ErrOTPSendRateLimited, got %v", err)
+	}
+
+	if err := store.VerifyOTP(ctx, session, code.OTP); err != nil {
+		t.Fatalf("original OTP should still verify after rate-limited resend, got %v", err)
+	}
+}
+
 func TestKVOTPStore_SendCooldown_RecipientEmptySkipsCrossTransitionLimit(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
 	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)

@@ -109,12 +109,12 @@ func (s *sessionService) ResolveSessionToken(
 	ctx context.Context,
 	wireToken string,
 ) (ResolvedSession, error) {
-	selectorB64, validatorB64, err := ParseSessionToken(wireToken)
+	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
 	if err != nil {
 		return ResolvedSession{}, err
 	}
 
-	validatorSecret, err := decodeValidatorSecret(validatorB64)
+	validatorSecret, err := session.DecodeWireValidatorSecret(validatorB64)
 	if err != nil {
 		return ResolvedSession{}, err
 	}
@@ -140,7 +140,7 @@ func (s *sessionService) ResolveSessionToken(
 		}
 	}
 
-	selector, err := decodeSelector(selectorB64)
+	selector, err := session.DecodeWireSelectorBytes(selectorB64)
 	if err != nil {
 		return ResolvedSession{}, err
 	}
@@ -184,17 +184,17 @@ func (s *sessionService) ResolveSessionToken(
 
 // RevokeSessionToken revokes the session and drops any cache entry.
 func (s *sessionService) RevokeSessionToken(ctx context.Context, wireToken string) error {
-	selectorB64, validatorB64, err := ParseSessionToken(wireToken)
+	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
 	if err != nil {
 		return err
 	}
 
-	selector, err := decodeSelector(selectorB64)
+	selector, err := session.DecodeWireSelectorBytes(selectorB64)
 	if err != nil {
 		return err
 	}
 
-	validatorSecret, err := decodeValidatorSecret(validatorB64)
+	validatorSecret, err := session.DecodeWireValidatorSecret(validatorB64)
 	if err != nil {
 		return err
 	}

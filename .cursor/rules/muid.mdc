@@ -37,7 +37,7 @@ alwaysApply: true
 ## Account service and Profile gRPC
 
 - **`internal/authn/infra/account`**: user refs, federated identity, **`CreateProfile`** via Profile gRPC when configured (`AUTHN_PROFILE_GRPC_ADDR`, timeout `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`).
-- Profile client dial uses **`traceid.UnaryClientInterceptor()`** so **`x-trace-id`** is forwarded downstream.
+- Profile client dial uses **`log.UnaryClientInterceptor()`** so **`x-trace-id`** is forwarded downstream.
 
 ## gRPC interceptors (unary server)
 
@@ -45,9 +45,10 @@ Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go
 
 1. `grpcutils.TraceUnaryInterceptor`
 2. `UnaryProtovalidateInterceptor()` from **`pkg/grpc_utils`** (`buf.build/go/protovalidate`)
-3. `grpcutils.RecoveryInterceptor`
-4. `grpcutils.LoggerInterceptor`
-5. `grpcutils.TimeoutInterceptor` driven by `*_REQUEST_TIMEOUT_SECONDS` in service config
+3. Service request-context interceptor (`profilegrpc.ProfileRequestContextInterceptor` / `app.AuthnRequestContextInterceptor`) — parse user ids / wire session tokens, `log.WithAttrs`, store on context; **`InvalidArgument`** before handler
+4. `grpcutils.RecoveryInterceptor`
+5. `grpcutils.LoggerInterceptor`
+6. `grpcutils.TimeoutInterceptor` driven by `*_REQUEST_TIMEOUT_SECONDS` in service config
 
 ## Protovalidate
 
@@ -55,9 +56,9 @@ Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go
 
 ## Trace id
 
-- **`pkg/traceid`**: `FromContext` / `TraceIDFromContext`, `With`.
-- Server: metadata **`x-trace-id`** then **`x-request-id`**; else new id (`pkg/traceid` + `pkg/shared` UUID v7).
-- Unexpected errors: **`traceid.LogUnexpected`** with short `reason`, safe `detail`, and **non-sensitive** key/value pairs only.
+- **`pkg/log`**: trace id (`FromContext` / `TraceIDFromContext`, `With`), context logger (`Logger`, `WithLogger`, `Default` / `SetDefault`), **`WithAttrs`**, **`UserIDPrefix`**, **`LogUnexpected`** (`...slog.Attr` only — no string pairs). Use **`pkg/log`** instead of stdlib **`log`**.
+- Server: metadata **`x-trace-id`** then **`x-request-id`**; else new id (`pkg/log` + `pkg/shared` UUID v7).
+- Unexpected errors: **`log.LogUnexpected`** with short `reason`, safe `detail`, and **non-sensitive** `...slog.Attr` (or **`log.WithAttrs`** on ctx); helpers like **`log.UserIDPrefix`**.
 - Handlers: unexpected domain failures → **`grpcutils.GRPCInternalError()`** (`internal error`), aligned with recovery behavior.
 
 ## Errors (inner vs boundary)
@@ -85,7 +86,7 @@ Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go
 
 ## NATS and mailer
 
-- Pub/sub contract: **`pkg/shared/pubsub.PubSub`**; NATS impl **`infra/nats`** (subscriber context gets **`traceid.With`**).
+- Pub/sub contract: **`pkg/shared/pubsub.PubSub`**; NATS impl **`infra/nats`** (subscriber context gets **`log.With`**).
 - Topics: **`pkg/shared/topics`** (`Topic` types, `domain.action` style strings).
 - Mailer: **`internal/mailer/handlers.TopicHandler`** — `Topic()`, `SubscribeOptions()`, `Handle(ctx, deps, payload []byte) error`; register via **`RegisterTopicHandlers`**. Per-event code under **`internal/mailer/handlers/<event>/`**; **`internal/mailer/app`** wires infra and subscribers only.
 

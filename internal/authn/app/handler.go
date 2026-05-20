@@ -68,7 +68,7 @@ func (g *GRPCHandler) StartAuthSession(
 		Provider:         providerName,
 		Identifier:       strings.TrimSpace(req.GetIdentifier()),
 		Intent:           protoIntent(req.GetIntent()),
-		LinkSessionToken: sessionTokenValue(req.GetSessionToken()),
+		LinkSessionToken: optionalWireSession(ctx, req.GetSessionToken()),
 	})
 	if err != nil {
 		return nil, mapStartError(err)
@@ -94,7 +94,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 	ctx context.Context,
 	req *pb.ContinueAuthSessionRequest,
 ) (*pb.ContinueAuthSessionResponse, error) {
-	tid := strings.TrimSpace(req.GetTransitionId())
+	tid := transitionIDString(ctx, req)
 	sess, err := g.transitionStore.Get(ctx, tid)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
@@ -119,7 +119,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 	step, err := prov.Continue(ctx, identity.ContinueInput{
 		TransitionId:     tid,
 		Payload:          payload,
-		LinkSessionToken: sessionTokenValue(req.GetSessionToken()),
+		LinkSessionToken: optionalWireSession(ctx, req.GetSessionToken()),
 	})
 	if err != nil {
 		return mapContinueError(tid, err)
@@ -368,9 +368,9 @@ func (g *GRPCHandler) GetAuthorizedSession(
 	ctx context.Context,
 	req *pb.GetSessionRequest,
 ) (*pb.GetSessionResponse, error) {
-	wire := sessionTokenValue(req.GetSessionToken())
-	if wire == "" {
-		return nil, status.Error(codes.InvalidArgument, "missing session token")
+	wire, err := requiredWireSession(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
@@ -459,12 +459,12 @@ func (g *GRPCHandler) RevokeSession(
 	ctx context.Context,
 	req *pb.RevokeSessionRequest,
 ) (*pb.RevokeSessionResponse, error) {
-	wire := sessionTokenValue(req.GetSessionToken())
-	if wire == "" {
-		return nil, status.Error(codes.InvalidArgument, "missing session token")
+	wire, err := requiredWireSession(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	err := g.accounts.Session.RevokeSessionToken(ctx, wire)
+	err = g.accounts.Session.RevokeSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) {
 		return nil, status.Error(codes.NotFound, "session not found")
 	}

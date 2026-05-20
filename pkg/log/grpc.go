@@ -1,4 +1,4 @@
-package traceid
+package log
 
 import (
 	"context"

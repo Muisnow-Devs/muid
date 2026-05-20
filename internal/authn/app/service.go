@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"sanzi.io/muid/api/proto/authn/v1"
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/log"
 )
 
 type AuthnService struct {
@@ -33,6 +33,7 @@ func NewAuthnService(config Config, handler authn.AuthnServiceServer) (*AuthnSer
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
 			pvUnary,
+			AuthnRequestContextInterceptor(),
 			grpcutils.RecoveryInterceptor,
 			grpcutils.LoggerInterceptor,
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),

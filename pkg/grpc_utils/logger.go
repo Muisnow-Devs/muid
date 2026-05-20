@@ -2,12 +2,12 @@ package grpcutils
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"time"
 
 	"google.golang.org/grpc"
 
-	"sanzi.io/muid/pkg/traceid"
+	"sanzi.io/muid/pkg/log"
 )
 
 func LoggerInterceptor(
@@ -20,16 +20,10 @@ func LoggerInterceptor(
 
 	resp, err := handler(ctx, req)
 
-	tid, _ := traceid.FromContext(ctx)
-	if tid == "" {
-		tid = "none"
-	}
-	log.Printf(
-		"method=%s trace_id=%s duration=%s err=%v",
-		info.FullMethod,
-		tid,
-		time.Since(start),
-		err,
+	log.Logger(ctx).Info("grpc request",
+		slog.String("method", info.FullMethod),
+		slog.Duration("duration", time.Since(start)),
+		slog.Any("err", err),
 	)
 
 	return resp, err

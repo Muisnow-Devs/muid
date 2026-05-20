@@ -31,7 +31,7 @@ The gateway must safely route traffic to backend services while acting as the Gr
 - [ ] **1.1 Gateway Service Bootstrapping**
   - Scaffold `cmd/gateway/main.go` using the standard `muid` bootstrapping pattern.
   - Instantiate gRPC clients (`api/proto/authn/v1`, `api/proto/profile/v1`) using existing `grpcutils` resilience/timeout logic.
-  - Add standard HTTP middleware (CORS, Trace ID injection, structured logging matching `pkg/traceid`).
+  - Add standard HTTP middleware (CORS, Trace ID injection, structured logging matching `pkg/log`).
 - [ ] **1.2 GraphQL Engine Integration**
   - Integrate a Go GraphQL library (e.g., `github.com/99designs/gqlgen`).
   - Create the exact schema definitions (`schema.graphql`) mirroring public use cases.

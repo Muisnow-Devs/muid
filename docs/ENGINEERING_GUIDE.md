@@ -25,7 +25,7 @@ There is no separate frontend design system in this repo; the “contract surfac
 | **`cmd/<service>/main.go`** | Process entrypoints. Present today: **`authn`**, **`profile`**, **`mailer`**. |
 | **`internal/<domain>/`** | Domain logic per service (`internal/authn`, `internal/profile`, `internal/mailer`, plus shared packages like `internal/session`, `internal/identity`, `internal/media`, `internal/templates`). |
 | **`infra/<backend>/`** | Reusable infrastructure: **interfaces in `interface.go`**, implementations in sibling files (`infra/redis`, `infra/nats`, `infra/smtp`, `infra/r2`, `infra/mocked`, …). |
-| **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/traceid`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). |
+| **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). |
 | **`api/proto/`** | Protobuf definitions; generated `*.pb.go` under **`api/`** after `buf generate`. |
 
 **Authn-only infrastructure** (OTP, transition store, OIDC/email/passkey providers tightly coupled to auth flows) lives under **`internal/authn/infra/`** (`kv/`, `identity/`). Do **not** move those into top-level **`infra/*`**.
@@ -64,11 +64,14 @@ Use **`github.com/kelseyhightower/envconfig`** via **`pkg/shared.LoadConfig[T](p
 
 Unary servers in **authn** and **profile** use **`google.golang.org/grpc.ChainUnaryInterceptor`** in this order:
 
-1. **`grpcutils.TraceUnaryInterceptor`** — injects trace id (`pkg/traceid` reads **`x-trace-id`** then **`x-request-id`**, else new UUID string via `shared.UUIDV7()`).
-2. **`grpcutils.UnaryProtovalidateInterceptor()`** — validates the request `proto.Message`.
-3. **`grpcutils.RecoveryInterceptor`**
-4. **`grpcutils.LoggerInterceptor`**
-5. **`grpcutils.TimeoutInterceptor`** — timeout from `RequestTimeoutSeconds` in service config (`AUTHN_REQUEST_TIMEOUT_SECONDS`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, …).
+1. **`grpcutils.TraceUnaryInterceptor`** — injects trace id (`pkg/log` reads **`x-trace-id`** then **`x-request-id`**, else new UUID string via `shared.UUIDV7()`).
+2. **`grpcutils.UnaryProtovalidateInterceptor`** — buf validate / protovalidate; fixed client message on violations.
+3. **Request context** — **`profilegrpc.ProfileRequestContextInterceptor`** or **`app.AuthnRequestContextInterceptor`**: after protovalidate, parse profile user ids / authn wire session tokens, attach **`log.WithAttrs`**, store typed values on context; return **`InvalidArgument`** before the handler on parse failures.
+4. **`grpcutils.RecoveryInterceptor`**
+5. **`grpcutils.LoggerInterceptor`**
+6. **`grpcutils.TimeoutInterceptor`** — timeout from `RequestTimeoutSeconds` in service config (`AUTHN_REQUEST_TIMEOUT_SECONDS`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, …).
+
+Shared factory: **`grpcutils.UnaryRequestContextInterceptor`** — per-method enrichers keyed by `FullMethod`.
 
 Reference implementations: **`internal/authn/app/service.go`**, **`internal/profile/app/service.go`**.
 
@@ -88,7 +91,7 @@ When **`interface.go`** defines the public contract for a package, **caller-visi
 ### Expected vs unexpected
 
 - **Expected:** validation, business rules, not-found where that is part of the contract — map to appropriate **`grpc/codes`** and stable, non-sensitive status messages.
-- **Unexpected:** DB/network/SDK bugs — at the handler or nearest boundary, call **`traceid.LogUnexpected`** with a short `reason`, safe `detail` (often `err.Error()` only when safe), and **non-sensitive** key/value pairs (e.g. topic name, truncated ids). Return **`grpcutils.GRPCInternalError()`** so the client sees **`codes.Internal`** and the literal **`internal error`**, consistent with **`RecoveryInterceptor`**.
+- **Unexpected:** DB/network/SDK bugs — at the handler or nearest boundary, call **`log.LogUnexpected`** with a short `reason`, safe `detail` (often `err.Error()` only when safe), and **`...slog.Attr`** (e.g. `slog.String("method", …)`, **`log.UserIDPrefix`**, or **`log.WithAttrs`** on ctx for fields reused across logs). Return **`grpcutils.GRPCInternalError()`** so the client sees **`codes.Internal`** and the literal **`internal error`**, consistent with **`RecoveryInterceptor`**.
 
 ### Cleanup
 
@@ -110,7 +113,7 @@ Use **`errutil.Discard`**, **`errutil.Close`**, **`errutil.CloseIf`** instead of
 ## NATS, topics, and mailer
 
 - **Abstraction:** **`pkg/shared/pubsub.PubSub`** (`Publish` / `Subscribe`).
-- **NATS:** **`infra/nats.NewNATSPubSub`**. Each subscription handler runs with **`traceid.With(context.Background(), …)`** so logs include **`trace_id`** even without gRPC metadata.
+- **NATS:** **`infra/nats.NewNATSPubSub`**. Each subscription handler runs with **`log.With(context.Background(), …)`** so logs include **`trace_id`** even without gRPC metadata.
 - **Topic constants:** **`pkg/shared/topics`** (e.g. `mail.go`, `profile.go`) — strings like **`domain.action`** (e.g. `mail.send.otp`, `profile.change`).
 - **Wire payloads:** protobuf **`proto.Marshal`** / **`proto.Unmarshal`** (same pattern as authn email publish path).
 
@@ -169,7 +172,7 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 
 - **Transition state:** **`internal/session`** (`AuthFlowKind`, `EmailOTPFlow`, `OIDCFlow`, `PasskeyFlow` pointers on `SessionStore`) with Redis backing **`internal/authn/infra/kv`** implementing **`internal/session.AuthTransitionStore`**.
 - **Identity providers:** **`internal/authn/infra/identity`** implement **`internal/identity.IdentityProvider`**; **`internal/authn/app/handler.go`** routes **`ContinueAuthSession`** using transition `Provider` and maps `proof` into **`ContinueInput.Payload`**.
-- **Accounts:** **`internal/authn/infra/account`** persists users, calls Profile **`CreateProfile`** when configured, issues sessions (`SessionToken` shape per proto). Profile gRPC dial attaches **`traceid.UnaryClientInterceptor()`** for **`x-trace-id`**.
+- **Accounts:** **`internal/authn/infra/account`** persists users, calls Profile **`CreateProfile`** when configured, issues sessions (`SessionToken` shape per proto). Profile gRPC dial attaches **`log.UnaryClientInterceptor()`** for **`x-trace-id`**.
 
 ---
 

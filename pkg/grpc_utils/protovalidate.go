@@ -3,7 +3,7 @@ package grpcutils
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"sync"
 
 	"buf.build/go/protovalidate"
@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
-	"sanzi.io/muid/pkg/traceid"
+	"sanzi.io/muid/pkg/log"
 )
 
 var (
@@ -50,21 +50,21 @@ func UnaryProtovalidateInterceptor() (grpc.UnaryServerInterceptor, error) {
 			return nil, status.Errorf(codes.Internal, "unsupported request type")
 		}
 		if err := v.Validate(msg); err != nil {
-			tid, _ := traceid.FromContext(ctx)
-			if tid == "" {
-				tid = "none"
-			}
 			var valErr *protovalidate.ValidationError
 			if errors.As(err, &valErr) {
-				log.Printf(
-					"invalid_argument trace_id=%s method=%s reason=protovalidate detail=%s",
-					tid,
-					info.FullMethod,
-					valErr.Error(),
+				log.Logger(ctx).Info("invalid_argument",
+					slog.String("reason", "protovalidate"),
+					slog.String("method", info.FullMethod),
+					slog.String("detail", valErr.Error()),
 				)
 				return nil, status.Error(codes.InvalidArgument, clientValidationMessage)
 			}
-			traceid.LogUnexpected(ctx, "protovalidate", err.Error(), "method", info.FullMethod)
+			log.LogUnexpected(
+				ctx,
+				"protovalidate",
+				err.Error(),
+				slog.String("method", info.FullMethod),
+			)
 			return nil, status.Error(codes.Internal, "internal error")
 		}
 		return handler(ctx, req)

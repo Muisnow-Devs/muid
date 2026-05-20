@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	"sanzi.io/muid/pkg/traceid"
+	"sanzi.io/muid/pkg/log"
 )
 
 // DialInsecureClient dials target with trace forwarding, optional circuit breaker (outer) and retry (inner).
@@ -23,7 +23,7 @@ func DialInsecureClient(
 	}
 
 	interceptors := []grpc.UnaryClientInterceptor{
-		traceid.UnaryClientInterceptor(),
+		log.UnaryClientInterceptor(),
 	}
 
 	cbCfg := resilience.CircuitBreaker.withDefaults()

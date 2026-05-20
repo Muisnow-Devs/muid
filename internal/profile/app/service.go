@@ -3,14 +3,15 @@ package app
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"time"
 
 	"google.golang.org/grpc"
 
 	pb "sanzi.io/muid/api/proto/profile/v1"
+	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/log"
 )
 
 type ProfileGRPC struct {
@@ -33,6 +34,7 @@ func NewProfileGRPC(config Config, handler pb.ProfileServiceServer) (*ProfileGRP
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
 			pvUnary,
+			profilegrpc.ProfileRequestContextInterceptor(),
 			grpcutils.RecoveryInterceptor,
 			grpcutils.LoggerInterceptor,
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),

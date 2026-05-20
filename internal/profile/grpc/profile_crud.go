@@ -20,6 +20,8 @@ import (
 	"sanzi.io/muid/internal/profile/ent/userprofile"
 	"sanzi.io/muid/internal/profile/updatemask"
 	"sanzi.io/muid/pkg/errutil"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/topics"
 )
 
@@ -48,11 +50,8 @@ func (g *GRPCHandler) CreateProfile(
 	usernameCandidate := generateUsernameCandidates(randomUsernameBase())
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, grpcInternal(
-			ctx,
-			"profile create tx begin",
-			err,
-		)
+		log.LogUnexpected(ctx, "profile create tx begin", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 	defer func() { errutil.Discard(tx.Rollback()) }()
 
@@ -62,11 +61,8 @@ func (g *GRPCHandler) CreateProfile(
 			Where(userprofile.UsernameEQ(candidate)).
 			Exist(ctx)
 		if err != nil {
-			return nil, grpcInternal(
-				ctx,
-				"profile create username existence check",
-				err,
-			)
+			log.LogUnexpected(ctx, "profile create username existence check", err.Error())
+			return nil, grpcutils.GRPCInternalError()
 		}
 
 		if exists {
@@ -84,21 +80,18 @@ func (g *GRPCHandler) CreateProfile(
 			break
 		}
 
-		return nil, grpcInternal(
-			ctx,
-			"profile create",
-			err,
-		)
+		log.LogUnexpected(ctx, "profile create", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
+		log.LogUnexpected(
+			log.WithAttrs(ctx, log.UserIDPrefix(user.ID.String())),
 			"profile create tx commit",
-			user.ID,
+			err.Error(),
 		)
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	if g.avatarIngest != nil && pictureURL != "" {
@@ -115,9 +108,9 @@ func (g *GRPCHandler) GetProfile(
 	ctx context.Context,
 	req *pb.GetProfileRequest,
 ) (*pb.GetProfileResponse, error) {
-	id, err := uuid.Parse(req.GetId())
+	id, err := requiredProfileUserID(ctx)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid profile id")
+		return nil, err
 	}
 
 	p, err := g.db.UserProfile.Query().
@@ -127,23 +120,15 @@ func (g *GRPCHandler) GetProfile(
 		return nil, status.Error(codes.NotFound, "profile not found")
 	}
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
-			"profile get query",
-			id,
-		)
+		log.LogUnexpected(ctx, "profile get query", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	locale := p.Locale
 	avatarURL, objectKey, err := g.queryDisplayAvatar(ctx, id)
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
-			"profile get avatar",
-			id,
-		)
+		log.LogUnexpected(ctx, "profile get avatar", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	resp := &pb.GetProfileResponse{}
@@ -162,9 +147,9 @@ func (g *GRPCHandler) UpdateProfile(
 	ctx context.Context,
 	req *pb.UpdateProfileRequest,
 ) (*pb.UpdateProfileResponse, error) {
-	id, err := uuid.Parse(req.GetId())
+	id, err := requiredProfileUserID(ctx)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid profile id")
+		return nil, err
 	}
 
 	paths, err := sortedPatchableProfileMaskPaths(req.GetUpdateMask())
@@ -186,12 +171,8 @@ func (g *GRPCHandler) UpdateProfile(
 
 	tx, err := g.db.Tx(ctx)
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
-			"profile update tx begin",
-			id,
-		)
+		log.LogUnexpected(ctx, "profile update tx begin", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 	defer func() { errutil.Discard(tx.Rollback()) }()
 
@@ -213,32 +194,20 @@ func (g *GRPCHandler) UpdateProfile(
 	}
 
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
-			"profile update save",
-			id,
-		)
+		log.LogUnexpected(ctx, "profile update save", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
-			"profile update tx commit",
-			id,
-		)
+		log.LogUnexpected(ctx, "profile update tx commit", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	resPaths, err := updatemask.GetProfileResponsePathsFromUpdateRequestPaths(paths)
 	if err != nil {
-		return nil, internalErrorWithUserId(
-			ctx,
-			err,
-			"profile update event paths",
-			id,
-		)
+		log.LogUnexpected(ctx, "profile update event paths", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	changed := &fieldmaskpb.FieldMask{Paths: resPaths}

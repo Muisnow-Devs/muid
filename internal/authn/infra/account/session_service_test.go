@@ -46,8 +46,8 @@ func seedUserRef(t *testing.T, client *ent.Client, userID uuid.UUID) {
 
 func wireTokenParts(t *testing.T) (wire string, selectorB64 string, validatorSecret []byte) {
 	t.Helper()
-	selector := make([]byte, SelectorLength)
-	validatorSecret = make([]byte, ValidatorLength)
+	selector := make([]byte, session.SelectorByteLength)
+	validatorSecret = make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(selector); err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,9 @@ func TestIssueAuthenticatedSession_uniqueSelectors(t *testing.T) {
 		if err != nil {
 			t.Fatalf("issue: %v", err)
 		}
-		selB64, _, err := ParseSessionToken(issued.GetSessionContext().GetSessionToken().GetValue())
+		selB64, _, err := session.ParseWireSessionToken(
+			issued.GetSessionContext().GetSessionToken().GetValue(),
+		)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -165,8 +167,8 @@ func TestResolveSessionToken_wrongValidatorDB(t *testing.T) {
 	userID := uuid.MustParse("00000000-0000-7000-8000-000000000022")
 	seedUserRef(t, client, userID)
 
-	selector := make([]byte, SelectorLength)
-	validatorSecret := make([]byte, ValidatorLength)
+	selector := make([]byte, session.SelectorByteLength)
+	validatorSecret := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(selector); err != nil {
 		t.Fatal(err)
 	}
@@ -184,7 +186,7 @@ func TestResolveSessionToken_wrongValidatorDB(t *testing.T) {
 	)
 
 	selectorB64 := base64.RawURLEncoding.EncodeToString(selector)
-	wrongValidator := make([]byte, ValidatorLength)
+	wrongValidator := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(wrongValidator); err != nil {
 		t.Fatal(err)
 	}
@@ -230,8 +232,8 @@ func TestResolveSessionToken_revokedAndExpiredDB(t *testing.T) {
 			userID := uuid.New()
 			seedUserRef(t, client, userID)
 
-			selector := make([]byte, SelectorLength)
-			validatorSecret := make([]byte, ValidatorLength)
+			selector := make([]byte, session.SelectorByteLength)
+			validatorSecret := make([]byte, session.ValidatorByteLength)
 			if _, err := rand.Read(selector); err != nil {
 				t.Fatal(err)
 			}
@@ -299,11 +301,13 @@ func TestRevokeSessionToken_wrongValidatorNotFound(t *testing.T) {
 	if err != nil {
 		t.Fatalf("issue: %v", err)
 	}
-	selB64, _, err := ParseSessionToken(issued.GetSessionContext().GetSessionToken().GetValue())
+	selB64, _, err := session.ParseWireSessionToken(
+		issued.GetSessionContext().GetSessionToken().GetValue(),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	wrongValidator := make([]byte, ValidatorLength)
+	wrongValidator := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(wrongValidator); err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +324,8 @@ func TestResolveSessionToken_unknownTokenNotFound(t *testing.T) {
 	t.Parallel()
 
 	svc := newSessionService(t, nil)
-	_, err := svc.ResolveSessionToken(context.Background(), validWireToken(t))
+	wire, _, _ := wireTokenParts(t)
+	_, err := svc.ResolveSessionToken(context.Background(), wire)
 	if !errors.Is(err, session.ErrSessionNotFound) {
 		t.Fatalf("unknown token: got %v", err)
 	}
@@ -345,7 +350,7 @@ func TestResolveSessionToken_malformedVsWrongValidatorErrors(t *testing.T) {
 		ExpiresAt:     time.Now().Add(time.Hour),
 		ValidatorHash: sum,
 	}
-	wrongValidator := make([]byte, ValidatorLength)
+	wrongValidator := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(wrongValidator); err != nil {
 		t.Fatal(err)
 	}
@@ -372,8 +377,8 @@ func TestResolveSessionToken_expiredCacheFallsThroughDB(t *testing.T) {
 	userID := uuid.New()
 	seedUserRef(t, client, userID)
 
-	selector := make([]byte, SelectorLength)
-	validatorSecret := make([]byte, ValidatorLength)
+	selector := make([]byte, session.SelectorByteLength)
+	validatorSecret := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(selector); err != nil {
 		t.Fatal(err)
 	}

@@ -3,11 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"os/signal"
 	"syscall"
 
 	"sanzi.io/muid/internal/profile/app"
+	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
 )
 

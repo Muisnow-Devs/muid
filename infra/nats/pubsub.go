@@ -2,12 +2,13 @@ package nats
 
 import (
 	"context"
+	"log/slog"
 
 	natsio "github.com/nats-io/nats.go"
+	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
-	"sanzi.io/muid/pkg/traceid"
 )
 
 type NATSPubSub struct {
@@ -38,10 +39,15 @@ func (n *NATSPubSub) Subscribe(
 		workCtx, cancel := context.WithTimeout(ctx, pubsub.SubscribeTaskTimeout)
 		defer cancel()
 
-		ctx := traceid.With(context.Background(), shared.UUIDV7().String())
+		ctx := log.With(context.Background(), shared.UUIDV7().String())
 
 		if err := handler(workCtx, msg.Data); err != nil {
-			traceid.LogUnexpected(ctx, "nats subscriber", err.Error(), "topic", string(topic))
+			log.LogUnexpected(
+				ctx,
+				"nats subscriber",
+				err.Error(),
+				slog.String("topic", string(topic)),
+			)
 		}
 	}
 

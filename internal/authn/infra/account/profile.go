@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
-	"sanzi.io/muid/pkg/traceid"
+	"sanzi.io/muid/pkg/log"
 )
 
 func (s *Store) provisionFromProfile(
@@ -21,8 +21,8 @@ func (s *Store) provisionFromProfile(
 	pctx, cancel := context.WithTimeout(ctx, s.profileTimeout())
 	defer cancel()
 
-	if id, ok := traceid.FromContext(ctx); ok {
-		pctx = traceid.With(pctx, id)
+	if id, ok := log.FromContext(ctx); ok {
+		pctx = log.With(pctx, id)
 	}
 
 	req := &profilepb.CreateProfileRequest{}

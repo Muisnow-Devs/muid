@@ -14,8 +14,8 @@ import (
 	"sanzi.io/muid/internal/profile/avatarkey"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/synthavatar"
+	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
-	"sanzi.io/muid/pkg/traceid"
 )
 
 const ingestTimeout = 3 * time.Minute
@@ -44,13 +44,6 @@ func NewExternalAvatarIngestor(
 		publicAssetURL: publicAssetURL,
 		proc:           proc,
 	}
-}
-
-func userIDPrefix(userID string) string {
-	if len(userID) >= 8 {
-		return userID[:8]
-	}
-	return userID
 }
 
 func (i *ExternalAvatarIngestor) publicProdURL(objectKey string) string {
@@ -170,29 +163,18 @@ func (i *ExternalAvatarIngestor) Go(
 
 	ctx := context.WithoutCancel(parentCtx)
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	ctx = log.WithAttrs(ctx, log.UserIDPrefix(userID.String()))
 
 	go func() {
 		defer cancel()
 		defer func() {
 			if r := recover(); r != nil {
-				traceid.LogUnexpected(
-					ctx,
-					"ExternalAvatarIngestor.panic",
-					fmt.Sprintf("%v", r),
-					"user_id_prefix",
-					userIDPrefix(userID.String()),
-				)
+				log.LogUnexpected(ctx, "ExternalAvatarIngestor.panic", fmt.Sprintf("%v", r))
 			}
 		}()
 
 		if err := i.IngestFromURL(ctx, userID, primaryURL, fallbackURL); err != nil {
-			traceid.LogUnexpected(
-				ctx,
-				"ExternalAvatarIngestor.IngestFromURL",
-				err.Error(),
-				"user_id_prefix",
-				userIDPrefix(userID.String()),
-			)
+			log.LogUnexpected(ctx, "ExternalAvatarIngestor.IngestFromURL", err.Error())
 		}
 	}()
 }
@@ -210,17 +192,16 @@ func (i *ExternalAvatarIngestor) GoBootstrap(
 
 	ctx := context.WithoutCancel(parentCtx)
 	ctx, cancel := context.WithTimeout(ctx, ingestTimeout)
+	ctx = log.WithAttrs(ctx, log.UserIDPrefix(userID.String()))
 
 	go func() {
 		defer cancel()
 		defer func() {
 			if r := recover(); r != nil {
-				traceid.LogUnexpected(
+				log.LogUnexpected(
 					ctx,
 					"ExternalAvatarIngestor.GoBootstrap.panic",
 					fmt.Sprintf("%v", r),
-					"user_id_prefix",
-					userIDPrefix(userID.String()),
 				)
 			}
 		}()
@@ -255,12 +236,6 @@ func (i *ExternalAvatarIngestor) backgroundIngest(
 	}
 
 	if err != nil {
-		traceid.LogUnexpected(
-			ctx,
-			"ExternalAvatarIngestor.GoBootstrap",
-			err.Error(),
-			"user_id_prefix",
-			userIDPrefix(uid.String()),
-		)
+		log.LogUnexpected(ctx, "ExternalAvatarIngestor.GoBootstrap", err.Error())
 	}
 }

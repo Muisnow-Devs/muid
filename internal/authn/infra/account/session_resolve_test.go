@@ -77,8 +77,8 @@ func (m *mapSessionCache) Delete(ctx context.Context, wireToken string) error {
 func TestResolveSessionTokenCacheRequiresValidator(t *testing.T) {
 	t.Parallel()
 
-	selectorBytes := make([]byte, SelectorLength)
-	validatorSecret := make([]byte, ValidatorLength)
+	selectorBytes := make([]byte, session.SelectorByteLength)
+	validatorSecret := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(selectorBytes); err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +90,7 @@ func TestResolveSessionTokenCacheRequiresValidator(t *testing.T) {
 	validatorB64 := base64.RawURLEncoding.EncodeToString(validatorSecret)
 	wireOK := selectorB64 + "." + validatorB64
 
-	wrongValidator := make([]byte, ValidatorLength)
+	wrongValidator := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(wrongValidator); err != nil {
 		t.Fatal(err)
 	}
@@ -134,8 +134,8 @@ func TestResolveSessionTokenCacheRequiresValidator(t *testing.T) {
 func TestResolveSessionTokenCacheWrongValidatorNoSessionLeak(t *testing.T) {
 	t.Parallel()
 
-	selectorBytes := make([]byte, SelectorLength)
-	validatorSecret := make([]byte, ValidatorLength)
+	selectorBytes := make([]byte, session.SelectorByteLength)
+	validatorSecret := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(selectorBytes); err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +146,7 @@ func TestResolveSessionTokenCacheWrongValidatorNoSessionLeak(t *testing.T) {
 	selectorB64 := base64.RawURLEncoding.EncodeToString(selectorBytes)
 	wireOK := selectorB64 + "." + base64.RawURLEncoding.EncodeToString(validatorSecret)
 
-	wrongValidator := make([]byte, ValidatorLength)
+	wrongValidator := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(wrongValidator); err != nil {
 		t.Fatal(err)
 	}
@@ -187,8 +187,8 @@ func TestResolveSessionTokenCacheWrongValidatorNoSessionLeak(t *testing.T) {
 func TestResolveSessionTokenCacheValidatorMismatchSkipsDB(t *testing.T) {
 	t.Parallel()
 
-	selectorBytes := make([]byte, SelectorLength)
-	validatorSecret := make([]byte, ValidatorLength)
+	selectorBytes := make([]byte, session.SelectorByteLength)
+	validatorSecret := make([]byte, session.ValidatorByteLength)
 	if _, err := rand.Read(selectorBytes); err != nil {
 		t.Fatal(err)
 	}

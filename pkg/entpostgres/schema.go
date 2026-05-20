@@ -3,10 +3,10 @@ package entpostgres
 import (
 	"context"
 	"errors"
-	"log"
 	"strings"
 
 	"entgo.io/ent/dialect/sql/schema"
+	"sanzi.io/muid/pkg/log"
 )
 
 // SchemaMigrator matches Ent generated migrate.Schema.Create.

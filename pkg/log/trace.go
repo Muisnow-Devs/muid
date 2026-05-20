@@ -1,15 +1,15 @@
-package traceid
+package log
 
 import "context"
 
-type ctxKey struct{}
+type traceCtxKey struct{}
 
 // With returns a child context carrying traceID (non-empty).
 func With(ctx context.Context, traceID string) context.Context {
 	if traceID == "" {
 		return ctx
 	}
-	return context.WithValue(ctx, ctxKey{}, traceID)
+	return context.WithValue(ctx, traceCtxKey{}, traceID)
 }
 
 // TraceIDFromContext returns the trace id if present.
@@ -22,7 +22,7 @@ func FromContext(ctx context.Context) (string, bool) {
 	if ctx == nil {
 		return "", false
 	}
-	v, ok := ctx.Value(ctxKey{}).(string)
+	v, ok := ctx.Value(traceCtxKey{}).(string)
 	if !ok || v == "" {
 		return "", false
 	}

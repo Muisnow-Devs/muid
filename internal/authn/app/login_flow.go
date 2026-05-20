@@ -21,8 +21,8 @@ func (g *GRPCHandler) finishAuthStep(
 	sess session.AuthSession,
 	step identity.StepResult,
 ) (*pb.ContinueAuthSessionResponse, error) {
-	tid := strings.TrimSpace(req.GetTransitionId())
-	wire := sessionTokenValue(req.GetSessionToken())
+	tid := transitionIDString(ctx, req)
+	wire := optionalWireSession(ctx, req.GetSessionToken())
 
 	switch step.Type {
 	case identity.StepLinked:
@@ -42,7 +42,7 @@ func (g *GRPCHandler) completeRegisterRequired(
 	sess session.AuthSession,
 	step identity.StepResult,
 ) (*pb.ContinueAuthSessionResponse, error) {
-	tid := strings.TrimSpace(req.GetTransitionId())
+	tid := transitionIDString(ctx, req)
 
 	uid, err := g.provisionRegisterRequired(ctx, step.RegisterRequired)
 	if err != nil {
@@ -65,7 +65,7 @@ func (g *GRPCHandler) completeRegisterRequired(
 		Payload: map[string]any{
 			identity.ContinuePayloadFinishRegister: true,
 		},
-		LinkSessionToken: sessionTokenValue(req.GetSessionToken()),
+		LinkSessionToken: optionalWireSession(ctx, req.GetSessionToken()),
 	})
 	if err != nil {
 		return mapContinueError(tid, err)

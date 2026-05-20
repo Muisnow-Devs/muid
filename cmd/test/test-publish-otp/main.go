@@ -10,8 +10,9 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"time"
+
+	"sanzi.io/muid/pkg/log"
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"

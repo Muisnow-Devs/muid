@@ -222,16 +222,19 @@ func (b0 GetProfileRequest_builder) Build() *GetProfileRequest {
 }
 
 type GetProfileResponse struct {
-	state                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Id              string                 `protobuf:"bytes,1,opt,name=id,proto3"`
-	xxx_hidden_Email           string                 `protobuf:"bytes,2,opt,name=email,proto3"`
-	xxx_hidden_DisplayName     string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3"`
-	xxx_hidden_Username        string                 `protobuf:"bytes,4,opt,name=username,proto3"`
-	xxx_hidden_AvatarUrl       string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3"`
-	xxx_hidden_Locale          string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
-	xxx_hidden_AvatarObjectKey string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3"`
-	unknownFields              protoimpl.UnknownFields
-	sizeCache                  protoimpl.SizeCache
+	state                       protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id               string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Email            string                 `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_DisplayName      string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3"`
+	xxx_hidden_Username         string                 `protobuf:"bytes,4,opt,name=username,proto3"`
+	xxx_hidden_AvatarUrl        string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3"`
+	xxx_hidden_Locale           string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
+	xxx_hidden_AvatarObjectKey  string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3"`
+	xxx_hidden_OriginalIdentity *string                `protobuf:"bytes,8,opt,name=original_identity,json=originalIdentity,proto3,oneof"`
+	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
+	XXX_presence                [1]uint32
+	unknownFields               protoimpl.UnknownFields
+	sizeCache                   protoimpl.SizeCache
 }
 
 func (x *GetProfileResponse) Reset() {
@@ -308,6 +311,16 @@ func (x *GetProfileResponse) GetAvatarObjectKey() string {
 	return ""
 }
 
+func (x *GetProfileResponse) GetOriginalIdentity() string {
+	if x != nil {
+		if x.xxx_hidden_OriginalIdentity != nil {
+			return *x.xxx_hidden_OriginalIdentity
+		}
+		return ""
+	}
+	return ""
+}
+
 func (x *GetProfileResponse) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -336,6 +349,23 @@ func (x *GetProfileResponse) SetAvatarObjectKey(v string) {
 	x.xxx_hidden_AvatarObjectKey = v
 }
 
+func (x *GetProfileResponse) SetOriginalIdentity(v string) {
+	x.xxx_hidden_OriginalIdentity = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
+}
+
+func (x *GetProfileResponse) HasOriginalIdentity() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+}
+
+func (x *GetProfileResponse) ClearOriginalIdentity() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_OriginalIdentity = nil
+}
+
 type GetProfileResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -346,6 +376,9 @@ type GetProfileResponse_builder struct {
 	AvatarUrl       string
 	Locale          string
 	AvatarObjectKey string
+	// This is for backwards compatibility with the event schema.
+	// Newer account shouldn't have this field populated.
+	OriginalIdentity *string
 }
 
 func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
@@ -359,6 +392,10 @@ func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
 	x.xxx_hidden_AvatarUrl = b.AvatarUrl
 	x.xxx_hidden_Locale = b.Locale
 	x.xxx_hidden_AvatarObjectKey = b.AvatarObjectKey
+	if b.OriginalIdentity != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		x.xxx_hidden_OriginalIdentity = b.OriginalIdentity
+	}
 	return m0
 }
 
@@ -852,7 +889,7 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x15CreateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"-\n" +
 	"\x11GetProfileRequest\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\x83\x02\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\xcb\x02\n" +
 	"\x12GetProfileResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12!\n" +
@@ -861,7 +898,9 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
 	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
 	"\x06locale\x18\x06 \x01(\tR\x06locale\x12*\n" +
-	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\"\xc7\x01\n" +
+	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\x120\n" +
+	"\x11original_identity\x18\b \x01(\tH\x00R\x10originalIdentity\x88\x01\x01B\x14\n" +
+	"\x12_original_identity\"\xc7\x01\n" +
 	"\x14UpdateProfileRequest\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
@@ -943,6 +982,7 @@ func file_profile_v1_profile_proto_init() {
 		return
 	}
 	file_profile_v1_profile_proto_msgTypes[0].OneofWrappers = []any{}
+	file_profile_v1_profile_proto_msgTypes[3].OneofWrappers = []any{}
 	file_profile_v1_profile_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

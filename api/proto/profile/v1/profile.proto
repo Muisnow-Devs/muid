@@ -43,6 +43,10 @@ message GetProfileResponse {
   string avatar_url        = 5;
   string locale            = 6;
   string avatar_object_key = 7;
+
+  // This is for backwards compatibility with the event schema.
+  // Newer account shouldn't have this field populated.
+  optional string original_identity = 8;
 }
 
 message UpdateProfileRequest {

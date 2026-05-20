@@ -114,6 +114,7 @@ func (g *GRPCHandler) GetProfile(
 	}
 
 	p, err := g.db.UserProfile.Query().
+		WithOriginalIdentity().
 		Where(userprofile.ID(id)).
 		Only(ctx)
 	if ent.IsNotFound(err) {
@@ -143,6 +144,10 @@ func (g *GRPCHandler) GetProfile(
 	resp.SetAvatarUrl(avatarURL)
 	resp.SetLocale(locale)
 	resp.SetAvatarObjectKey(objectKey)
+
+	if p.Edges.OriginalIdentity != nil {
+		resp.SetOriginalIdentity(p.Edges.OriginalIdentity.OriginalIdentity)
+	}
 
 	return resp, nil
 }

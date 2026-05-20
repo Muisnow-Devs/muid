@@ -11,12 +11,12 @@ import (
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
+	"sanzi.io/muid/infra/mocked"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/enttest"
+	authnkv "sanzi.io/muid/internal/authn/infra/kv"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/infra/mocked"
-	authnkv "sanzi.io/muid/internal/authn/infra/kv"
 )
 
 func openRegisterFinishTestDB(t *testing.T) *ent.Client {
@@ -103,9 +103,13 @@ func TestFinishRegisterAfterLink_deletesTransition(t *testing.T) {
 	store := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
 	uid := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 
-	sess, err := store.Create(ctx, "email", session.EmailOTPStore(session.StepFinish, &session.EmailOTPFlow{
-		Email: "a@b.com",
-	}))
+	sess, err := store.Create(
+		ctx,
+		"email",
+		session.EmailOTPStore(session.StepFinish, &session.EmailOTPFlow{
+			Email: "a@b.com",
+		}),
+	)
 	if err != nil {
 		t.Fatalf("create: %v", err)
 	}

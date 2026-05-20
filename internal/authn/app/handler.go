@@ -26,18 +26,24 @@ import (
 type GRPCHandler struct {
 	pb.UnimplementedAuthnServiceServer
 
-	optStore        otp.OTPStore
-	idm             *identity.IdentityManager
-	transitionStore session.AuthTransitionStore
-	accounts        *account.Accounts
+	optStore                otp.OTPStore
+	idm                     *identity.IdentityManager
+	transitionStore         session.AuthTransitionStore
+	accounts                *account.Accounts
+	otpResendCooldownMillis int64
 }
 
 func CreateGRPCHandler(infra *InfraDependencies) pb.AuthnServiceServer {
+	cooldownSec := infra.GlobalConfig.OTPSendCooldownSeconds
+	if cooldownSec < 0 {
+		cooldownSec = 0
+	}
 	return &GRPCHandler{
-		optStore:        infra.OTPStore,
-		idm:             infra.IdentityManager,
-		transitionStore: infra.TransitionStore,
-		accounts:        infra.Accounts,
+		optStore:                infra.OTPStore,
+		idm:                     infra.IdentityManager,
+		transitionStore:         infra.TransitionStore,
+		accounts:                infra.Accounts,
+		otpResendCooldownMillis: int64(cooldownSec) * 1000,
 	}
 }
 
@@ -73,7 +79,7 @@ func (g *GRPCHandler) StartAuthSession(
 		return nil, status.Error(codes.Internal, "load transition after start")
 	}
 
-	ch, err := buildAuthChallenge(req.GetMethod(), sess, step)
+	ch, err := buildAuthChallenge(req.GetMethod(), sess, step, g.otpResendCooldownMillis)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -142,6 +148,7 @@ func buildAuthChallenge(
 	method basic.AuthMethod,
 	sess session.AuthSession,
 	step identity.StepResult,
+	otpResendCooldownMillis int64,
 ) (*challenge.AuthChallenge, error) {
 	now := time.Now()
 	ch := &challenge.AuthChallenge{}
@@ -157,7 +164,7 @@ func buildAuthChallenge(
 		}
 		ec := &challenge.EmailChallenge{}
 		ec.SetEmailMasked(maskEmail(emailFlow.Email))
-		ec.SetResendCooldownMillis(60_000)
+		ec.SetResendCooldownMillis(otpResendCooldownMillis)
 		ch.SetEmailChallenge(ec)
 	case basic.AuthMethod_AUTH_METHOD_OAUTH:
 		oc := &challenge.OAuthChallenge{}
@@ -229,6 +236,8 @@ func mapStartError(err error) error {
 	switch {
 	case errors.Is(err, identity.ErrInvalidInput):
 		return status.Error(codes.InvalidArgument, err.Error())
+	case errors.Is(err, otp.ErrOTPSendRateLimited):
+		return status.Error(codes.ResourceExhausted, "OTP send rate limited; try again later")
 	case errors.Is(err, identity.ErrLinkUnauthorized):
 		return status.Error(codes.PermissionDenied, "valid session required")
 	case errors.Is(err, identity.ErrEmailAlreadyInUse):

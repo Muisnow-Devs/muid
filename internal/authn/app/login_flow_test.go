@@ -9,8 +9,8 @@ import (
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/infra/mocked"
-	authnkv "sanzi.io/muid/internal/authn/infra/kv"
 	"sanzi.io/muid/internal/authn/infra/account"
+	authnkv "sanzi.io/muid/internal/authn/infra/kv"
 	idpkg "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )
@@ -69,7 +69,10 @@ func (s *stubSessionIssuer) IssueAuthenticatedSession(
 	return out, nil
 }
 
-func (stubSessionIssuer) ResolveSessionToken(context.Context, string) (account.ResolvedSession, error) {
+func (stubSessionIssuer) ResolveSessionToken(
+	context.Context,
+	string,
+) (account.ResolvedSession, error) {
 	panic("not used")
 }
 
@@ -77,7 +80,10 @@ func (stubSessionIssuer) RevokeSessionToken(context.Context, string) error {
 	panic("not used")
 }
 
-func (stubSessionIssuer) AuthenticatedResultFromResolved(string, account.ResolvedSession) *sessionpb.AuthenticatedResult {
+func (stubSessionIssuer) AuthenticatedResultFromResolved(
+	string,
+	account.ResolvedSession,
+) *sessionpb.AuthenticatedResult {
 	panic("not used")
 }
 
@@ -91,9 +97,13 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 	prov := &stubRegisterProvider{name: "email", finishUserID: provisioned.String()}
 	idm := idpkg.NewIdentityManager(transitionStore, prov)
 
-	sess, err := transitionStore.Create(ctx, "email", session.EmailOTPStore(session.StepRegister, &session.EmailOTPFlow{
-		Email: "new@example.com",
-	}))
+	sess, err := transitionStore.Create(
+		ctx,
+		"email",
+		session.EmailOTPStore(session.StepRegister, &session.EmailOTPFlow{
+			Email: "new@example.com",
+		}),
+	)
 	if err != nil {
 		t.Fatalf("create transition: %v", err)
 	}
@@ -135,7 +145,8 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 		t.Fatalf("get transition after provision: %v", err)
 	}
 	pending, ok := updated.Store.PendingRegisterState()
-	if !ok || pending.ProvisionedUserID != provisioned.String() || updated.Store.Step != session.StepFinish {
+	if !ok || pending.ProvisionedUserID != provisioned.String() ||
+		updated.Store.Step != session.StepFinish {
 		t.Fatalf("after provision: step=%s ok=%v pending=%+v", updated.Store.Step, ok, pending)
 	}
 }

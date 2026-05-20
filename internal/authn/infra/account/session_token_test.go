@@ -61,7 +61,11 @@ func TestParseSessionToken_rejectsInvalidWire(t *testing.T) {
 		{name: "empty segments", wire: ".", wantErr: errInvalidSessionToken},
 		{name: "selector too short", wire: "abc." + validVal, wantErr: errInvalidSessionToken},
 		{name: "validator too short", wire: validSel + ".abc", wantErr: errInvalidSessionToken},
-		{name: "selector too long", wire: longSegment + "." + validVal, wantErr: errInvalidSessionToken},
+		{
+			name:    "selector too long",
+			wire:    longSegment + "." + validVal,
+			wantErr: errInvalidSessionToken,
+		},
 		{
 			name:    "invalid base64 in selector",
 			wire:    strings.Repeat("!", SelectorB64Length) + "." + validVal,

@@ -31,7 +31,11 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		return nil, fmt.Errorf("invalid OTP secret key: %w, should be a valid hex string", err)
 	}
 
-	otpStore := kv.NewKVOTPStore(redisKV, otpSecret)
+	otpSendCooldown := time.Duration(cfg.OTPSendCooldownSeconds) * time.Second
+	if cfg.OTPSendCooldownSeconds < 0 {
+		otpSendCooldown = 0
+	}
+	otpStore := kv.NewKVOTPStore(redisKV, otpSecret, otpSendCooldown)
 
 	pubSub, err := nats.NewNATSPubSub(cfg.NATSURL)
 	if err != nil {
@@ -136,9 +140,9 @@ func profileGRPCResilience(cfg Config) grpcutils.ClientResilienceConfig {
 	}
 	return grpcutils.ClientResilienceConfig{
 		Retry: grpcutils.RetryConfig{
-			MaxRetries:   maxRetries,
-			BaseBackoff:  time.Duration(backoffMs) * time.Millisecond,
-			MaxBackoff:   time.Duration(maxBackoffMs) * time.Millisecond,
+			MaxRetries:  maxRetries,
+			BaseBackoff: time.Duration(backoffMs) * time.Millisecond,
+			MaxBackoff:  time.Duration(maxBackoffMs) * time.Millisecond,
 		},
 		CircuitBreaker: grpcutils.CircuitBreakerConfig{
 			Enabled:             cfg.ProfileGRPCCBEnabled,

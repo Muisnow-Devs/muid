@@ -17,7 +17,12 @@ type Provisioning interface {
 // Email covers email lookup and email change.
 type Email interface {
 	LookupUserByEmail(ctx context.Context, email string) (uuid.UUID, bool, error)
-	ChangeUserEmail(ctx context.Context, pub pubsub.PubSub, userID uuid.UUID, newEmail string) (oldEmail string, err error)
+	ChangeUserEmail(
+		ctx context.Context,
+		pub pubsub.PubSub,
+		userID uuid.UUID,
+		newEmail string,
+	) (oldEmail string, err error)
 }
 
 // OIDC covers federated identity lookup and OIDC signup provisioning.
@@ -43,8 +48,14 @@ type Passkey interface {
 
 // Session issues, resolves, and revokes authenticated sessions.
 type Session interface {
-	IssueAuthenticatedSession(ctx context.Context, userID uuid.UUID) (*sessionpb.AuthenticatedResult, error)
+	IssueAuthenticatedSession(
+		ctx context.Context,
+		userID uuid.UUID,
+	) (*sessionpb.AuthenticatedResult, error)
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
-	AuthenticatedResultFromResolved(wireToken string, resolved ResolvedSession) *sessionpb.AuthenticatedResult
+	AuthenticatedResultFromResolved(
+		wireToken string,
+		resolved ResolvedSession,
+	) *sessionpb.AuthenticatedResult
 }

@@ -2,6 +2,7 @@ package kv
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -11,12 +12,12 @@ import (
 
 func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"))
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
 	ctx := context.Background()
 
 	session := "session-123"
 
-	code, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	code, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -35,12 +36,12 @@ func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {
 
 func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"))
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
 	ctx := context.Background()
 
 	session := "session-123"
 
-	_, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	_, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
 	if err != nil {
 		t.Fatalf("expected no error on create, got %v", err)
 	}
@@ -53,7 +54,7 @@ func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
 
 func TestKVOTPStore_Verify_NotFound(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"))
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
 	ctx := context.Background()
 
 	err := store.VerifyOTP(ctx, "non-existent", "123456")
@@ -64,11 +65,11 @@ func TestKVOTPStore_Verify_NotFound(t *testing.T) {
 
 func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"))
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
 	ctx := context.Background()
 
 	session := "session-123"
-	code, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	code, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
 	if err != nil {
 		t.Fatalf("expected no error on create, got %v", err)
 	}
@@ -103,13 +104,13 @@ func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 
 func TestKVOTPStore_Verify_Expired(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"))
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
 	ctx := context.Background()
 
 	session := "session-123"
 
 	// Set with a negative duration to simulate expiration
-	code, err := store.CreateOTP(ctx, session, -1*time.Minute)
+	code, err := store.CreateOTP(ctx, session, "", -1*time.Minute)
 	if err != nil {
 		t.Fatalf("expected no error on create, got %v", err)
 	}
@@ -122,11 +123,11 @@ func TestKVOTPStore_Verify_Expired(t *testing.T) {
 
 func TestKVOTPStore_Revoke_Success(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"))
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
 	ctx := context.Background()
 
 	session := "session-123"
-	code, err := store.CreateOTP(ctx, session, 5*time.Minute)
+	code, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
 	if err != nil {
 		t.Fatalf("expected no error on create, got %v", err)
 	}
@@ -139,5 +140,102 @@ func TestKVOTPStore_Revoke_Success(t *testing.T) {
 	err = store.VerifyOTP(ctx, session, code.OTP)
 	if err != otp.ErrOTPInvalid {
 		t.Fatalf("expected ErrOTPInvalid after revocation, got %v", err)
+	}
+}
+
+func TestKVOTPStore_SendCooldown_BlocksSecondCreate(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	ctx := context.Background()
+	session := "session-123"
+
+	_, err := store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if !errors.Is(err, otp.ErrOTPSendRateLimited) {
+		t.Fatalf("expected ErrOTPSendRateLimited, got %v", err)
+	}
+
+	if err := store.RevokeOTP(ctx, session); err != nil {
+		t.Fatalf("revoke: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("CreateOTP after revoke: %v", err)
+	}
+}
+
+func TestKVOTPStore_SendCooldown_AllowsAfterExpiry(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Hour)
+	ctx := context.Background()
+	session := "session-123"
+
+	_, err := store.CreateOTP(ctx, session, "", -time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, session, "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("CreateOTP after expired challenge should succeed, got %v", err)
+	}
+}
+
+func TestKVOTPStore_SendCooldown_BlocksDifferentTransitionSameEmail(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	ctx := context.Background()
+	email := "user@example.com"
+
+	_, err := store.CreateOTP(ctx, "transition-a", email, 5*time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, "transition-b", email, 5*time.Minute)
+	if !errors.Is(err, otp.ErrOTPSendRateLimited) {
+		t.Fatalf("expected ErrOTPSendRateLimited for second transition same email, got %v", err)
+	}
+}
+
+func TestKVOTPStore_SendCooldown_NormalizesEmailForCooldown(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	ctx := context.Background()
+
+	_, err := store.CreateOTP(ctx, "transition-a", " User@Example.COM ", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, "transition-b", "user@example.com", 5*time.Minute)
+	if !errors.Is(err, otp.ErrOTPSendRateLimited) {
+		t.Fatalf("expected ErrOTPSendRateLimited after normalization, got %v", err)
+	}
+}
+
+func TestKVOTPStore_SendCooldown_RecipientEmptySkipsCrossTransitionLimit(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	ctx := context.Background()
+
+	_, err := store.CreateOTP(ctx, "transition-a", "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("first CreateOTP: %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, "transition-b", "", 5*time.Minute)
+	if err != nil {
+		t.Fatalf("second transition with empty recipient should succeed, got %v", err)
+	}
+
+	_, err = store.CreateOTP(ctx, "transition-b", "", 5*time.Minute)
+	if !errors.Is(err, otp.ErrOTPSendRateLimited) {
+		t.Fatalf("expected ErrOTPSendRateLimited for same transition twice, got %v", err)
 	}
 }

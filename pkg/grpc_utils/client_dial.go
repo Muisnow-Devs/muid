@@ -12,7 +12,11 @@ import (
 
 // DialInsecureClient dials target with trace forwarding, optional circuit breaker (outer) and retry (inner).
 // extraOpts are appended after the standard transport and interceptor options.
-func DialInsecureClient(target string, resilience ClientResilienceConfig, extraOpts ...grpc.DialOption) (*grpc.ClientConn, error) {
+func DialInsecureClient(
+	target string,
+	resilience ClientResilienceConfig,
+	extraOpts ...grpc.DialOption,
+) (*grpc.ClientConn, error) {
 	target = strings.TrimSpace(target)
 	if target == "" {
 		return nil, fmt.Errorf("grpcutils: empty dial target")
@@ -24,7 +28,10 @@ func DialInsecureClient(target string, resilience ClientResilienceConfig, extraO
 
 	cbCfg := resilience.CircuitBreaker.withDefaults()
 	if cbCfg.Enabled {
-		interceptors = append(interceptors, UnaryCircuitBreakerInterceptor(NewCircuitBreaker(cbCfg)))
+		interceptors = append(
+			interceptors,
+			UnaryCircuitBreakerInterceptor(NewCircuitBreaker(cbCfg)),
+		)
 	}
 
 	retryCfg := resilience.Retry.withDefaults()

@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"math/big"
+	"strings"
 	"time"
 
 	"sanzi.io/muid/internal/otp"
@@ -18,22 +19,53 @@ const (
 )
 
 type OTPInformation struct {
-	OTPHash  []byte    `json:"otp_hash"`
-	Attempts int       `json:"attempts"`
-	ExpireAt time.Time `json:"expire_at"`
+	OTPHash    []byte    `json:"otp_hash"`
+	Attempts   int       `json:"attempts"`
+	ExpireAt   time.Time `json:"expire_at"`
+	LastSentAt time.Time `json:"last_sent_at,omitempty"`
+}
+
+// recipientSendState tracks the last OTP send for a normalized recipient so send
+// cooldown can apply across transitions (mirrors OTPInformation cooldown rules).
+type recipientSendState struct {
+	LastSentAt time.Time `json:"last_sent_at"`
+	ExpireAt   time.Time `json:"expire_at"`
 }
 
 type KVOTPStore struct {
-	client    kv.KVStore
-	otpSecret []byte
+	client       kv.KVStore
+	otpSecret    []byte
+	sendCooldown time.Duration
 }
 
-func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte) otp.OTPStore {
-	return &KVOTPStore{client: kvStore, otpSecret: otpSecret}
+func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte, sendCooldown time.Duration) otp.OTPStore {
+	return &KVOTPStore{client: kvStore, otpSecret: otpSecret, sendCooldown: sendCooldown}
 }
 
 func (*KVOTPStore) key(transitionId string) string {
 	return "muid:challenge:otp:" + transitionId
+}
+
+func (*KVOTPStore) recipientCooldownKey(normalizedEmail string) string {
+	return "muid:challenge:otp_recipient_send:" + normalizedEmail
+}
+
+func normalizeOTPRecipient(s string) string {
+	return strings.TrimSpace(strings.ToLower(s))
+}
+
+func (store *KVOTPStore) recipientStateKVTTL(challengeTTL time.Duration) time.Duration {
+	if store.sendCooldown <= 0 {
+		return challengeTTL
+	}
+	ttl := challengeTTL
+	if ttl < store.sendCooldown {
+		ttl = store.sendCooldown
+	}
+	if ttl <= 0 {
+		ttl = store.sendCooldown
+	}
+	return ttl
 }
 
 func (store *KVOTPStore) hashOTP(otp string, transitionId string) []byte {
@@ -66,19 +98,35 @@ func generateOTP(length int) (string, error) {
 func (store *KVOTPStore) CreateOTP(
 	ctx context.Context,
 	transitionId string,
+	recipient string,
 	expiration time.Duration,
 ) (otp.OTPChallenge, error) {
+	normalizedRecipient := normalizeOTPRecipient(recipient)
+
+	if store.sendCooldown > 0 {
+		if err := store.checkSendCooldown(ctx, transitionId); err != nil {
+			return otp.OTPChallenge{}, err
+		}
+		if normalizedRecipient != "" {
+			if err := store.checkRecipientSendCooldown(ctx, normalizedRecipient); err != nil {
+				return otp.OTPChallenge{}, err
+			}
+		}
+	}
+
 	otpCode, err := generateOTP(OTPLength)
 	if err != nil {
 		return otp.OTPChallenge{}, err
 	}
 
 	sha := store.hashOTP(otpCode, transitionId)
-	expiresAt := time.Now().Add(expiration)
+	now := time.Now()
+	expiresAt := now.Add(expiration)
 	info := OTPInformation{
-		OTPHash:  sha[:],
-		Attempts: 0,
-		ExpireAt: expiresAt,
+		OTPHash:    sha[:],
+		Attempts:   0,
+		ExpireAt:   expiresAt,
+		LastSentAt: now,
 	}
 
 	jsonData, err := json.Marshal(info)
@@ -91,10 +139,73 @@ func (store *KVOTPStore) CreateOTP(
 		return otp.OTPChallenge{}, err
 	}
 
+	if store.sendCooldown > 0 && normalizedRecipient != "" {
+		recipientState := recipientSendState{LastSentAt: now, ExpireAt: expiresAt}
+		recipientJSON, err := json.Marshal(recipientState)
+		if err != nil {
+			return otp.OTPChallenge{}, err
+		}
+		recipientTTL := store.recipientStateKVTTL(expiration)
+		if err := store.client.Set(ctx, store.recipientCooldownKey(normalizedRecipient), recipientJSON, recipientTTL); err != nil {
+			return otp.OTPChallenge{}, err
+		}
+	}
+
 	return otp.OTPChallenge{
 		OTP:       otpCode,
 		ExpiresAt: expiresAt,
 	}, nil
+}
+
+func (store *KVOTPStore) checkSendCooldown(ctx context.Context, transitionId string) error {
+	data, err := store.client.Get(ctx, store.key(transitionId))
+	if err == kv.ErrKeyNotFound {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	var info OTPInformation
+	if err := json.Unmarshal(data, &info); err != nil {
+		return err
+	}
+
+	now := time.Now()
+	if now.After(info.ExpireAt) {
+		return nil
+	}
+	if !info.LastSentAt.IsZero() && now.Sub(info.LastSentAt) < store.sendCooldown {
+		return otp.ErrOTPSendRateLimited
+	}
+	return nil
+}
+
+func (store *KVOTPStore) checkRecipientSendCooldown(
+	ctx context.Context,
+	normalizedEmail string,
+) error {
+	data, err := store.client.Get(ctx, store.recipientCooldownKey(normalizedEmail))
+	if err == kv.ErrKeyNotFound {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	var info recipientSendState
+	if err := json.Unmarshal(data, &info); err != nil {
+		return err
+	}
+
+	now := time.Now()
+	if now.After(info.ExpireAt) {
+		return nil
+	}
+	if !info.LastSentAt.IsZero() && now.Sub(info.LastSentAt) < store.sendCooldown {
+		return otp.ErrOTPSendRateLimited
+	}
+	return nil
 }
 
 func (store *KVOTPStore) VerifyOTP(
@@ -134,6 +245,7 @@ func (store *KVOTPStore) VerifyOTP(
 			return otp.ErrTooManyAttempts
 		}
 
+		// Preserve LastSentAt so resend cooldown still applies after failed attempts.
 		ttl := time.Until(info.ExpireAt)
 		jsonData, _ := json.Marshal(info)
 		store.client.Set(ctx, store.key(transitionId), jsonData, ttl)

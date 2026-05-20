@@ -24,7 +24,10 @@ type emailService struct {
 }
 
 // LookupUserByEmail returns the authn user id when a UserRef exists for the email.
-func (e *emailService) LookupUserByEmail(ctx context.Context, email string) (uuid.UUID, bool, error) {
+func (e *emailService) LookupUserByEmail(
+	ctx context.Context,
+	email string,
+) (uuid.UUID, bool, error) {
 	ref, err := e.store.DB.UserRef.Query().Where(userref.EmailEQ(email)).Only(ctx)
 	if ent.IsNotFound(err) {
 		return uuid.Nil, false, nil

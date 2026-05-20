@@ -173,7 +173,15 @@ func TestResolveSessionToken_wrongValidatorDB(t *testing.T) {
 	if _, err := rand.Read(validatorSecret); err != nil {
 		t.Fatal(err)
 	}
-	insertUserSession(t, client, userID, selector, validatorSecret, time.Now().Add(time.Hour), time.Time{})
+	insertUserSession(
+		t,
+		client,
+		userID,
+		selector,
+		validatorSecret,
+		time.Now().Add(time.Hour),
+		time.Time{},
+	)
 
 	selectorB64 := base64.RawURLEncoding.EncodeToString(selector)
 	wrongValidator := make([]byte, ValidatorLength)
@@ -230,7 +238,15 @@ func TestResolveSessionToken_revokedAndExpiredDB(t *testing.T) {
 			if _, err := rand.Read(validatorSecret); err != nil {
 				t.Fatal(err)
 			}
-			insertUserSession(t, client, userID, selector, validatorSecret, tc.expiresAt, tc.revokedAt)
+			insertUserSession(
+				t,
+				client,
+				userID,
+				selector,
+				validatorSecret,
+				tc.expiresAt,
+				tc.revokedAt,
+			)
 
 			wire := base64.RawURLEncoding.EncodeToString(selector) + "." +
 				base64.RawURLEncoding.EncodeToString(validatorSecret)
@@ -275,7 +291,10 @@ func TestRevokeSessionToken_wrongValidatorNotFound(t *testing.T) {
 	userID := uuid.New()
 	seedUserRef(t, client, userID)
 
-	issued, err := (&sessionService{store: &Store{DB: client}}).IssueAuthenticatedSession(ctx, userID)
+	issued, err := (&sessionService{store: &Store{DB: client}}).IssueAuthenticatedSession(
+		ctx,
+		userID,
+	)
 	if err != nil {
 		t.Fatalf("issue: %v", err)
 	}
@@ -359,12 +378,26 @@ func TestResolveSessionToken_expiredCacheFallsThroughDB(t *testing.T) {
 	if _, err := rand.Read(validatorSecret); err != nil {
 		t.Fatal(err)
 	}
-	insertUserSession(t, client, userID, selector, validatorSecret, time.Now().Add(time.Hour), time.Time{})
+	insertUserSession(
+		t,
+		client,
+		userID,
+		selector,
+		validatorSecret,
+		time.Now().Add(time.Hour),
+		time.Time{},
+	)
 
 	selectorB64 := base64.RawURLEncoding.EncodeToString(selector)
 	sum := sha256.Sum256(validatorSecret)
 
-	mockKV := seedExpiredSessionCacheRecord(t, selectorB64, sum, userID, time.Now().Add(-time.Minute))
+	mockKV := seedExpiredSessionCacheRecord(
+		t,
+		selectorB64,
+		sum,
+		userID,
+		time.Now().Add(-time.Minute),
+	)
 	cache := kv.NewKVSessionCache(mockKV)
 
 	svc := &sessionService{store: &Store{DB: client, SessionCache: cache}}

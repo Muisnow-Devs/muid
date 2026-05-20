@@ -11,7 +11,14 @@ type OTPChallenge struct {
 }
 
 type OTPStore interface {
-	CreateOTP(ctx context.Context, transitionId string, ttl time.Duration) (OTPChallenge, error)
+	// CreateOTP issues an OTP for transitionId. recipient is the delivery address (e.g. email),
+	// used only for send cooldown; it is normalized in the store. Empty recipient skips per-recipient cooldown.
+	CreateOTP(
+		ctx context.Context,
+		transitionId string,
+		recipient string,
+		ttl time.Duration,
+	) (OTPChallenge, error)
 	VerifyOTP(ctx context.Context, transitionId, otp string) error
 	RevokeOTP(ctx context.Context, transitionId string) error
 }

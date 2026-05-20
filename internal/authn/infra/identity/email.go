@@ -332,7 +332,7 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	sessionID string,
 	email string,
 ) error {
-	code, err := p.otpStore.CreateOTP(ctx, sessionID, OTPLifetime)
+	code, err := p.otpStore.CreateOTP(ctx, sessionID, email, OTPLifetime)
 	if err != nil {
 		return err
 	}

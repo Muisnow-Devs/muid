@@ -33,9 +33,9 @@ type RetryConfig struct {
 // DefaultRetryConfig is used when RetryConfig fields are zero.
 func DefaultRetryConfig() RetryConfig {
 	return RetryConfig{
-		MaxRetries:   2,
-		BaseBackoff:  100 * time.Millisecond,
-		MaxBackoff:   2 * time.Second,
+		MaxRetries:     2,
+		BaseBackoff:    100 * time.Millisecond,
+		MaxBackoff:     2 * time.Second,
 		RetryableCodes: defaultRetryableCodes,
 	}
 }

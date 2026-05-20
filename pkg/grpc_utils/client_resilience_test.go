@@ -25,12 +25,42 @@ func TestShouldRetry(t *testing.T) {
 		want bool
 	}{
 		{name: "nil", err: nil, ctx: context.Background(), want: false},
-		{name: "canceled context", err: status.Error(codes.Unavailable, "x"), ctx: canceledContext(t), want: false},
-		{name: "grpc canceled", err: status.Error(codes.Canceled, "x"), ctx: context.Background(), want: false},
-		{name: "unavailable", err: status.Error(codes.Unavailable, "x"), ctx: context.Background(), want: true},
-		{name: "deadline exceeded", err: status.Error(codes.DeadlineExceeded, "x"), ctx: context.Background(), want: true},
-		{name: "resource exhausted", err: status.Error(codes.ResourceExhausted, "x"), ctx: context.Background(), want: true},
-		{name: "invalid argument", err: status.Error(codes.InvalidArgument, "x"), ctx: context.Background(), want: false},
+		{
+			name: "canceled context",
+			err:  status.Error(codes.Unavailable, "x"),
+			ctx:  canceledContext(t),
+			want: false,
+		},
+		{
+			name: "grpc canceled",
+			err:  status.Error(codes.Canceled, "x"),
+			ctx:  context.Background(),
+			want: false,
+		},
+		{
+			name: "unavailable",
+			err:  status.Error(codes.Unavailable, "x"),
+			ctx:  context.Background(),
+			want: true,
+		},
+		{
+			name: "deadline exceeded",
+			err:  status.Error(codes.DeadlineExceeded, "x"),
+			ctx:  context.Background(),
+			want: true,
+		},
+		{
+			name: "resource exhausted",
+			err:  status.Error(codes.ResourceExhausted, "x"),
+			ctx:  context.Background(),
+			want: true,
+		},
+		{
+			name: "invalid argument",
+			err:  status.Error(codes.InvalidArgument, "x"),
+			ctx:  context.Background(),
+			want: false,
+		},
 		{name: "non grpc", err: errors.New("network"), ctx: context.Background(), want: false},
 	}
 
@@ -109,9 +139,9 @@ func TestUnaryRetryInterceptorAttempts(t *testing.T) {
 	}
 
 	ic := UnaryRetryInterceptor(RetryConfig{
-		MaxRetries:   2,
-		BaseBackoff:  time.Millisecond,
-		MaxBackoff:   time.Millisecond,
+		MaxRetries:     2,
+		BaseBackoff:    time.Millisecond,
+		MaxBackoff:     time.Millisecond,
 		RetryableCodes: defaultRetryableCodes,
 	})
 

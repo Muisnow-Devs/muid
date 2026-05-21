@@ -11,12 +11,12 @@ func TestOIDCProviderConfigsFromEnv(t *testing.T) {
 	cfg := Config{
 		OIDCClientsJSON: `[
 			{
-				"provider": "google",
+				"provider": " google ",
 				"endpoint": "https://accounts.google.com",
 				"client_id": "google-client",
 				"client_secret": "google-secret",
 				"redirect_url": "https://app.example.test/auth/callback/google",
-				"scopes": ["openid", "profile", "email"],
+				"scopes": [" openid ", "", "profile", "email "],
 				"claim_fields": {"picture": "picture"}
 			},
 			{
@@ -43,6 +43,9 @@ func TestOIDCProviderConfigsFromEnv(t *testing.T) {
 	}
 	if got[0].ClaimFields.Picture != "picture" {
 		t.Fatalf("got[0].ClaimFields.Picture = %q, want picture", got[0].ClaimFields.Picture)
+	}
+	if len(got[0].Scopes) != 3 || got[0].Scopes[0] != "openid" || got[0].Scopes[2] != "email" {
+		t.Fatalf("got[0].Scopes = %+v, want trimmed non-empty scopes", got[0].Scopes)
 	}
 	if got[1].Name != "github" {
 		t.Fatalf("got[1].Name = %q, want github", got[1].Name)

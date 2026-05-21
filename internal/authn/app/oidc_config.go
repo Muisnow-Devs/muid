@@ -6,9 +6,12 @@ import (
 	"strings"
 
 	implIdentity "sanzi.io/muid/internal/authn/identity"
+	"sanzi.io/muid/pkg/utils"
 )
 
-var errOIDCClientConfigRequired = errors.New("authn app: OIDC client config requires provider, endpoint, client_id, client_secret, and redirect_url")
+var errOIDCClientConfigRequired = errors.New(
+	"authn app: OIDC client config requires provider, endpoint, client_id, client_secret, and redirect_url",
+)
 
 type oidcClientConfigJSON struct {
 	Provider     string              `json:"provider"`
@@ -54,14 +57,14 @@ func oidcProviderConfigsFromEnv(config Config) ([]implIdentity.OIDCProviderConfi
 }
 
 func (c oidcClientConfigJSON) toOIDCProviderConfig() (implIdentity.OIDCProviderConfig, error) {
-	name := firstNonEmpty(c.Provider, c.Key, c.Name)
+	name := utils.FirstNonEmpty(c.Provider, c.Key, c.Name)
 	cfg := implIdentity.OIDCProviderConfig{
 		Name:         name,
 		Endpoint:     strings.TrimSpace(c.Endpoint),
 		ClientID:     strings.TrimSpace(c.ClientID),
 		ClientSecret: strings.TrimSpace(c.ClientSecret),
 		RedirectURL:  strings.TrimSpace(c.RedirectURL),
-		Scopes:       trimStringSlice(c.Scopes),
+		Scopes:       utils.TrimNonEmpty(c.Scopes),
 		ClaimFields: implIdentity.OIDCClaimFields{
 			Subject:       strings.TrimSpace(c.ClaimFields.Subject),
 			Name:          strings.TrimSpace(c.ClaimFields.Name),
@@ -78,25 +81,4 @@ func (c oidcClientConfigJSON) toOIDCProviderConfig() (implIdentity.OIDCProviderC
 		return implIdentity.OIDCProviderConfig{}, errOIDCClientConfigRequired
 	}
 	return cfg, nil
-}
-
-func firstNonEmpty(values ...string) string {
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value != "" {
-			return value
-		}
-	}
-	return ""
-}
-
-func trimStringSlice(values []string) []string {
-	out := make([]string, 0, len(values))
-	for _, value := range values {
-		value = strings.TrimSpace(value)
-		if value != "" {
-			out = append(out, value)
-		}
-	}
-	return out
 }

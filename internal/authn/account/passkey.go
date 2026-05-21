@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
@@ -12,32 +11,28 @@ import (
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
+	"sanzi.io/muid/pkg/utils"
 )
 
 type passkeyService struct {
-	store *Store
+	store  *Store
+	pubSub pubsub.PubSub
 }
 
 // LinkPasskey persists a new WebAuthn credential for the user.
 func (p *passkeyService) LinkPasskey(
 	ctx context.Context,
-	pub pubsub.PubSub,
-	userID uuid.UUID,
-	credentialID, publicKey []byte,
-	rpID, deviceType, name string,
+	config LinkPasskeyConfig,
 ) error {
-	if len(credentialID) == 0 || len(publicKey) == 0 {
+	if len(config.CredentialID) == 0 || len(config.PublicKey) == 0 {
 		return idn.ErrInvalidInput
 	}
-	if rpID == "" {
-		rpID = "localhost"
-	}
-	if deviceType == "" {
-		deviceType = "multi_device"
-	}
+
+	utils.DefaultIfEmpty(&config.RpID, "localhost")
+	utils.DefaultIfEmpty(&config.DeviceType, "multi_device")
 
 	exists, err := p.store.DB.UserPasskey.Query().
-		Where(userpasskey.CredentialIDEQ(credentialID)).
+		Where(userpasskey.CredentialIDEQ(config.CredentialID)).
 		Exist(ctx)
 	if err != nil {
 		return err
@@ -47,35 +42,33 @@ func (p *passkeyService) LinkPasskey(
 	}
 
 	err = p.store.DB.UserPasskey.Create().
-		SetUserID(userID).
-		SetCredentialID(credentialID).
-		SetPublicKey(publicKey).
-		SetRpID(rpID).
-		SetDeviceType(parseDeviceType(deviceType)).
-		SetName(name).
+		SetUserID(config.UserId).
+		SetCredentialID(config.CredentialID).
+		SetPublicKey(config.PublicKey).
+		SetRpID(config.RpID).
+		SetDeviceType(parseDeviceType(config.DeviceType)).
+		SetName(config.Name).
 		Exec(ctx)
 	if err != nil {
 		return err
 	}
 
-	if pub == nil {
-		return nil
-	}
-	ref, err := p.store.DB.UserRef.Get(ctx, userID)
+	ref, err := p.store.DB.UserRef.Get(ctx, config.UserId)
 	if err != nil {
 		return err
 	}
+
 	now := time.Now().UTC()
 	ev := &mailpb.SendPasskeyAddedEmailEvent{}
 	ev.SetEmail(ref.Email)
-	ev.SetPasskeyName(name)
+	ev.SetPasskeyName(config.Name)
 	ev.SetOccurredAt(timestamppb.New(now))
 	ev.SetCreatedAt(timestamppb.New(now))
 	b, err := proto.Marshal(ev)
 	if err != nil {
 		return err
 	}
-	return pub.Publish(topics.TopicPasskeyAdded, b)
+	return p.pubSub.Publish(topics.TopicPasskeyAdded, b)
 }
 
 func parseDeviceType(v string) userpasskey.DeviceType {

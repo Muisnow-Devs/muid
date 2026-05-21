@@ -383,17 +383,12 @@ func oidcScopes(scopes []string) []string {
 		return []string{oidc.ScopeOpenID, OIDCScopeProfile, OIDCScopeEmail}
 	}
 
-	out := make([]string, 0, len(scopes)+1)
+	out := utils.TrimNonEmpty(scopes)
 	hasOpenID := false
-	for _, scope := range scopes {
-		scope = strings.TrimSpace(scope)
-		if scope == "" {
-			continue
-		}
+	for _, scope := range out {
 		if scope == oidc.ScopeOpenID {
 			hasOpenID = true
 		}
-		out = append(out, scope)
 	}
 	if !hasOpenID {
 		out = append([]string{oidc.ScopeOpenID}, out...)
@@ -414,43 +409,12 @@ func oidcClaimFieldsWithDefaults(fields OIDCClaimFields) OIDCClaimFields {
 func oidcClaimsFromRaw(raw map[string]json.RawMessage, fields OIDCClaimFields) OIDCClaims {
 	fields = oidcClaimFieldsWithDefaults(fields)
 	return OIDCClaims{
-		Subject:       oidcStringClaim(raw, fields.Subject),
-		Name:          oidcStringClaim(raw, fields.Name),
-		Picture:       oidcStringClaim(raw, fields.Picture),
-		Email:         oidcStringClaim(raw, fields.Email),
-		EmailVerified: oidcBoolClaim(raw, fields.EmailVerified),
+		Subject:       utils.JSONStringField(raw, fields.Subject),
+		Name:          utils.JSONStringField(raw, fields.Name),
+		Picture:       utils.JSONStringField(raw, fields.Picture),
+		Email:         utils.JSONStringField(raw, fields.Email),
+		EmailVerified: utils.JSONBoolField(raw, fields.EmailVerified),
 	}
-}
-
-func oidcStringClaim(raw map[string]json.RawMessage, field string) string {
-	value, ok := raw[strings.TrimSpace(field)]
-	if !ok {
-		return ""
-	}
-
-	var out string
-	err := json.Unmarshal(value, &out)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimSpace(out)
-}
-
-func oidcBoolClaim(raw map[string]json.RawMessage, field string) bool {
-	value, ok := raw[strings.TrimSpace(field)]
-	if !ok {
-		return false
-	}
-
-	var out bool
-	err := json.Unmarshal(value, &out)
-	if err == nil {
-		return out
-	}
-
-	var asString string
-	err = json.Unmarshal(value, &asString)
-	return err == nil && strings.EqualFold(strings.TrimSpace(asString), "true")
 }
 
 func oidcClaimsNeedUserInfo(claims OIDCClaims, fields OIDCClaimFields) bool {

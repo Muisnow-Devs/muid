@@ -36,13 +36,19 @@ type OIDC interface {
 }
 
 // Passkey persists WebAuthn credentials and related notifications.
+type LinkPasskeyConfig struct {
+	UserId       uuid.UUID
+	CredentialID []byte
+	PublicKey    []byte
+	RpID         string
+	DeviceType   string
+	Name         string
+}
+
 type Passkey interface {
 	LinkPasskey(
 		ctx context.Context,
-		pub pubsub.PubSub,
-		userID uuid.UUID,
-		credentialID, publicKey []byte,
-		rpID, deviceType, name string,
+		config LinkPasskeyConfig,
 	) error
 }
 

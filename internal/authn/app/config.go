@@ -36,12 +36,12 @@ type Config struct {
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
 
-	SignatureSecretName          string `envconfig:"SIGNATURE_SECRET_NAME"          default:""`
-	SignatureKeyBits             int    `envconfig:"SIGNATURE_KEY_BITS"             default:"2048"`
-	SignaturePreviousGenerations int    `envconfig:"SIGNATURE_PREVIOUS_GENERATIONS" default:"1"`
+	SignatureSecretName          string `envconfig:"SIGNATURE_SECRET_NAME"           default:""`
+	SignatureKeyBits             int    `envconfig:"SIGNATURE_KEY_BITS"              default:"2048"`
+	SignaturePreviousGenerations int    `envconfig:"SIGNATURE_PREVIOUS_GENERATIONS"  default:"1"`
 	SignatureRotationPeriodHours int    `envconfig:"SIGNATURE_ROTATION_PERIOD_HOURS" default:"720"`
-	SecretManagerGCPProjectID    string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"  default:""`
-	SecretManagerGCPCredentials  string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS" default:""`
+	SecretManagerGCPProjectID    string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"   default:""`
+	SecretManagerGCPCredentials  string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS"  default:""`
 
 	// OIDCClientsJSON configures enabled OIDC identity providers as a JSON array.
 	OIDCClientsJSON string `envconfig:"OIDC_CLIENTS_JSON" default:"[]"`

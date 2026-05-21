@@ -1,5 +1,7 @@
 package account
 
+import "sanzi.io/muid/pkg/shared/pubsub"
+
 // Accounts wires domain-focused account services behind a thin facade.
 type Accounts struct {
 	Store *Store
@@ -12,7 +14,7 @@ type Accounts struct {
 }
 
 // New returns account services backed by store.
-func New(store *Store) *Accounts {
+func New(store *Store, pubSub pubsub.PubSub) *Accounts {
 	if store == nil {
 		store = &Store{}
 	}
@@ -21,7 +23,7 @@ func New(store *Store) *Accounts {
 		Provision: store,
 		Email:     &emailService{store: store},
 		OIDC:      &oidcService{store: store},
-		Passkey:   &passkeyService{store: store},
+		Passkey:   &passkeyService{store: store, pubSub: pubSub},
 		Session:   &sessionService{store: store},
 	}
 }

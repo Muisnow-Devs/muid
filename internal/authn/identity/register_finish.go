@@ -10,6 +10,7 @@ import (
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/utils"
 )
 
 func finishRegisterAfterLink(
@@ -70,12 +71,10 @@ func ensureFederatedLink(
 		SetSubject(subject).
 		SetEmail(email).
 		SetEmailVerified(claims.EmailVerified)
-	if name := strings.TrimSpace(claims.Name); name != "" {
-		b = b.SetDisplayName(name)
-	}
-	if pic := strings.TrimSpace(claims.Picture); pic != "" {
-		b = b.SetNillableAvatarURL(&pic)
-	}
+
+	utils.FuncIfExists(&claims.Name, func(name string) { b = b.SetDisplayName(name) })
+	utils.FuncIfExists(&claims.Picture, func(pic string) { b = b.SetNillableAvatarURL(&pic) })
+
 	err = b.Exec(ctx)
 	if err != nil {
 		return uuid.Nil, err

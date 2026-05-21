@@ -16,6 +16,7 @@ import (
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"
+	"sanzi.io/muid/pkg/utils"
 )
 
 const (
@@ -157,7 +158,7 @@ func (p *PasskeyProvider) startRegister(
 		},
 		"user": map[string]any{
 			"id":          base64.RawURLEncoding.EncodeToString(linkRes.UserID[:]),
-			"name":        ref.Email,
+			"name":        ref.ID.String(),
 			"displayName": ref.Email,
 		},
 		"pubKeyCredParams": []map[string]any{
@@ -315,16 +316,14 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
 	}
 
-	err = p.accounts.Passkey.LinkPasskey(
-		ctx,
-		p.pubSub,
-		uid,
-		credID,
-		attObj,
-		pkFlow.RPID,
-		string(userpasskey.DeviceTypeMultiDevice),
-		"Passkey",
-	)
+	err = p.accounts.Passkey.LinkPasskey(ctx, account.LinkPasskeyConfig{
+		UserId:       uid,
+		CredentialID: credID,
+		PublicKey:    attObj,
+		RpID:         pkFlow.RPID,
+		DeviceType:   string(userpasskey.DeviceTypeMultiDevice),
+		Name:         "Passkey",
+	})
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -351,18 +350,22 @@ func verifyPasskeyChallengeBinding(assertionJSON, expectedChallengeB64 string) e
 			ClientDataJSON string `json:"clientDataJSON"`
 		} `json:"response"`
 	}
+
 	err := json.Unmarshal([]byte(assertionJSON), &outer)
 	if err != nil {
 		return fmt.Errorf("assertion json: %w", err)
 	}
+
 	raw, err := base64.RawURLEncoding.DecodeString(outer.Response.ClientDataJSON)
 	if err != nil {
 		return fmt.Errorf("clientDataJSON base64: %w", err)
 	}
+
 	var cd struct {
 		Challenge string `json:"challenge"`
 		Type      string `json:"type"`
 	}
+
 	err = json.Unmarshal(raw, &cd)
 	if err != nil {
 		return fmt.Errorf("client data: %w", err)
@@ -373,6 +376,7 @@ func verifyPasskeyChallengeBinding(assertionJSON, expectedChallengeB64 string) e
 	if cd.Challenge != expectedChallengeB64 {
 		return errors.New("webauthn challenge mismatch")
 	}
+
 	return nil
 }
 
@@ -385,13 +389,14 @@ func extractCredentialID(assertionJSON string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	b64 := outer.RawID
-	if b64 == "" {
-		b64 = outer.ID
-	}
+	utils.DefaultIfEmpty(&b64, outer.ID)
+
 	if b64 == "" {
 		return nil, errors.New("missing rawId/id")
 	}
+
 	raw, err := base64.RawURLEncoding.DecodeString(b64)
 	if err != nil {
 		return nil, err
@@ -399,5 +404,6 @@ func extractCredentialID(assertionJSON string) ([]byte, error) {
 	if len(raw) == 0 {
 		return nil, errors.New("empty credential id")
 	}
+
 	return raw, nil
 }

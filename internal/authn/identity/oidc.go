@@ -10,7 +10,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
-	"sanzi.io/muid/internal/authn/infra/account"
+	"sanzi.io/muid/internal/authn/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )

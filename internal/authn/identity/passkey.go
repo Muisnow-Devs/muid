@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/account"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
-	"sanzi.io/muid/internal/authn/infra/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"

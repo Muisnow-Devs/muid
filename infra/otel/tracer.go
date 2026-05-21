@@ -111,7 +111,11 @@ type otelTracer struct {
 	debug    bool
 }
 
-func (t *otelTracer) Start(ctx context.Context, name string, opts ...tracing.SpanOption) (context.Context, tracing.Span) {
+func (t *otelTracer) Start(
+	ctx context.Context,
+	name string,
+	opts ...tracing.SpanOption,
+) (context.Context, tracing.Span) {
 	if carrier, ok := tracing.IncomingGRPCMetadataCarrier(ctx); ok {
 		ctx = otel.GetTextMapPropagator().Extract(ctx, carrier)
 	}
@@ -124,7 +128,10 @@ func (t *otelTracer) Start(ctx context.Context, name string, opts ...tracing.Spa
 		otelOpts = append(otelOpts, oteltrace.WithAttributes(attrsToOTel(cfg.Attrs)...))
 	}
 	if tid, ok := log.FromContext(ctx); ok && tid != "" {
-		otelOpts = append(otelOpts, oteltrace.WithAttributes(attribute.String("muid.log_trace_id", tid)))
+		otelOpts = append(
+			otelOpts,
+			oteltrace.WithAttributes(attribute.String("muid.log_trace_id", tid)),
+		)
 	}
 
 	ctx, otelSpan := t.tracer.Start(ctx, name, otelOpts...)

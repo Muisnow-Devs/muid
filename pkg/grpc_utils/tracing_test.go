@@ -28,7 +28,10 @@ func TestUnaryTracingInterceptor_recordsSpan(t *testing.T) {
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Service/Method"}
 	ic := grpcutils.UnaryTracingInterceptor(tr)
-	ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"))
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs("traceparent", "00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01"),
+	)
 	ctx = log.With(ctx, "corr-id")
 
 	_, err := ic(ctx, nil, info, handler)

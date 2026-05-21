@@ -27,16 +27,16 @@ alwaysApply: true
 ## Authn-specific infrastructure
 
 - Generic drivers stay in **`infra/`** (redis, nats, smtp, r2, mocked, …).
-- Authn-coupled pieces (OTP, transition session, identity providers) live under **`internal/authn/infra/`** (`kv/`, `identity/`), not top-level `infra/`.
+- Authn-coupled pieces (OTP, transition session, identity providers) live under **`internal/authn/`** (`kv/`, `identity/`), not top-level `infra/`.
 
 ## Transition store typing
 
 - **`internal/session`**: `SessionStore` discriminates with **`AuthFlowKind`** (`email_otp`, `oidc`, `passkey`) and typed pointers **`Email`**, **`OIDC`**, **`Passkey`** — not `map[string]any` for transition state.
-- Redis implementation: **`internal/authn/infra/kv`**. **`internal/identity`**: `IdentityProvider`; routing in **`internal/authn/app`** (e.g. `ContinueAuthSession`).
+- Redis implementation: **`internal/authn/kv`**. **`internal/identity`**: `IdentityProvider`; routing in **`internal/authn/app`** (e.g. `ContinueAuthSession`).
 
 ## Account service and Profile gRPC
 
-- **`internal/authn/infra/account`**: user refs, federated identity, **`CreateProfile`** via Profile gRPC when configured (`AUTHN_PROFILE_GRPC_ADDR`, timeout `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`).
+- **`internal/authn/account`**: user refs, federated identity, **`CreateProfile`** via Profile gRPC when configured (`AUTHN_PROFILE_GRPC_ADDR`, timeout `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`).
 - Profile client dial uses **`log.UnaryClientInterceptor()`** so **`x-trace-id`** is forwarded downstream.
 
 ## gRPC interceptors (unary server)

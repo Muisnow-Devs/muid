@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"sanzi.io/muid/infra/mocked"
-	authnkv "sanzi.io/muid/internal/authn/infra/kv"
+	authnkv "sanzi.io/muid/internal/authn/kv"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"

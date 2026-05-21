@@ -37,7 +37,11 @@ func NoopSpanCount(tr Tracer) int64 {
 	return 0
 }
 
-func (t *noopTracer) Start(ctx context.Context, name string, opts ...SpanOption) (context.Context, Span) {
+func (t *noopTracer) Start(
+	ctx context.Context,
+	name string,
+	opts ...SpanOption,
+) (context.Context, Span) {
 	t.spansStarted.Add(1)
 	cfg := applySpanOptions(opts)
 	span := &noopSpan{

@@ -9,8 +9,8 @@ import (
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/infra/mocked"
-	"sanzi.io/muid/internal/authn/infra/account"
-	authnkv "sanzi.io/muid/internal/authn/infra/kv"
+	"sanzi.io/muid/internal/authn/account"
+	authnkv "sanzi.io/muid/internal/authn/kv"
 	idpkg "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )

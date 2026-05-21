@@ -14,7 +14,7 @@ import (
 	"sanzi.io/muid/infra/mocked"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/enttest"
-	authnkv "sanzi.io/muid/internal/authn/infra/kv"
+	authnkv "sanzi.io/muid/internal/authn/kv"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )

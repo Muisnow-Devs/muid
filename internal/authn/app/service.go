@@ -19,7 +19,11 @@ type AuthnService struct {
 	listener   net.Listener
 }
 
-func NewAuthnService(config Config, handler authn.AuthnServiceServer, tracer tracing.Tracer) (*AuthnService, error) {
+func NewAuthnService(
+	config Config,
+	handler authn.AuthnServiceServer,
+	tracer tracing.Tracer,
+) (*AuthnService, error) {
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
 	}

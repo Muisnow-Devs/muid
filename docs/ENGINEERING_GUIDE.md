@@ -28,7 +28,7 @@ There is no separate frontend design system in this repo; the “contract surfac
 | **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/enttx`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). Contracts such as **`pkg/shared/secretmanager.SecretManager`** live under **`pkg/shared/<name>/`**. |
 | **`api/proto/`** | Protobuf definitions; generated `*.pb.go` under **`api/`** after `buf generate`. |
 
-**Authn-only infrastructure** (OTP, transition store, OIDC/email/passkey providers tightly coupled to auth flows) lives under **`internal/authn/infra/`** (`kv/`, `identity/`). Do **not** move those into top-level **`infra/*`**.
+**Authn-only infrastructure** (OTP, transition store, OIDC/email/passkey providers tightly coupled to auth flows) lives under **`internal/authn/`** (`kv/`, `identity/`). Do **not** move those into top-level **`infra/*`**.
 
 ---
 
@@ -187,9 +187,9 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 
 ## Authn service
 
-- **Transition state:** **`internal/session`** (`AuthFlowKind`, `EmailOTPFlow`, `OIDCFlow`, `PasskeyFlow` pointers on `SessionStore`) with Redis backing **`internal/authn/infra/kv`** implementing **`internal/session.AuthTransitionStore`**.
-- **Identity providers:** **`internal/authn/infra/identity`** implement **`internal/identity.IdentityProvider`**; **`internal/authn/app/handler.go`** routes **`ContinueAuthSession`** using transition `Provider` and maps `proof` into **`ContinueInput.Payload`**.
-- **Accounts:** **`internal/authn/infra/account`** persists users, calls Profile **`CreateProfile`** when configured, issues sessions (`SessionToken` shape per proto). Profile gRPC dial attaches **`log.UnaryClientInterceptor()`** for **`x-trace-id`**.
+- **Transition state:** **`internal/session`** (`AuthFlowKind`, `EmailOTPFlow`, `OIDCFlow`, `PasskeyFlow` pointers on `SessionStore`) with Redis backing **`internal/authn/kv`** implementing **`internal/session.AuthTransitionStore`**.
+- **Identity providers:** **`internal/authn/identity`** implement **`internal/identity.IdentityProvider`**; **`internal/authn/app/handler.go`** routes **`ContinueAuthSession`** using transition `Provider` and maps `proof` into **`ContinueInput.Payload`**.
+- **Accounts:** **`internal/authn/account`** persists users, calls Profile **`CreateProfile`** when configured, issues sessions (`SessionToken` shape per proto). Profile gRPC dial attaches **`log.UnaryClientInterceptor()`** for **`x-trace-id`**.
 
 ---
 

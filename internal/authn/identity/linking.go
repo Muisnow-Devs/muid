@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strings"
 
-	"sanzi.io/muid/internal/authn/infra/account"
+	"sanzi.io/muid/internal/authn/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )

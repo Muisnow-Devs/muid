@@ -6,8 +6,8 @@ import (
 
 	"google.golang.org/grpc"
 
+	"sanzi.io/muid/internal/authn/account"
 	authnent "sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/infra/account"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"

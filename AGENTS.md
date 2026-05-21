@@ -50,7 +50,7 @@ Config is loaded with `pkg/shared.LoadConfig[T](prefix)` and `github.com/kelseyh
 ## Do not
 
 - Put concrete implementations inside **`infra/*/interface.go`**.
-- Put authn‑specific adapters (OTP, transition store, identity providers) in top‑level **`infra/*`** — they belong under **`internal/authn/infra/`**.
+- Put authn‑specific adapters (OTP, transition store, identity providers) in top‑level **`infra/*`** — they belong under **`internal/authn/`**.
 - Return raw internal errors or stack traces in gRPC status messages; do not put protovalidate violation blobs in the client‑visible status (server logs them with `trace_id`).
 - Mutate **`UserAvatar`** history in place for “avatar changes”; new state is **append‑only INSERTs** (see engineering guide).
 - Bypass **`pkg/validation.ValidUsername`** / proto rules when changing usernames in Go (normalize to lower case for storage as implemented in profile code).

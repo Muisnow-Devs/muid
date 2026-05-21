@@ -20,7 +20,11 @@ type ProfileGRPC struct {
 	listener   net.Listener
 }
 
-func NewProfileGRPC(config Config, handler pb.ProfileServiceServer, tracer tracing.Tracer) (*ProfileGRPC, error) {
+func NewProfileGRPC(
+	config Config,
+	handler pb.ProfileServiceServer,
+	tracer tracing.Tracer,
+) (*ProfileGRPC, error) {
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
 	}

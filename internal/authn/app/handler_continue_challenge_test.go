@@ -9,8 +9,8 @@ import (
 	"sanzi.io/muid/api/proto/authn/v1/basic"
 	proofpb "sanzi.io/muid/api/proto/authn/v1/proof"
 	"sanzi.io/muid/infra/mocked"
-	implIdentity "sanzi.io/muid/internal/authn/infra/identity"
-	authnkv "sanzi.io/muid/internal/authn/infra/kv"
+	implIdentity "sanzi.io/muid/internal/authn/identity"
+	authnkv "sanzi.io/muid/internal/authn/kv"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 )

@@ -22,8 +22,8 @@ import (
 	"sanzi.io/muid/pkg/enttx"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
-	"sanzi.io/muid/pkg/shared/tracing"
 	"sanzi.io/muid/pkg/shared/topics"
+	"sanzi.io/muid/pkg/shared/tracing"
 )
 
 func (g *GRPCHandler) CreateProfile(
@@ -50,37 +50,41 @@ func (g *GRPCHandler) CreateProfile(
 
 	usernameCandidate := generateUsernameCandidates(randomUsernameBase())
 	ctx = tracing.WithSpanName(ctx, "profile.create_profile.tx")
-	user, err := enttx.Run(ctx, g.db.Tx, func(ctx context.Context, tx *ent.Tx) (*ent.UserProfile, error) {
-		var user *ent.UserProfile
-		for _, candidate := range usernameCandidate {
-			exists, err := tx.UserProfile.Query().
-				Where(userprofile.UsernameEQ(candidate)).
-				Exist(ctx)
-			if err != nil {
-				log.LogUnexpected(ctx, "profile create username existence check", err.Error())
+	user, err := enttx.Run(
+		ctx,
+		g.db.Tx,
+		func(ctx context.Context, tx *ent.Tx) (*ent.UserProfile, error) {
+			var user *ent.UserProfile
+			for _, candidate := range usernameCandidate {
+				exists, err := tx.UserProfile.Query().
+					Where(userprofile.UsernameEQ(candidate)).
+					Exist(ctx)
+				if err != nil {
+					log.LogUnexpected(ctx, "profile create username existence check", err.Error())
+					return nil, grpcutils.GRPCInternalError()
+				}
+
+				if exists {
+					continue
+				}
+
+				user, err = tx.UserProfile.Create().
+					SetEmailRef(email).
+					SetLocale(locale).
+					SetDisplayName(displayName).
+					SetUsername(candidate).
+					Save(ctx)
+
+				if err == nil {
+					break
+				}
+
+				log.LogUnexpected(ctx, "profile create", err.Error())
 				return nil, grpcutils.GRPCInternalError()
 			}
-
-			if exists {
-				continue
-			}
-
-			user, err = tx.UserProfile.Create().
-				SetEmailRef(email).
-				SetLocale(locale).
-				SetDisplayName(displayName).
-				SetUsername(candidate).
-				Save(ctx)
-
-			if err == nil {
-				break
-			}
-
-			log.LogUnexpected(ctx, "profile create", err.Error())
-			return nil, grpcutils.GRPCInternalError()
-		}
-		return user, nil
-	})
+			return user, nil
+		},
+	)
 	if err != nil {
 		if _, ok := status.FromError(err); ok {
 			return nil, err

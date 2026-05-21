@@ -1,4 +1,4 @@
-package app
+package flow
 
 import (
 	"context"
@@ -21,35 +21,41 @@ import (
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/log"
 )
 
-type GRPCHandler struct {
-	pb.UnimplementedAuthnServiceServer
-
-	optStore                otp.OTPStore
+type Service struct {
 	idm                     *identity.IdentityManager
 	transitionStore         session.AuthTransitionStore
 	accounts                *account.Accounts
 	otpResendCooldownMillis int64
 }
 
-func CreateGRPCHandler(infra *InfraDependencies) pb.AuthnServiceServer {
-	cooldownSec := infra.GlobalConfig.OTPSendCooldownSeconds
+type Dependencies struct {
+	IdentityManager        *identity.IdentityManager
+	TransitionStore        session.AuthTransitionStore
+	Accounts               *account.Accounts
+	OTPSendCooldownSeconds int
+}
+
+func NewService(deps Dependencies) *Service {
+	cooldownSec := deps.OTPSendCooldownSeconds
 	if cooldownSec < 0 {
 		cooldownSec = 0
 	}
-	return &GRPCHandler{
-		optStore:                infra.OTPStore,
-		idm:                     infra.IdentityManager,
-		transitionStore:         infra.TransitionStore,
-		accounts:                infra.Accounts,
+	return &Service{
+		idm:                     deps.IdentityManager,
+		transitionStore:         deps.TransitionStore,
+		accounts:                deps.Accounts,
 		otpResendCooldownMillis: int64(cooldownSec) * 1000,
 	}
 }
 
-func (g *GRPCHandler) StartAuthSession(
+func (s *Service) StartAuthSession(
 	ctx context.Context,
 	req *pb.StartAuthSessionRequest,
+	linkSessionToken string,
 ) (*pb.StartAuthSessionResponse, error) {
 	providerName, err := providerNameForMethod(
 		req.GetMethod(),
@@ -59,7 +65,7 @@ func (g *GRPCHandler) StartAuthSession(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	prov, err := g.idm.GetProvider(providerName)
+	prov, err := s.idm.GetProvider(providerName)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
@@ -68,20 +74,22 @@ func (g *GRPCHandler) StartAuthSession(
 		Provider:         providerName,
 		Identifier:       strings.TrimSpace(req.GetIdentifier()),
 		Intent:           protoIntent(req.GetIntent()),
-		LinkSessionToken: optionalWireSession(ctx, req.GetSessionToken()),
+		LinkSessionToken: linkSessionToken,
 	})
 	if err != nil {
-		return nil, mapStartError(err)
+		return nil, mapStartError(ctx, err)
 	}
 
-	sess, err := g.transitionStore.Get(ctx, step.TransitionId)
+	sess, err := s.transitionStore.Get(ctx, step.TransitionId)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "load transition after start")
+		log.LogUnexpected(ctx, "authn start load transition", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
-	ch, err := buildAuthChallenge(req.GetMethod(), sess, step, g.otpResendCooldownMillis)
+	ch, err := buildAuthChallenge(req.GetMethod(), sess, step, s.otpResendCooldownMillis)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		log.LogUnexpected(ctx, "authn start build challenge", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	out := &pb.StartAuthSessionResponse{}
@@ -90,25 +98,22 @@ func (g *GRPCHandler) StartAuthSession(
 	return out, nil
 }
 
-func (g *GRPCHandler) ContinueAuthSession(
+func (s *Service) ContinueAuthSession(
 	ctx context.Context,
 	req *pb.ContinueAuthSessionRequest,
+	transitionID string,
+	linkSessionToken string,
 ) (*pb.ContinueAuthSessionResponse, error) {
-	tid := transitionIDString(ctx, req)
-	sess, err := g.transitionStore.Get(ctx, tid)
+	tid := strings.TrimSpace(transitionID)
+	sess, err := s.transitionStore.Get(ctx, tid)
 	if err != nil {
-		if errors.Is(err, session.ErrSessionNotFound) {
-			return nil, status.Error(codes.NotFound, "transition not found")
-		}
-		if errors.Is(err, session.ErrSessionExpired) {
-			return nil, status.Error(codes.FailedPrecondition, "transition expired")
-		}
-		return nil, err
+		return nil, mapTransitionLoadError(ctx, err)
 	}
 
-	prov, err := g.idm.GetProvider(sess.Provider)
+	prov, err := s.idm.GetProvider(sess.Provider)
 	if err != nil {
-		return nil, status.Error(codes.Internal, "unknown transition provider")
+		log.LogUnexpected(ctx, "authn continue provider lookup", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	payload, err := proofToPayload(req.GetProof())
@@ -119,17 +124,17 @@ func (g *GRPCHandler) ContinueAuthSession(
 	step, err := prov.Continue(ctx, identity.ContinueInput{
 		TransitionId:     tid,
 		Payload:          payload,
-		LinkSessionToken: optionalWireSession(ctx, req.GetSessionToken()),
+		LinkSessionToken: linkSessionToken,
 	})
 	if err != nil {
-		return mapContinueError(tid, err)
+		return mapContinueError(ctx, tid, err)
 	}
 
 	if step.Type == identity.StepInput {
-		return g.continueAwaitingChallenge(tid, sess, step)
+		return s.continueAwaitingChallenge(ctx, tid, sess, step)
 	}
 
-	return g.finishAuthStep(ctx, req, sess, step)
+	return s.finishAuthStep(ctx, req, sess, step, tid, linkSessionToken)
 }
 
 func providerNameForMethod(m basic.AuthMethod, identifier string) (string, error) {
@@ -208,23 +213,31 @@ func authMethodForProvider(provider string) (basic.AuthMethod, error) {
 	}
 }
 
-func (g *GRPCHandler) continueAwaitingChallenge(
+func (s *Service) continueAwaitingChallenge(
+	ctx context.Context,
 	tid string,
 	sess session.AuthSession,
 	step identity.StepResult,
 ) (*pb.ContinueAuthSessionResponse, error) {
 	if strings.TrimSpace(step.TransitionId) != "" && step.TransitionId != tid {
-		return nil, status.Error(codes.Internal, "transition mismatch after continue")
+		log.LogUnexpected(
+			ctx,
+			"authn continue transition mismatch",
+			"transition mismatch after continue",
+		)
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	method, err := authMethodForProvider(sess.Provider)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		log.LogUnexpected(ctx, "authn continue method lookup", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
-	ch, err := buildAuthChallenge(method, sess, step, g.otpResendCooldownMillis)
+	ch, err := buildAuthChallenge(method, sess, step, s.otpResendCooldownMillis)
 	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
+		log.LogUnexpected(ctx, "authn continue build challenge", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	cr := &sessionpb.ChallengeRequired{}
@@ -286,7 +299,7 @@ func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
 	return nil, status.Error(codes.InvalidArgument, "unsupported proof type")
 }
 
-func mapStartError(err error) error {
+func mapStartError(ctx context.Context, err error) error {
 	switch {
 	case errors.Is(err, identity.ErrInvalidInput):
 		return status.Error(codes.InvalidArgument, err.Error())
@@ -297,11 +310,16 @@ func mapStartError(err error) error {
 	case errors.Is(err, identity.ErrEmailAlreadyInUse):
 		return status.Error(codes.AlreadyExists, "email already in use")
 	default:
-		return status.Error(codes.Internal, err.Error())
+		log.LogUnexpected(ctx, "authn start provider", err.Error())
+		return grpcutils.GRPCInternalError()
 	}
 }
 
-func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, error) {
+func mapContinueError(
+	ctx context.Context,
+	tid string,
+	err error,
+) (*pb.ContinueAuthSessionResponse, error) {
 	switch {
 	case errors.Is(err, identity.ErrOIDCManualAccountLinkingRequired):
 		return authFailureResponse(
@@ -342,11 +360,23 @@ func mapContinueError(tid string, err error) (*pb.ContinueAuthSessionResponse, e
 		return nil, status.Error(codes.NotFound, "transition not found")
 	case errors.Is(err, identity.ErrInvalidSessionState):
 		return authFailureResponse(tid, err.Error(), ErrCodeInvalidInput), nil
+	case errors.Is(err, session.ErrSessionExpired):
+		return nil, status.Error(codes.FailedPrecondition, "transition expired")
 	default:
-		if errors.Is(err, session.ErrSessionExpired) {
-			return nil, status.Error(codes.FailedPrecondition, "transition expired")
-		}
-		return nil, err
+		log.LogUnexpected(ctx, "authn continue provider", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+}
+
+func mapTransitionLoadError(ctx context.Context, err error) error {
+	switch {
+	case errors.Is(err, session.ErrSessionNotFound):
+		return status.Error(codes.NotFound, "transition not found")
+	case errors.Is(err, session.ErrSessionExpired):
+		return status.Error(codes.FailedPrecondition, "transition expired")
+	default:
+		log.LogUnexpected(ctx, "authn continue load transition", err.Error())
+		return grpcutils.GRPCInternalError()
 	}
 }
 
@@ -363,121 +393,6 @@ func authFailureResponse(tid, reason, code string) *pb.ContinueAuthSessionRespon
 	return out
 }
 
-// GetAuthorizedSession implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) GetAuthorizedSession(
-	ctx context.Context,
-	req *pb.GetSessionRequest,
-) (*pb.GetSessionResponse, error) {
-	wire, err := requiredWireSession(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
-	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
-		out := &pb.GetSessionResponse{}
-		out.SetValid(false)
-		return out, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	out := &pb.GetSessionResponse{}
-	out.SetValid(true)
-	out.SetSession(g.accounts.Session.AuthenticatedResultFromResolved(wire, res))
-
-	return out, nil
-}
-
-// GetPublicKeys implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) GetPublicKeys(
-	context.Context,
-	*pb.GetPublicKeysRequest,
-) (*pb.GetPublicKeysResponse, error) {
-	panic("unimplemented")
-}
-
-// OIDCGrantConsent implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) OIDCGrantConsent(
-	context.Context,
-	*pb.OIDCGrantConsentRequest,
-) (*pb.OIDCGrantConsentResponse, error) {
-	panic("unimplemented")
-}
-
-// OIDCIntrospectToken implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) OIDCIntrospectToken(
-	context.Context,
-	*pb.OIDCIntrospectTokenRequest,
-) (*pb.OIDCIntrospectTokenResponse, error) {
-	panic("unimplemented")
-}
-
-// OIDCListGrantedConsents implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) OIDCListGrantedConsents(
-	context.Context,
-	*pb.OIDCListGrantedConsentsRequest,
-) (*pb.OIDCListGrantedConsentsResponse, error) {
-	panic("unimplemented")
-}
-
-// OIDCRevokeConsent implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) OIDCRevokeConsent(
-	context.Context,
-	*pb.OIDCRevokeConsentRequest,
-) (*pb.OIDCRevokeConsentResponse, error) {
-	panic("unimplemented")
-}
-
-// OIDCRevokeRefreshToken implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) OIDCRevokeRefreshToken(
-	context.Context,
-	*pb.OIDCRevokeRefreshTokenRequest,
-) (*pb.OIDCRevokeRefreshTokenResponse, error) {
-	panic("unimplemented")
-}
-
-// OIDCRotateAndGetAccessToken implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) OIDCRotateAndGetAccessToken(
-	context.Context,
-	*pb.OIDCRotateAndGetAccessTokenRequest,
-) (*pb.OIDCRotateAndGetAccessTokenResponse, error) {
-	panic("unimplemented")
-}
-
-// RevokeFederatedIdentity implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) RevokeFederatedIdentity(
-	context.Context,
-	*pb.RevokeFederatedIdentityRequest,
-) (*pb.RevokeFederatedIdentityResponse, error) {
-	panic("unimplemented")
-}
-
-// RevokeSession implements [authn.AuthnServiceServer].
-func (g *GRPCHandler) RevokeSession(
-	ctx context.Context,
-	req *pb.RevokeSessionRequest,
-) (*pb.RevokeSessionResponse, error) {
-	wire, err := requiredWireSession(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	err = g.accounts.Session.RevokeSessionToken(ctx, wire)
-	if errors.Is(err, session.ErrSessionNotFound) {
-		return nil, status.Error(codes.NotFound, "session not found")
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	out := &pb.RevokeSessionResponse{}
-	out.SetSuccess(true)
-
-	return out, nil
-}
-
 func protoIntent(i basic.AuthIntent) identity.AuthIntent {
 	switch i {
 	case basic.AuthIntent_AUTH_INTENT_LINK_ACCOUNT:
@@ -489,11 +404,4 @@ func protoIntent(i basic.AuthIntent) identity.AuthIntent {
 	default:
 		return identity.IntentLogin
 	}
-}
-
-func sessionTokenValue(tok *sessionpb.SessionToken) string {
-	if tok == nil {
-		return ""
-	}
-	return strings.TrimSpace(tok.GetValue())
 }

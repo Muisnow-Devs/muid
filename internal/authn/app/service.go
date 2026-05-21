@@ -7,23 +7,23 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"sanzi.io/muid/api/proto/authn/v1"
 	pb "sanzi.io/muid/api/proto/authn/v1"
+	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
-type AuthnService struct {
+type AuthnGRPC struct {
 	grpcServer *grpc.Server
 	listener   net.Listener
 }
 
-func NewAuthnService(
+func NewAuthnGRPC(
 	config Config,
-	handler authn.AuthnServiceServer,
+	handler pb.AuthnServiceServer,
 	tracer tracing.Tracer,
-) (*AuthnService, error) {
+) (*AuthnGRPC, error) {
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
 	}
@@ -43,7 +43,7 @@ func NewAuthnService(
 			grpcutils.TraceUnaryInterceptor,
 			grpcutils.UnaryTracingInterceptor(tracer),
 			pvUnary,
-			AuthnRequestContextInterceptor(),
+			authngrpc.AuthnRequestContextInterceptor(),
 			grpcutils.RecoveryInterceptor,
 			grpcutils.LoggerInterceptor,
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
@@ -51,13 +51,13 @@ func NewAuthnService(
 	)
 	pb.RegisterAuthnServiceServer(grpcServer, handler)
 
-	return &AuthnService{
+	return &AuthnGRPC{
 		grpcServer: grpcServer,
 		listener:   listener,
 	}, nil
 }
 
-func (s *AuthnService) Start(ctx context.Context) error {
+func (s *AuthnGRPC) Start(ctx context.Context) error {
 	errCh := make(chan error, 1)
 
 	go func() {
@@ -74,6 +74,6 @@ func (s *AuthnService) Start(ctx context.Context) error {
 	}
 }
 
-func (s *AuthnService) Stop() {
+func (s *AuthnGRPC) Stop() {
 	s.grpcServer.GracefulStop()
 }

@@ -1,4 +1,4 @@
-package app
+package flow
 
 import (
 	"context"
@@ -55,11 +55,11 @@ func TestContinueAuthSession_StepInputReturnsChallengeRequired(t *testing.T) {
 	}
 
 	idm := identity.NewIdentityManager(trans, otpInputStubProvider{})
-	h := &GRPCHandler{
-		idm:                     idm,
-		transitionStore:         trans,
-		otpResendCooldownMillis: 60_000,
-	}
+	svc := NewService(Dependencies{
+		IdentityManager:        idm,
+		TransitionStore:        trans,
+		OTPSendCooldownSeconds: 60,
+	})
 
 	ep := &proofpb.EmailProof{}
 	ep.SetResend(&proofpb.EmailResendOtp{})
@@ -70,7 +70,7 @@ func TestContinueAuthSession_StepInputReturnsChallengeRequired(t *testing.T) {
 	req.SetTransitionId(sess.Id)
 	req.SetProof(proof)
 
-	resp, err := h.ContinueAuthSession(ctx, req)
+	resp, err := svc.ContinueAuthSession(ctx, req, sess.Id, "")
 	if err != nil {
 		t.Fatalf("ContinueAuthSession: %v", err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"sanzi.io/muid/internal/authn/account"
+	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	implIdentity "sanzi.io/muid/internal/authn/identity"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
@@ -12,13 +13,20 @@ import (
 )
 
 type AuthnApp struct {
-	server             *AuthnService
+	server             *AuthnGRPC
 	dependencyInjector *InfraDependencies
 }
 
 func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, error) {
-	handler := CreateGRPCHandler(infra)
-	service, err := NewAuthnService(infra.GlobalConfig, handler, nil)
+	handler := authngrpc.NewGRPCHandler(
+		infra.IdentityManager,
+		infra.TransitionStore,
+		infra.Accounts,
+		authngrpc.HandlerConfig{
+			OTPSendCooldownSeconds: infra.GlobalConfig.OTPSendCooldownSeconds,
+		},
+	)
+	service, err := NewAuthnGRPC(infra.GlobalConfig, handler, nil)
 	if err != nil {
 		return nil, err
 	}

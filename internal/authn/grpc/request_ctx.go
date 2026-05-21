@@ -1,4 +1,4 @@
-package app
+package authngrpc
 
 import (
 	"context"
@@ -95,7 +95,8 @@ func enrichOptionalWireSession(
 	if wire == "" {
 		return ctx, nil
 	}
-	if _, _, err := session.ParseWireSessionToken(wire); err != nil {
+	_, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
 		return ctx, status.Error(codes.InvalidArgument, msgInvalidSessionToken)
 	}
 	return context.WithValue(ctx, wireSessionKey{}, wire), nil
@@ -109,7 +110,8 @@ func enrichRequiredWireSessionToken(
 	if wire == "" {
 		return ctx, status.Error(codes.InvalidArgument, msgMissingSessionToken)
 	}
-	if _, _, err := session.ParseWireSessionToken(wire); err != nil {
+	_, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
 		return ctx, status.Error(codes.InvalidArgument, msgInvalidSessionToken)
 	}
 	return context.WithValue(ctx, wireSessionKey{}, wire), nil

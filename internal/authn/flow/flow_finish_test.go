@@ -1,4 +1,4 @@
-package app
+package flow
 
 import (
 	"context"
@@ -112,24 +112,24 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 	claims.SetEmail("new@example.com")
 	claims.SetEmailVerified(true)
 
-	h := &GRPCHandler{
-		idm:             idm,
-		transitionStore: transitionStore,
-		accounts: &account.Accounts{
+	svc := NewService(Dependencies{
+		IdentityManager: idm,
+		TransitionStore: transitionStore,
+		Accounts: &account.Accounts{
 			Provision: &stubProvisioner{uid: provisioned},
 			Session:   &stubSessionIssuer{},
 		},
-	}
+	})
 
 	req := &pb.ContinueAuthSessionRequest{}
 	req.SetTransitionId(sess.Id)
 
-	resp, err := h.finishAuthStep(ctx, req, sess, idpkg.StepResult{
+	resp, err := svc.finishAuthStep(ctx, req, sess, idpkg.StepResult{
 		Type: idpkg.StepRegisterRequired,
 		RegisterRequired: &idpkg.RegisterRequired{
 			Identity: claims,
 		},
-	})
+	}, sess.Id, "")
 	if err != nil {
 		t.Fatalf("finishAuthStep: %v", err)
 	}

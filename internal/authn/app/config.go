@@ -43,18 +43,8 @@ type Config struct {
 	SecretManagerGCPProjectID    string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"  default:""`
 	SecretManagerGCPCredentials  string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS" default:""`
 
-	// Third-party OAuth credentials
-	GoogleOAuthClientID     string `envconfig:"GOOGLE_OAUTH_CLIENT_ID"     default:""`
-	GoogleOAuthClientSecret string `envconfig:"GOOGLE_OAUTH_CLIENT_SECRET" default:""`
-	GoogleRedirectURL       string `envconfig:"GOOGLE_REDIRECT_URL"        default:"http://localhost:5314/auth/callback/google"`
-
-	FacebookOAuthClientID     string `envconfig:"FACEBOOK_OAUTH_CLIENT_ID"     default:""`
-	FacebookOAuthClientSecret string `envconfig:"FACEBOOK_OAUTH_CLIENT_SECRET" default:""`
-	FacebookRedirectURL       string `envconfig:"FACEBOOK_REDIRECT_URL"        default:"http://localhost:5314/auth/callback/facebook"`
-
-	GithubOAuthClientID     string `envconfig:"GITHUB_OAUTH_CLIENT_ID"     default:""`
-	GithubOAuthClientSecret string `envconfig:"GITHUB_OAUTH_CLIENT_SECRET" default:""`
-	GithubRedirectURL       string `envconfig:"GITHUB_REDIRECT_URL"        default:"http://localhost:5314/auth/callback/github"`
+	// OIDCClientsJSON configures enabled OIDC identity providers as a JSON array.
+	OIDCClientsJSON string `envconfig:"OIDC_CLIENTS_JSON" default:"[]"`
 
 	// ProfileGRPCAddr is the Profile gRPC authority (host:port). Leave empty to skip dialing (signup flows will fail until set).
 	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"            default:""`

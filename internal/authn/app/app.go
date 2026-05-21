@@ -67,28 +67,9 @@ func InitializeIdentityManager(
 		implIdentity.NewPasskeyIdentityProvider(transitionStore, accounts, pubSub),
 	}
 
-	oidcProviders := []implIdentity.OIDCProviderConfig{
-		{
-			Name:         "google",
-			Issuer:       implIdentity.GOOGLE_OIDC_PROVIDER_URL,
-			ClientID:     config.GoogleOAuthClientID,
-			ClientSecret: config.GoogleOAuthClientSecret,
-			RedirectURL:  config.GoogleRedirectURL,
-		},
-		{
-			Name:         "github",
-			Issuer:       implIdentity.GITHUB_OIDC_PROVIDER_URL,
-			ClientID:     config.GithubOAuthClientID,
-			ClientSecret: config.GithubOAuthClientSecret,
-			RedirectURL:  config.GithubRedirectURL,
-		},
-		{
-			Name:         "facebook",
-			Issuer:       implIdentity.FACEBOOK_OIDC_PROVIDER_URL,
-			ClientID:     config.FacebookOAuthClientID,
-			ClientSecret: config.FacebookOAuthClientSecret,
-			RedirectURL:  config.FacebookRedirectURL,
-		},
+	oidcProviders, err := oidcProviderConfigsFromEnv(config)
+	if err != nil {
+		return nil, err
 	}
 
 	for _, cfg := range oidcProviders {

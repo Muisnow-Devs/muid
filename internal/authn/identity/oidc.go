@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -13,13 +14,10 @@ import (
 	"sanzi.io/muid/internal/authn/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/utils"
 )
 
 const (
-	GOOGLE_OIDC_PROVIDER_URL   = "https://accounts.google.com"
-	GITHUB_OIDC_PROVIDER_URL   = "https://token.actions.githubusercontent.com"
-	FACEBOOK_OIDC_PROVIDER_URL = "https://www.facebook.com"
-
 	OIDCPayloadKeyCode    = "code"
 	OIDCPayloadKeyState   = "state"
 	OIDCTokenExtraIDToken = "id_token"
@@ -35,23 +33,34 @@ type OIDCIdentityProvider struct {
 	provider     *oidc.Provider
 	oauth2Config *oauth2.Config
 	verifier     *oidc.IDTokenVerifier
+	claimFields  OIDCClaimFields
 }
 
 type OIDCClaims struct {
-	Subject string `json:"sub"`
-	Name    string `json:"name"`
-	Picture string `json:"picture"`
+	Subject string
+	Name    string
+	Picture string
 
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
+	Email         string
+	EmailVerified bool
 }
 
 type OIDCProviderConfig struct {
 	Name         string
-	Issuer       string
+	Endpoint     string
 	ClientID     string
 	ClientSecret string
 	RedirectURL  string
+	Scopes       []string
+	ClaimFields  OIDCClaimFields
+}
+
+type OIDCClaimFields struct {
+	Subject       string
+	Name          string
+	Picture       string
+	Email         string
+	EmailVerified string
 }
 
 func (*OIDCIdentityProvider) generateRandomState() string {
@@ -66,7 +75,7 @@ func NewOIDCProvider(
 	transitionStore session.AuthTransitionStore,
 	accounts *account.Accounts,
 ) (idn.IdentityProvider, error) {
-	provider, err := oidc.NewProvider(ctx, config.Issuer)
+	provider, err := oidc.NewProvider(ctx, config.Endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +85,7 @@ func NewOIDCProvider(
 		ClientSecret: config.ClientSecret,
 		Endpoint:     provider.Endpoint(),
 		RedirectURL:  config.RedirectURL,
-		Scopes:       []string{oidc.ScopeOpenID, OIDCScopeProfile, OIDCScopeEmail},
+		Scopes:       oidcScopes(config.Scopes),
 	}
 
 	verifier := provider.Verifier(&oidc.Config{ClientID: config.ClientID})
@@ -86,6 +95,7 @@ func NewOIDCProvider(
 		provider:        provider,
 		oauth2Config:    oauth2Config,
 		verifier:        verifier,
+		claimFields:     oidcClaimFieldsWithDefaults(config.ClaimFields),
 		transitionStore: transitionStore,
 		accounts:        accounts,
 	}, nil
@@ -291,7 +301,11 @@ func (p *OIDCIdentityProvider) exchangeAndVerify(
 	code string,
 	verifier string,
 ) (OIDCClaims, error) {
-	token, err := p.exchangeCode(ctx, code, verifier)
+	token, err := p.oauth2Config.Exchange(
+		ctx,
+		code,
+		oauth2.VerifierOption(verifier),
+	)
 	if err != nil {
 		return OIDCClaims{}, err
 	}
@@ -301,19 +315,17 @@ func (p *OIDCIdentityProvider) exchangeAndVerify(
 		return OIDCClaims{}, err
 	}
 
-	return p.verifyIDToken(ctx, idToken)
-}
+	claims, err := p.verifyIDToken(ctx, idToken)
+	if err != nil {
+		return OIDCClaims{}, err
+	}
 
-func (p *OIDCIdentityProvider) exchangeCode(
-	ctx context.Context,
-	code string,
-	verifier string,
-) (*oauth2.Token, error) {
-	return p.oauth2Config.Exchange(
-		ctx,
-		code,
-		oauth2.VerifierOption(verifier),
-	)
+	claims, err = p.mergeUserInfoClaims(ctx, token, claims)
+	if err != nil {
+		return OIDCClaims{}, err
+	}
+
+	return claims, nil
 }
 
 func (*OIDCIdentityProvider) extractIDToken(token *oauth2.Token) (string, error) {
@@ -333,11 +345,128 @@ func (p *OIDCIdentityProvider) verifyIDToken(
 		return OIDCClaims{}, err
 	}
 
-	var claims OIDCClaims
-	err = idToken.Claims(&claims)
+	var raw map[string]json.RawMessage
+	err = idToken.Claims(&raw)
 	if err != nil {
 		return OIDCClaims{}, err
 	}
 
-	return claims, nil
+	return oidcClaimsFromRaw(raw, p.claimFields), nil
+}
+
+func (p *OIDCIdentityProvider) mergeUserInfoClaims(
+	ctx context.Context,
+	token *oauth2.Token,
+	claims OIDCClaims,
+) (OIDCClaims, error) {
+	if !oidcClaimsNeedUserInfo(claims, p.claimFields) {
+		return claims, nil
+	}
+
+	userInfo, err := p.provider.UserInfo(ctx, oauth2.StaticTokenSource(token))
+	if err != nil {
+		return claims, nil
+	}
+
+	var raw map[string]json.RawMessage
+	err = userInfo.Claims(&raw)
+	if err != nil {
+		return OIDCClaims{}, err
+	}
+
+	userInfoClaims := oidcClaimsFromRaw(raw, p.claimFields)
+	return oidcMergeClaims(claims, userInfoClaims), nil
+}
+
+func oidcScopes(scopes []string) []string {
+	if len(scopes) == 0 {
+		return []string{oidc.ScopeOpenID, OIDCScopeProfile, OIDCScopeEmail}
+	}
+
+	out := make([]string, 0, len(scopes)+1)
+	hasOpenID := false
+	for _, scope := range scopes {
+		scope = strings.TrimSpace(scope)
+		if scope == "" {
+			continue
+		}
+		if scope == oidc.ScopeOpenID {
+			hasOpenID = true
+		}
+		out = append(out, scope)
+	}
+	if !hasOpenID {
+		out = append([]string{oidc.ScopeOpenID}, out...)
+	}
+	return out
+}
+
+func oidcClaimFieldsWithDefaults(fields OIDCClaimFields) OIDCClaimFields {
+	utils.DefaultIfEmpty(&fields.Subject, "sub")
+	utils.DefaultIfEmpty(&fields.Name, "name")
+	utils.DefaultIfEmpty(&fields.Picture, "picture")
+	utils.DefaultIfEmpty(&fields.Email, "email")
+	utils.DefaultIfEmpty(&fields.EmailVerified, "email_verified")
+
+	return fields
+}
+
+func oidcClaimsFromRaw(raw map[string]json.RawMessage, fields OIDCClaimFields) OIDCClaims {
+	fields = oidcClaimFieldsWithDefaults(fields)
+	return OIDCClaims{
+		Subject:       oidcStringClaim(raw, fields.Subject),
+		Name:          oidcStringClaim(raw, fields.Name),
+		Picture:       oidcStringClaim(raw, fields.Picture),
+		Email:         oidcStringClaim(raw, fields.Email),
+		EmailVerified: oidcBoolClaim(raw, fields.EmailVerified),
+	}
+}
+
+func oidcStringClaim(raw map[string]json.RawMessage, field string) string {
+	value, ok := raw[strings.TrimSpace(field)]
+	if !ok {
+		return ""
+	}
+
+	var out string
+	err := json.Unmarshal(value, &out)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(out)
+}
+
+func oidcBoolClaim(raw map[string]json.RawMessage, field string) bool {
+	value, ok := raw[strings.TrimSpace(field)]
+	if !ok {
+		return false
+	}
+
+	var out bool
+	err := json.Unmarshal(value, &out)
+	if err == nil {
+		return out
+	}
+
+	var asString string
+	err = json.Unmarshal(value, &asString)
+	return err == nil && strings.EqualFold(strings.TrimSpace(asString), "true")
+}
+
+func oidcClaimsNeedUserInfo(claims OIDCClaims, fields OIDCClaimFields) bool {
+	fields = oidcClaimFieldsWithDefaults(fields)
+	return fields.Name != "" && claims.Name == "" ||
+		fields.Picture != "" && claims.Picture == "" ||
+		fields.Email != "" && claims.Email == ""
+}
+
+func oidcMergeClaims(primary, secondary OIDCClaims) OIDCClaims {
+	utils.DefaultIfEmpty(&primary.Subject, secondary.Subject)
+	utils.DefaultIfEmpty(&primary.Name, secondary.Name)
+	utils.DefaultIfEmpty(&primary.Picture, secondary.Picture)
+	utils.DefaultIfEmpty(&primary.Email, secondary.Email)
+
+	utils.DefaultIfFalse(&primary.EmailVerified, secondary.EmailVerified)
+
+	return primary
 }

@@ -52,7 +52,7 @@ Use **`github.com/kelseyhightower/envconfig`** via **`pkg/shared.LoadConfig[T](p
 - **Prefix convention:** service name + underscore (`AUTHN_`, `PROFILE_`, `MAILER_`).
 - Struct fields use `envconfig:"FIELD_NAME"`; the full environment variable is **`PREFIX_FIELD_NAME`** (e.g. `PROFILE_DATABASE_URL`).
 
-**Authn (`AUTHN_`):** `DATABASE_URL`, `REDIS_URL`, `NATS_URL`, `OTP_SECRET_KEY`, `REQUEST_TIMEOUT_SECONDS`, OAuth client fields, optional `PROFILE_GRPC_ADDR`, `PROFILE_GRPC_TIMEOUT_SECONDS`, … (see `internal/authn/app/config.go`).
+**Authn (`AUTHN_`):** `DATABASE_URL`, `REDIS_URL`, `NATS_URL`, `OTP_SECRET_KEY`, `REQUEST_TIMEOUT_SECONDS`, `OIDC_CLIENTS_JSON`, optional `PROFILE_GRPC_ADDR`, `PROFILE_GRPC_TIMEOUT_SECONDS`, … (see `internal/authn/app/config.go`). `OIDC_CLIENTS_JSON` is a JSON array of clients with `provider` (or `key`), `endpoint`, `client_id`, `client_secret`, `redirect_url`, optional `scopes`, and optional `claim_fields` mapping shared claims such as `picture` to provider fields like `avatar_url`.
 
 **Profile (`PROFILE_`):** `DATABASE_URL`, `NATS_URL`, `REQUEST_TIMEOUT_SECONDS`, R2 and `PUBLIC_ASSETS_URL` fields (see `internal/profile/app/config.go`).
 

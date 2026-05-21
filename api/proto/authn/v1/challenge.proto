@@ -30,8 +30,20 @@ message OAuthChallenge {
   string auth_url = 2  [(buf.validate.field).string.uri = true];
 }
 
+enum PasskeyCeremony {
+  PASSKEY_CEREMONY_UNSPECIFIED    = 0;
+  PASSKEY_CEREMONY_AUTHENTICATION = 1;
+  PASSKEY_CEREMONY_REGISTRATION   = 2;
+}
+
 message PasskeyChallenge {
-  string state                                      = 1;
+  string state = 1;
+  // Deprecated for registration ceremonies. Authentication uses this as the
+  // JSON value passed to PublicKeyCredential.parseRequestOptionsFromJSON().
   string public_key_credential_request_options_json = 2;
   int64  timeout_millis                             = 3;
+  PasskeyCeremony ceremony                          = 4;
+  // Registration uses this as the JSON value passed to
+  // PublicKeyCredential.parseCreationOptionsFromJSON().
+  string public_key_credential_creation_options_json = 5;
 }

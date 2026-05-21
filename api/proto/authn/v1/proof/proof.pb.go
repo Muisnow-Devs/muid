@@ -519,11 +519,10 @@ func (b0 OAuthProof_builder) Build() *OAuthProof {
 }
 
 type PasskeyProof struct {
-	state                                      protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_CredentialAssertionResponseJson string                 `protobuf:"bytes,1,opt,name=credential_assertion_response_json,json=credentialAssertionResponseJson,proto3"`
-	xxx_hidden_CredentialCreationResponseJson  string                 `protobuf:"bytes,2,opt,name=credential_creation_response_json,json=credentialCreationResponseJson,proto3"`
-	unknownFields                              protoimpl.UnknownFields
-	sizeCache                                  protoimpl.SizeCache
+	state               protoimpl.MessageState  `protogen:"opaque.v1"`
+	xxx_hidden_Response isPasskeyProof_Response `protobuf_oneof:"response"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *PasskeyProof) Reset() {
@@ -553,41 +552,134 @@ func (x *PasskeyProof) ProtoReflect() protoreflect.Message {
 
 func (x *PasskeyProof) GetCredentialAssertionResponseJson() string {
 	if x != nil {
-		return x.xxx_hidden_CredentialAssertionResponseJson
+		if x, ok := x.xxx_hidden_Response.(*passkeyProof_CredentialAssertionResponseJson); ok {
+			return x.CredentialAssertionResponseJson
+		}
 	}
 	return ""
 }
 
 func (x *PasskeyProof) GetCredentialCreationResponseJson() string {
 	if x != nil {
-		return x.xxx_hidden_CredentialCreationResponseJson
+		if x, ok := x.xxx_hidden_Response.(*passkeyProof_CredentialCreationResponseJson); ok {
+			return x.CredentialCreationResponseJson
+		}
 	}
 	return ""
 }
 
 func (x *PasskeyProof) SetCredentialAssertionResponseJson(v string) {
-	x.xxx_hidden_CredentialAssertionResponseJson = v
+	x.xxx_hidden_Response = &passkeyProof_CredentialAssertionResponseJson{v}
 }
 
 func (x *PasskeyProof) SetCredentialCreationResponseJson(v string) {
-	x.xxx_hidden_CredentialCreationResponseJson = v
+	x.xxx_hidden_Response = &passkeyProof_CredentialCreationResponseJson{v}
+}
+
+func (x *PasskeyProof) HasResponse() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Response != nil
+}
+
+func (x *PasskeyProof) HasCredentialAssertionResponseJson() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Response.(*passkeyProof_CredentialAssertionResponseJson)
+	return ok
+}
+
+func (x *PasskeyProof) HasCredentialCreationResponseJson() bool {
+	if x == nil {
+		return false
+	}
+	_, ok := x.xxx_hidden_Response.(*passkeyProof_CredentialCreationResponseJson)
+	return ok
+}
+
+func (x *PasskeyProof) ClearResponse() {
+	x.xxx_hidden_Response = nil
+}
+
+func (x *PasskeyProof) ClearCredentialAssertionResponseJson() {
+	if _, ok := x.xxx_hidden_Response.(*passkeyProof_CredentialAssertionResponseJson); ok {
+		x.xxx_hidden_Response = nil
+	}
+}
+
+func (x *PasskeyProof) ClearCredentialCreationResponseJson() {
+	if _, ok := x.xxx_hidden_Response.(*passkeyProof_CredentialCreationResponseJson); ok {
+		x.xxx_hidden_Response = nil
+	}
+}
+
+const PasskeyProof_Response_not_set_case case_PasskeyProof_Response = 0
+const PasskeyProof_CredentialAssertionResponseJson_case case_PasskeyProof_Response = 1
+const PasskeyProof_CredentialCreationResponseJson_case case_PasskeyProof_Response = 2
+
+func (x *PasskeyProof) WhichResponse() case_PasskeyProof_Response {
+	if x == nil {
+		return PasskeyProof_Response_not_set_case
+	}
+	switch x.xxx_hidden_Response.(type) {
+	case *passkeyProof_CredentialAssertionResponseJson:
+		return PasskeyProof_CredentialAssertionResponseJson_case
+	case *passkeyProof_CredentialCreationResponseJson:
+		return PasskeyProof_CredentialCreationResponseJson_case
+	default:
+		return PasskeyProof_Response_not_set_case
+	}
 }
 
 type PasskeyProof_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	CredentialAssertionResponseJson string
-	CredentialCreationResponseJson  string
+	// Fields of oneof xxx_hidden_Response:
+	CredentialAssertionResponseJson *string
+	CredentialCreationResponseJson  *string
+	// -- end of xxx_hidden_Response
 }
 
 func (b0 PasskeyProof_builder) Build() *PasskeyProof {
 	m0 := &PasskeyProof{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_CredentialAssertionResponseJson = b.CredentialAssertionResponseJson
-	x.xxx_hidden_CredentialCreationResponseJson = b.CredentialCreationResponseJson
+	if b.CredentialAssertionResponseJson != nil {
+		x.xxx_hidden_Response = &passkeyProof_CredentialAssertionResponseJson{*b.CredentialAssertionResponseJson}
+	}
+	if b.CredentialCreationResponseJson != nil {
+		x.xxx_hidden_Response = &passkeyProof_CredentialCreationResponseJson{*b.CredentialCreationResponseJson}
+	}
 	return m0
 }
+
+type case_PasskeyProof_Response protoreflect.FieldNumber
+
+func (x case_PasskeyProof_Response) String() string {
+	md := file_authn_v1_proof_proto_msgTypes[4].Descriptor()
+	if x == 0 {
+		return "not set"
+	}
+	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
+}
+
+type isPasskeyProof_Response interface {
+	isPasskeyProof_Response()
+}
+
+type passkeyProof_CredentialAssertionResponseJson struct {
+	CredentialAssertionResponseJson string `protobuf:"bytes,1,opt,name=credential_assertion_response_json,json=credentialAssertionResponseJson,proto3,oneof"`
+}
+
+type passkeyProof_CredentialCreationResponseJson struct {
+	CredentialCreationResponseJson string `protobuf:"bytes,2,opt,name=credential_creation_response_json,json=credentialCreationResponseJson,proto3,oneof"`
+}
+
+func (*passkeyProof_CredentialAssertionResponseJson) isPasskeyProof_Response() {}
+
+func (*passkeyProof_CredentialCreationResponseJson) isPasskeyProof_Response() {}
 
 var File_authn_v1_proof_proto protoreflect.FileDescriptor
 
@@ -610,10 +702,12 @@ const file_authn_v1_proof_proto_rawDesc = "" +
 	"\n" +
 	"OAuthProof\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\tR\x04code\x12\x14\n" +
-	"\x05state\x18\x02 \x01(\tR\x05state\"\xa6\x01\n" +
-	"\fPasskeyProof\x12K\n" +
-	"\"credential_assertion_response_json\x18\x01 \x01(\tR\x1fcredentialAssertionResponseJson\x12I\n" +
-	"!credential_creation_response_json\x18\x02 \x01(\tR\x1ecredentialCreationResponseJsonB\xc3\x01\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"\xb6\x01\n" +
+	"\fPasskeyProof\x12M\n" +
+	"\"credential_assertion_response_json\x18\x01 \x01(\tH\x00R\x1fcredentialAssertionResponseJson\x12K\n" +
+	"!credential_creation_response_json\x18\x02 \x01(\tH\x00R\x1ecredentialCreationResponseJsonB\n" +
+	"\n" +
+	"\bresponseB\xc3\x01\n" +
 	"\x17com.muid.authn.v1.proofB\n" +
 	"ProofProtoP\x01Z,sanzi.io/muid/api/proto/authn/v1/proof;proof\xa2\x02\x04MAVP\xaa\x02\x13Muid.Authn.V1.Proof\xca\x02\x13Muid\\Authn\\V1\\Proof\xe2\x02\x1fMuid\\Authn\\V1\\Proof\\GPBMetadata\xea\x02\x16Muid::Authn::V1::Proofb\x06proto3"
 
@@ -650,6 +744,10 @@ func file_authn_v1_proof_proto_init() {
 	file_authn_v1_proof_proto_msgTypes[1].OneofWrappers = []any{
 		(*emailProof_OtpCode)(nil),
 		(*emailProof_Resend)(nil),
+	}
+	file_authn_v1_proof_proto_msgTypes[4].OneofWrappers = []any{
+		(*passkeyProof_CredentialAssertionResponseJson)(nil),
+		(*passkeyProof_CredentialCreationResponseJson)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

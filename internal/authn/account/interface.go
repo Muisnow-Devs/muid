@@ -2,6 +2,7 @@ package account
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
@@ -37,18 +38,34 @@ type OIDC interface {
 
 // Passkey persists WebAuthn credentials and related notifications.
 type LinkPasskeyConfig struct {
-	UserId       uuid.UUID
+	UserId         uuid.UUID
+	CredentialID   []byte
+	PublicKey      []byte
+	RpID           string
+	DeviceType     string
+	Name           string
+	BackupEligible bool
+	BackupState    bool
+	SignCount      uint32
+	Transports     []string
+	AAGUID         []byte
+}
+
+type UpdatePasskeyUsageConfig struct {
 	CredentialID []byte
-	PublicKey    []byte
-	RpID         string
-	DeviceType   string
-	Name         string
+	BackupState  bool
+	SignCount    uint32
+	LastUsedAt   time.Time
 }
 
 type Passkey interface {
 	LinkPasskey(
 		ctx context.Context,
 		config LinkPasskeyConfig,
+	) error
+	UpdatePasskeyUsage(
+		ctx context.Context,
+		config UpdatePasskeyUsageConfig,
 	) error
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"sanzi.io/muid/internal/authn/account"
+	authnconfig "sanzi.io/muid/internal/authn/config"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	implIdentity "sanzi.io/muid/internal/authn/identity"
 	"sanzi.io/muid/internal/identity"
@@ -62,17 +63,27 @@ func InitializeIdentityManager(
 	pubSub pubsub.PubSub,
 	accounts *account.Accounts,
 ) (*identity.IdentityManager, error) {
-	providers := []identity.IdentityProvider{
-		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, accounts),
-		implIdentity.NewPasskeyIdentityProvider(transitionStore, accounts, pubSub),
-	}
-
-	oidcProviders, err := oidcProviderConfigsFromEnv(config)
+	passkeyConfig := authnconfig.ParsePasskeyConfig(
+		config.PasskeyRPID,
+		config.PasskeyRPDisplayName,
+		config.PasskeyRPOrigins,
+	)
+	passkeyProvider, err := implIdentity.NewPasskeyIdentityProviderWithConfig(
+		transitionStore,
+		accounts,
+		pubSub,
+		passkeyConfig,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, cfg := range oidcProviders {
+	providers := []identity.IdentityProvider{
+		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, accounts),
+		passkeyProvider,
+	}
+
+	for _, cfg := range config.OIDCClients {
 		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore, accounts)
 		if err != nil {
 			return nil, &OIDCProviderInitError{Name: cfg.Name, Err: err}

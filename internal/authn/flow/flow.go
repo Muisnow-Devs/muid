@@ -185,9 +185,18 @@ func buildAuthChallenge(
 		pc.SetState(step.TransitionId)
 		if step.Payload != nil && step.Payload.Passkey != nil {
 			pk := step.Payload.Passkey
-			pc.SetPublicKeyCredentialRequestOptionsJson(
-				pk.PublicKeyCredentialRequestOptionsJSON,
-			)
+			switch pk.Ceremony {
+			case implIdentity.PasskeyCeremonyRegistration:
+				pc.SetCeremony(challenge.PasskeyCeremony_PASSKEY_CEREMONY_REGISTRATION)
+				pc.SetPublicKeyCredentialCreationOptionsJson(
+					pk.PublicKeyCredentialCreationOptionsJSON,
+				)
+			default:
+				pc.SetCeremony(challenge.PasskeyCeremony_PASSKEY_CEREMONY_AUTHENTICATION)
+				pc.SetPublicKeyCredentialRequestOptionsJson(
+					pk.PublicKeyCredentialRequestOptionsJSON,
+				)
+			}
 			pc.SetTimeoutMillis(pk.TimeoutMillis)
 		}
 		ch.SetPasskeyChallenge(pc)

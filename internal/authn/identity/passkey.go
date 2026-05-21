@@ -2,13 +2,13 @@ package identity
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
+	"time"
 
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/account"
 	"sanzi.io/muid/internal/authn/ent"
@@ -16,18 +16,24 @@ import (
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared/pubsub"
-	"sanzi.io/muid/pkg/utils"
 )
 
 const (
-	passkeyModeLogin    = "login"
-	passkeyModeRegister = "register"
+	PasskeyCeremonyAuthentication = "authentication"
+	PasskeyCeremonyRegistration   = "registration"
 )
+
+type PasskeyConfig struct {
+	RPID          string
+	RPDisplayName string
+	RPOrigins     []string
+}
 
 type PasskeyProvider struct {
 	transitionStore session.AuthTransitionStore
 	accounts        *account.Accounts
 	pubSub          pubsub.PubSub
+	webAuthn        *webauthn.WebAuthn
 }
 
 // pubSub is optional; pass nil when mail notifications are not required in tests.
@@ -36,10 +42,54 @@ func NewPasskeyIdentityProvider(
 	accounts *account.Accounts,
 	pubSub pubsub.PubSub,
 ) idn.IdentityProvider {
+	provider, err := NewPasskeyIdentityProviderWithConfig(
+		transitionStore,
+		accounts,
+		pubSub,
+		DefaultPasskeyConfig(),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return provider
+}
+
+func NewPasskeyIdentityProviderWithConfig(
+	transitionStore session.AuthTransitionStore,
+	accounts *account.Accounts,
+	pubSub pubsub.PubSub,
+	config PasskeyConfig,
+) (idn.IdentityProvider, error) {
+	wa, err := webauthn.New(&webauthn.Config{
+		RPID:          config.RPID,
+		RPDisplayName: config.RPDisplayName,
+		RPOrigins:     config.RPOrigins,
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			UserVerification: protocol.VerificationPreferred,
+			ResidentKey:      protocol.ResidentKeyRequirementPreferred,
+		},
+		AttestationPreference: protocol.PreferNoAttestation,
+		Timeouts: webauthn.TimeoutsConfig{
+			Login:        webauthn.TimeoutConfig{Enforce: true, Timeout: time.Minute},
+			Registration: webauthn.TimeoutConfig{Enforce: true, Timeout: time.Minute},
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 	return &PasskeyProvider{
 		transitionStore: transitionStore,
 		accounts:        accounts,
 		pubSub:          pubSub,
+		webAuthn:        wa,
+	}, nil
+}
+
+func DefaultPasskeyConfig() PasskeyConfig {
+	return PasskeyConfig{
+		RPID:          "localhost",
+		RPDisplayName: "muid",
+		RPOrigins:     []string{"http://localhost", "http://localhost:3000", "https://localhost"},
 	}
 }
 
@@ -63,23 +113,16 @@ func (p *PasskeyProvider) Start(
 
 func (p *PasskeyProvider) startLogin(
 	ctx context.Context,
-	input idn.StartInput,
+	_ idn.StartInput,
 ) (idn.StepResult, error) {
-	rpID := input.Identifier
-	if rpID == "" {
-		rpID = "localhost"
-	}
-
-	challenge := make([]byte, 32)
-	if _, err := rand.Read(challenge); err != nil {
+	assertion, webAuthnSession, err := p.webAuthn.BeginDiscoverableLogin()
+	if err != nil {
 		return idn.StepResult{}, err
 	}
-	challengeB64 := base64.RawURLEncoding.EncodeToString(challenge)
 
 	store := session.PasskeyStore(session.StepStart, &session.PasskeyFlow{
-		ChallengeB64: challengeB64,
-		RPID:         rpID,
-		Mode:         passkeyModeLogin,
+		Ceremony: PasskeyCeremonyAuthentication,
+		Session:  *webAuthnSession,
 	})
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
@@ -87,19 +130,18 @@ func (p *PasskeyProvider) startLogin(
 		return idn.StepResult{}, err
 	}
 
-	opts := map[string]any{
-		"challenge":        challengeB64,
-		"timeout":          60000,
-		"rpId":             rpID,
-		"allowCredentials": []any{},
-		"userVerification": "preferred",
-	}
-	optsJSON, err := json.Marshal(opts)
+	optsJSON, err := json.Marshal(assertion.Response)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	return passkeyChallengeStep(sess.Id, string(optsJSON), 60000), nil
+	return passkeyChallengeStep(
+		sess.Id,
+		PasskeyCeremonyAuthentication,
+		string(optsJSON),
+		"",
+		int64(assertion.Response.Timeout),
+	), nil
 }
 
 func (p *PasskeyProvider) startRegister(
@@ -116,100 +158,42 @@ func (p *PasskeyProvider) startRegister(
 		return idn.StepResult{}, err
 	}
 
-	rpID := input.Identifier
-	if rpID == "" {
-		rpID = "localhost"
-	}
-
-	challenge := make([]byte, 32)
-	if _, err := rand.Read(challenge); err != nil {
+	user, err := p.passkeyUserByID(ctx, linkRes.UserID)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
-	challengeB64 := base64.RawURLEncoding.EncodeToString(challenge)
+
+	creation, webAuthnSession, err := p.webAuthn.BeginRegistration(
+		user,
+		webauthn.WithExclusions(webauthn.Credentials(user.credentials).CredentialDescriptors()),
+		webauthn.WithResidentKeyRequirement(protocol.ResidentKeyRequirementPreferred),
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
 
 	store := session.PasskeyStore(session.StepStart, &session.PasskeyFlow{
-		ChallengeB64:  challengeB64,
-		RPID:          rpID,
-		Mode:          passkeyModeRegister,
+		Ceremony:      PasskeyCeremonyRegistration,
+		Session:       *webAuthnSession,
 		SubjectUserID: linkRes.UserID.String(),
 	})
-
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	exclude, err := p.excludeCredentials(ctx, linkRes.UserID)
+	optsJSON, err := json.Marshal(creation.Response)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	ref, err := p.accounts.Store.DB.UserRef.Get(ctx, linkRes.UserID)
-	if err != nil {
-		return idn.StepResult{}, err
-	}
-
-	opts := map[string]any{
-		"challenge": challengeB64,
-		"timeout":   60000,
-		"rp": map[string]any{
-			"id":   rpID,
-			"name": "muid",
-		},
-		"user": map[string]any{
-			"id":          base64.RawURLEncoding.EncodeToString(linkRes.UserID[:]),
-			"name":        ref.ID.String(),
-			"displayName": ref.Email,
-		},
-		"pubKeyCredParams": []map[string]any{
-			{"type": "public-key", "alg": -7},
-			{"type": "public-key", "alg": -257},
-		},
-		"excludeCredentials": exclude,
-		"authenticatorSelection": map[string]any{
-			"userVerification": "preferred",
-		},
-		"attestation": "none",
-	}
-	optsJSON, err := json.Marshal(opts)
-	if err != nil {
-		return idn.StepResult{}, err
-	}
-
-	return passkeyChallengeStep(sess.Id, string(optsJSON), 60000), nil
-}
-
-func passkeyChallengeStep(transitionID, optsJSON string, timeoutMillis int64) idn.StepResult {
-	return idn.StepResult{
-		TransitionId: transitionID,
-		Type:         idn.StepChallenge,
-		Payload: &idn.StepPayload{
-			Passkey: &idn.PasskeyChallengePayload{
-				PublicKeyCredentialRequestOptionsJSON: optsJSON,
-				TimeoutMillis:                         timeoutMillis,
-			},
-		},
-	}
-}
-
-func (p *PasskeyProvider) excludeCredentials(
-	ctx context.Context,
-	userID uuid.UUID,
-) ([]map[string]any, error) {
-	rows, err := p.accounts.Store.DB.UserPasskey.Query().
-		Where(userpasskey.UserIDEQ(userID), userpasskey.RevokedEQ(false)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]map[string]any, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, map[string]any{
-			"type": "public-key",
-			"id":   base64.RawURLEncoding.EncodeToString(row.CredentialID),
-		})
-	}
-	return out, nil
+	return passkeyChallengeStep(
+		sess.Id,
+		PasskeyCeremonyRegistration,
+		"",
+		string(optsJSON),
+		int64(creation.Response.Timeout),
+	), nil
 }
 
 func (p *PasskeyProvider) Continue(
@@ -232,7 +216,7 @@ func (p *PasskeyProvider) Continue(
 		)
 	}
 
-	if pkFlow.Mode == passkeyModeRegister {
+	if pkFlow.Ceremony == PasskeyCeremonyRegistration {
 		return p.continueRegister(ctx, input, sess, pkFlow)
 	}
 	return p.continueLogin(ctx, input, sess, pkFlow)
@@ -252,22 +236,31 @@ func (p *PasskeyProvider) continueLogin(
 		)
 	}
 
-	err := verifyPasskeyChallengeBinding(rawJSON, pkFlow.ChallengeB64)
-	if err != nil {
-		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
-	}
-
-	credID, err := extractCredentialID(rawJSON)
+	parsed, err := protocol.ParseCredentialRequestResponseBytes([]byte(rawJSON))
 	if err != nil {
 		return idn.StepResult{}, errors.Join(idn.ErrInvalidInput, err)
 	}
 
-	pk, err := p.accounts.Store.DB.UserPasskey.Query().
-		Where(userpasskey.CredentialIDEQ(credID)).
-		Only(ctx)
-	if ent.IsNotFound(err) {
-		return idn.StepResult{}, idn.ErrPasskeyNotLinked
+	user, verifiedCredential, err := p.webAuthn.ValidatePasskeyLogin(
+		p.discoverableUserHandler(ctx),
+		pkFlow.Session,
+		parsed,
+	)
+	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
 	}
+
+	passkeyUser, ok := user.(*passkeyUser)
+	if !ok {
+		return idn.StepResult{}, idn.ErrInvalidSessionState
+	}
+
+	err = p.accounts.Passkey.UpdatePasskeyUsage(ctx, account.UpdatePasskeyUsageConfig{
+		CredentialID: verifiedCredential.ID,
+		BackupState:  verifiedCredential.Flags.BackupState,
+		SignCount:    verifiedCredential.Authenticator.SignCount,
+		LastUsedAt:   time.Now().UTC(),
+	})
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -277,7 +270,7 @@ func (p *PasskeyProvider) continueLogin(
 	return idn.StepResult{
 		Type: idn.StepAuthenticated,
 		Authenticated: &idn.AuthenticatedIdentity{
-			UserID: pk.UserID.String(),
+			UserID: passkeyUser.id.String(),
 		},
 	}, nil
 }
@@ -296,17 +289,7 @@ func (p *PasskeyProvider) continueRegister(
 		)
 	}
 
-	err := verifyPasskeyCreationChallengeBinding(rawJSON, pkFlow.ChallengeB64)
-	if err != nil {
-		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
-	}
-
-	credID, err := extractCreationCredentialID(rawJSON)
-	if err != nil {
-		return idn.StepResult{}, errors.Join(idn.ErrInvalidInput, err)
-	}
-
-	attObj, err := extractAttestationObject(rawJSON)
+	parsed, err := protocol.ParseCredentialCreationResponseBytes([]byte(rawJSON))
 	if err != nil {
 		return idn.StepResult{}, errors.Join(idn.ErrInvalidInput, err)
 	}
@@ -316,13 +299,28 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
 	}
 
+	user, err := p.passkeyUserByID(ctx, uid)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	credential, err := p.webAuthn.CreateCredential(user, pkFlow.Session, parsed)
+	if err != nil {
+		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
+	}
+
 	err = p.accounts.Passkey.LinkPasskey(ctx, account.LinkPasskeyConfig{
-		UserId:       uid,
-		CredentialID: credID,
-		PublicKey:    attObj,
-		RpID:         pkFlow.RPID,
-		DeviceType:   string(userpasskey.DeviceTypeMultiDevice),
-		Name:         "Passkey",
+		UserId:         uid,
+		CredentialID:   credential.ID,
+		PublicKey:      credential.PublicKey,
+		RpID:           pkFlow.Session.RelyingPartyID,
+		DeviceType:     passkeyDeviceType(credential),
+		Name:           "Passkey",
+		BackupEligible: credential.Flags.BackupEligible,
+		BackupState:    credential.Flags.BackupState,
+		SignCount:      credential.Authenticator.SignCount,
+		Transports:     credentialTransportStrings(credential.Transport),
+		AAGUID:         credential.Authenticator.AAGUID,
 	})
 	if err != nil {
 		return idn.StepResult{}, err
@@ -344,66 +342,143 @@ func (p *PasskeyProvider) continueRegister(
 	return idn.StepResult{Type: idn.StepLinked}, nil
 }
 
-func verifyPasskeyChallengeBinding(assertionJSON, expectedChallengeB64 string) error {
-	var outer struct {
-		Response struct {
-			ClientDataJSON string `json:"clientDataJSON"`
-		} `json:"response"`
+func passkeyChallengeStep(
+	transitionID string,
+	ceremony string,
+	requestOptionsJSON string,
+	creationOptionsJSON string,
+	timeoutMillis int64,
+) idn.StepResult {
+	return idn.StepResult{
+		TransitionId: transitionID,
+		Type:         idn.StepChallenge,
+		Payload: &idn.StepPayload{
+			Passkey: &idn.PasskeyChallengePayload{
+				Ceremony:                               ceremony,
+				PublicKeyCredentialRequestOptionsJSON:  requestOptionsJSON,
+				PublicKeyCredentialCreationOptionsJSON: creationOptionsJSON,
+				TimeoutMillis:                          timeoutMillis,
+			},
+		},
 	}
-
-	err := json.Unmarshal([]byte(assertionJSON), &outer)
-	if err != nil {
-		return fmt.Errorf("assertion json: %w", err)
-	}
-
-	raw, err := base64.RawURLEncoding.DecodeString(outer.Response.ClientDataJSON)
-	if err != nil {
-		return fmt.Errorf("clientDataJSON base64: %w", err)
-	}
-
-	var cd struct {
-		Challenge string `json:"challenge"`
-		Type      string `json:"type"`
-	}
-
-	err = json.Unmarshal(raw, &cd)
-	if err != nil {
-		return fmt.Errorf("client data: %w", err)
-	}
-	if cd.Type != "webauthn.get" {
-		return errors.New("unexpected clientData type")
-	}
-	if cd.Challenge != expectedChallengeB64 {
-		return errors.New("webauthn challenge mismatch")
-	}
-
-	return nil
 }
 
-func extractCredentialID(assertionJSON string) ([]byte, error) {
-	var outer struct {
-		RawID string `json:"rawId"`
-		ID    string `json:"id"`
-	}
-	err := json.Unmarshal([]byte(assertionJSON), &outer)
+type passkeyUser struct {
+	id          uuid.UUID
+	name        string
+	displayName string
+	credentials []webauthn.Credential
+}
+
+func (u *passkeyUser) WebAuthnID() []byte { return u.id[:] }
+
+func (u *passkeyUser) WebAuthnName() string { return u.name }
+
+func (u *passkeyUser) WebAuthnDisplayName() string { return u.displayName }
+
+func (u *passkeyUser) WebAuthnCredentials() []webauthn.Credential {
+	return u.credentials
+}
+
+func (p *PasskeyProvider) passkeyUserByID(
+	ctx context.Context,
+	userID uuid.UUID,
+) (*passkeyUser, error) {
+	ref, err := p.accounts.Store.DB.UserRef.Get(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-
-	b64 := outer.RawID
-	utils.DefaultIfEmpty(&b64, outer.ID)
-
-	if b64 == "" {
-		return nil, errors.New("missing rawId/id")
-	}
-
-	raw, err := base64.RawURLEncoding.DecodeString(b64)
+	rows, err := p.accounts.Store.DB.UserPasskey.Query().
+		Where(userpasskey.UserIDEQ(userID), userpasskey.RevokedEQ(false)).
+		All(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(raw) == 0 {
-		return nil, errors.New("empty credential id")
+	return &passkeyUser{
+		id:          ref.ID,
+		name:        ref.Email,
+		displayName: ref.Email,
+		credentials: passkeyCredentialsFromRows(rows),
+	}, nil
+}
+
+func (p *PasskeyProvider) discoverableUserHandler(
+	ctx context.Context,
+) webauthn.DiscoverableUserHandler {
+	return func(rawID, userHandle []byte) (webauthn.User, error) {
+		row, err := p.accounts.Store.DB.UserPasskey.Query().
+			Where(userpasskey.CredentialIDEQ(rawID), userpasskey.RevokedEQ(false)).
+			Only(ctx)
+		if ent.IsNotFound(err) {
+			return nil, idn.ErrPasskeyNotLinked
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		userID, err := uuid.FromBytes(userHandle)
+		if err != nil {
+			return nil, errors.Join(idn.ErrInvalidInput, err)
+		}
+		if userID != row.UserID {
+			return nil, idn.ErrInvalidSessionState
+		}
+
+		return p.passkeyUserByID(ctx, row.UserID)
+	}
+}
+
+func passkeyCredentialsFromRows(rows []*ent.UserPasskey) []webauthn.Credential {
+	credentials := make([]webauthn.Credential, 0, len(rows))
+	for _, row := range rows {
+		credentials = append(credentials, passkeyCredentialFromRow(row))
+	}
+	return credentials
+}
+
+func passkeyCredentialFromRow(row *ent.UserPasskey) webauthn.Credential {
+	var flags protocol.AuthenticatorFlags
+	if row.BackupEligible {
+		flags |= protocol.FlagBackupEligible
+	}
+	if row.BackupState {
+		flags |= protocol.FlagBackupState
 	}
 
-	return raw, nil
+	transports := make([]protocol.AuthenticatorTransport, 0, len(row.Transports))
+	for _, transport := range row.Transports {
+		if transport != "" {
+			transports = append(transports, protocol.AuthenticatorTransport(transport))
+		}
+	}
+
+	return webauthn.Credential{
+		ID:        row.CredentialID,
+		PublicKey: row.PublicKey,
+		Transport: transports,
+		Flags:     webauthn.NewCredentialFlags(flags),
+		Authenticator: webauthn.Authenticator{
+			AAGUID:    row.Aaguid,
+			SignCount: row.SignCount,
+		},
+	}
+}
+
+func passkeyDeviceType(credential *webauthn.Credential) string {
+	if credential.Flags.BackupEligible {
+		return string(userpasskey.DeviceTypeMultiDevice)
+	}
+	return string(userpasskey.DeviceTypeSingleDevice)
+}
+
+func credentialTransportStrings(
+	transports []protocol.AuthenticatorTransport,
+) []string {
+	out := make([]string, 0, len(transports))
+	for _, transport := range transports {
+		if transport != "" {
+			out = append(out, string(transport))
+		}
+	}
+	return out
 }

@@ -41,16 +41,27 @@ func (p *passkeyService) LinkPasskey(
 		return idn.ErrPasskeyAlreadyRegistered
 	}
 
-	err = p.store.DB.UserPasskey.Create().
+	create := p.store.DB.UserPasskey.Create().
 		SetUserID(config.UserId).
 		SetCredentialID(config.CredentialID).
 		SetPublicKey(config.PublicKey).
 		SetRpID(config.RpID).
 		SetDeviceType(parseDeviceType(config.DeviceType)).
 		SetName(config.Name).
-		Exec(ctx)
+		SetBackupEligible(config.BackupEligible).
+		SetBackupState(config.BackupState).
+		SetSignCount(config.SignCount).
+		SetTransports(config.Transports)
+	if len(config.AAGUID) > 0 {
+		create.SetAaguid(config.AAGUID)
+	}
+
+	err = create.Exec(ctx)
 	if err != nil {
 		return err
+	}
+	if p.pubSub == nil {
+		return nil
 	}
 
 	ref, err := p.store.DB.UserRef.Get(ctx, config.UserId)
@@ -69,6 +80,29 @@ func (p *passkeyService) LinkPasskey(
 		return err
 	}
 	return p.pubSub.Publish(topics.TopicPasskeyAdded, b)
+}
+
+func (p *passkeyService) UpdatePasskeyUsage(
+	ctx context.Context,
+	config UpdatePasskeyUsageConfig,
+) error {
+	if len(config.CredentialID) == 0 {
+		return idn.ErrInvalidInput
+	}
+	if config.LastUsedAt.IsZero() {
+		config.LastUsedAt = time.Now().UTC()
+	}
+
+	err := p.store.DB.UserPasskey.Update().
+		Where(userpasskey.CredentialIDEQ(config.CredentialID)).
+		SetBackupState(config.BackupState).
+		SetSignCount(config.SignCount).
+		SetLastUsedAt(config.LastUsedAt).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func parseDeviceType(v string) userpasskey.DeviceType {

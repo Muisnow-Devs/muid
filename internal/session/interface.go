@@ -3,6 +3,8 @@ package session
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/go-webauthn/webauthn/webauthn"
 )
 
 type ProviderData struct {
@@ -48,12 +50,11 @@ type OIDCFlow struct {
 	PKCECodeVerifier string `json:"pkce_code_verifier"`
 }
 
-// PasskeyFlow holds WebAuthn ceremony state for the passkey login transition.
+// PasskeyFlow holds WebAuthn ceremony state for the passkey transition.
 type PasskeyFlow struct {
-	ChallengeB64 string `json:"challenge_b64"`
-	RPID         string `json:"rp_id"`
-	// Mode is login (assertion) or register (link new passkey).
-	Mode string `json:"mode,omitempty"`
+	// Ceremony is authentication (assertion) or registration (attestation).
+	Ceremony string               `json:"ceremony,omitempty"`
+	Session  webauthn.SessionData `json:"session"`
 	// SubjectUserID is set for register/link flows.
 	SubjectUserID string `json:"subject_user_id,omitempty"`
 }

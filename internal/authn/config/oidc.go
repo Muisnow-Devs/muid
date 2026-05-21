@@ -1,19 +1,19 @@
-package app
+package config
 
 import (
 	"encoding/json"
 	"errors"
 	"strings"
 
-	implIdentity "sanzi.io/muid/internal/authn/identity"
+	"sanzi.io/muid/internal/authn/identity"
 	"sanzi.io/muid/pkg/utils"
 )
 
-var errOIDCClientConfigRequired = errors.New(
-	"authn app: OIDC client config requires provider, endpoint, client_id, client_secret, and redirect_url",
+var ErrOIDCClientConfigRequired = errors.New(
+	"authn config: OIDC client config requires provider, endpoint, client_id, client_secret, and redirect_url",
 )
 
-type oidcClientConfigJSON struct {
+type oidcClientJSON struct {
 	Provider     string              `json:"provider"`
 	Key          string              `json:"key"`
 	Name         string              `json:"name"`
@@ -33,19 +33,30 @@ type oidcClaimFieldsJSON struct {
 	EmailVerified string `json:"email_verified"`
 }
 
-func oidcProviderConfigsFromEnv(config Config) ([]implIdentity.OIDCProviderConfig, error) {
-	raw := strings.TrimSpace(config.OIDCClientsJSON)
+type OIDCClients []identity.OIDCProviderConfig
+
+func (clients *OIDCClients) Decode(raw string) error {
+	parsed, err := parseOIDCClientsJSON(raw)
+	if err != nil {
+		return err
+	}
+	*clients = parsed
+	return nil
+}
+
+func parseOIDCClientsJSON(raw string) (OIDCClients, error) {
+	raw = strings.TrimSpace(raw)
 	if raw == "" {
 		return nil, nil
 	}
 
-	var clients []oidcClientConfigJSON
+	var clients []oidcClientJSON
 	err := json.Unmarshal([]byte(raw), &clients)
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]implIdentity.OIDCProviderConfig, 0, len(clients))
+	out := make(OIDCClients, 0, len(clients))
 	for _, client := range clients {
 		cfg, err := client.toOIDCProviderConfig()
 		if err != nil {
@@ -56,16 +67,15 @@ func oidcProviderConfigsFromEnv(config Config) ([]implIdentity.OIDCProviderConfi
 	return out, nil
 }
 
-func (c oidcClientConfigJSON) toOIDCProviderConfig() (implIdentity.OIDCProviderConfig, error) {
-	name := utils.FirstNonEmpty(c.Provider, c.Key, c.Name)
-	cfg := implIdentity.OIDCProviderConfig{
-		Name:         name,
+func (c oidcClientJSON) toOIDCProviderConfig() (identity.OIDCProviderConfig, error) {
+	cfg := identity.OIDCProviderConfig{
+		Name:         utils.FirstNonEmpty(c.Provider, c.Key, c.Name),
 		Endpoint:     strings.TrimSpace(c.Endpoint),
 		ClientID:     strings.TrimSpace(c.ClientID),
 		ClientSecret: strings.TrimSpace(c.ClientSecret),
 		RedirectURL:  strings.TrimSpace(c.RedirectURL),
 		Scopes:       utils.TrimNonEmpty(c.Scopes),
-		ClaimFields: implIdentity.OIDCClaimFields{
+		ClaimFields: identity.OIDCClaimFields{
 			Subject:       strings.TrimSpace(c.ClaimFields.Subject),
 			Name:          strings.TrimSpace(c.ClaimFields.Name),
 			Picture:       strings.TrimSpace(c.ClaimFields.Picture),
@@ -78,7 +88,7 @@ func (c oidcClientConfigJSON) toOIDCProviderConfig() (implIdentity.OIDCProviderC
 		cfg.ClientID == "" ||
 		cfg.ClientSecret == "" ||
 		cfg.RedirectURL == "" {
-		return implIdentity.OIDCProviderConfig{}, errOIDCClientConfigRequired
+		return identity.OIDCProviderConfig{}, ErrOIDCClientConfigRequired
 	}
 	return cfg, nil
 }

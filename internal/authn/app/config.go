@@ -7,6 +7,7 @@ import (
 	"google.golang.org/grpc"
 
 	"sanzi.io/muid/internal/authn/account"
+	authnconfig "sanzi.io/muid/internal/authn/config"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
@@ -43,10 +44,20 @@ type Config struct {
 	SecretManagerGCPProjectID    string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"   default:""`
 	SecretManagerGCPCredentials  string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS"  default:""`
 
-	// OIDCClientsJSON configures enabled OIDC identity providers as a JSON array.
-	OIDCClientsJSON string `envconfig:"OIDC_CLIENTS_JSON" default:"[]"`
+	// OIDCClients configures enabled OIDC identity providers as a JSON array.
+	OIDCClients authnconfig.OIDCClients `envconfig:"OIDC_CLIENTS_JSON" default:"[]"`
 
-	// ProfileGRPCAddr is the Profile gRPC authority (host:port). Leave empty to skip dialing (signup flows will fail until set).
+	// RPID is the Relying Party ID for Passkey (WebAuthn) operations, typically the effective domain name of the
+	// application. It should be set to the root domain (e.g. "example.com" not "auth.example.com") if using subdomain
+	// delegation with a valid delegation JSON file at the well-known location on the root domain.
+	PasskeyRPID string `envconfig:"PASSKEY_RP_ID"           default:"localhost"`
+	// PasskeyRPDisplayName is the user-friendly name for the Relying Party, shown in authenticator prompts.
+	PasskeyRPDisplayName string `envconfig:"PASSKEY_RP_DISPLAY_NAME" default:"muid"`
+	// PasskeyRPOrigins accepts a JSON array or comma-separated origins.
+	PasskeyRPOrigins authnconfig.PasskeyOrigins `envconfig:"PASSKEY_RP_ORIGINS"      default:"'http://localhost','http://localhost:3000','https://localhost'"`
+
+	// ProfileGRPCAddr is the Profile gRPC authority (host:port). Leave empty to skip dialing (signup flows will fail
+	// until set).
 	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"            default:""`
 	// ProfileGRPCTimeoutSeconds bounds each outbound Profile RPC from authn.
 	ProfileGRPCTimeoutSeconds int `envconfig:"PROFILE_GRPC_TIMEOUT_SECONDS" default:"10"`

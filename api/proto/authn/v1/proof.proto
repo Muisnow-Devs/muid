@@ -29,6 +29,8 @@ message OAuthProof {
 }
 
 message PasskeyProof {
-  string credential_assertion_response_json = 1;
-  string credential_creation_response_json  = 2;
+  oneof response {
+    string credential_assertion_response_json = 1;
+    string credential_creation_response_json  = 2;
+  }
 }

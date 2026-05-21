@@ -22,6 +22,50 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type PasskeyCeremony int32
+
+const (
+	PasskeyCeremony_PASSKEY_CEREMONY_UNSPECIFIED    PasskeyCeremony = 0
+	PasskeyCeremony_PASSKEY_CEREMONY_AUTHENTICATION PasskeyCeremony = 1
+	PasskeyCeremony_PASSKEY_CEREMONY_REGISTRATION   PasskeyCeremony = 2
+)
+
+// Enum value maps for PasskeyCeremony.
+var (
+	PasskeyCeremony_name = map[int32]string{
+		0: "PASSKEY_CEREMONY_UNSPECIFIED",
+		1: "PASSKEY_CEREMONY_AUTHENTICATION",
+		2: "PASSKEY_CEREMONY_REGISTRATION",
+	}
+	PasskeyCeremony_value = map[string]int32{
+		"PASSKEY_CEREMONY_UNSPECIFIED":    0,
+		"PASSKEY_CEREMONY_AUTHENTICATION": 1,
+		"PASSKEY_CEREMONY_REGISTRATION":   2,
+	}
+)
+
+func (x PasskeyCeremony) Enum() *PasskeyCeremony {
+	p := new(PasskeyCeremony)
+	*p = x
+	return p
+}
+
+func (x PasskeyCeremony) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PasskeyCeremony) Descriptor() protoreflect.EnumDescriptor {
+	return file_authn_v1_challenge_proto_enumTypes[0].Descriptor()
+}
+
+func (PasskeyCeremony) Type() protoreflect.EnumType {
+	return &file_authn_v1_challenge_proto_enumTypes[0]
+}
+
+func (x PasskeyCeremony) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type AuthChallenge struct {
 	state                  protoimpl.MessageState    `protogen:"opaque.v1"`
 	xxx_hidden_ChallengeId string                    `protobuf:"bytes,1,opt,name=challenge_id,json=challengeId,proto3"`
@@ -444,12 +488,14 @@ func (b0 OAuthChallenge_builder) Build() *OAuthChallenge {
 }
 
 type PasskeyChallenge struct {
-	state                                            protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_State                                 string                 `protobuf:"bytes,1,opt,name=state,proto3"`
-	xxx_hidden_PublicKeyCredentialRequestOptionsJson string                 `protobuf:"bytes,2,opt,name=public_key_credential_request_options_json,json=publicKeyCredentialRequestOptionsJson,proto3"`
-	xxx_hidden_TimeoutMillis                         int64                  `protobuf:"varint,3,opt,name=timeout_millis,json=timeoutMillis,proto3"`
-	unknownFields                                    protoimpl.UnknownFields
-	sizeCache                                        protoimpl.SizeCache
+	state                                             protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_State                                  string                 `protobuf:"bytes,1,opt,name=state,proto3"`
+	xxx_hidden_PublicKeyCredentialRequestOptionsJson  string                 `protobuf:"bytes,2,opt,name=public_key_credential_request_options_json,json=publicKeyCredentialRequestOptionsJson,proto3"`
+	xxx_hidden_TimeoutMillis                          int64                  `protobuf:"varint,3,opt,name=timeout_millis,json=timeoutMillis,proto3"`
+	xxx_hidden_Ceremony                               PasskeyCeremony        `protobuf:"varint,4,opt,name=ceremony,proto3,enum=muid.authn.v1.challenge.PasskeyCeremony"`
+	xxx_hidden_PublicKeyCredentialCreationOptionsJson string                 `protobuf:"bytes,5,opt,name=public_key_credential_creation_options_json,json=publicKeyCredentialCreationOptionsJson,proto3"`
+	unknownFields                                     protoimpl.UnknownFields
+	sizeCache                                         protoimpl.SizeCache
 }
 
 func (x *PasskeyChallenge) Reset() {
@@ -498,6 +544,20 @@ func (x *PasskeyChallenge) GetTimeoutMillis() int64 {
 	return 0
 }
 
+func (x *PasskeyChallenge) GetCeremony() PasskeyCeremony {
+	if x != nil {
+		return x.xxx_hidden_Ceremony
+	}
+	return PasskeyCeremony_PASSKEY_CEREMONY_UNSPECIFIED
+}
+
+func (x *PasskeyChallenge) GetPublicKeyCredentialCreationOptionsJson() string {
+	if x != nil {
+		return x.xxx_hidden_PublicKeyCredentialCreationOptionsJson
+	}
+	return ""
+}
+
 func (x *PasskeyChallenge) SetState(v string) {
 	x.xxx_hidden_State = v
 }
@@ -510,12 +570,26 @@ func (x *PasskeyChallenge) SetTimeoutMillis(v int64) {
 	x.xxx_hidden_TimeoutMillis = v
 }
 
+func (x *PasskeyChallenge) SetCeremony(v PasskeyCeremony) {
+	x.xxx_hidden_Ceremony = v
+}
+
+func (x *PasskeyChallenge) SetPublicKeyCredentialCreationOptionsJson(v string) {
+	x.xxx_hidden_PublicKeyCredentialCreationOptionsJson = v
+}
+
 type PasskeyChallenge_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	State                                 string
+	State string
+	// Deprecated for registration ceremonies. Authentication uses this as the
+	// JSON value passed to PublicKeyCredential.parseRequestOptionsFromJSON().
 	PublicKeyCredentialRequestOptionsJson string
 	TimeoutMillis                         int64
+	Ceremony                              PasskeyCeremony
+	// Registration uses this as the JSON value passed to
+	// PublicKeyCredential.parseCreationOptionsFromJSON().
+	PublicKeyCredentialCreationOptionsJson string
 }
 
 func (b0 PasskeyChallenge_builder) Build() *PasskeyChallenge {
@@ -525,6 +599,8 @@ func (b0 PasskeyChallenge_builder) Build() *PasskeyChallenge {
 	x.xxx_hidden_State = b.State
 	x.xxx_hidden_PublicKeyCredentialRequestOptionsJson = b.PublicKeyCredentialRequestOptionsJson
 	x.xxx_hidden_TimeoutMillis = b.TimeoutMillis
+	x.xxx_hidden_Ceremony = b.Ceremony
+	x.xxx_hidden_PublicKeyCredentialCreationOptionsJson = b.PublicKeyCredentialCreationOptionsJson
 	return m0
 }
 
@@ -547,32 +623,41 @@ const file_authn_v1_challenge_proto_rawDesc = "" +
 	"\x16resend_cooldown_millis\x18\x02 \x01(\x03R\x14resendCooldownMillis\"Z\n" +
 	"\x0eOAuthChallenge\x12#\n" +
 	"\bprovider\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18\x10R\bprovider\x12#\n" +
-	"\bauth_url\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x88\x01\x01R\aauthUrl\"\xaa\x01\n" +
+	"\bauth_url\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x88\x01\x01R\aauthUrl\"\xcd\x02\n" +
 	"\x10PasskeyChallenge\x12\x14\n" +
 	"\x05state\x18\x01 \x01(\tR\x05state\x12Y\n" +
 	"*public_key_credential_request_options_json\x18\x02 \x01(\tR%publicKeyCredentialRequestOptionsJson\x12%\n" +
-	"\x0etimeout_millis\x18\x03 \x01(\x03R\rtimeoutMillisB\xe3\x01\n" +
+	"\x0etimeout_millis\x18\x03 \x01(\x03R\rtimeoutMillis\x12D\n" +
+	"\bceremony\x18\x04 \x01(\x0e2(.muid.authn.v1.challenge.PasskeyCeremonyR\bceremony\x12[\n" +
+	"+public_key_credential_creation_options_json\x18\x05 \x01(\tR&publicKeyCredentialCreationOptionsJson*{\n" +
+	"\x0fPasskeyCeremony\x12 \n" +
+	"\x1cPASSKEY_CEREMONY_UNSPECIFIED\x10\x00\x12#\n" +
+	"\x1fPASSKEY_CEREMONY_AUTHENTICATION\x10\x01\x12!\n" +
+	"\x1dPASSKEY_CEREMONY_REGISTRATION\x10\x02B\xe3\x01\n" +
 	"\x1bcom.muid.authn.v1.challengeB\x0eChallengeProtoP\x01Z4sanzi.io/muid/api/proto/authn/v1/challenge;challenge\xa2\x02\x04MAVC\xaa\x02\x17Muid.Authn.V1.Challenge\xca\x02\x17Muid\\Authn\\V1\\Challenge\xe2\x02#Muid\\Authn\\V1\\Challenge\\GPBMetadata\xea\x02\x1aMuid::Authn::V1::Challengeb\x06proto3"
 
+var file_authn_v1_challenge_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_authn_v1_challenge_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_authn_v1_challenge_proto_goTypes = []any{
-	(*AuthChallenge)(nil),         // 0: muid.authn.v1.challenge.AuthChallenge
-	(*EmailChallenge)(nil),        // 1: muid.authn.v1.challenge.EmailChallenge
-	(*OAuthChallenge)(nil),        // 2: muid.authn.v1.challenge.OAuthChallenge
-	(*PasskeyChallenge)(nil),      // 3: muid.authn.v1.challenge.PasskeyChallenge
-	(*timestamppb.Timestamp)(nil), // 4: google.protobuf.Timestamp
+	(PasskeyCeremony)(0),          // 0: muid.authn.v1.challenge.PasskeyCeremony
+	(*AuthChallenge)(nil),         // 1: muid.authn.v1.challenge.AuthChallenge
+	(*EmailChallenge)(nil),        // 2: muid.authn.v1.challenge.EmailChallenge
+	(*OAuthChallenge)(nil),        // 3: muid.authn.v1.challenge.OAuthChallenge
+	(*PasskeyChallenge)(nil),      // 4: muid.authn.v1.challenge.PasskeyChallenge
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
 }
 var file_authn_v1_challenge_proto_depIdxs = []int32{
-	4, // 0: muid.authn.v1.challenge.AuthChallenge.issued_at:type_name -> google.protobuf.Timestamp
-	4, // 1: muid.authn.v1.challenge.AuthChallenge.expires_at:type_name -> google.protobuf.Timestamp
-	1, // 2: muid.authn.v1.challenge.AuthChallenge.email_challenge:type_name -> muid.authn.v1.challenge.EmailChallenge
-	2, // 3: muid.authn.v1.challenge.AuthChallenge.oauth_challenge:type_name -> muid.authn.v1.challenge.OAuthChallenge
-	3, // 4: muid.authn.v1.challenge.AuthChallenge.passkey_challenge:type_name -> muid.authn.v1.challenge.PasskeyChallenge
-	5, // [5:5] is the sub-list for method output_type
-	5, // [5:5] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	5, // 0: muid.authn.v1.challenge.AuthChallenge.issued_at:type_name -> google.protobuf.Timestamp
+	5, // 1: muid.authn.v1.challenge.AuthChallenge.expires_at:type_name -> google.protobuf.Timestamp
+	2, // 2: muid.authn.v1.challenge.AuthChallenge.email_challenge:type_name -> muid.authn.v1.challenge.EmailChallenge
+	3, // 3: muid.authn.v1.challenge.AuthChallenge.oauth_challenge:type_name -> muid.authn.v1.challenge.OAuthChallenge
+	4, // 4: muid.authn.v1.challenge.AuthChallenge.passkey_challenge:type_name -> muid.authn.v1.challenge.PasskeyChallenge
+	0, // 5: muid.authn.v1.challenge.PasskeyChallenge.ceremony:type_name -> muid.authn.v1.challenge.PasskeyCeremony
+	6, // [6:6] is the sub-list for method output_type
+	6, // [6:6] is the sub-list for method input_type
+	6, // [6:6] is the sub-list for extension type_name
+	6, // [6:6] is the sub-list for extension extendee
+	0, // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_challenge_proto_init() }
@@ -590,13 +675,14 @@ func file_authn_v1_challenge_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_challenge_proto_rawDesc), len(file_authn_v1_challenge_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_authn_v1_challenge_proto_goTypes,
 		DependencyIndexes: file_authn_v1_challenge_proto_depIdxs,
+		EnumInfos:         file_authn_v1_challenge_proto_enumTypes,
 		MessageInfos:      file_authn_v1_challenge_proto_msgTypes,
 	}.Build()
 	File_authn_v1_challenge_proto = out.File

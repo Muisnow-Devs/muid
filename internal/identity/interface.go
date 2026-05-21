@@ -63,8 +63,10 @@ type StepPayload struct {
 }
 
 type PasskeyChallengePayload struct {
-	PublicKeyCredentialRequestOptionsJSON string
-	TimeoutMillis                         int64
+	Ceremony                               string
+	PublicKeyCredentialRequestOptionsJSON  string
+	PublicKeyCredentialCreationOptionsJSON string
+	TimeoutMillis                          int64
 }
 
 // AuthenticatedIdentity is the provider auth outcome before session issuance.

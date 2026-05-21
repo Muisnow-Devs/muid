@@ -11,6 +11,7 @@ import (
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/shared/kv"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
@@ -34,6 +35,13 @@ type Config struct {
 	OTPSendCooldownSeconds int `envconfig:"OTP_SEND_COOLDOWN_SECONDS"                 default:"60"`
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
+
+	SignatureSecretName          string `envconfig:"SIGNATURE_SECRET_NAME"          default:""`
+	SignatureKeyBits             int    `envconfig:"SIGNATURE_KEY_BITS"             default:"2048"`
+	SignaturePreviousGenerations int    `envconfig:"SIGNATURE_PREVIOUS_GENERATIONS" default:"1"`
+	SignatureRotationPeriodHours int    `envconfig:"SIGNATURE_ROTATION_PERIOD_HOURS" default:"720"`
+	SecretManagerGCPProjectID    string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"  default:""`
+	SecretManagerGCPCredentials  string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS" default:""`
 
 	// Third-party OAuth credentials
 	GoogleOAuthClientID     string `envconfig:"GOOGLE_OAUTH_CLIENT_ID"     default:""`
@@ -76,6 +84,8 @@ type InfraDependencies struct {
 
 	Accounts *account.Accounts
 
+	SignatureManager signature.SignatureManager
+
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn
 }
@@ -90,6 +100,12 @@ func (d *InfraDependencies) Close() error {
 	}
 	if d.entClient != nil {
 		err := d.entClient.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if d.SignatureManager != nil {
+		err := d.SignatureManager.Close()
 		if err != nil {
 			errs = append(errs, err)
 		}

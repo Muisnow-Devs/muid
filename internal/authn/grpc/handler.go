@@ -14,6 +14,7 @@ import (
 	authnflow "sanzi.io/muid/internal/authn/flow"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/internal/signature"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
@@ -23,10 +24,12 @@ type GRPCHandler struct {
 
 	flow     *authnflow.Service
 	accounts *account.Accounts
+	signing  signature.SignatureManager
 }
 
 type HandlerConfig struct {
 	OTPSendCooldownSeconds int
+	SignatureManager       signature.SignatureManager
 }
 
 func NewGRPCHandler(
@@ -43,6 +46,7 @@ func NewGRPCHandler(
 			OTPSendCooldownSeconds: config.OTPSendCooldownSeconds,
 		}),
 		accounts: accounts,
+		signing:  config.SignatureManager,
 	}
 }
 
@@ -93,10 +97,22 @@ func (g *GRPCHandler) GetAuthorizedSession(
 }
 
 func (g *GRPCHandler) GetPublicKeys(
-	context.Context,
-	*pb.GetPublicKeysRequest,
+	ctx context.Context,
+	_ *pb.GetPublicKeysRequest,
 ) (*pb.GetPublicKeysResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetPublicKeys not implemented")
+	if g.signing == nil {
+		return nil, status.Error(codes.Unavailable, "signature manager unavailable")
+	}
+
+	keys, err := g.signing.PublicKeys(ctx)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn public keys", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
+	out := &pb.GetPublicKeysResponse{}
+	out.SetPublicKeys(keys)
+	return out, nil
 }
 
 func (g *GRPCHandler) OIDCGrantConsent(

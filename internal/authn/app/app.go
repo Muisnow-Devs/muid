@@ -24,6 +24,7 @@ func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, erro
 		infra.Accounts,
 		authngrpc.HandlerConfig{
 			OTPSendCooldownSeconds: infra.GlobalConfig.OTPSendCooldownSeconds,
+			SignatureManager:       infra.SignatureManager,
 		},
 	)
 	service, err := NewAuthnGRPC(infra.GlobalConfig, handler, nil)
@@ -38,6 +39,13 @@ func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, erro
 }
 
 func (app *AuthnApp) Start(ctx context.Context) error {
+	if app.dependencyInjector.SignatureManager != nil {
+		err := app.dependencyInjector.SignatureManager.Start(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
 	return app.server.Start(ctx)
 }
 

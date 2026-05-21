@@ -18,7 +18,7 @@ import (
 	"sanzi.io/muid/infra/mocked"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/enttest"
-	"sanzi.io/muid/internal/authn/infra/kv"
+	"sanzi.io/muid/internal/authn/kv"
 	"sanzi.io/muid/internal/session"
 	sharedkv "sanzi.io/muid/pkg/shared/kv"
 )

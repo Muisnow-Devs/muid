@@ -5,39 +5,46 @@ import (
 	"time"
 )
 
-func TestFormatEnglishLocalTime(t *testing.T) {
+func TestFormat(t *testing.T) {
 	t.Parallel()
 
-	instant := time.Date(2026, 5, 25, 6, 30, 5, 0, time.UTC)
-	got := Format(instant, "en", "Asia/Taipei")
-
-	want := "Mon, 25 May 2026 14:30:05 CST"
-	if got != want {
-		t.Fatalf("Format() = %q, want %q", got, want)
+	tests := []struct {
+		name     string
+		locale   string
+		timezone string
+		want     string
+	}{
+		{
+			name:     "english includes numeric timezone offset",
+			locale:   "en",
+			timezone: "Asia/Taipei",
+			want:     "Mon, 25 May 2026 14:30:05 +0800",
+		},
+		{
+			name:     "chinese includes numeric timezone offset",
+			locale:   "zh-TW",
+			timezone: "Asia/Taipei",
+			want:     "2026-05-25 14:30:05 +0800",
+		},
+		{
+			name:     "invalid timezone uses UTC",
+			locale:   "en",
+			timezone: "Not/AZone",
+			want:     "Mon, 25 May 2026 06:30:05 +0000",
+		},
 	}
-}
-
-func TestFormatChineseLocalTime(t *testing.T) {
-	t.Parallel()
 
 	instant := time.Date(2026, 5, 25, 6, 30, 5, 0, time.UTC)
-	got := Format(instant, "zh-TW", "Asia/Taipei")
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	want := "2026-05-25 14:30:05"
-	if got != want {
-		t.Fatalf("Format() = %q, want %q", got, want)
-	}
-}
-
-func TestFormatInvalidTimezoneUsesUTC(t *testing.T) {
-	t.Parallel()
-
-	instant := time.Date(2026, 5, 25, 6, 30, 5, 0, time.UTC)
-	got := Format(instant, "en", "Not/AZone")
-
-	want := "Mon, 25 May 2026 06:30:05 UTC"
-	if got != want {
-		t.Fatalf("Format() = %q, want %q", got, want)
+			got := Format(instant, tt.locale, tt.timezone)
+			if got != tt.want {
+				t.Fatalf("Format() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
 

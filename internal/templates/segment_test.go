@@ -3,6 +3,7 @@ package templates
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -144,5 +145,31 @@ func TestRender_templatePathValidation(t *testing.T) {
 				t.Fatalf("errors.Is: got %v", err)
 			}
 		})
+	}
+}
+
+func TestRenderEmailChangedChineseKeepsTimeInTimeSlot(t *testing.T) {
+	t.Parallel()
+
+	loader := NewTemplateLoader(HTMLTemplatesFS, TextTemplatesFS, LocaleTemplateFS)
+	ctx := context.Background()
+	rendered, err := loader.Render(ctx, "zh-TW", "email_changed", struct {
+		OldEmail string
+		NewEmail string
+		Time     string
+	}{
+		OldEmail: "old@example.com",
+		NewEmail: "new@example.com",
+		Time:     "2026-05-25 14:30:05 +0800",
+	})
+	if err != nil {
+		t.Fatalf("Render(zh-TW, email_changed): %v", err)
+	}
+
+	want := "您的帳號電子郵件已由 old@example.com 變更為 new@example.com，變更時間為 2026-05-25 14:30:05 +0800。"
+	for _, body := range []string{rendered.Text, rendered.HTML} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("rendered body missing %q: %q", want, body)
+		}
 	}
 }

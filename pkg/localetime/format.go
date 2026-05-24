@@ -6,11 +6,11 @@ import (
 )
 
 // Format renders instant in the user's locale and IANA time zone.
-// Layouts use only standard library time format constants.
+// Layouts include a numeric UTC offset so mail recipients can see the timezone.
 // Empty locale falls back to English; empty or invalid timezone falls back to UTC.
 func Format(instant time.Time, locale, timezone string) string {
 	local := instant.In(LoadLocation(timezone))
-	return local.Format(layoutForLocale(locale))
+	return local.Format(time.RFC1123Z)
 }
 
 // LoadLocation parses an IANA time zone name, falling back to UTC.
@@ -37,16 +37,4 @@ func ValidTimezone(timezone string) bool {
 
 	_, err := time.LoadLocation(tz)
 	return err == nil
-}
-
-func layoutForLocale(locale string) string {
-	locale = strings.ToLower(strings.TrimSpace(locale))
-	switch {
-	case strings.HasPrefix(locale, "zh"),
-		strings.HasPrefix(locale, "ja"),
-		strings.HasPrefix(locale, "ko"):
-		return time.DateTime
-	default:
-		return time.RFC1123
-	}
 }

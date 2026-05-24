@@ -10,11 +10,36 @@ import (
 func TestFormatEventTimeUsesLocaleAndTimezone(t *testing.T) {
 	t.Parallel()
 
-	ts := timestamppb.New(time.Date(2026, 5, 25, 6, 30, 5, 0, time.UTC))
-	got := FormatEventTime(ts, "zh-TW", "Asia/Taipei")
+	tests := []struct {
+		name     string
+		locale   string
+		timezone string
+		want     string
+	}{
+		{
+			name:     "english mail timestamp",
+			locale:   "en",
+			timezone: "Asia/Taipei",
+			want:     "Mon, 25 May 2026 14:30:05 +0800",
+		},
+		{
+			name:     "chinese mail timestamp",
+			locale:   "zh-TW",
+			timezone: "Asia/Taipei",
+			want:     "2026-05-25 14:30:05 +0800",
+		},
+	}
 
-	want := "2026-05-25 14:30:05"
-	if got != want {
-		t.Fatalf("FormatEventTime() = %q, want %q", got, want)
+	ts := timestamppb.New(time.Date(2026, 5, 25, 6, 30, 5, 0, time.UTC))
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := FormatEventTime(ts, tt.locale, tt.timezone)
+			if got != tt.want {
+				t.Fatalf("FormatEventTime() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }

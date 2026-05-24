@@ -2,16 +2,14 @@ syntax = "proto3";
 
 package muid.authn.v1;
 
-import "google/protobuf/timestamp.proto";
-
-import "buf/validate/validate.proto";
-
 import "authn/v1/basic.proto";
 import "authn/v1/certification.proto";
 import "authn/v1/challenge.proto";
 import "authn/v1/client.proto";
 import "authn/v1/proof.proto";
 import "authn/v1/session.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
@@ -25,7 +23,7 @@ service AuthnService {
 
   /// user related APIs, for user to manage their sessions.
   rpc RevokeFederatedIdentity(RevokeFederatedIdentityRequest) returns (RevokeFederatedIdentityResponse);
-  rpc GetAuthorizedSession(GetSessionRequest) returns (GetSessionResponse);
+  rpc GetAuthorizedSession(GetAuthorizedSessionRequest) returns (GetAuthorizedSessionResponse);
 
   // user session management APIs
   rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
@@ -43,8 +41,8 @@ service AuthnService {
 }
 
 message StartAuthSessionRequest {
-  muid.authn.v1.basic.AuthMethod method     = 1;
-  string                         identifier = 2 [(buf.validate.field).string.max_len = 256];
+  muid.authn.v1.basic.AuthMethod method = 1;
+  string identifier = 2 [(buf.validate.field).string.max_len = 256];
   // intent defaults to AUTH_INTENT_LOGIN when unset.
   muid.authn.v1.basic.AuthIntent intent = 3;
   // Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
@@ -52,25 +50,25 @@ message StartAuthSessionRequest {
 }
 
 message StartAuthSessionResponse {
-  string                                transition_id = 1 [(buf.validate.field).string.uuid = true];
-  muid.authn.v1.challenge.AuthChallenge challenge     = 2;
+  string transition_id = 1 [(buf.validate.field).string.uuid = true];
+  muid.authn.v1.challenge.AuthChallenge challenge = 2;
 }
 
 message ContinueAuthSessionRequest {
-  string                        transition_id = 1 [(buf.validate.field).string.uuid = true];
-  muid.authn.v1.proof.AuthProof proof         = 2;
+  string transition_id = 1 [(buf.validate.field).string.uuid = true];
+  muid.authn.v1.proof.AuthProof proof = 2;
   // Optional; required to return session context after AUTH_INTENT_LINK_ACCOUNT completes.
   muid.authn.v1.session.SessionToken session_token = 3;
 }
 
 message ContinueAuthSessionResponse {
-  string                         transition_id = 1 [(buf.validate.field).string.uuid = true];
-  muid.authn.v1.basic.AuthStatus status        = 2;
+  string transition_id = 1 [(buf.validate.field).string.uuid = true];
+  muid.authn.v1.basic.AuthStatus status = 2;
 
   oneof result {
     muid.authn.v1.session.ChallengeRequired challenge_required = 3;
-    muid.authn.v1.session.AuthSuccess       auth_success       = 4;
-    muid.authn.v1.session.AuthFailure       auth_failure       = 5;
+    muid.authn.v1.session.AuthSuccess auth_success = 4;
+    muid.authn.v1.session.AuthFailure auth_failure = 5;
   }
 }
 
@@ -80,18 +78,18 @@ message GetPublicKeysResponse {
   repeated muid.authn.v1.certification.PublicKey public_keys = 1;
 }
 
-message GetSessionRequest {
+message GetAuthorizedSessionRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
 }
 
-message GetSessionResponse {
-  bool                                      valid   = 1;
+message GetAuthorizedSessionResponse {
+  bool valid = 1;
   muid.authn.v1.session.AuthenticatedResult session = 2;
 }
 
 message RevokeFederatedIdentityRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string                             provider      = 2;
+  string provider = 2;
 }
 
 message RevokeFederatedIdentityResponse {
@@ -99,18 +97,18 @@ message RevokeFederatedIdentityResponse {
 }
 
 message OIDCIntrospectTokenRequest {
-  string          token = 1;
-  optional string hint  = 2;
+  string token = 1;
+  optional string hint = 2;
 }
 
 message OIDCIntrospectTokenResponse {
-  bool   active    = 1;
-  string user_id   = 2 [(buf.validate.field).string.uuid = true];
+  bool active = 1;
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
   string client_id = 3;
-  string type      = 4;
+  string type = 4;
 
   optional string audience = 5;
-  repeated string scopes   = 6;
+  repeated string scopes = 6;
 
   google.protobuf.Timestamp created_at = 7;
   google.protobuf.Timestamp expires_at = 8;
@@ -118,8 +116,8 @@ message OIDCIntrospectTokenResponse {
 
 message OIDCGrantConsentRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string                             client_id     = 2;
-  repeated string                    scopes        = 3;
+  string client_id = 2;
+  repeated string scopes = 3;
 }
 
 message OIDCGrantConsentResponse {
@@ -128,7 +126,7 @@ message OIDCGrantConsentResponse {
 
 message OIDCRevokeConsentRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string                             client_id     = 2;
+  string client_id = 2;
 }
 
 message OIDCRevokeConsentResponse {
@@ -164,7 +162,7 @@ message OIDCRotateAndGetAccessTokenRequest {
 }
 
 message OIDCRotateAndGetAccessTokenResponse {
-  string                    access_token  = 1;
-  string                    refresh_token = 2;
-  google.protobuf.Timestamp expires_at    = 3;
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
 }

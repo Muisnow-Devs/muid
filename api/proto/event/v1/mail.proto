@@ -8,17 +8,17 @@ option go_package = "sanzi.io/muid/api/proto/event/v1/mail;mail";
 
 message EmailAddress {
   string email = 1;
-  string name  = 2;
+  string name = 2;
 }
 
 message EmailMessage {
   string id = 1;
 
-  repeated EmailAddress to      = 3;
-  string                subject = 4;
+  repeated EmailAddress to = 3;
+  string subject = 4;
 
   string template = 5;
-  string locale   = 6;
+  string locale = 6;
 
   map<string, string> data = 7;
 
@@ -28,7 +28,7 @@ message EmailMessage {
 message SendOTPEmailEvent {
   string id = 1;
 
-  string email  = 2;
+  string email = 2;
   string locale = 3;
 
   string code = 4;
@@ -40,41 +40,41 @@ message SendOTPEmailEvent {
 message SendEmailChangedEvent {
   string id = 1;
 
-  string email  = 2;
+  string email = 2;
   string locale = 3;
 
   string old_email = 4;
   string new_email = 5;
 
   google.protobuf.Timestamp occurred_at = 6;
-  google.protobuf.Timestamp created_at  = 7;
+  google.protobuf.Timestamp created_at = 7;
 }
 
 message SendPasskeyAddedEmailEvent {
   string id = 1;
 
-  string email  = 2;
+  string email = 2;
   string locale = 3;
 
   string passkey_name = 4;
 
   google.protobuf.Timestamp occurred_at = 5;
-  google.protobuf.Timestamp created_at  = 6;
+  google.protobuf.Timestamp created_at = 6;
 }
 
 message SendLoginAlertEmailEvent {
   string id = 1;
 
-  string email  = 2;
+  string email = 2;
   string locale = 3;
 
   string ip_address = 4;
-  string location   = 5;
-  string device     = 6;
+  string location = 5;
+  string device = 6;
   string user_agent = 7;
 
   string secure_link = 8;
 
   google.protobuf.Timestamp occurred_at = 9;
-  google.protobuf.Timestamp created_at  = 10;
+  google.protobuf.Timestamp created_at = 10;
 }

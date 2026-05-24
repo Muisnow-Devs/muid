@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 package muid.shared.v1.claims;
+
 import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/shared/v1/claims;claims";
@@ -10,18 +11,22 @@ message IdentityInformation {
   optional string name = 1 [(buf.validate.field).string.max_len = 32];
   // Stored username; set only via profile update (identity.username). CreateProfile always auto-allocates; omit on create/OIDC bootstrap payloads.
   // Charset: lowercase letters, digits, underscore, period; length 5–16 when set; must not start with _ or .
-  optional string username = 2 [(buf.validate.field).string = { min_len: 5, max_len: 16, pattern: "^[a-z0-9][a-z0-9_.]{4,15}$" }];
+  optional string username = 2 [(buf.validate.field).string = {
+    min_len: 5
+    max_len: 16
+    pattern: "^[a-z0-9][a-z0-9_.]{4,15}$"
+  }];
   optional string given_name = 3 [(buf.validate.field).string.max_len = 64];
   optional string family_name = 4 [(buf.validate.field).string.max_len = 64];
 
   optional string picture = 5;
-  optional string locale  = 6 [(buf.validate.field).string.max_len = 32];
-  optional string bio     = 9 [(buf.validate.field).string.max_len = 1024];
+  optional string locale = 6 [(buf.validate.field).string.max_len = 32];
+  optional string bio = 9 [(buf.validate.field).string.max_len = 1024];
 
-  optional string email          = 7 [(buf.validate.field).string.email = true];
-  optional bool   email_verified = 8;
+  optional string email = 7 [(buf.validate.field).string.email = true];
+  optional bool email_verified = 8;
 
   // Set when signup must link a federated identity (e.g. OIDC subject) during provisioning.
   optional string federated_provider = 10 [(buf.validate.field).string.max_len = 64];
-  optional string federated_subject  = 11 [(buf.validate.field).string.max_len = 256];
+  optional string federated_subject = 11 [(buf.validate.field).string.max_len = 256];
 }

@@ -2,35 +2,31 @@ syntax = "proto3";
 
 package muid.authn.v1.session;
 
-import "google/protobuf/timestamp.proto";
-
-import "buf/validate/validate.proto";
-
 import "authn/v1/challenge.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/session;session";
 
 enum AuthLevel {
   AUTH_LEVEL_UNSPECIFIED = 0;
-  AUTH_LEVEL_LOW         = 1;
-  AUTH_LEVEL_MEDIUM      = 2;
-  AUTH_LEVEL_HIGH        = 3;
+  AUTH_LEVEL_LOW = 1;
+  AUTH_LEVEL_MEDIUM = 2;
+  AUTH_LEVEL_HIGH = 3;
 }
 
 message SessionToken {
-  string value = 1 [
-    (buf.validate.field).string = {
-    pattern: "^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$",
-    max_len: 66,
+  string value = 1 [(buf.validate.field).string = {
+    pattern: "^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$"
+    max_len: 66
     min_len: 66
-    }
-  ];
+  }];
 }
 
 message SessionContext {
   muid.authn.v1.session.SessionToken session_token = 1;
 
-  google.protobuf.Timestamp issued_at  = 2;
+  google.protobuf.Timestamp issued_at = 2;
   google.protobuf.Timestamp expires_at = 3;
 }
 
@@ -38,7 +34,7 @@ message AuthenticatedResult {
   string user_id = 1;
 
   SessionContext session_context = 2;
-  AuthLevel      auth_level      = 3;
+  AuthLevel auth_level = 3;
 }
 
 message ChallengeRequired {
@@ -50,6 +46,6 @@ message AuthSuccess {
 }
 
 message AuthFailure {
-  string reason     = 1;
+  string reason = 1;
   string error_code = 2;
 }

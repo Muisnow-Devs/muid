@@ -1,39 +1,39 @@
 syntax = "proto3";
 
 package muid.authn.v1.challenge;
-import "google/protobuf/timestamp.proto";
 
 import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/challenge;challenge";
 
 message AuthChallenge {
   string challenge_id = 1 [(buf.validate.field).string.uuid = true];
 
-  google.protobuf.Timestamp issued_at  = 2;
+  google.protobuf.Timestamp issued_at = 2;
   google.protobuf.Timestamp expires_at = 3;
 
   oneof challenge {
-    EmailChallenge   email_challenge   = 4;
-    OAuthChallenge   oauth_challenge   = 5;
+    EmailChallenge email_challenge = 4;
+    OAuthChallenge oauth_challenge = 5;
     PasskeyChallenge passkey_challenge = 6;
   }
 }
 
 message EmailChallenge {
-  string email_masked           = 1 [(buf.validate.field).string.max_len = 256];
-  int64  resend_cooldown_millis = 2;
+  string email_masked = 1 [(buf.validate.field).string.max_len = 256];
+  int64 resend_cooldown_millis = 2;
 }
 
 message OAuthChallenge {
   string provider = 1 [(buf.validate.field).string.max_len = 16];
-  string auth_url = 2  [(buf.validate.field).string.uri = true];
+  string auth_url = 2 [(buf.validate.field).string.uri = true];
 }
 
 enum PasskeyCeremony {
-  PASSKEY_CEREMONY_UNSPECIFIED    = 0;
+  PASSKEY_CEREMONY_UNSPECIFIED = 0;
   PASSKEY_CEREMONY_AUTHENTICATION = 1;
-  PASSKEY_CEREMONY_REGISTRATION   = 2;
+  PASSKEY_CEREMONY_REGISTRATION = 2;
 }
 
 message PasskeyChallenge {
@@ -41,8 +41,8 @@ message PasskeyChallenge {
   // Deprecated for registration ceremonies. Authentication uses this as the
   // JSON value passed to PublicKeyCredential.parseRequestOptionsFromJSON().
   string public_key_credential_request_options_json = 2;
-  int64  timeout_millis                             = 3;
-  PasskeyCeremony ceremony                          = 4;
+  int64 timeout_millis = 3;
+  PasskeyCeremony ceremony = 4;
   // Registration uses this as the JSON value passed to
   // PublicKeyCredential.parseCreationOptionsFromJSON().
   string public_key_credential_creation_options_json = 5;

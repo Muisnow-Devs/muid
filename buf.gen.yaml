@@ -1,17 +1,17 @@
 version: v2
 managed:
-  enabled: true
-  disable:
-    - file_option: go_package
-      module: buf.build/bufbuild/protovalidate
+    enabled: true
+    disable:
+        - file_option: go_package
+          module: buf.build/bufbuild/protovalidate
 plugins:
-  - remote: buf.build/protocolbuffers/go
-    out: api
-    opt:
-      - module=sanzi.io/muid/api
-      - default_api_level=API_OPAQUE
+    - remote: buf.build/protocolbuffers/go
+      out: api
+      opt:
+          - module=sanzi.io/muid/api
+          - default_api_level=API_OPAQUE
 
-  - remote: buf.build/grpc/go
-    out: api
-    opt:
-      - module=sanzi.io/muid/api
+    - remote: buf.build/grpc/go
+      out: api
+      opt:
+          - module=sanzi.io/muid/api

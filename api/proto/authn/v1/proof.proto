@@ -1,14 +1,15 @@
 syntax = "proto3";
 
 package muid.authn.v1.proof;
+
 import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1/proof;proof";
 
 message AuthProof {
   oneof proof {
-    EmailProof   email_proof   = 1;
-    OAuthProof   oauth_proof   = 2;
+    EmailProof email_proof = 1;
+    OAuthProof oauth_proof = 2;
     PasskeyProof passkey_proof = 3;
   }
 }
@@ -24,13 +25,13 @@ message EmailProof {
 message EmailResendOtp {}
 
 message OAuthProof {
-  string code  = 1;
+  string code = 1;
   string state = 2;
 }
 
 message PasskeyProof {
   oneof response {
     string credential_assertion_response_json = 1;
-    string credential_creation_response_json  = 2;
+    string credential_creation_response_json = 2;
   }
 }

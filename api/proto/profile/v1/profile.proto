@@ -2,11 +2,9 @@ syntax = "proto3";
 
 package muid.profile.v1;
 
+import "buf/validate/validate.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
-
-import "buf/validate/validate.proto";
-
 import "shared/v1/claims.proto";
 
 option go_package = "sanzi.io/muid/api/proto/profile/v1;profile";
@@ -36,12 +34,16 @@ message GetProfileRequest {
 }
 
 message GetProfileResponse {
-  string id                = 1;
-  string email             = 2;
-  string display_name      = 3;
-  string username          = 4 [(buf.validate.field).string = { min_len: 5, max_len: 16, pattern: "^[a-z0-9][a-z0-9_.]{4,15}$" }];
-  string avatar_url        = 5;
-  string locale            = 6;
+  string id = 1;
+  string email = 2;
+  string display_name = 3;
+  string username = 4 [(buf.validate.field).string = {
+    min_len: 5
+    max_len: 16
+    pattern: "^[a-z0-9][a-z0-9_.]{4,15}$"
+  }];
+  string avatar_url = 5;
+  string locale = 6;
   string avatar_object_key = 7;
 
   // This is for backwards compatibility with the event schema.
@@ -65,8 +67,11 @@ message UpdateProfileResponse {
 }
 
 message StartAvatarUploadRequest {
-  string user_id      = 1 [(buf.validate.field).string.uuid = true];
-  string content_type = 2 [(buf.validate.field).string = {min_len: 3, max_len: 128}];
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  string content_type = 2 [(buf.validate.field).string = {
+    min_len: 3
+    max_len: 128
+  }];
 }
 
 message StartAvatarUploadResponse {
@@ -77,9 +82,12 @@ message StartAvatarUploadResponse {
 }
 
 message CompleteAvatarUploadRequest {
-  string user_id    = 1 [(buf.validate.field).string.uuid = true];
-  string object_key = 2 [(buf.validate.field).string = {min_len: 1, max_len: 512}];
-  int64  byte_size  = 3 [(buf.validate.field).int64 = {gte: 1}];
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  string object_key = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 512
+  }];
+  int64 byte_size = 3 [(buf.validate.field).int64 = {gte: 1}];
 }
 
 message CompleteAvatarUploadResponse {

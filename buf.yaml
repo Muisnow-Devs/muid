@@ -1,13 +1,18 @@
 # For details on buf.yaml configuration, visit https://buf.build/docs/configuration/v2/buf-yaml
 version: v2
 deps:
-  - buf.build/bufbuild/protovalidate
+    - buf.build/bufbuild/protovalidate
 modules:
-  - name: sanzi.io/muid/proto
-    path: api/proto
+    - name: sanzi.io/muid/proto
+      path: api/proto
 lint:
-  use:
-    - STANDARD
+    service_suffix: Service
+    enum_zero_value_suffix: _UNSPECIFIED
+    use:
+        - STANDARD
+    except:
+        - PACKAGE_DIRECTORY_MATCH
+        - PACKAGE_VERSION_SUFFIX
 breaking:
-  use:
-    - FILE
+    use:
+        - FILE

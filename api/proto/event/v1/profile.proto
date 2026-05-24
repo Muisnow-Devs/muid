@@ -4,7 +4,6 @@ package muid.event.v1.profile;
 
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
-
 import "shared/v1/claims.proto";
 
 option go_package = "sanzi.io/muid/api/proto/event/v1/profile;profileevent";
@@ -18,8 +17,8 @@ option go_package = "sanzi.io/muid/api/proto/event/v1/profile;profileevent";
 message ProfileChangedEvent {
   string user_id = 1;
 
-  google.protobuf.FieldMask                 changed_fields = 2;
-  muid.shared.v1.claims.IdentityInformation changes        = 3;
+  google.protobuf.FieldMask changed_fields = 2;
+  muid.shared.v1.claims.IdentityInformation changes = 3;
 
   google.protobuf.Timestamp occurred_at = 4;
 }

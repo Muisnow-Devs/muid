@@ -14,8 +14,10 @@ import (
 // Handler subscribes to the login-alert topic and delivers email via SMTP.
 type Handler struct{}
 
-func (Handler) Topic() topics.Topic                       { return topics.TopicSendLoginAlert }
-func (Handler) SubscribeOptions() pubsub.SubscribeOptions { return pubsub.SubscribeOptions{} }
+func (Handler) Topic() topics.Topic { return topics.TopicSendLoginAlert }
+func (Handler) SubscribeOptions() pubsub.SubscribeOptions {
+	return handlers.ReliableMailSubscribeOptions(topics.TopicSendLoginAlert)
+}
 
 func (Handler) Handle(
 	ctx context.Context,

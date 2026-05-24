@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"strings"
 
 	"sanzi.io/muid/internal/templates"
 	"sanzi.io/muid/pkg/shared/mailer"
@@ -25,6 +26,15 @@ type TopicHandler interface {
 		templates templates.MailRenderer,
 		payload []byte,
 	) (mailer.Message, error)
+}
+
+func ReliableMailSubscribeOptions(topic topics.Topic) pubsub.SubscribeOptions {
+	return pubsub.SubscribeOptions{
+		QueueGroup:  "mailer",
+		Reliable:    true,
+		Durable:     "mailer_" + strings.ReplaceAll(string(topic), ".", "_"),
+		RetryPolicy: pubsub.CriticalRetryPolicy(),
+	}
 }
 
 type TopicOTP struct {

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 
 	"sanzi.io/muid/pkg/shared/topics"
 )
@@ -17,7 +18,7 @@ type SubscribeTopicError struct {
 }
 
 func (e *SubscribeTopicError) Error() string {
-	return "mailer handlers: subscribe " + string(e.Topic)
+	return fmt.Sprintf("mailer handlers: subscribe %s: %v", e.Topic, e.Err)
 }
 
 func (e *SubscribeTopicError) Unwrap() error { return e.Err }

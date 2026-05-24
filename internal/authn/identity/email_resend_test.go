@@ -24,6 +24,15 @@ func (s *stubPubSub) Publish(topics.Topic, []byte) error {
 	return nil
 }
 
+func (s *stubPubSub) PublishWithOptions(
+	topics.Topic,
+	[]byte,
+	pubsub.PublishOptions,
+) error {
+	s.publishCalls++
+	return nil
+}
+
 func (*stubPubSub) Subscribe(
 	context.Context,
 	topics.Topic,

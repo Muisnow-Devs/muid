@@ -27,7 +27,10 @@ func (UserProfile) Fields() []ent.Field {
 		field.String("username").NotEmpty().Unique().Validate(validation.CheckUsername),
 
 		field.String("locale").Default("en").Comment("BCP-47 locale; empty means server default"),
-		field.String("timezone").Default("").MaxLen(64).Comment("IANA time zone; empty means UTC for mail display"),
+		field.String("timezone").
+			Default("UTC").
+			MaxLen(64).
+			Comment("IANA time zone; empty means UTC for mail display"),
 		field.String("biography").Default("").MaxLen(1024),
 
 		field.Time("created_at").Default(time.Now).Immutable(),

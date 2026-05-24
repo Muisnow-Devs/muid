@@ -147,7 +147,11 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("marshal event: %w", err)
 	}
-	err = ps.Publish(topics.TopicSendLoginAlert, payload)
+	err = ps.PublishWithOptions(
+		topics.TopicSendLoginAlert,
+		payload,
+		publishinput.ReliableMailPublishOptions(),
+	)
 	if err != nil {
 		return fmt.Errorf("publish: %w", err)
 	}

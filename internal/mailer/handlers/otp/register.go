@@ -14,8 +14,10 @@ import (
 // Handler subscribes to the send-OTP topic and delivers email via SMTP.
 type Handler struct{}
 
-func (Handler) Topic() topics.Topic                       { return topics.TopicSendOTP }
-func (Handler) SubscribeOptions() pubsub.SubscribeOptions { return pubsub.SubscribeOptions{} }
+func (Handler) Topic() topics.Topic { return topics.TopicSendOTP }
+func (Handler) SubscribeOptions() pubsub.SubscribeOptions {
+	return handlers.ReliableMailSubscribeOptions(topics.TopicSendOTP)
+}
 
 func (Handler) Handle(
 	ctx context.Context,

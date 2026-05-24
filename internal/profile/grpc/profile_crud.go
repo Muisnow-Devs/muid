@@ -22,6 +22,7 @@ import (
 	"sanzi.io/muid/pkg/enttx"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
@@ -273,7 +274,14 @@ func (g *GRPCHandler) publishChange(
 		return err
 	}
 
-	err = g.pub.Publish(topics.TopicProfileChange, b)
+	err = g.pub.PublishWithOptions(
+		topics.TopicProfileChange,
+		b,
+		pubsub.PublishOptions{
+			Reliable:    true,
+			RetryPolicy: pubsub.CriticalRetryPolicy(),
+		},
+	)
 	if err != nil {
 		span.RecordError(err)
 	}

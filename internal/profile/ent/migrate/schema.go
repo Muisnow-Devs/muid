@@ -67,7 +67,7 @@ var (
 		{Name: "display_name", Type: field.TypeString},
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "locale", Type: field.TypeString, Default: "en"},
-		{Name: "timezone", Type: field.TypeString, Size: 64, Default: ""},
+		{Name: "timezone", Type: field.TypeString, Size: 64, Default: "UTC"},
 		{Name: "biography", Type: field.TypeString, Size: 1024, Default: ""},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

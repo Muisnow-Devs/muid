@@ -107,7 +107,14 @@ func publishEmailChanged(
 		return err
 	}
 
-	return pub.Publish(topics.TopicEmailChanged, b)
+	return pub.PublishWithOptions(
+		topics.TopicEmailChanged,
+		b,
+		pubsub.PublishOptions{
+			Reliable:    true,
+			RetryPolicy: pubsub.CriticalRetryPolicy(),
+		},
+	)
 }
 
 func publishProfileEmailChange(pub pubsub.PubSub, userID uuid.UUID, newEmail string) error {
@@ -127,5 +134,12 @@ func publishProfileEmailChange(pub pubsub.PubSub, userID uuid.UUID, newEmail str
 		return err
 	}
 
-	return pub.Publish(topics.TopicProfileChange, b)
+	return pub.PublishWithOptions(
+		topics.TopicProfileChange,
+		b,
+		pubsub.PublishOptions{
+			Reliable:    true,
+			RetryPolicy: pubsub.CriticalRetryPolicy(),
+		},
+	)
 }

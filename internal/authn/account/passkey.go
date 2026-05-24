@@ -102,7 +102,14 @@ func publishPasskeyAdded(
 	if err != nil {
 		return err
 	}
-	return pub.Publish(topics.TopicPasskeyAdded, b)
+	return pub.PublishWithOptions(
+		topics.TopicPasskeyAdded,
+		b,
+		pubsub.PublishOptions{
+			Reliable:    true,
+			RetryPolicy: pubsub.CriticalRetryPolicy(),
+		},
+	)
 }
 
 func (p *passkeyService) UpdatePasskeyUsage(

@@ -99,7 +99,10 @@ func patchIdentityTimezone(
 ) error {
 	c := req.GetIdentity()
 	if c == nil {
-		return status.Error(codes.InvalidArgument, "identity payload required for identity.timezone")
+		return status.Error(
+			codes.InvalidArgument,
+			"identity payload required for identity.timezone",
+		)
 	}
 
 	tz := strings.TrimSpace(c.GetTimezone())

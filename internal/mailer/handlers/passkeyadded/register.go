@@ -14,8 +14,10 @@ import (
 // Handler subscribes to passkey-added notifications.
 type Handler struct{}
 
-func (Handler) Topic() topics.Topic                       { return topics.TopicPasskeyAdded }
-func (Handler) SubscribeOptions() pubsub.SubscribeOptions { return pubsub.SubscribeOptions{} }
+func (Handler) Topic() topics.Topic { return topics.TopicPasskeyAdded }
+func (Handler) SubscribeOptions() pubsub.SubscribeOptions {
+	return handlers.ReliableMailSubscribeOptions(topics.TopicPasskeyAdded)
+}
 
 func (Handler) Handle(
 	ctx context.Context,

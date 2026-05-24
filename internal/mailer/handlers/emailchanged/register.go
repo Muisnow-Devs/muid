@@ -14,8 +14,10 @@ import (
 // Handler subscribes to email-changed notifications.
 type Handler struct{}
 
-func (Handler) Topic() topics.Topic                       { return topics.TopicEmailChanged }
-func (Handler) SubscribeOptions() pubsub.SubscribeOptions { return pubsub.SubscribeOptions{} }
+func (Handler) Topic() topics.Topic { return topics.TopicEmailChanged }
+func (Handler) SubscribeOptions() pubsub.SubscribeOptions {
+	return handlers.ReliableMailSubscribeOptions(topics.TopicEmailChanged)
+}
 
 func (Handler) Handle(
 	ctx context.Context,

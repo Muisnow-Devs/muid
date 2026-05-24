@@ -3,6 +3,8 @@ package publishinput
 import (
 	"strings"
 	"testing"
+
+	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
 func TestResolve(t *testing.T) {
@@ -151,5 +153,17 @@ func TestResolveNATSURL(t *testing.T) {
 				t.Fatalf("got %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestReliableMailPublishOptions(t *testing.T) {
+	t.Parallel()
+
+	got := ReliableMailPublishOptions()
+	if !got.Reliable {
+		t.Fatal("Reliable = false, want true")
+	}
+	if got.RetryPolicy != pubsub.CriticalRetryPolicy() {
+		t.Fatalf("RetryPolicy = %#v, want %#v", got.RetryPolicy, pubsub.CriticalRetryPolicy())
 	}
 }

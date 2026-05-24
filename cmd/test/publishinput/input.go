@@ -9,6 +9,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
 // Field resolves a single value: a non-empty EnvValue wins; otherwise one line is read from stdin.
@@ -64,6 +66,14 @@ func ResolveNATSURL(fromConfig string, stdin io.Reader) (string, error) {
 		Default: "nats://127.0.0.1:4222",
 		Stdin:   stdin,
 	})
+}
+
+// ReliableMailPublishOptions matches mailer durable subscriptions for manual test publishers.
+func ReliableMailPublishOptions() pubsub.PublishOptions {
+	return pubsub.PublishOptions{
+		Reliable:    true,
+		RetryPolicy: pubsub.CriticalRetryPolicy(),
+	}
 }
 
 // RegisterHelp installs -h / -help and a usage block listing env vars.

@@ -18,7 +18,12 @@ func Register(ctx context.Context, ps pubsub.PubSub, db *ent.Client) error {
 	return ps.Subscribe(
 		ctx,
 		topics.TopicProfileChange,
-		pubsub.SubscribeOptions{},
+		pubsub.SubscribeOptions{
+			QueueGroup:  "profile",
+			Reliable:    true,
+			Durable:     "profile_email_ref",
+			RetryPolicy: pubsub.CriticalRetryPolicy(),
+		},
 		func(ctx context.Context, payload []byte) error {
 			return handleProfileChange(ctx, db, payload)
 		},

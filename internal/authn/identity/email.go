@@ -117,7 +117,15 @@ func (p *EmailIdentityProvider) Start(
 		return p.startChangeEmail(ctx, input, email)
 	}
 
-	sess, err := p.createTransitionSession(ctx, email, emailIntentLogin, "", "", input.Locale, input.Timezone)
+	sess, err := p.createTransitionSession(
+		ctx,
+		email,
+		emailIntentLogin,
+		"",
+		"",
+		input.Locale,
+		input.Timezone,
+	)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -466,7 +474,14 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	}
 
 	ctx, pubSpan := tracing.StartSpan(ctx, "authn.otp.publish")
-	err = p.pubSub.Publish(topics.TopicSendOTP, msgBytes)
+	err = p.pubSub.PublishWithOptions(
+		topics.TopicSendOTP,
+		msgBytes,
+		pubsub.PublishOptions{
+			Reliable:    true,
+			RetryPolicy: pubsub.CriticalRetryPolicy(),
+		},
+	)
 	pubSpan.End()
 	if err != nil {
 		return err

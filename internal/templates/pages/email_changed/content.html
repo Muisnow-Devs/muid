@@ -1,5 +1,17 @@
 {{ define "content" }}
 <h1>{{ t "title" }}</h1>
-<p>{{ t "description" .OldEmail .NewEmail .Time }}</p>
+<p>{{ t "description" .Time }}</p>
+
+<div class="details-container">
+    <div class="details-row">
+        <div class="details-label">{{ t "old_mail" }}</div>
+        <div class="details-value">{{ .OldEmail }}</div>
+    </div>
+    <div class="details-row">
+        <div class="details-label">{{ t "new_mail" }}</div>
+        <div class="details-value">{{ .NewEmail }}</div>
+    </div>
+</div>
+
 <p>{{ t "additional_info" }}</p>
 {{ end }}

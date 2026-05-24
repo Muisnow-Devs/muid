@@ -166,10 +166,16 @@ func TestRenderEmailChangedChineseKeepsTimeInTimeSlot(t *testing.T) {
 		t.Fatalf("Render(zh-TW, email_changed): %v", err)
 	}
 
-	want := "您的帳號電子郵件已由 old@example.com 變更為 new@example.com，變更時間為 2026-05-25 14:30:05 +0800。"
+	wantDescription := "您的帳號電子郵件已於 2026-05-25 14:30:05 +0800 變更。"
 	for _, body := range []string{rendered.Text, rendered.HTML} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("rendered body missing %q: %q", want, body)
+		if !strings.Contains(body, wantDescription) {
+			t.Fatalf("rendered body missing description %q: %q", wantDescription, body)
+		}
+	}
+
+	for _, want := range []string{"原電子郵件：", "old@example.com", "新電子郵件：", "new@example.com"} {
+		if !strings.Contains(rendered.HTML, want) {
+			t.Fatalf("HTML missing %q: %q", want, rendered.HTML)
 		}
 	}
 }

@@ -1,6 +1,8 @@
 {
     "subject": "[MuID] Your email address was changed",
     "title": "Email address updated",
-    "description": "Your account email was changed from %s to %s on %s.",
+    "description": "Your account email was changed on %s.",
+    "old_mail": "Original email:",
+    "new_mail": "New email:",
     "additional_info": "If you did not make this change, secure your account immediately."
 }

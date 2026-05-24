@@ -1,7 +1,10 @@
 {{ define "content" }}
 {{ t "title" }}
 
-{{ t "description" .OldEmail .NewEmail .Time }}
+{{ t "description" .Time }}
+
+{{ t "old_mail" .OldEmail }}
+{{ t "new_mail" .NewEmail }}
 
 {{ t "additional_info" }}
 {{ end }}

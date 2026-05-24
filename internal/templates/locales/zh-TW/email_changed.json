@@ -1,6 +1,8 @@
 {
     "subject": "[MuID] 您的電子郵件已變更",
     "title": "電子郵件已更新",
-    "description": "您的帳號電子郵件已於 %s 由 %s 變更為 %s。",
+    "description": "您的帳號電子郵件已於 %s 變更。",
+    "old_mail": "原電子郵件：",
+    "new_mail": "新電子郵件：",
     "additional_info": "若您未進行此變更，請立即保護您的帳號。"
 }

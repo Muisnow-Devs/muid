@@ -1,0 +1,12 @@
+{
+    "subject": "[MuID] 新しいサインインを検出しました",
+    "title": "新しいサインインを検出しました",
+    "description": "お客様のアカウントに、最近確認されていないデバイスまたは場所からの新しいサインインがありました。",
+    "information_device": "デバイス：",
+    "information_location": "場所：",
+    "information_time": "日時：",
+    "information_ip": "IP アドレス：",
+    "additional_info_1": "ご自身によるものであれば、このメールは無視していただいて問題ありません。",
+    "additional_info_2": "心当たりがない場合は、直ちにアカウントのセキュリティを確認してください。",
+    "action_text": "アカウントを保護"
+}

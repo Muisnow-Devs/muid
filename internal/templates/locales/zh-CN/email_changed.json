@@ -1,0 +1,8 @@
+{
+    "subject": "[MuID] 您的电子邮件已变更",
+    "title": "电子邮件已更新",
+    "description": "您的账号电子邮件已于 %s 变更。",
+    "old_mail": "原电子邮件：",
+    "new_mail": "新电子邮件：",
+    "additional_info": "若您未进行此变更，请立即保护您的账号。"
+}

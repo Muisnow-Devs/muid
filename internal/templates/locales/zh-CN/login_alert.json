@@ -1,0 +1,12 @@
+{
+    "subject": "[MuID] 您有新的登录",
+    "title": "您有新的登录",
+    "description": "我们注意到您账户从未见过的设备或位置有新的登录。",
+    "information_device": "设备：",
+    "information_location": "位置：",
+    "information_time": "时间：",
+    "information_ip": "IP 地址：",
+    "additional_info_1": "如果这是您，您可以安全地忽略这封邮件。",
+    "additional_info_2": "如果您不认识此活动，请立即保护您的账户。",
+    "action_text": "保护您的账户"
+}

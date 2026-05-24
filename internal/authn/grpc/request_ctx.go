@@ -78,7 +78,7 @@ func enrichContinueAuthSession(ctx context.Context, _ string, req any) (context.
 
 func enrichRequiredWireSession(ctx context.Context, _ string, req any) (context.Context, error) {
 	switch r := req.(type) {
-	case *pb.GetSessionRequest:
+	case *pb.GetAuthorizedSessionRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	case *pb.RevokeSessionRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())

@@ -125,7 +125,7 @@ func (s *Service) authenticatedLoginResponse(
 
 	resp := &pb.ContinueAuthSessionResponse{}
 	resp.SetTransitionId(tid)
-	resp.SetStatus(basic.AuthStatus_AUTH_STATE_AUTHENTICATED)
+	resp.SetStatus(basic.AuthStatus_AUTH_STATUS_AUTHENTICATED)
 
 	authOK := &sessionpb.AuthSuccess{}
 	authOK.SetResult(authResult)
@@ -140,7 +140,7 @@ func (s *Service) linkCompletedResponse(
 ) (*pb.ContinueAuthSessionResponse, error) {
 	resp := &pb.ContinueAuthSessionResponse{}
 	resp.SetTransitionId(tid)
-	resp.SetStatus(basic.AuthStatus_AUTH_STATE_AUTHENTICATED)
+	resp.SetStatus(basic.AuthStatus_AUTH_STATUS_AUTHENTICATED)
 
 	if wire == "" {
 		return resp, nil

@@ -38,7 +38,7 @@ func TestAuthnRequestContextInterceptor_requiredWireSession(t *testing.T) {
 	interceptor := AuthnRequestContextInterceptor()
 	wire := validWireToken(t)
 
-	req := &pb.GetSessionRequest{}
+	req := &pb.GetAuthorizedSessionRequest{}
 	tok := &sessionpb.SessionToken{}
 	tok.SetValue(wire)
 	req.SetSessionToken(tok)

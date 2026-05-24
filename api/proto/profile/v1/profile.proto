@@ -45,6 +45,8 @@ message GetProfileResponse {
   string avatar_url = 5;
   string locale = 6;
   string avatar_object_key = 7;
+  // IANA time zone (e.g. "Asia/Taipei"); empty means UTC for mail display.
+  string timezone = 9;
 
   // This is for backwards compatibility with the event schema.
   // Newer account shouldn't have this field populated.

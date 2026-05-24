@@ -22,6 +22,7 @@ import (
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/localetime"
 	"sanzi.io/muid/pkg/log"
 )
 
@@ -65,6 +66,12 @@ func (s *Service) StartAuthSession(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
+	locale := strings.TrimSpace(req.GetLocale())
+	timezone := strings.TrimSpace(req.GetTimezone())
+	if timezone != "" && !localetime.ValidTimezone(timezone) {
+		return nil, status.Error(codes.InvalidArgument, "timezone must be a valid IANA time zone")
+	}
+
 	prov, err := s.idm.GetProvider(providerName)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -75,6 +82,8 @@ func (s *Service) StartAuthSession(
 		Identifier:       strings.TrimSpace(req.GetIdentifier()),
 		Intent:           protoIntent(req.GetIntent()),
 		LinkSessionToken: linkSessionToken,
+		Locale:           locale,
+		Timezone:         timezone,
 	})
 	if err != nil {
 		return nil, mapStartError(ctx, err)
@@ -254,7 +263,7 @@ func (s *Service) continueAwaitingChallenge(
 
 	out := &pb.ContinueAuthSessionResponse{}
 	out.SetTransitionId(tid)
-	out.SetStatus(basic.AuthStatus_AUTH_STATE_CHALLENGE_REQUIRED)
+	out.SetStatus(basic.AuthStatus_AUTH_STATUS_CHALLENGE_REQUIRED)
 	out.SetChallengeRequired(cr)
 	return out, nil
 }
@@ -396,7 +405,7 @@ func authFailureResponse(tid, reason, code string) *pb.ContinueAuthSessionRespon
 
 	out := &pb.ContinueAuthSessionResponse{}
 	out.SetTransitionId(tid)
-	out.SetStatus(basic.AuthStatus_AUTH_STATE_FAILED)
+	out.SetStatus(basic.AuthStatus_AUTH_STATUS_FAILED)
 	out.SetAuthFailure(fail)
 
 	return out

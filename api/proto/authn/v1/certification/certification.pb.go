@@ -247,7 +247,7 @@ var File_authn_v1_certification_proto protoreflect.FileDescriptor
 
 const file_authn_v1_certification_proto_rawDesc = "" +
 	"\n" +
-	"\x1cauthn/v1/certification.proto\x12\x1bmuid.authn.v1.certification\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\"\x9b\x02\n" +
+	"\x1cauthn/v1/certification.proto\x12\x1bmuid.authn.v1.certification\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9b\x02\n" +
 	"\tPublicKey\x12\x1a\n" +
 	"\x03kid\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x03kid\x12\x10\n" +
 	"\x03kty\x18\x02 \x01(\tR\x03kty\x12\x10\n" +

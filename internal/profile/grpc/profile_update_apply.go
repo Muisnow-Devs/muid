@@ -14,6 +14,7 @@ import (
 	pb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/updatemask"
+	"sanzi.io/muid/pkg/localetime"
 	"sanzi.io/muid/pkg/validation"
 )
 
@@ -27,6 +28,7 @@ var errProfileUpdateUnsupportedPath = errors.New("unsupported update_mask path")
 var profilePatchRegistry = map[string]profilePatchFn{
 	"identity.username":    patchIdentityUsername,
 	"identity.locale":      patchIdentityLocale,
+	"identity.timezone":    patchIdentityTimezone,
 	"identity.name":        patchIdentityDisplayFromNameFields,
 	"identity.given_name":  patchIdentityDisplayFromNameFields,
 	"identity.family_name": patchIdentityDisplayFromNameFields,
@@ -86,6 +88,29 @@ func patchIdentityLocale(
 	}
 
 	profile.SetLocale(loc)
+	return nil
+}
+
+func patchIdentityTimezone(
+	ctx context.Context,
+	userID uuid.UUID,
+	profile *ent.UserProfileUpdateOne,
+	req *pb.UpdateProfileRequest,
+) error {
+	c := req.GetIdentity()
+	if c == nil {
+		return status.Error(codes.InvalidArgument, "identity payload required for identity.timezone")
+	}
+
+	tz := strings.TrimSpace(c.GetTimezone())
+	if len(tz) > 64 {
+		return status.Error(codes.InvalidArgument, "timezone must be at most 64 characters")
+	}
+	if tz != "" && !localetime.ValidTimezone(tz) {
+		return status.Error(codes.InvalidArgument, "timezone must be a valid IANA time zone")
+	}
+
+	profile.SetTimezone(tz)
 	return nil
 }
 

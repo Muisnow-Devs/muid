@@ -552,7 +552,7 @@ var File_authn_v1_session_proto protoreflect.FileDescriptor
 
 const file_authn_v1_session_proto_rawDesc = "" +
 	"\n" +
-	"\x16authn/v1/session.proto\x12\x15muid.authn.v1.session\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a\x18authn/v1/challenge.proto\"W\n" +
+	"\x16authn/v1/session.proto\x12\x15muid.authn.v1.session\x1a\x18authn/v1/challenge.proto\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"W\n" +
 	"\fSessionToken\x12G\n" +
 	"\x05value\x18\x01 \x01(\tB1\xbaH.r,\x10B\x18B2&^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$R\x05value\"\xce\x01\n" +
 	"\x0eSessionContext\x12H\n" +

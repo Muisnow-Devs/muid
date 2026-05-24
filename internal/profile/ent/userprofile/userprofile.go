@@ -23,6 +23,8 @@ const (
 	FieldUsername = "username"
 	// FieldLocale holds the string denoting the locale field in the database.
 	FieldLocale = "locale"
+	// FieldTimezone holds the string denoting the timezone field in the database.
+	FieldTimezone = "timezone"
 	// FieldBiography holds the string denoting the biography field in the database.
 	FieldBiography = "biography"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -58,6 +60,7 @@ var Columns = []string{
 	FieldDisplayName,
 	FieldUsername,
 	FieldLocale,
+	FieldTimezone,
 	FieldBiography,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -93,6 +96,10 @@ var (
 	UsernameValidator func(string) error
 	// DefaultLocale holds the default value on creation for the "locale" field.
 	DefaultLocale string
+	// DefaultTimezone holds the default value on creation for the "timezone" field.
+	DefaultTimezone string
+	// TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
+	TimezoneValidator func(string) error
 	// DefaultBiography holds the default value on creation for the "biography" field.
 	DefaultBiography string
 	// BiographyValidator is a validator for the "biography" field. It is called by the builders before save.
@@ -133,6 +140,11 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 // ByLocale orders the results by the locale field.
 func ByLocale(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLocale, opts...).ToFunc()
+}
+
+// ByTimezone orders the results by the timezone field.
+func ByTimezone(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTimezone, opts...).ToFunc()
 }
 
 // ByBiography orders the results by the biography field.

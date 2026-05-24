@@ -117,12 +117,12 @@ func (p *EmailIdentityProvider) Start(
 		return p.startChangeEmail(ctx, input, email)
 	}
 
-	sess, err := p.createTransitionSession(ctx, email, emailIntentLogin, "", "")
+	sess, err := p.createTransitionSession(ctx, email, emailIntentLogin, "", "", input.Locale, input.Timezone)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	err = p.generateAndSendOTP(ctx, sess.Id, email)
+	err = p.generateAndSendOTP(ctx, sess.Id)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -173,12 +173,14 @@ func (p *EmailIdentityProvider) startChangeEmail(
 		emailIntentChangeEmail,
 		linkRes.UserID.String(),
 		ref.Email,
+		input.Locale,
+		input.Timezone,
 	)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
 
-	err = p.generateAndSendOTP(ctx, sess.Id, newEmail)
+	err = p.generateAndSendOTP(ctx, sess.Id)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -245,7 +247,16 @@ func (p *EmailIdentityProvider) continueChangeEmail(
 	}
 
 	newEmail := emailFlow.Email
-	_, err = p.accounts.Email.ChangeUserEmail(ctx, p.pubSub, uid, newEmail)
+	_, err = p.accounts.Email.ChangeUserEmail(
+		ctx,
+		p.pubSub,
+		uid,
+		newEmail,
+		account.MailDeliveryPrefs{
+			Locale:   sess.Store.Locale,
+			Timezone: sess.Store.Timezone,
+		},
+	)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -288,7 +299,7 @@ func (p *EmailIdentityProvider) continueResendOTP(
 	if email == "" {
 		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
-	err = p.generateAndSendOTP(ctx, sess.Id, email)
+	err = p.generateAndSendOTP(ctx, sess.Id)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -392,7 +403,7 @@ func validateEmailStartInput(input idn.StartInput) error {
 
 func (p *EmailIdentityProvider) createTransitionSession(
 	ctx context.Context,
-	email, intent, subjectUserID, oldEmail string,
+	email, intent, subjectUserID, oldEmail, locale, timezone string,
 ) (session.AuthSession, error) {
 	store := session.EmailOTPStore(session.StepStart, &session.EmailOTPFlow{
 		Email:         email,
@@ -400,6 +411,8 @@ func (p *EmailIdentityProvider) createTransitionSession(
 		SubjectUserID: subjectUserID,
 		OldEmail:      oldEmail,
 	})
+	store.Locale = locale
+	store.Timezone = timezone
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
@@ -412,8 +425,27 @@ func (p *EmailIdentityProvider) createTransitionSession(
 func (p *EmailIdentityProvider) generateAndSendOTP(
 	ctx context.Context,
 	sessionID string,
-	email string,
 ) error {
+	sess, err := p.transitionStore.Get(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
+	emailFlow, ok := sess.Store.EmailFlow()
+	if !ok {
+		return idn.ErrInvalidSessionState
+	}
+
+	email := strings.TrimSpace(strings.ToLower(emailFlow.Email))
+	if email == "" {
+		return idn.ErrInvalidSessionState
+	}
+
+	mailPrefs := account.MailDeliveryPrefs{
+		Locale:   sess.Store.Locale,
+		Timezone: sess.Store.Timezone,
+	}
+
 	code, err := p.otpStore.CreateOTP(ctx, sessionID, email, OTPLifetime)
 	if err != nil {
 		return err
@@ -422,6 +454,8 @@ func (p *EmailIdentityProvider) generateAndSendOTP(
 	created_at := time.Now()
 	msg := &mail.SendOTPEmailEvent{}
 	msg.SetEmail(email)
+	msg.SetLocale(mailPrefs.NormalizedLocale())
+	msg.SetTimezone(mailPrefs.NormalizedTimezone())
 	msg.SetCode(code.OTP)
 	msg.SetExpiresAt(timestamppb.New(code.ExpiresAt.UTC()))
 	msg.SetCreatedAt(timestamppb.New(created_at.UTC()))

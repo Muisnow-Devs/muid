@@ -31,6 +31,7 @@ type config struct {
 	NATSURL     string `envconfig:"NATS_URL"`
 	Email       string `envconfig:"EMAIL"`
 	Locale      string `envconfig:"LOCALE"`
+	Timezone    string `envconfig:"TIMEZONE"`
 	PasskeyName string `envconfig:"PASSKEY_NAME"`
 }
 
@@ -42,6 +43,7 @@ func main() {
 			configEnvPrefix + "_NATS_URL      - NATS server (or MAILER_NATS_URL)",
 			configEnvPrefix + "_EMAIL         - recipient (default: test@example.com)",
 			configEnvPrefix + "_LOCALE        - template locale (default: en)",
+			configEnvPrefix + "_TIMEZONE      - IANA time zone (default: UTC)",
 			configEnvPrefix + "_PASSKEY_NAME  - display name in email (default: Passkey)",
 		},
 	)
@@ -75,6 +77,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	timezone, err := publishinput.Resolve(publishinput.Field{
+		Name: "Timezone", EnvValue: cfg.Timezone, Default: "UTC",
+	})
+	if err != nil {
+		return err
+	}
 	passkeyName, err := publishinput.Resolve(publishinput.Field{
 		Name: "Passkey name", EnvValue: cfg.PasskeyName, Default: "Passkey",
 	})
@@ -93,6 +101,7 @@ func run() error {
 	ev.SetId(shared.UUIDV7().String())
 	ev.SetEmail(email)
 	ev.SetLocale(locale)
+	ev.SetTimezone(timezone)
 	ev.SetPasskeyName(passkeyName)
 	ev.SetOccurredAt(timestamppb.New(now))
 	ev.SetCreatedAt(timestamppb.New(now))
@@ -107,8 +116,8 @@ func run() error {
 	}
 
 	log.Printf(
-		"published topic=%s email=%s locale=%s passkey=%s bytes=%d",
-		topics.TopicPasskeyAdded, email, locale, passkeyName, len(payload),
+		"published topic=%s email=%s locale=%s timezone=%s passkey=%s bytes=%d",
+		topics.TopicPasskeyAdded, email, locale, timezone, passkeyName, len(payload),
 	)
 	return nil
 }

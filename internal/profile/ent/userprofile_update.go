@@ -86,6 +86,20 @@ func (_u *UserProfileUpdate) SetNillableLocale(v *string) *UserProfileUpdate {
 	return _u
 }
 
+// SetTimezone sets the "timezone" field.
+func (_u *UserProfileUpdate) SetTimezone(v string) *UserProfileUpdate {
+	_u.mutation.SetTimezone(v)
+	return _u
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_u *UserProfileUpdate) SetNillableTimezone(v *string) *UserProfileUpdate {
+	if v != nil {
+		_u.SetTimezone(*v)
+	}
+	return _u
+}
+
 // SetBiography sets the "biography" field.
 func (_u *UserProfileUpdate) SetBiography(v string) *UserProfileUpdate {
 	_u.mutation.SetBiography(v)
@@ -200,6 +214,11 @@ func (_u *UserProfileUpdate) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Timezone(); ok {
+		if err := userprofile.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "UserProfile.timezone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Biography(); ok {
 		if err := userprofile.BiographyValidator(v); err != nil {
 			return &ValidationError{Name: "biography", err: fmt.Errorf(`ent: validator failed for field "UserProfile.biography": %w`, err)}
@@ -231,6 +250,9 @@ func (_u *UserProfileUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	}
 	if value, ok := _u.mutation.Locale(); ok {
 		_spec.SetField(userprofile.FieldLocale, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Timezone(); ok {
+		_spec.SetField(userprofile.FieldTimezone, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Biography(); ok {
 		_spec.SetField(userprofile.FieldBiography, field.TypeString, value)
@@ -355,6 +377,20 @@ func (_u *UserProfileUpdateOne) SetLocale(v string) *UserProfileUpdateOne {
 func (_u *UserProfileUpdateOne) SetNillableLocale(v *string) *UserProfileUpdateOne {
 	if v != nil {
 		_u.SetLocale(*v)
+	}
+	return _u
+}
+
+// SetTimezone sets the "timezone" field.
+func (_u *UserProfileUpdateOne) SetTimezone(v string) *UserProfileUpdateOne {
+	_u.mutation.SetTimezone(v)
+	return _u
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_u *UserProfileUpdateOne) SetNillableTimezone(v *string) *UserProfileUpdateOne {
+	if v != nil {
+		_u.SetTimezone(*v)
 	}
 	return _u
 }
@@ -486,6 +522,11 @@ func (_u *UserProfileUpdateOne) check() error {
 			return &ValidationError{Name: "username", err: fmt.Errorf(`ent: validator failed for field "UserProfile.username": %w`, err)}
 		}
 	}
+	if v, ok := _u.mutation.Timezone(); ok {
+		if err := userprofile.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "UserProfile.timezone": %w`, err)}
+		}
+	}
 	if v, ok := _u.mutation.Biography(); ok {
 		if err := userprofile.BiographyValidator(v); err != nil {
 			return &ValidationError{Name: "biography", err: fmt.Errorf(`ent: validator failed for field "UserProfile.biography": %w`, err)}
@@ -534,6 +575,9 @@ func (_u *UserProfileUpdateOne) sqlSave(ctx context.Context) (_node *UserProfile
 	}
 	if value, ok := _u.mutation.Locale(); ok {
 		_spec.SetField(userprofile.FieldLocale, field.TypeString, value)
+	}
+	if value, ok := _u.mutation.Timezone(); ok {
+		_spec.SetField(userprofile.FieldTimezone, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.Biography(); ok {
 		_spec.SetField(userprofile.FieldBiography, field.TypeString, value)

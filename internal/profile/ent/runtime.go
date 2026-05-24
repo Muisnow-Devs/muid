@@ -76,18 +76,24 @@ func init() {
 	userprofileDescLocale := userprofileFields[4].Descriptor()
 	// userprofile.DefaultLocale holds the default value on creation for the locale field.
 	userprofile.DefaultLocale = userprofileDescLocale.Default.(string)
+	// userprofileDescTimezone is the schema descriptor for timezone field.
+	userprofileDescTimezone := userprofileFields[5].Descriptor()
+	// userprofile.DefaultTimezone holds the default value on creation for the timezone field.
+	userprofile.DefaultTimezone = userprofileDescTimezone.Default.(string)
+	// userprofile.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
+	userprofile.TimezoneValidator = userprofileDescTimezone.Validators[0].(func(string) error)
 	// userprofileDescBiography is the schema descriptor for biography field.
-	userprofileDescBiography := userprofileFields[5].Descriptor()
+	userprofileDescBiography := userprofileFields[6].Descriptor()
 	// userprofile.DefaultBiography holds the default value on creation for the biography field.
 	userprofile.DefaultBiography = userprofileDescBiography.Default.(string)
 	// userprofile.BiographyValidator is a validator for the "biography" field. It is called by the builders before save.
 	userprofile.BiographyValidator = userprofileDescBiography.Validators[0].(func(string) error)
 	// userprofileDescCreatedAt is the schema descriptor for created_at field.
-	userprofileDescCreatedAt := userprofileFields[6].Descriptor()
+	userprofileDescCreatedAt := userprofileFields[7].Descriptor()
 	// userprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userprofile.DefaultCreatedAt = userprofileDescCreatedAt.Default.(func() time.Time)
 	// userprofileDescUpdatedAt is the schema descriptor for updated_at field.
-	userprofileDescUpdatedAt := userprofileFields[7].Descriptor()
+	userprofileDescUpdatedAt := userprofileFields[8].Descriptor()
 	// userprofile.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userprofile.DefaultUpdatedAt = userprofileDescUpdatedAt.Default.(func() time.Time)
 	// userprofile.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

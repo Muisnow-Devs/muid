@@ -35,7 +35,11 @@ type StartInput struct {
 	Intent     AuthIntent
 	// LinkSessionToken is the wire session token (selector.validator) required for linking flows.
 	LinkSessionToken string
-	Metadata         map[string]any
+	// Locale is the client BCP-47 locale for outbound mail; empty defaults to "en".
+	Locale string
+	// Timezone is an IANA time zone for outbound mail; empty means UTC.
+	Timezone string
+	Metadata map[string]any
 }
 
 // ContinuePayloadFinishRegister is set by login-flow orchestration after ProvisionUser (not from wire clients).

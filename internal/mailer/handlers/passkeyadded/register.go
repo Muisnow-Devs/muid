@@ -2,7 +2,6 @@ package passkeyadded
 
 import (
 	"context"
-	"time"
 
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/mailer/handlers"
@@ -31,10 +30,7 @@ func (Handler) Handle(
 	if email == "" {
 		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
-	when := time.Now().UTC().Format(time.RFC1123Z)
-	if ts := ev.GetOccurredAt(); ts != nil {
-		when = ts.AsTime().UTC().Format(time.RFC1123Z)
-	}
+	when := handlers.FormatEventTime(ev.GetOccurredAt(), ev.GetLocale(), ev.GetTimezone())
 	rendered, err := tmpl.Render(ctx, ev.GetLocale(), "passkey_added", handlers.TopicPasskeyAdded{
 		PasskeyName: ev.GetPasskeyName(),
 		Time:        when,

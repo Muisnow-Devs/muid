@@ -230,6 +230,7 @@ type GetProfileResponse struct {
 	xxx_hidden_AvatarUrl        string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3"`
 	xxx_hidden_Locale           string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
 	xxx_hidden_AvatarObjectKey  string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3"`
+	xxx_hidden_Timezone         string                 `protobuf:"bytes,9,opt,name=timezone,proto3"`
 	xxx_hidden_OriginalIdentity *string                `protobuf:"bytes,8,opt,name=original_identity,json=originalIdentity,proto3,oneof"`
 	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
 	XXX_presence                [1]uint32
@@ -311,6 +312,13 @@ func (x *GetProfileResponse) GetAvatarObjectKey() string {
 	return ""
 }
 
+func (x *GetProfileResponse) GetTimezone() string {
+	if x != nil {
+		return x.xxx_hidden_Timezone
+	}
+	return ""
+}
+
 func (x *GetProfileResponse) GetOriginalIdentity() string {
 	if x != nil {
 		if x.xxx_hidden_OriginalIdentity != nil {
@@ -349,20 +357,24 @@ func (x *GetProfileResponse) SetAvatarObjectKey(v string) {
 	x.xxx_hidden_AvatarObjectKey = v
 }
 
+func (x *GetProfileResponse) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = v
+}
+
 func (x *GetProfileResponse) SetOriginalIdentity(v string) {
 	x.xxx_hidden_OriginalIdentity = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 8)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
 }
 
 func (x *GetProfileResponse) HasOriginalIdentity() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
 func (x *GetProfileResponse) ClearOriginalIdentity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
 	x.xxx_hidden_OriginalIdentity = nil
 }
 
@@ -376,6 +388,8 @@ type GetProfileResponse_builder struct {
 	AvatarUrl       string
 	Locale          string
 	AvatarObjectKey string
+	// IANA time zone (e.g. "Asia/Taipei"); empty means UTC for mail display.
+	Timezone string
 	// This is for backwards compatibility with the event schema.
 	// Newer account shouldn't have this field populated.
 	OriginalIdentity *string
@@ -392,8 +406,9 @@ func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
 	x.xxx_hidden_AvatarUrl = b.AvatarUrl
 	x.xxx_hidden_Locale = b.Locale
 	x.xxx_hidden_AvatarObjectKey = b.AvatarObjectKey
+	x.xxx_hidden_Timezone = b.Timezone
 	if b.OriginalIdentity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 8)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
 		x.xxx_hidden_OriginalIdentity = b.OriginalIdentity
 	}
 	return m0
@@ -881,7 +896,7 @@ var File_profile_v1_profile_proto protoreflect.FileDescriptor
 
 const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\x1a\x16shared/v1/claims.proto\"\x8f\x01\n" +
+	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16shared/v1/claims.proto\"\x8f\x01\n" +
 	"\x14CreateProfileRequest\x12\x1d\n" +
 	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12K\n" +
 	"\bidentity\x18\x02 \x01(\v2*.muid.shared.v1.claims.IdentityInformationH\x00R\bidentity\x88\x01\x01B\v\n" +
@@ -889,7 +904,7 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x15CreateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"-\n" +
 	"\x11GetProfileRequest\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\xcb\x02\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\xe7\x02\n" +
 	"\x12GetProfileResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12!\n" +
@@ -898,7 +913,8 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
 	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
 	"\x06locale\x18\x06 \x01(\tR\x06locale\x12*\n" +
-	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\x120\n" +
+	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\x12\x1a\n" +
+	"\btimezone\x18\t \x01(\tR\btimezone\x120\n" +
 	"\x11original_identity\x18\b \x01(\tH\x00R\x10originalIdentity\x88\x01\x01B\x14\n" +
 	"\x12_original_identity\"\xc7\x01\n" +
 	"\x14UpdateProfileRequest\x12\x18\n" +

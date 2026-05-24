@@ -31,6 +31,7 @@ type config struct {
 	NATSURL        string `envconfig:"NATS_URL"`
 	Email          string `envconfig:"EMAIL"`
 	Locale         string `envconfig:"LOCALE"`
+	Timezone       string `envconfig:"TIMEZONE"`
 	Code           string `envconfig:"CODE"`
 	ExpiresSeconds int    `envconfig:"EXPIRES_SECONDS" default:"300"`
 }
@@ -43,6 +44,7 @@ func main() {
 			configEnvPrefix + "_NATS_URL        - NATS server (or MAILER_NATS_URL)",
 			configEnvPrefix + "_EMAIL           - recipient (default: test@example.com)",
 			configEnvPrefix + "_LOCALE          - template locale (default: en)",
+			configEnvPrefix + "_TIMEZONE        - IANA time zone (default: UTC)",
 			configEnvPrefix + "_CODE            - OTP code (default: 123456)",
 			configEnvPrefix + "_EXPIRES_SECONDS - TTL seconds (default: 300, env only)",
 		},
@@ -77,6 +79,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	timezone, err := publishinput.Resolve(publishinput.Field{
+		Name: "Timezone", EnvValue: cfg.Timezone, Default: "UTC",
+	})
+	if err != nil {
+		return err
+	}
 	code, err := publishinput.Resolve(publishinput.Field{
 		Name: "OTP code", EnvValue: cfg.Code, Default: "123456",
 	})
@@ -102,6 +110,7 @@ func run() error {
 	ev.SetId(shared.UUIDV7().String())
 	ev.SetEmail(email)
 	ev.SetLocale(locale)
+	ev.SetTimezone(timezone)
 	ev.SetCode(code)
 	ev.SetExpiresAt(timestamppb.New(expires))
 	ev.SetCreatedAt(timestamppb.New(now))
@@ -116,8 +125,8 @@ func run() error {
 	}
 
 	log.Printf(
-		"published topic=%s email=%s locale=%s bytes=%d",
-		topics.TopicSendOTP, email, locale, len(payload),
+		"published topic=%s email=%s locale=%s timezone=%s bytes=%d",
+		topics.TopicSendOTP, email, locale, timezone, len(payload),
 	)
 	return nil
 }

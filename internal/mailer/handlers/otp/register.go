@@ -2,7 +2,6 @@ package otp
 
 import (
 	"context"
-	"time"
 
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/mailer/handlers"
@@ -34,13 +33,9 @@ func (Handler) Handle(
 		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
 
-	expires := time.Now().UTC().Format(time.RFC1123Z)
-	if ts := ev.GetExpiresAt(); ts != nil {
-		expires = ts.AsTime().UTC().Format(time.RFC1123Z)
-	}
-	locale := ev.GetLocale()
+	expires := handlers.FormatEventTime(ev.GetExpiresAt(), ev.GetLocale(), ev.GetTimezone())
 
-	rendered, err := templates.Render(ctx, locale, "otp", handlers.TopicOTP{
+	rendered, err := templates.Render(ctx, ev.GetLocale(), "otp", handlers.TopicOTP{
 		OTP:        ev.GetCode(),
 		ExpiryTime: expires,
 	})

@@ -31,6 +31,7 @@ type config struct {
 	NATSURL  string `envconfig:"NATS_URL"`
 	Email    string `envconfig:"EMAIL"`
 	Locale   string `envconfig:"LOCALE"`
+	Timezone string `envconfig:"TIMEZONE"`
 	OldEmail string `envconfig:"OLD_EMAIL"`
 	NewEmail string `envconfig:"NEW_EMAIL"`
 }
@@ -43,6 +44,7 @@ func main() {
 			configEnvPrefix + "_NATS_URL   - NATS server (or MAILER_NATS_URL)",
 			configEnvPrefix + "_EMAIL      - recipient (default: test@example.com)",
 			configEnvPrefix + "_LOCALE     - template locale (default: en)",
+			configEnvPrefix + "_TIMEZONE   - IANA time zone (default: UTC)",
 			configEnvPrefix + "_OLD_EMAIL  - previous address (default: old@example.com)",
 			configEnvPrefix + "_NEW_EMAIL  - new address (default: same as EMAIL)",
 		},
@@ -77,6 +79,12 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	timezone, err := publishinput.Resolve(publishinput.Field{
+		Name: "Timezone", EnvValue: cfg.Timezone, Default: "UTC",
+	})
+	if err != nil {
+		return err
+	}
 	oldEmail, err := publishinput.Resolve(publishinput.Field{
 		Name: "Old email", EnvValue: cfg.OldEmail, Default: "old@example.com",
 	})
@@ -101,6 +109,7 @@ func run() error {
 	ev.SetId(shared.UUIDV7().String())
 	ev.SetEmail(email)
 	ev.SetLocale(locale)
+	ev.SetTimezone(timezone)
 	ev.SetOldEmail(oldEmail)
 	ev.SetNewEmail(newEmail)
 	ev.SetOccurredAt(timestamppb.New(now))
@@ -116,8 +125,8 @@ func run() error {
 	}
 
 	log.Printf(
-		"published topic=%s email=%s locale=%s old=%s new=%s bytes=%d",
-		topics.TopicEmailChanged, email, locale, oldEmail, newEmail, len(payload),
+		"published topic=%s email=%s locale=%s timezone=%s old=%s new=%s bytes=%d",
+		topics.TopicEmailChanged, email, locale, timezone, oldEmail, newEmail, len(payload),
 	)
 	return nil
 }

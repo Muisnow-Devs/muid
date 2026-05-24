@@ -77,7 +77,7 @@ func TestContinueAuthSession_StepInputReturnsChallengeRequired(t *testing.T) {
 	if resp.GetTransitionId() != sess.Id {
 		t.Fatalf("transition id: got %q want %q", resp.GetTransitionId(), sess.Id)
 	}
-	if resp.GetStatus() != basic.AuthStatus_AUTH_STATE_CHALLENGE_REQUIRED {
+	if resp.GetStatus() != basic.AuthStatus_AUTH_STATUS_CHALLENGE_REQUIRED {
 		t.Fatalf("status: got %v", resp.GetStatus())
 	}
 	if !resp.HasChallengeRequired() || !resp.GetChallengeRequired().HasChallenge() {

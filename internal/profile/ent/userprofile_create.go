@@ -55,6 +55,20 @@ func (_c *UserProfileCreate) SetNillableLocale(v *string) *UserProfileCreate {
 	return _c
 }
 
+// SetTimezone sets the "timezone" field.
+func (_c *UserProfileCreate) SetTimezone(v string) *UserProfileCreate {
+	_c.mutation.SetTimezone(v)
+	return _c
+}
+
+// SetNillableTimezone sets the "timezone" field if the given value is not nil.
+func (_c *UserProfileCreate) SetNillableTimezone(v *string) *UserProfileCreate {
+	if v != nil {
+		_c.SetTimezone(*v)
+	}
+	return _c
+}
+
 // SetBiography sets the "biography" field.
 func (_c *UserProfileCreate) SetBiography(v string) *UserProfileCreate {
 	_c.mutation.SetBiography(v)
@@ -184,6 +198,10 @@ func (_c *UserProfileCreate) defaults() {
 		v := userprofile.DefaultLocale
 		_c.mutation.SetLocale(v)
 	}
+	if _, ok := _c.mutation.Timezone(); !ok {
+		v := userprofile.DefaultTimezone
+		_c.mutation.SetTimezone(v)
+	}
 	if _, ok := _c.mutation.Biography(); !ok {
 		v := userprofile.DefaultBiography
 		_c.mutation.SetBiography(v)
@@ -230,6 +248,14 @@ func (_c *UserProfileCreate) check() error {
 	}
 	if _, ok := _c.mutation.Locale(); !ok {
 		return &ValidationError{Name: "locale", err: errors.New(`ent: missing required field "UserProfile.locale"`)}
+	}
+	if _, ok := _c.mutation.Timezone(); !ok {
+		return &ValidationError{Name: "timezone", err: errors.New(`ent: missing required field "UserProfile.timezone"`)}
+	}
+	if v, ok := _c.mutation.Timezone(); ok {
+		if err := userprofile.TimezoneValidator(v); err != nil {
+			return &ValidationError{Name: "timezone", err: fmt.Errorf(`ent: validator failed for field "UserProfile.timezone": %w`, err)}
+		}
 	}
 	if _, ok := _c.mutation.Biography(); !ok {
 		return &ValidationError{Name: "biography", err: errors.New(`ent: missing required field "UserProfile.biography"`)}
@@ -295,6 +321,10 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Locale(); ok {
 		_spec.SetField(userprofile.FieldLocale, field.TypeString, value)
 		_node.Locale = value
+	}
+	if value, ok := _c.mutation.Timezone(); ok {
+		_spec.SetField(userprofile.FieldTimezone, field.TypeString, value)
+		_node.Timezone = value
 	}
 	if value, ok := _c.mutation.Biography(); ok {
 		_spec.SetField(userprofile.FieldBiography, field.TypeString, value)

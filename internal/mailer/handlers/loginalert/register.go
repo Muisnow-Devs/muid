@@ -2,7 +2,6 @@ package loginalert
 
 import (
 	"context"
-	"time"
 
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/mailer/handlers"
@@ -34,13 +33,8 @@ func (Handler) Handle(
 		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
 
-	when := time.Now().UTC().Format(time.RFC1123Z)
-	if ts := ev.GetOccurredAt(); ts != nil {
-		when = ts.AsTime().UTC().Format(time.RFC1123Z)
-	}
-
-	locale := ev.GetLocale()
-	rendered, err := templates.Render(ctx, locale, "login_alert", handlers.TopicLoginAlert{
+	when := handlers.FormatEventTime(ev.GetOccurredAt(), ev.GetLocale(), ev.GetTimezone())
+	rendered, err := templates.Render(ctx, ev.GetLocale(), "login_alert", handlers.TopicLoginAlert{
 		Device:            ev.GetDevice(),
 		Location:          ev.GetLocation(),
 		IPAddress:         ev.GetIpAddress(),

@@ -35,6 +35,9 @@ message SendOTPEmailEvent {
 
   google.protobuf.Timestamp expires_at = 5;
   google.protobuf.Timestamp created_at = 6;
+
+  // IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+  string timezone = 7;
 }
 
 message SendEmailChangedEvent {
@@ -48,6 +51,9 @@ message SendEmailChangedEvent {
 
   google.protobuf.Timestamp occurred_at = 6;
   google.protobuf.Timestamp created_at = 7;
+
+  // IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+  string timezone = 8;
 }
 
 message SendPasskeyAddedEmailEvent {
@@ -60,6 +66,9 @@ message SendPasskeyAddedEmailEvent {
 
   google.protobuf.Timestamp occurred_at = 5;
   google.protobuf.Timestamp created_at = 6;
+
+  // IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+  string timezone = 7;
 }
 
 message SendLoginAlertEmailEvent {
@@ -77,4 +86,7 @@ message SendLoginAlertEmailEvent {
 
   google.protobuf.Timestamp occurred_at = 9;
   google.protobuf.Timestamp created_at = 10;
+
+  // IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+  string timezone = 11;
 }

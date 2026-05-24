@@ -23,6 +23,7 @@ type Email interface {
 		pub pubsub.PubSub,
 		userID uuid.UUID,
 		newEmail string,
+		mailPrefs MailDeliveryPrefs,
 	) (oldEmail string, err error)
 }
 
@@ -62,6 +63,12 @@ type Passkey interface {
 	LinkPasskey(
 		ctx context.Context,
 		config LinkPasskeyConfig,
+	) error
+	NotifyPasskeyAdded(
+		ctx context.Context,
+		userID uuid.UUID,
+		passkeyName string,
+		mailPrefs MailDeliveryPrefs,
 	) error
 	UpdatePasskeyUsage(
 		ctx context.Context,

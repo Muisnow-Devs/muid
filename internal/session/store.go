@@ -81,6 +81,9 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 
 		Flow json.RawMessage `json:"flow"`
 
+		Locale   string `json:"locale,omitempty"`
+		Timezone string `json:"timezone,omitempty"`
+
 		PendingRegister *RegisterPending `json:"pending_register,omitempty"`
 
 		Email   *EmailOTPFlow `json:"email,omitempty"`
@@ -94,6 +97,8 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 
 	s.Attempts = raw.Attempts
 	s.Step = raw.Step
+	s.Locale = raw.Locale
+	s.Timezone = raw.Timezone
 	s.PendingRegister = raw.PendingRegister
 
 	if len(raw.Flow) == 0 {

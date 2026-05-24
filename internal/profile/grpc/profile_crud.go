@@ -40,12 +40,14 @@ func (g *GRPCHandler) CreateProfile(
 		displayName string
 		pictureURL  string
 		locale      = "en"
+		timezone    string
 	)
 
 	if identity != nil {
 		displayName = displayNameFromIdentity(identity, emailLocalPart(email))
 		pictureURL = avatarFromIdentity(identity)
 		locale = strings.TrimSpace(identity.GetLocale())
+		timezone = strings.TrimSpace(identity.GetTimezone())
 	}
 
 	usernameCandidate := generateUsernameCandidates(randomUsernameBase())
@@ -71,6 +73,7 @@ func (g *GRPCHandler) CreateProfile(
 				user, err = tx.UserProfile.Create().
 					SetEmailRef(email).
 					SetLocale(locale).
+					SetTimezone(timezone).
 					SetDisplayName(displayName).
 					SetUsername(candidate).
 					Save(ctx)
@@ -148,6 +151,7 @@ func (g *GRPCHandler) GetProfile(
 	resp.SetUsername(p.Username)
 	resp.SetAvatarUrl(avatarURL)
 	resp.SetLocale(locale)
+	resp.SetTimezone(strings.TrimSpace(p.Timezone))
 	resp.SetAvatarObjectKey(objectKey)
 
 	if p.Edges.OriginalIdentity != nil {
@@ -307,6 +311,9 @@ func (g *GRPCHandler) buildProfileChangedClaims(
 		switch path {
 		case "locale":
 			ch.SetLocale(locale)
+			setAny = true
+		case "timezone":
+			ch.SetTimezone(strings.TrimSpace(p.Timezone))
 			setAny = true
 		case "display_name":
 			ch.SetName(p.DisplayName)

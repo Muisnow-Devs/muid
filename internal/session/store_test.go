@@ -34,6 +34,33 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	}
 }
 
+func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
+	t.Parallel()
+
+	original := EmailOTPStore(StepStart, &EmailOTPFlow{Email: "user@example.com"})
+	original.Locale = "zh-TW"
+	original.Timezone = "Asia/Taipei"
+
+	data, err := json.Marshal(original)
+	if err != nil {
+		t.Fatalf("marshal: %v", err)
+	}
+
+	var decoded SessionStore
+	err = json.Unmarshal(data, &decoded)
+	if err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+
+	if decoded.Locale != "zh-TW" || decoded.Timezone != "Asia/Taipei" {
+		t.Fatalf("mail delivery mismatch: locale=%q timezone=%q", decoded.Locale, decoded.Timezone)
+	}
+	email, ok := decoded.EmailFlow()
+	if !ok || email.Email != "user@example.com" {
+		t.Fatalf("email flow mismatch: ok=%v %+v", ok, email)
+	}
+}
+
 func TestSessionStore_JSON_legacyFlatFlowKind(t *testing.T) {
 	t.Parallel()
 

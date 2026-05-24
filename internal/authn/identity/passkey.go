@@ -113,7 +113,7 @@ func (p *PasskeyProvider) Start(
 
 func (p *PasskeyProvider) startLogin(
 	ctx context.Context,
-	_ idn.StartInput,
+	input idn.StartInput,
 ) (idn.StepResult, error) {
 	assertion, webAuthnSession, err := p.webAuthn.BeginDiscoverableLogin()
 	if err != nil {
@@ -124,6 +124,8 @@ func (p *PasskeyProvider) startLogin(
 		Ceremony: PasskeyCeremonyAuthentication,
 		Session:  *webAuthnSession,
 	})
+	store.Locale = input.Locale
+	store.Timezone = input.Timezone
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
@@ -177,6 +179,8 @@ func (p *PasskeyProvider) startRegister(
 		Session:       *webAuthnSession,
 		SubjectUserID: linkRes.UserID.String(),
 	})
+	store.Locale = input.Locale
+	store.Timezone = input.Timezone
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -322,6 +326,19 @@ func (p *PasskeyProvider) continueRegister(
 		Transports:     credentialTransportStrings(credential.Transport),
 		AAGUID:         credential.Authenticator.AAGUID,
 	})
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	err = p.accounts.Passkey.NotifyPasskeyAdded(
+		ctx,
+		uid,
+		"Passkey",
+		account.MailDeliveryPrefs{
+			Locale:   sess.Store.Locale,
+			Timezone: sess.Store.Timezone,
+		},
+	)
 	if err != nil {
 		return idn.StepResult{}, err
 	}

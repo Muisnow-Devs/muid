@@ -81,6 +81,10 @@ type SessionStore struct {
 
 	Flow FlowState `json:"flow"`
 
+	// Locale and Timezone come from StartAuthSession for mail formatting.
+	Locale   string `json:"locale,omitempty"`
+	Timezone string `json:"timezone,omitempty"`
+
 	// PendingRegister is set when a provider needs login-flow provision before finish linking.
 	PendingRegister *RegisterPending `json:"pending_register,omitempty"`
 }

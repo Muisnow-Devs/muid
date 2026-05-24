@@ -608,7 +608,7 @@ var File_authn_v1_challenge_proto protoreflect.FileDescriptor
 
 const file_authn_v1_challenge_proto_rawDesc = "" +
 	"\n" +
-	"\x18authn/v1/challenge.proto\x12\x17muid.authn.v1.challenge\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1bbuf/validate/validate.proto\"\xbf\x03\n" +
+	"\x18authn/v1/challenge.proto\x12\x17muid.authn.v1.challenge\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbf\x03\n" +
 	"\rAuthChallenge\x12+\n" +
 	"\fchallenge_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vchallengeId\x127\n" +
 	"\tissued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +

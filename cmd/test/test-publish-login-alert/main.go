@@ -31,6 +31,7 @@ type config struct {
 	NATSURL    string `envconfig:"NATS_URL"`
 	Email      string `envconfig:"EMAIL"`
 	Locale     string `envconfig:"LOCALE"`
+	Timezone   string `envconfig:"TIMEZONE"`
 	IPAddress  string `envconfig:"IP_ADDRESS"`
 	Location   string `envconfig:"LOCATION"`
 	Device     string `envconfig:"DEVICE"`
@@ -46,6 +47,7 @@ func main() {
 			configEnvPrefix + "_NATS_URL     - NATS server (or MAILER_NATS_URL)",
 			configEnvPrefix + "_EMAIL        - recipient (default: test@example.com)",
 			configEnvPrefix + "_LOCALE       - template locale (default: en)",
+			configEnvPrefix + "_TIMEZONE     - IANA time zone (default: UTC)",
 			configEnvPrefix + "_IP_ADDRESS   - default: 203.0.113.1",
 			configEnvPrefix + "_LOCATION     - default: Taipei, TW",
 			configEnvPrefix + "_DEVICE       - default: Chrome on Windows",
@@ -79,6 +81,12 @@ func run() error {
 	}
 	locale, err := publishinput.Resolve(publishinput.Field{
 		Name: "Locale", EnvValue: cfg.Locale, Default: "en",
+	})
+	if err != nil {
+		return err
+	}
+	timezone, err := publishinput.Resolve(publishinput.Field{
+		Name: "Timezone", EnvValue: cfg.Timezone, Default: "UTC",
 	})
 	if err != nil {
 		return err
@@ -126,6 +134,7 @@ func run() error {
 	ev.SetId(shared.UUIDV7().String())
 	ev.SetEmail(email)
 	ev.SetLocale(locale)
+	ev.SetTimezone(timezone)
 	ev.SetIpAddress(ipAddress)
 	ev.SetLocation(location)
 	ev.SetDevice(device)
@@ -144,8 +153,8 @@ func run() error {
 	}
 
 	log.Printf(
-		"published topic=%s email=%s locale=%s bytes=%d",
-		topics.TopicSendLoginAlert, email, locale, len(payload),
+		"published topic=%s email=%s locale=%s timezone=%s bytes=%d",
+		topics.TopicSendLoginAlert, email, locale, timezone, len(payload),
 	)
 	return nil
 }

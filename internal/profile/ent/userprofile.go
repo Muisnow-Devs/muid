@@ -27,6 +27,8 @@ type UserProfile struct {
 	Username string `json:"username,omitempty"`
 	// BCP-47 locale; empty means server default
 	Locale string `json:"locale,omitempty"`
+	// IANA time zone; empty means UTC for mail display
+	Timezone string `json:"timezone,omitempty"`
 	// Biography holds the value of the "biography" field.
 	Biography string `json:"biography,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -76,7 +78,7 @@ func (*UserProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userprofile.FieldEmailRef, userprofile.FieldDisplayName, userprofile.FieldUsername, userprofile.FieldLocale, userprofile.FieldBiography:
+		case userprofile.FieldEmailRef, userprofile.FieldDisplayName, userprofile.FieldUsername, userprofile.FieldLocale, userprofile.FieldTimezone, userprofile.FieldBiography:
 			values[i] = new(sql.NullString)
 		case userprofile.FieldCreatedAt, userprofile.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -128,6 +130,12 @@ func (_m *UserProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field locale", values[i])
 			} else if value.Valid {
 				_m.Locale = value.String
+			}
+		case userprofile.FieldTimezone:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field timezone", values[i])
+			} else if value.Valid {
+				_m.Timezone = value.String
 			}
 		case userprofile.FieldBiography:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -211,6 +219,9 @@ func (_m *UserProfile) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("locale=")
 	builder.WriteString(_m.Locale)
+	builder.WriteString(", ")
+	builder.WriteString("timezone=")
+	builder.WriteString(_m.Timezone)
 	builder.WriteString(", ")
 	builder.WriteString("biography=")
 	builder.WriteString(_m.Biography)

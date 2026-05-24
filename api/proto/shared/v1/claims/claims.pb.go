@@ -30,6 +30,7 @@ type IdentityInformation struct {
 	xxx_hidden_Picture           *string                `protobuf:"bytes,5,opt,name=picture,proto3,oneof"`
 	xxx_hidden_Locale            *string                `protobuf:"bytes,6,opt,name=locale,proto3,oneof"`
 	xxx_hidden_Bio               *string                `protobuf:"bytes,9,opt,name=bio,proto3,oneof"`
+	xxx_hidden_Timezone          *string                `protobuf:"bytes,12,opt,name=timezone,proto3,oneof"`
 	xxx_hidden_Email             *string                `protobuf:"bytes,7,opt,name=email,proto3,oneof"`
 	xxx_hidden_EmailVerified     bool                   `protobuf:"varint,8,opt,name=email_verified,json=emailVerified,proto3,oneof"`
 	xxx_hidden_FederatedProvider *string                `protobuf:"bytes,10,opt,name=federated_provider,json=federatedProvider,proto3,oneof"`
@@ -135,6 +136,16 @@ func (x *IdentityInformation) GetBio() string {
 	return ""
 }
 
+func (x *IdentityInformation) GetTimezone() string {
+	if x != nil {
+		if x.xxx_hidden_Timezone != nil {
+			return *x.xxx_hidden_Timezone
+		}
+		return ""
+	}
+	return ""
+}
+
 func (x *IdentityInformation) GetEmail() string {
 	if x != nil {
 		if x.xxx_hidden_Email != nil {
@@ -174,57 +185,62 @@ func (x *IdentityInformation) GetFederatedSubject() string {
 
 func (x *IdentityInformation) SetName(v string) {
 	x.xxx_hidden_Name = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 12)
 }
 
 func (x *IdentityInformation) SetUsername(v string) {
 	x.xxx_hidden_Username = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 12)
 }
 
 func (x *IdentityInformation) SetGivenName(v string) {
 	x.xxx_hidden_GivenName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 12)
 }
 
 func (x *IdentityInformation) SetFamilyName(v string) {
 	x.xxx_hidden_FamilyName = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 12)
 }
 
 func (x *IdentityInformation) SetPicture(v string) {
 	x.xxx_hidden_Picture = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 12)
 }
 
 func (x *IdentityInformation) SetLocale(v string) {
 	x.xxx_hidden_Locale = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 12)
 }
 
 func (x *IdentityInformation) SetBio(v string) {
 	x.xxx_hidden_Bio = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 6, 12)
+}
+
+func (x *IdentityInformation) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 12)
 }
 
 func (x *IdentityInformation) SetEmail(v string) {
 	x.xxx_hidden_Email = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 7, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 12)
 }
 
 func (x *IdentityInformation) SetEmailVerified(v bool) {
 	x.xxx_hidden_EmailVerified = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 12)
 }
 
 func (x *IdentityInformation) SetFederatedProvider(v string) {
 	x.xxx_hidden_FederatedProvider = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 12)
 }
 
 func (x *IdentityInformation) SetFederatedSubject(v string) {
 	x.xxx_hidden_FederatedSubject = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 10, 11)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 11, 12)
 }
 
 func (x *IdentityInformation) HasName() bool {
@@ -276,32 +292,39 @@ func (x *IdentityInformation) HasBio() bool {
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 6)
 }
 
-func (x *IdentityInformation) HasEmail() bool {
+func (x *IdentityInformation) HasTimezone() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 7)
 }
 
-func (x *IdentityInformation) HasEmailVerified() bool {
+func (x *IdentityInformation) HasEmail() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
 }
 
-func (x *IdentityInformation) HasFederatedProvider() bool {
+func (x *IdentityInformation) HasEmailVerified() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
-func (x *IdentityInformation) HasFederatedSubject() bool {
+func (x *IdentityInformation) HasFederatedProvider() bool {
 	if x == nil {
 		return false
 	}
 	return protoimpl.X.Present(&(x.XXX_presence[0]), 10)
+}
+
+func (x *IdentityInformation) HasFederatedSubject() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 11)
 }
 
 func (x *IdentityInformation) ClearName() {
@@ -339,23 +362,28 @@ func (x *IdentityInformation) ClearBio() {
 	x.xxx_hidden_Bio = nil
 }
 
-func (x *IdentityInformation) ClearEmail() {
+func (x *IdentityInformation) ClearTimezone() {
 	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 7)
+	x.xxx_hidden_Timezone = nil
+}
+
+func (x *IdentityInformation) ClearEmail() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
 	x.xxx_hidden_Email = nil
 }
 
 func (x *IdentityInformation) ClearEmailVerified() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
 	x.xxx_hidden_EmailVerified = false
 }
 
 func (x *IdentityInformation) ClearFederatedProvider() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
 	x.xxx_hidden_FederatedProvider = nil
 }
 
 func (x *IdentityInformation) ClearFederatedSubject() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 10)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 11)
 	x.xxx_hidden_FederatedSubject = nil
 }
 
@@ -366,12 +394,14 @@ type IdentityInformation_builder struct {
 	Name *string
 	// Stored username; set only via profile update (identity.username). CreateProfile always auto-allocates; omit on create/OIDC bootstrap payloads.
 	// Charset: lowercase letters, digits, underscore, period; length 5–16 when set; must not start with _ or .
-	Username      *string
-	GivenName     *string
-	FamilyName    *string
-	Picture       *string
-	Locale        *string
-	Bio           *string
+	Username   *string
+	GivenName  *string
+	FamilyName *string
+	Picture    *string
+	Locale     *string
+	Bio        *string
+	// IANA time zone (e.g. "Asia/Taipei"); empty means server default (UTC in mail).
+	Timezone      *string
 	Email         *string
 	EmailVerified *bool
 	// Set when signup must link a federated identity (e.g. OIDC subject) during provisioning.
@@ -384,47 +414,51 @@ func (b0 IdentityInformation_builder) Build() *IdentityInformation {
 	b, x := &b0, m0
 	_, _ = b, x
 	if b.Name != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 12)
 		x.xxx_hidden_Name = b.Name
 	}
 	if b.Username != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 12)
 		x.xxx_hidden_Username = b.Username
 	}
 	if b.GivenName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 12)
 		x.xxx_hidden_GivenName = b.GivenName
 	}
 	if b.FamilyName != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 12)
 		x.xxx_hidden_FamilyName = b.FamilyName
 	}
 	if b.Picture != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 12)
 		x.xxx_hidden_Picture = b.Picture
 	}
 	if b.Locale != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 12)
 		x.xxx_hidden_Locale = b.Locale
 	}
 	if b.Bio != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 6, 12)
 		x.xxx_hidden_Bio = b.Bio
 	}
+	if b.Timezone != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 12)
+		x.xxx_hidden_Timezone = b.Timezone
+	}
 	if b.Email != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 7, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 12)
 		x.xxx_hidden_Email = b.Email
 	}
 	if b.EmailVerified != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 12)
 		x.xxx_hidden_EmailVerified = *b.EmailVerified
 	}
 	if b.FederatedProvider != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 12)
 		x.xxx_hidden_FederatedProvider = b.FederatedProvider
 	}
 	if b.FederatedSubject != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 10, 11)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 11, 12)
 		x.xxx_hidden_FederatedSubject = b.FederatedSubject
 	}
 	return m0
@@ -434,7 +468,7 @@ var File_shared_v1_claims_proto protoreflect.FileDescriptor
 
 const file_shared_v1_claims_proto_rawDesc = "" +
 	"\n" +
-	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xa8\x05\n" +
+	"\x16shared/v1/claims.proto\x12\x15muid.shared.v1.claims\x1a\x1bbuf/validate/validate.proto\"\xdf\x05\n" +
 	"\x13IdentityInformation\x12 \n" +
 	"\x04name\x18\x01 \x01(\tB\a\xbaH\x04r\x02\x18 H\x00R\x04name\x88\x01\x01\x12F\n" +
 	"\busername\x18\x02 \x01(\tB%\xbaH\"r \x10\x05\x18\x102\x1a^[a-z0-9][a-z0-9_.]{4,15}$H\x01R\busername\x88\x01\x01\x12+\n" +
@@ -444,13 +478,14 @@ const file_shared_v1_claims_proto_rawDesc = "" +
 	"familyName\x88\x01\x01\x12\x1d\n" +
 	"\apicture\x18\x05 \x01(\tH\x04R\apicture\x88\x01\x01\x12$\n" +
 	"\x06locale\x18\x06 \x01(\tB\a\xbaH\x04r\x02\x18 H\x05R\x06locale\x88\x01\x01\x12\x1f\n" +
-	"\x03bio\x18\t \x01(\tB\b\xbaH\x05r\x03\x18\x80\bH\x06R\x03bio\x88\x01\x01\x12\"\n" +
-	"\x05email\x18\a \x01(\tB\a\xbaH\x04r\x02`\x01H\aR\x05email\x88\x01\x01\x12*\n" +
-	"\x0eemail_verified\x18\b \x01(\bH\bR\remailVerified\x88\x01\x01\x12;\n" +
+	"\x03bio\x18\t \x01(\tB\b\xbaH\x05r\x03\x18\x80\bH\x06R\x03bio\x88\x01\x01\x12(\n" +
+	"\btimezone\x18\f \x01(\tB\a\xbaH\x04r\x02\x18@H\aR\btimezone\x88\x01\x01\x12\"\n" +
+	"\x05email\x18\a \x01(\tB\a\xbaH\x04r\x02`\x01H\bR\x05email\x88\x01\x01\x12*\n" +
+	"\x0eemail_verified\x18\b \x01(\bH\tR\remailVerified\x88\x01\x01\x12;\n" +
 	"\x12federated_provider\x18\n" +
-	" \x01(\tB\a\xbaH\x04r\x02\x18@H\tR\x11federatedProvider\x88\x01\x01\x12:\n" +
-	"\x11federated_subject\x18\v \x01(\tB\b\xbaH\x05r\x03\x18\x80\x02H\n" +
-	"R\x10federatedSubject\x88\x01\x01B\a\n" +
+	" \x01(\tB\a\xbaH\x04r\x02\x18@H\n" +
+	"R\x11federatedProvider\x88\x01\x01\x12:\n" +
+	"\x11federated_subject\x18\v \x01(\tB\b\xbaH\x05r\x03\x18\x80\x02H\vR\x10federatedSubject\x88\x01\x01B\a\n" +
 	"\x05_nameB\v\n" +
 	"\t_usernameB\r\n" +
 	"\v_given_nameB\x0e\n" +
@@ -458,7 +493,8 @@ const file_shared_v1_claims_proto_rawDesc = "" +
 	"\n" +
 	"\b_pictureB\t\n" +
 	"\a_localeB\x06\n" +
-	"\x04_bioB\b\n" +
+	"\x04_bioB\v\n" +
+	"\t_timezoneB\b\n" +
 	"\x06_emailB\x11\n" +
 	"\x0f_email_verifiedB\x15\n" +
 	"\x13_federated_providerB\x14\n" +

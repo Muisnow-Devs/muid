@@ -37,17 +37,17 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthnServiceClient interface {
-	/// authentication APIs
+	// / authentication APIs
 	StartAuthSession(ctx context.Context, in *StartAuthSessionRequest, opts ...grpc.CallOption) (*StartAuthSessionResponse, error)
 	ContinueAuthSession(ctx context.Context, in *ContinueAuthSessionRequest, opts ...grpc.CallOption) (*ContinueAuthSessionResponse, error)
-	/// infrastructure APIs
+	// / infrastructure APIs
 	GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error)
-	/// user related APIs, for user to manage their sessions.
+	// / user related APIs, for user to manage their sessions.
 	RevokeFederatedIdentity(ctx context.Context, in *RevokeFederatedIdentityRequest, opts ...grpc.CallOption) (*RevokeFederatedIdentityResponse, error)
-	GetAuthorizedSession(ctx context.Context, in *GetSessionRequest, opts ...grpc.CallOption) (*GetSessionResponse, error)
+	GetAuthorizedSession(ctx context.Context, in *GetAuthorizedSessionRequest, opts ...grpc.CallOption) (*GetAuthorizedSessionResponse, error)
 	// user session management APIs
 	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
-	/// oidc token management APIs
+	// / oidc token management APIs
 	// user consent
 	OIDCListGrantedConsents(ctx context.Context, in *OIDCListGrantedConsentsRequest, opts ...grpc.CallOption) (*OIDCListGrantedConsentsResponse, error)
 	OIDCGrantConsent(ctx context.Context, in *OIDCGrantConsentRequest, opts ...grpc.CallOption) (*OIDCGrantConsentResponse, error)
@@ -106,9 +106,9 @@ func (c *authnServiceClient) RevokeFederatedIdentity(ctx context.Context, in *Re
 	return out, nil
 }
 
-func (c *authnServiceClient) GetAuthorizedSession(ctx context.Context, in *GetSessionRequest, opts ...grpc.CallOption) (*GetSessionResponse, error) {
+func (c *authnServiceClient) GetAuthorizedSession(ctx context.Context, in *GetAuthorizedSessionRequest, opts ...grpc.CallOption) (*GetAuthorizedSessionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetSessionResponse)
+	out := new(GetAuthorizedSessionResponse)
 	err := c.cc.Invoke(ctx, AuthnService_GetAuthorizedSession_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -190,17 +190,17 @@ func (c *authnServiceClient) OIDCRotateAndGetAccessToken(ctx context.Context, in
 // All implementations must embed UnimplementedAuthnServiceServer
 // for forward compatibility.
 type AuthnServiceServer interface {
-	/// authentication APIs
+	// / authentication APIs
 	StartAuthSession(context.Context, *StartAuthSessionRequest) (*StartAuthSessionResponse, error)
 	ContinueAuthSession(context.Context, *ContinueAuthSessionRequest) (*ContinueAuthSessionResponse, error)
-	/// infrastructure APIs
+	// / infrastructure APIs
 	GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error)
-	/// user related APIs, for user to manage their sessions.
+	// / user related APIs, for user to manage their sessions.
 	RevokeFederatedIdentity(context.Context, *RevokeFederatedIdentityRequest) (*RevokeFederatedIdentityResponse, error)
-	GetAuthorizedSession(context.Context, *GetSessionRequest) (*GetSessionResponse, error)
+	GetAuthorizedSession(context.Context, *GetAuthorizedSessionRequest) (*GetAuthorizedSessionResponse, error)
 	// user session management APIs
 	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
-	/// oidc token management APIs
+	// / oidc token management APIs
 	// user consent
 	OIDCListGrantedConsents(context.Context, *OIDCListGrantedConsentsRequest) (*OIDCListGrantedConsentsResponse, error)
 	OIDCGrantConsent(context.Context, *OIDCGrantConsentRequest) (*OIDCGrantConsentResponse, error)
@@ -231,7 +231,7 @@ func (UnimplementedAuthnServiceServer) GetPublicKeys(context.Context, *GetPublic
 func (UnimplementedAuthnServiceServer) RevokeFederatedIdentity(context.Context, *RevokeFederatedIdentityRequest) (*RevokeFederatedIdentityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeFederatedIdentity not implemented")
 }
-func (UnimplementedAuthnServiceServer) GetAuthorizedSession(context.Context, *GetSessionRequest) (*GetSessionResponse, error) {
+func (UnimplementedAuthnServiceServer) GetAuthorizedSession(context.Context, *GetAuthorizedSessionRequest) (*GetAuthorizedSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAuthorizedSession not implemented")
 }
 func (UnimplementedAuthnServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error) {
@@ -349,7 +349,7 @@ func _AuthnService_RevokeFederatedIdentity_Handler(srv interface{}, ctx context.
 }
 
 func _AuthnService_GetAuthorizedSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetSessionRequest)
+	in := new(GetAuthorizedSessionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func _AuthnService_GetAuthorizedSession_Handler(srv interface{}, ctx context.Con
 		FullMethod: AuthnService_GetAuthorizedSession_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).GetAuthorizedSession(ctx, req.(*GetSessionRequest))
+		return srv.(AuthnServiceServer).GetAuthorizedSession(ctx, req.(*GetAuthorizedSessionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

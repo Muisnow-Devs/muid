@@ -6,11 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/profile/ent/migrate"
-	"sanzi.io/muid/pkg/log"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"

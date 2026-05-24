@@ -151,6 +151,8 @@ func updateMaskPathToGetProfileSegment(canon string) (string, error) {
 			return "email", nil
 		case "locale":
 			return "locale", nil
+		case "timezone":
+			return "timezone", nil
 		case "username":
 			return "username", nil
 		case "name", "given_name", "family_name":

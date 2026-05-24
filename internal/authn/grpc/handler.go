@@ -71,8 +71,8 @@ func (g *GRPCHandler) ContinueAuthSession(
 
 func (g *GRPCHandler) GetAuthorizedSession(
 	ctx context.Context,
-	req *pb.GetSessionRequest,
-) (*pb.GetSessionResponse, error) {
+	req *pb.GetAuthorizedSessionRequest,
+) (*pb.GetAuthorizedSessionResponse, error) {
 	wire, err := requiredWireSession(ctx)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (g *GRPCHandler) GetAuthorizedSession(
 
 	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
-		out := &pb.GetSessionResponse{}
+		out := &pb.GetAuthorizedSessionResponse{}
 		out.SetValid(false)
 		return out, nil
 	}
@@ -89,7 +89,7 @@ func (g *GRPCHandler) GetAuthorizedSession(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	out := &pb.GetSessionResponse{}
+	out := &pb.GetAuthorizedSessionResponse{}
 	out.SetValid(true)
 	out.SetSession(g.accounts.Session.AuthenticatedResultFromResolved(wire, res))
 

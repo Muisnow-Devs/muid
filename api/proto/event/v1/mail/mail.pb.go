@@ -254,6 +254,7 @@ type SendOTPEmailEvent struct {
 	xxx_hidden_Code      string                 `protobuf:"bytes,4,opt,name=code,proto3"`
 	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expires_at,json=expiresAt,proto3"`
 	xxx_hidden_CreatedAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Timezone  string                 `protobuf:"bytes,7,opt,name=timezone,proto3"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -325,6 +326,13 @@ func (x *SendOTPEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SendOTPEmailEvent) GetTimezone() string {
+	if x != nil {
+		return x.xxx_hidden_Timezone
+	}
+	return ""
+}
+
 func (x *SendOTPEmailEvent) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -347,6 +355,10 @@ func (x *SendOTPEmailEvent) SetExpiresAt(v *timestamppb.Timestamp) {
 
 func (x *SendOTPEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *SendOTPEmailEvent) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = v
 }
 
 func (x *SendOTPEmailEvent) HasExpiresAt() bool {
@@ -380,6 +392,8 @@ type SendOTPEmailEvent_builder struct {
 	Code      string
 	ExpiresAt *timestamppb.Timestamp
 	CreatedAt *timestamppb.Timestamp
+	// IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+	Timezone string
 }
 
 func (b0 SendOTPEmailEvent_builder) Build() *SendOTPEmailEvent {
@@ -392,6 +406,7 @@ func (b0 SendOTPEmailEvent_builder) Build() *SendOTPEmailEvent {
 	x.xxx_hidden_Code = b.Code
 	x.xxx_hidden_ExpiresAt = b.ExpiresAt
 	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Timezone = b.Timezone
 	return m0
 }
 
@@ -404,6 +419,7 @@ type SendEmailChangedEvent struct {
 	xxx_hidden_NewEmail   string                 `protobuf:"bytes,5,opt,name=new_email,json=newEmail,proto3"`
 	xxx_hidden_OccurredAt *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=occurred_at,json=occurredAt,proto3"`
 	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Timezone   string                 `protobuf:"bytes,8,opt,name=timezone,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -482,6 +498,13 @@ func (x *SendEmailChangedEvent) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SendEmailChangedEvent) GetTimezone() string {
+	if x != nil {
+		return x.xxx_hidden_Timezone
+	}
+	return ""
+}
+
 func (x *SendEmailChangedEvent) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -508,6 +531,10 @@ func (x *SendEmailChangedEvent) SetOccurredAt(v *timestamppb.Timestamp) {
 
 func (x *SendEmailChangedEvent) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *SendEmailChangedEvent) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = v
 }
 
 func (x *SendEmailChangedEvent) HasOccurredAt() bool {
@@ -542,6 +569,8 @@ type SendEmailChangedEvent_builder struct {
 	NewEmail   string
 	OccurredAt *timestamppb.Timestamp
 	CreatedAt  *timestamppb.Timestamp
+	// IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+	Timezone string
 }
 
 func (b0 SendEmailChangedEvent_builder) Build() *SendEmailChangedEvent {
@@ -555,6 +584,7 @@ func (b0 SendEmailChangedEvent_builder) Build() *SendEmailChangedEvent {
 	x.xxx_hidden_NewEmail = b.NewEmail
 	x.xxx_hidden_OccurredAt = b.OccurredAt
 	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Timezone = b.Timezone
 	return m0
 }
 
@@ -566,6 +596,7 @@ type SendPasskeyAddedEmailEvent struct {
 	xxx_hidden_PasskeyName string                 `protobuf:"bytes,4,opt,name=passkey_name,json=passkeyName,proto3"`
 	xxx_hidden_OccurredAt  *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3"`
 	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Timezone    string                 `protobuf:"bytes,7,opt,name=timezone,proto3"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -637,6 +668,13 @@ func (x *SendPasskeyAddedEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SendPasskeyAddedEmailEvent) GetTimezone() string {
+	if x != nil {
+		return x.xxx_hidden_Timezone
+	}
+	return ""
+}
+
 func (x *SendPasskeyAddedEmailEvent) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -659,6 +697,10 @@ func (x *SendPasskeyAddedEmailEvent) SetOccurredAt(v *timestamppb.Timestamp) {
 
 func (x *SendPasskeyAddedEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *SendPasskeyAddedEmailEvent) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = v
 }
 
 func (x *SendPasskeyAddedEmailEvent) HasOccurredAt() bool {
@@ -692,6 +734,8 @@ type SendPasskeyAddedEmailEvent_builder struct {
 	PasskeyName string
 	OccurredAt  *timestamppb.Timestamp
 	CreatedAt   *timestamppb.Timestamp
+	// IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+	Timezone string
 }
 
 func (b0 SendPasskeyAddedEmailEvent_builder) Build() *SendPasskeyAddedEmailEvent {
@@ -704,6 +748,7 @@ func (b0 SendPasskeyAddedEmailEvent_builder) Build() *SendPasskeyAddedEmailEvent
 	x.xxx_hidden_PasskeyName = b.PasskeyName
 	x.xxx_hidden_OccurredAt = b.OccurredAt
 	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Timezone = b.Timezone
 	return m0
 }
 
@@ -719,6 +764,7 @@ type SendLoginAlertEmailEvent struct {
 	xxx_hidden_SecureLink string                 `protobuf:"bytes,8,opt,name=secure_link,json=secureLink,proto3"`
 	xxx_hidden_OccurredAt *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=occurred_at,json=occurredAt,proto3"`
 	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Timezone   string                 `protobuf:"bytes,11,opt,name=timezone,proto3"`
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
 }
@@ -818,6 +864,13 @@ func (x *SendLoginAlertEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SendLoginAlertEmailEvent) GetTimezone() string {
+	if x != nil {
+		return x.xxx_hidden_Timezone
+	}
+	return ""
+}
+
 func (x *SendLoginAlertEmailEvent) SetId(v string) {
 	x.xxx_hidden_Id = v
 }
@@ -858,6 +911,10 @@ func (x *SendLoginAlertEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_CreatedAt = v
 }
 
+func (x *SendLoginAlertEmailEvent) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = v
+}
+
 func (x *SendLoginAlertEmailEvent) HasOccurredAt() bool {
 	if x == nil {
 		return false
@@ -893,6 +950,8 @@ type SendLoginAlertEmailEvent_builder struct {
 	SecureLink string
 	OccurredAt *timestamppb.Timestamp
 	CreatedAt  *timestamppb.Timestamp
+	// IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+	Timezone string
 }
 
 func (b0 SendLoginAlertEmailEvent_builder) Build() *SendLoginAlertEmailEvent {
@@ -909,6 +968,7 @@ func (b0 SendLoginAlertEmailEvent_builder) Build() *SendLoginAlertEmailEvent {
 	x.xxx_hidden_SecureLink = b.SecureLink
 	x.xxx_hidden_OccurredAt = b.OccurredAt
 	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Timezone = b.Timezone
 	return m0
 }
 
@@ -931,7 +991,7 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x1a7\n" +
 	"\tDataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdb\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xf7\x01\n" +
 	"\x11SendOTPEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
@@ -940,7 +1000,8 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"\n" +
 	"expires_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x87\x02\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\btimezone\x18\a \x01(\tR\btimezone\"\xa3\x02\n" +
 	"\x15SendEmailChangedEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
@@ -950,7 +1011,8 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"\voccurred_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"occurredAt\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xf5\x01\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\btimezone\x18\b \x01(\tR\btimezone\"\x91\x02\n" +
 	"\x1aSendPasskeyAddedEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
@@ -959,7 +1021,8 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"\voccurred_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"occurredAt\x129\n" +
 	"\n" +
-	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xe3\x02\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\btimezone\x18\a \x01(\tR\btimezone\"\xff\x02\n" +
 	"\x18SendLoginAlertEmailEvent\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
@@ -976,7 +1039,8 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"occurredAt\x129\n" +
 	"\n" +
 	"created_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAtB\xbb\x01\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\btimezone\x18\v \x01(\tR\btimezoneB\xbb\x01\n" +
 	"\x16com.muid.event.v1.mailB\tMailProtoP\x01Z*sanzi.io/muid/api/proto/event/v1/mail;mail\xa2\x02\x04MEVM\xaa\x02\x12Muid.Event.V1.Mail\xca\x02\x12Muid\\Event\\V1\\Mail\xe2\x02\x1eMuid\\Event\\V1\\Mail\\GPBMetadata\xea\x02\x15Muid::Event::V1::Mailb\x06proto3"
 
 var file_event_v1_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 7)

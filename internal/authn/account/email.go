@@ -44,6 +44,7 @@ func (e *emailService) ChangeUserEmail(
 	pub pubsub.PubSub,
 	userID uuid.UUID,
 	newEmail string,
+	mailPrefs MailDeliveryPrefs,
 ) (oldEmail string, err error) {
 	newEmail = strings.TrimSpace(strings.ToLower(newEmail))
 	if newEmail == "" {
@@ -73,7 +74,7 @@ func (e *emailService) ChangeUserEmail(
 	}
 
 	if pub != nil {
-		err = publishEmailChanged(pub, oldEmail, newEmail)
+		err = publishEmailChanged(pub, oldEmail, newEmail, mailPrefs)
 		if err != nil {
 			return oldEmail, err
 		}
@@ -85,11 +86,17 @@ func (e *emailService) ChangeUserEmail(
 	return oldEmail, nil
 }
 
-func publishEmailChanged(pub pubsub.PubSub, oldEmail, newEmail string) error {
+func publishEmailChanged(
+	pub pubsub.PubSub,
+	oldEmail, newEmail string,
+	mailPrefs MailDeliveryPrefs,
+) error {
 	now := time.Now().UTC()
 
 	ev := &mailpb.SendEmailChangedEvent{}
 	ev.SetEmail(newEmail)
+	ev.SetLocale(mailPrefs.NormalizedLocale())
+	ev.SetTimezone(mailPrefs.NormalizedTimezone())
 	ev.SetOldEmail(oldEmail)
 	ev.SetNewEmail(newEmail)
 	ev.SetOccurredAt(timestamppb.New(now))

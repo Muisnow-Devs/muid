@@ -41,20 +41,6 @@ func (_c *OIDCGrantCreate) SetScopes(v []string) *OIDCGrantCreate {
 	return _c
 }
 
-// SetAuthorizedAt sets the "authorized_at" field.
-func (_c *OIDCGrantCreate) SetAuthorizedAt(v time.Time) *OIDCGrantCreate {
-	_c.mutation.SetAuthorizedAt(v)
-	return _c
-}
-
-// SetNillableAuthorizedAt sets the "authorized_at" field if the given value is not nil.
-func (_c *OIDCGrantCreate) SetNillableAuthorizedAt(v *time.Time) *OIDCGrantCreate {
-	if v != nil {
-		_c.SetAuthorizedAt(*v)
-	}
-	return _c
-}
-
 // SetLastUsedAt sets the "last_used_at" field.
 func (_c *OIDCGrantCreate) SetLastUsedAt(v time.Time) *OIDCGrantCreate {
 	_c.mutation.SetLastUsedAt(v)
@@ -107,6 +93,20 @@ func (_c *OIDCGrantCreate) SetUpdatedAt(v time.Time) *OIDCGrantCreate {
 func (_c *OIDCGrantCreate) SetNillableUpdatedAt(v *time.Time) *OIDCGrantCreate {
 	if v != nil {
 		_c.SetUpdatedAt(*v)
+	}
+	return _c
+}
+
+// SetAuthorizedAt sets the "authorized_at" field.
+func (_c *OIDCGrantCreate) SetAuthorizedAt(v time.Time) *OIDCGrantCreate {
+	_c.mutation.SetAuthorizedAt(v)
+	return _c
+}
+
+// SetNillableAuthorizedAt sets the "authorized_at" field if the given value is not nil.
+func (_c *OIDCGrantCreate) SetNillableAuthorizedAt(v *time.Time) *OIDCGrantCreate {
+	if v != nil {
+		_c.SetAuthorizedAt(*v)
 	}
 	return _c
 }
@@ -180,10 +180,6 @@ func (_c *OIDCGrantCreate) defaults() {
 		v := oidcgrant.DefaultScopes
 		_c.mutation.SetScopes(v)
 	}
-	if _, ok := _c.mutation.AuthorizedAt(); !ok {
-		v := oidcgrant.DefaultAuthorizedAt()
-		_c.mutation.SetAuthorizedAt(v)
-	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := oidcgrant.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -191,6 +187,10 @@ func (_c *OIDCGrantCreate) defaults() {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := oidcgrant.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
+	}
+	if _, ok := _c.mutation.AuthorizedAt(); !ok {
+		v := oidcgrant.DefaultAuthorizedAt()
+		_c.mutation.SetAuthorizedAt(v)
 	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := oidcgrant.DefaultID()
@@ -209,14 +209,14 @@ func (_c *OIDCGrantCreate) check() error {
 	if _, ok := _c.mutation.Scopes(); !ok {
 		return &ValidationError{Name: "scopes", err: errors.New(`ent: missing required field "OIDCGrant.scopes"`)}
 	}
-	if _, ok := _c.mutation.AuthorizedAt(); !ok {
-		return &ValidationError{Name: "authorized_at", err: errors.New(`ent: missing required field "OIDCGrant.authorized_at"`)}
-	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "OIDCGrant.created_at"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "OIDCGrant.updated_at"`)}
+	}
+	if _, ok := _c.mutation.AuthorizedAt(); !ok {
+		return &ValidationError{Name: "authorized_at", err: errors.New(`ent: missing required field "OIDCGrant.authorized_at"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "OIDCGrant.user"`)}
@@ -263,10 +263,6 @@ func (_c *OIDCGrantCreate) createSpec() (*OIDCGrant, *sqlgraph.CreateSpec) {
 		_spec.SetField(oidcgrant.FieldScopes, field.TypeJSON, value)
 		_node.Scopes = value
 	}
-	if value, ok := _c.mutation.AuthorizedAt(); ok {
-		_spec.SetField(oidcgrant.FieldAuthorizedAt, field.TypeTime, value)
-		_node.AuthorizedAt = value
-	}
 	if value, ok := _c.mutation.LastUsedAt(); ok {
 		_spec.SetField(oidcgrant.FieldLastUsedAt, field.TypeTime, value)
 		_node.LastUsedAt = value
@@ -282,6 +278,10 @@ func (_c *OIDCGrantCreate) createSpec() (*OIDCGrant, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(oidcgrant.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
+	}
+	if value, ok := _c.mutation.AuthorizedAt(); ok {
+		_spec.SetField(oidcgrant.FieldAuthorizedAt, field.TypeTime, value)
+		_node.AuthorizedAt = value
 	}
 	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

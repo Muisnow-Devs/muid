@@ -61,9 +61,9 @@ func UserID(v uuid.UUID) predicate.OIDCRefreshToken {
 	return predicate.OIDCRefreshToken(sql.FieldEQ(FieldUserID, v))
 }
 
-// ClientID applies equality check predicate on the "client_id" field. It's identical to ClientIDEQ.
-func ClientID(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldEQ(FieldClientID, v))
+// ClientRefID applies equality check predicate on the "client_ref_id" field. It's identical to ClientRefIDEQ.
+func ClientRefID(v uuid.UUID) predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(sql.FieldEQ(FieldClientRefID, v))
 }
 
 // Selector applies equality check predicate on the "selector" field. It's identical to SelectorEQ.
@@ -131,69 +131,24 @@ func UserIDNotIn(vs ...uuid.UUID) predicate.OIDCRefreshToken {
 	return predicate.OIDCRefreshToken(sql.FieldNotIn(FieldUserID, vs...))
 }
 
-// ClientIDEQ applies the EQ predicate on the "client_id" field.
-func ClientIDEQ(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldEQ(FieldClientID, v))
+// ClientRefIDEQ applies the EQ predicate on the "client_ref_id" field.
+func ClientRefIDEQ(v uuid.UUID) predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(sql.FieldEQ(FieldClientRefID, v))
 }
 
-// ClientIDNEQ applies the NEQ predicate on the "client_id" field.
-func ClientIDNEQ(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldNEQ(FieldClientID, v))
+// ClientRefIDNEQ applies the NEQ predicate on the "client_ref_id" field.
+func ClientRefIDNEQ(v uuid.UUID) predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(sql.FieldNEQ(FieldClientRefID, v))
 }
 
-// ClientIDIn applies the In predicate on the "client_id" field.
-func ClientIDIn(vs ...string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldIn(FieldClientID, vs...))
+// ClientRefIDIn applies the In predicate on the "client_ref_id" field.
+func ClientRefIDIn(vs ...uuid.UUID) predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(sql.FieldIn(FieldClientRefID, vs...))
 }
 
-// ClientIDNotIn applies the NotIn predicate on the "client_id" field.
-func ClientIDNotIn(vs ...string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldNotIn(FieldClientID, vs...))
-}
-
-// ClientIDGT applies the GT predicate on the "client_id" field.
-func ClientIDGT(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldGT(FieldClientID, v))
-}
-
-// ClientIDGTE applies the GTE predicate on the "client_id" field.
-func ClientIDGTE(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldGTE(FieldClientID, v))
-}
-
-// ClientIDLT applies the LT predicate on the "client_id" field.
-func ClientIDLT(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldLT(FieldClientID, v))
-}
-
-// ClientIDLTE applies the LTE predicate on the "client_id" field.
-func ClientIDLTE(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldLTE(FieldClientID, v))
-}
-
-// ClientIDContains applies the Contains predicate on the "client_id" field.
-func ClientIDContains(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldContains(FieldClientID, v))
-}
-
-// ClientIDHasPrefix applies the HasPrefix predicate on the "client_id" field.
-func ClientIDHasPrefix(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldHasPrefix(FieldClientID, v))
-}
-
-// ClientIDHasSuffix applies the HasSuffix predicate on the "client_id" field.
-func ClientIDHasSuffix(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldHasSuffix(FieldClientID, v))
-}
-
-// ClientIDEqualFold applies the EqualFold predicate on the "client_id" field.
-func ClientIDEqualFold(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldEqualFold(FieldClientID, v))
-}
-
-// ClientIDContainsFold applies the ContainsFold predicate on the "client_id" field.
-func ClientIDContainsFold(v string) predicate.OIDCRefreshToken {
-	return predicate.OIDCRefreshToken(sql.FieldContainsFold(FieldClientID, v))
+// ClientRefIDNotIn applies the NotIn predicate on the "client_ref_id" field.
+func ClientRefIDNotIn(vs ...uuid.UUID) predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(sql.FieldNotIn(FieldClientRefID, vs...))
 }
 
 // ScopesIsNil applies the IsNil predicate on the "scopes" field.
@@ -662,6 +617,29 @@ func HasChildren() predicate.OIDCRefreshToken {
 func HasChildrenWith(preds ...predicate.OIDCRefreshToken) predicate.OIDCRefreshToken {
 	return predicate.OIDCRefreshToken(func(s *sql.Selector) {
 		step := newChildrenStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasClient applies the HasEdge predicate on the "client" edge.
+func HasClient() predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, ClientTable, ClientColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasClientWith applies the HasEdge predicate on the "client" edge with a given conditions (other predicates).
+func HasClientWith(preds ...predicate.OIDCClient) predicate.OIDCRefreshToken {
+	return predicate.OIDCRefreshToken(func(s *sql.Selector) {
+		step := newClientStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

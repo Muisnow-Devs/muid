@@ -21,8 +21,6 @@ const (
 	FieldClientRefID = "client_ref_id"
 	// FieldScopes holds the string denoting the scopes field in the database.
 	FieldScopes = "scopes"
-	// FieldAuthorizedAt holds the string denoting the authorized_at field in the database.
-	FieldAuthorizedAt = "authorized_at"
 	// FieldLastUsedAt holds the string denoting the last_used_at field in the database.
 	FieldLastUsedAt = "last_used_at"
 	// FieldRevokedAt holds the string denoting the revoked_at field in the database.
@@ -31,6 +29,8 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// FieldAuthorizedAt holds the string denoting the authorized_at field in the database.
+	FieldAuthorizedAt = "authorized_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
 	EdgeUser = "user"
 	// EdgeClient holds the string denoting the client edge name in mutations.
@@ -59,11 +59,11 @@ var Columns = []string{
 	FieldUserID,
 	FieldClientRefID,
 	FieldScopes,
-	FieldAuthorizedAt,
 	FieldLastUsedAt,
 	FieldRevokedAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
+	FieldAuthorizedAt,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -79,14 +79,14 @@ func ValidColumn(column string) bool {
 var (
 	// DefaultScopes holds the default value on creation for the "scopes" field.
 	DefaultScopes []string
-	// DefaultAuthorizedAt holds the default value on creation for the "authorized_at" field.
-	DefaultAuthorizedAt func() time.Time
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
+	// DefaultAuthorizedAt holds the default value on creation for the "authorized_at" field.
+	DefaultAuthorizedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -109,11 +109,6 @@ func ByClientRefID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClientRefID, opts...).ToFunc()
 }
 
-// ByAuthorizedAt orders the results by the authorized_at field.
-func ByAuthorizedAt(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldAuthorizedAt, opts...).ToFunc()
-}
-
 // ByLastUsedAt orders the results by the last_used_at field.
 func ByLastUsedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastUsedAt, opts...).ToFunc()
@@ -132,6 +127,11 @@ func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByUpdatedAt orders the results by the updated_at field.
 func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
+}
+
+// ByAuthorizedAt orders the results by the authorized_at field.
+func ByAuthorizedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAuthorizedAt, opts...).ToFunc()
 }
 
 // ByUserField orders the results by user field.

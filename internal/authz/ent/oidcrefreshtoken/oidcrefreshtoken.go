@@ -17,8 +17,8 @@ const (
 	FieldID = "id"
 	// FieldUserID holds the string denoting the user_id field in the database.
 	FieldUserID = "user_id"
-	// FieldClientID holds the string denoting the client_id field in the database.
-	FieldClientID = "client_id"
+	// FieldClientRefID holds the string denoting the client_ref_id field in the database.
+	FieldClientRefID = "client_ref_id"
 	// FieldScopes holds the string denoting the scopes field in the database.
 	FieldScopes = "scopes"
 	// FieldSelector holds the string denoting the selector field in the database.
@@ -45,6 +45,8 @@ const (
 	EdgeParent = "parent"
 	// EdgeChildren holds the string denoting the children edge name in mutations.
 	EdgeChildren = "children"
+	// EdgeClient holds the string denoting the client edge name in mutations.
+	EdgeClient = "client"
 	// Table holds the table name of the oidcrefreshtoken in the database.
 	Table = "oidc_refresh_tokens"
 	// UserTable is the table that holds the user relation/edge.
@@ -62,13 +64,20 @@ const (
 	ChildrenTable = "oidc_refresh_tokens"
 	// ChildrenColumn is the table column denoting the children relation/edge.
 	ChildrenColumn = "parent_id"
+	// ClientTable is the table that holds the client relation/edge.
+	ClientTable = "oidc_refresh_tokens"
+	// ClientInverseTable is the table name for the OIDCClient entity.
+	// It exists in this package in order to avoid circular dependency with the "oidcclient" package.
+	ClientInverseTable = "oidc_clients"
+	// ClientColumn is the table column denoting the client relation/edge.
+	ClientColumn = "client_ref_id"
 )
 
 // Columns holds all SQL columns for oidcrefreshtoken fields.
 var Columns = []string{
 	FieldID,
 	FieldUserID,
-	FieldClientID,
+	FieldClientRefID,
 	FieldScopes,
 	FieldSelector,
 	FieldValidationHash,
@@ -92,8 +101,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// ClientIDValidator is a validator for the "client_id" field. It is called by the builders before save.
-	ClientIDValidator func(string) error
 	// SelectorValidator is a validator for the "selector" field. It is called by the builders before save.
 	SelectorValidator func(string) error
 	// ValidationHashValidator is a validator for the "validation_hash" field. It is called by the builders before save.
@@ -123,9 +130,9 @@ func ByUserID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
-// ByClientID orders the results by the client_id field.
-func ByClientID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldClientID, opts...).ToFunc()
+// ByClientRefID orders the results by the client_ref_id field.
+func ByClientRefID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldClientRefID, opts...).ToFunc()
 }
 
 // BySelector orders the results by the selector field.
@@ -195,6 +202,13 @@ func ByChildren(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newChildrenStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByClientField orders the results by client field.
+func ByClientField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newClientStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -214,5 +228,12 @@ func newChildrenStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
+	)
+}
+func newClientStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ClientInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, ClientTable, ClientColumn),
 	)
 }

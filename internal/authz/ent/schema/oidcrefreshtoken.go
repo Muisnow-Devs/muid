@@ -22,7 +22,7 @@ func (OIDCRefreshToken) Fields() []ent.Field {
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 
 		field.UUID("user_id", uuid.UUID{}).Immutable(),
-		field.String("client_id").NotEmpty().Immutable(),
+		field.UUID("client_ref_id", uuid.UUID{}).Immutable(),
 		field.Strings("scopes").Optional(),
 
 		field.String("selector").MaxLen(16).Unique().NotEmpty().Immutable(),
@@ -43,7 +43,7 @@ func (OIDCRefreshToken) Fields() []ent.Field {
 
 func (OIDCRefreshToken) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("user_id", "client_id"),
+		index.Fields("user_id", "client_ref_id"),
 		index.Fields("family_id"),
 		index.Fields("selector", "revoked_at", "expires_at"),
 	}
@@ -67,7 +67,7 @@ func (OIDCRefreshToken) Edges() []ent.Edge {
 		edge.From("client", OIDCClient.Type).
 			Ref("refresh_tokens").
 			Unique().
-			Field("client_id").
+			Field("client_ref_id").
 			Required().
 			Immutable(),
 	}

@@ -66,11 +66,6 @@ func ClientRefID(v uuid.UUID) predicate.OIDCGrant {
 	return predicate.OIDCGrant(sql.FieldEQ(FieldClientRefID, v))
 }
 
-// AuthorizedAt applies equality check predicate on the "authorized_at" field. It's identical to AuthorizedAtEQ.
-func AuthorizedAt(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldEQ(FieldAuthorizedAt, v))
-}
-
 // LastUsedAt applies equality check predicate on the "last_used_at" field. It's identical to LastUsedAtEQ.
 func LastUsedAt(v time.Time) predicate.OIDCGrant {
 	return predicate.OIDCGrant(sql.FieldEQ(FieldLastUsedAt, v))
@@ -89,6 +84,11 @@ func CreatedAt(v time.Time) predicate.OIDCGrant {
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.OIDCGrant {
 	return predicate.OIDCGrant(sql.FieldEQ(FieldUpdatedAt, v))
+}
+
+// AuthorizedAt applies equality check predicate on the "authorized_at" field. It's identical to AuthorizedAtEQ.
+func AuthorizedAt(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldEQ(FieldAuthorizedAt, v))
 }
 
 // UserIDEQ applies the EQ predicate on the "user_id" field.
@@ -129,46 +129,6 @@ func ClientRefIDIn(vs ...uuid.UUID) predicate.OIDCGrant {
 // ClientRefIDNotIn applies the NotIn predicate on the "client_ref_id" field.
 func ClientRefIDNotIn(vs ...uuid.UUID) predicate.OIDCGrant {
 	return predicate.OIDCGrant(sql.FieldNotIn(FieldClientRefID, vs...))
-}
-
-// AuthorizedAtEQ applies the EQ predicate on the "authorized_at" field.
-func AuthorizedAtEQ(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldEQ(FieldAuthorizedAt, v))
-}
-
-// AuthorizedAtNEQ applies the NEQ predicate on the "authorized_at" field.
-func AuthorizedAtNEQ(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldNEQ(FieldAuthorizedAt, v))
-}
-
-// AuthorizedAtIn applies the In predicate on the "authorized_at" field.
-func AuthorizedAtIn(vs ...time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldIn(FieldAuthorizedAt, vs...))
-}
-
-// AuthorizedAtNotIn applies the NotIn predicate on the "authorized_at" field.
-func AuthorizedAtNotIn(vs ...time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldNotIn(FieldAuthorizedAt, vs...))
-}
-
-// AuthorizedAtGT applies the GT predicate on the "authorized_at" field.
-func AuthorizedAtGT(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldGT(FieldAuthorizedAt, v))
-}
-
-// AuthorizedAtGTE applies the GTE predicate on the "authorized_at" field.
-func AuthorizedAtGTE(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldGTE(FieldAuthorizedAt, v))
-}
-
-// AuthorizedAtLT applies the LT predicate on the "authorized_at" field.
-func AuthorizedAtLT(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldLT(FieldAuthorizedAt, v))
-}
-
-// AuthorizedAtLTE applies the LTE predicate on the "authorized_at" field.
-func AuthorizedAtLTE(v time.Time) predicate.OIDCGrant {
-	return predicate.OIDCGrant(sql.FieldLTE(FieldAuthorizedAt, v))
 }
 
 // LastUsedAtEQ applies the EQ predicate on the "last_used_at" field.
@@ -349,6 +309,46 @@ func UpdatedAtLT(v time.Time) predicate.OIDCGrant {
 // UpdatedAtLTE applies the LTE predicate on the "updated_at" field.
 func UpdatedAtLTE(v time.Time) predicate.OIDCGrant {
 	return predicate.OIDCGrant(sql.FieldLTE(FieldUpdatedAt, v))
+}
+
+// AuthorizedAtEQ applies the EQ predicate on the "authorized_at" field.
+func AuthorizedAtEQ(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldEQ(FieldAuthorizedAt, v))
+}
+
+// AuthorizedAtNEQ applies the NEQ predicate on the "authorized_at" field.
+func AuthorizedAtNEQ(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldNEQ(FieldAuthorizedAt, v))
+}
+
+// AuthorizedAtIn applies the In predicate on the "authorized_at" field.
+func AuthorizedAtIn(vs ...time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldIn(FieldAuthorizedAt, vs...))
+}
+
+// AuthorizedAtNotIn applies the NotIn predicate on the "authorized_at" field.
+func AuthorizedAtNotIn(vs ...time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldNotIn(FieldAuthorizedAt, vs...))
+}
+
+// AuthorizedAtGT applies the GT predicate on the "authorized_at" field.
+func AuthorizedAtGT(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldGT(FieldAuthorizedAt, v))
+}
+
+// AuthorizedAtGTE applies the GTE predicate on the "authorized_at" field.
+func AuthorizedAtGTE(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldGTE(FieldAuthorizedAt, v))
+}
+
+// AuthorizedAtLT applies the LT predicate on the "authorized_at" field.
+func AuthorizedAtLT(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldLT(FieldAuthorizedAt, v))
+}
+
+// AuthorizedAtLTE applies the LTE predicate on the "authorized_at" field.
+func AuthorizedAtLTE(v time.Time) predicate.OIDCGrant {
+	return predicate.OIDCGrant(sql.FieldLTE(FieldAuthorizedAt, v))
 }
 
 // HasUser applies the HasEdge predicate on the "user" edge.

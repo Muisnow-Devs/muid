@@ -49,9 +49,11 @@ type OIDCClientEdges struct {
 	Secrets []*OIDCClientSecret `json:"secrets,omitempty"`
 	// Grants holds the value of the grants edge.
 	Grants []*OIDCGrant `json:"grants,omitempty"`
+	// RefreshTokens holds the value of the refresh_tokens edge.
+	RefreshTokens []*OIDCRefreshToken `json:"refresh_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // CallbackUrlsOrErr returns the CallbackUrls value or an error if the edge
@@ -79,6 +81,15 @@ func (e OIDCClientEdges) GrantsOrErr() ([]*OIDCGrant, error) {
 		return e.Grants, nil
 	}
 	return nil, &NotLoadedError{edge: "grants"}
+}
+
+// RefreshTokensOrErr returns the RefreshTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e OIDCClientEdges) RefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
+	if e.loadedTypes[3] {
+		return e.RefreshTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "refresh_tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -194,6 +205,11 @@ func (_m *OIDCClient) QuerySecrets() *OIDCClientSecretQuery {
 // QueryGrants queries the "grants" edge of the OIDCClient entity.
 func (_m *OIDCClient) QueryGrants() *OIDCGrantQuery {
 	return NewOIDCClientClient(_m.config).QueryGrants(_m)
+}
+
+// QueryRefreshTokens queries the "refresh_tokens" edge of the OIDCClient entity.
+func (_m *OIDCClient) QueryRefreshTokens() *OIDCRefreshTokenQuery {
+	return NewOIDCClientClient(_m.config).QueryRefreshTokens(_m)
 }
 
 // Update returns a builder for updating this OIDCClient.

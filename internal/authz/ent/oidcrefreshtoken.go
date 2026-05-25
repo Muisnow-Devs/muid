@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
@@ -22,8 +23,8 @@ type OIDCRefreshToken struct {
 	ID uuid.UUID `json:"id,omitempty"`
 	// UserID holds the value of the "user_id" field.
 	UserID uuid.UUID `json:"user_id,omitempty"`
-	// ClientID holds the value of the "client_id" field.
-	ClientID string `json:"client_id,omitempty"`
+	// ClientRefID holds the value of the "client_ref_id" field.
+	ClientRefID uuid.UUID `json:"client_ref_id,omitempty"`
 	// Scopes holds the value of the "scopes" field.
 	Scopes []string `json:"scopes,omitempty"`
 	// Selector holds the value of the "selector" field.
@@ -58,9 +59,11 @@ type OIDCRefreshTokenEdges struct {
 	Parent *OIDCRefreshToken `json:"parent,omitempty"`
 	// Children holds the value of the children edge.
 	Children []*OIDCRefreshToken `json:"children,omitempty"`
+	// Client holds the value of the client edge.
+	Client *OIDCClient `json:"client,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -94,6 +97,17 @@ func (e OIDCRefreshTokenEdges) ChildrenOrErr() ([]*OIDCRefreshToken, error) {
 	return nil, &NotLoadedError{edge: "children"}
 }
 
+// ClientOrErr returns the Client value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OIDCRefreshTokenEdges) ClientOrErr() (*OIDCClient, error) {
+	if e.Client != nil {
+		return e.Client, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: oidcclient.Label}
+	}
+	return nil, &NotLoadedError{edge: "client"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*OIDCRefreshToken) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -101,11 +115,11 @@ func (*OIDCRefreshToken) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case oidcrefreshtoken.FieldScopes, oidcrefreshtoken.FieldValidationHash:
 			values[i] = new([]byte)
-		case oidcrefreshtoken.FieldClientID, oidcrefreshtoken.FieldSelector:
+		case oidcrefreshtoken.FieldSelector:
 			values[i] = new(sql.NullString)
 		case oidcrefreshtoken.FieldCreatedAt, oidcrefreshtoken.FieldUpdatedAt, oidcrefreshtoken.FieldExpiresAt, oidcrefreshtoken.FieldUsedAt, oidcrefreshtoken.FieldRevokedAt:
 			values[i] = new(sql.NullTime)
-		case oidcrefreshtoken.FieldID, oidcrefreshtoken.FieldUserID, oidcrefreshtoken.FieldParentID, oidcrefreshtoken.FieldFamilyID:
+		case oidcrefreshtoken.FieldID, oidcrefreshtoken.FieldUserID, oidcrefreshtoken.FieldClientRefID, oidcrefreshtoken.FieldParentID, oidcrefreshtoken.FieldFamilyID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -134,11 +148,11 @@ func (_m *OIDCRefreshToken) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.UserID = *value
 			}
-		case oidcrefreshtoken.FieldClientID:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field client_id", values[i])
-			} else if value.Valid {
-				_m.ClientID = value.String
+		case oidcrefreshtoken.FieldClientRefID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field client_ref_id", values[i])
+			} else if value != nil {
+				_m.ClientRefID = *value
 			}
 		case oidcrefreshtoken.FieldScopes:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -230,6 +244,11 @@ func (_m *OIDCRefreshToken) QueryChildren() *OIDCRefreshTokenQuery {
 	return NewOIDCRefreshTokenClient(_m.config).QueryChildren(_m)
 }
 
+// QueryClient queries the "client" edge of the OIDCRefreshToken entity.
+func (_m *OIDCRefreshToken) QueryClient() *OIDCClientQuery {
+	return NewOIDCRefreshTokenClient(_m.config).QueryClient(_m)
+}
+
 // Update returns a builder for updating this OIDCRefreshToken.
 // Note that you need to call OIDCRefreshToken.Unwrap() before calling this method if this OIDCRefreshToken
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -256,8 +275,8 @@ func (_m *OIDCRefreshToken) String() string {
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
-	builder.WriteString("client_id=")
-	builder.WriteString(_m.ClientID)
+	builder.WriteString("client_ref_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ClientRefID))
 	builder.WriteString(", ")
 	builder.WriteString("scopes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Scopes))

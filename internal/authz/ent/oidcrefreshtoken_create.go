@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
@@ -28,9 +29,9 @@ func (_c *OIDCRefreshTokenCreate) SetUserID(v uuid.UUID) *OIDCRefreshTokenCreate
 	return _c
 }
 
-// SetClientID sets the "client_id" field.
-func (_c *OIDCRefreshTokenCreate) SetClientID(v string) *OIDCRefreshTokenCreate {
-	_c.mutation.SetClientID(v)
+// SetClientRefID sets the "client_ref_id" field.
+func (_c *OIDCRefreshTokenCreate) SetClientRefID(v uuid.UUID) *OIDCRefreshTokenCreate {
+	_c.mutation.SetClientRefID(v)
 	return _c
 }
 
@@ -181,6 +182,17 @@ func (_c *OIDCRefreshTokenCreate) AddChildren(v ...*OIDCRefreshToken) *OIDCRefre
 	return _c.AddChildIDs(ids...)
 }
 
+// SetClientID sets the "client" edge to the OIDCClient entity by ID.
+func (_c *OIDCRefreshTokenCreate) SetClientID(id uuid.UUID) *OIDCRefreshTokenCreate {
+	_c.mutation.SetClientID(id)
+	return _c
+}
+
+// SetClient sets the "client" edge to the OIDCClient entity.
+func (_c *OIDCRefreshTokenCreate) SetClient(v *OIDCClient) *OIDCRefreshTokenCreate {
+	return _c.SetClientID(v.ID)
+}
+
 // Mutation returns the OIDCRefreshTokenMutation object of the builder.
 func (_c *OIDCRefreshTokenCreate) Mutation() *OIDCRefreshTokenMutation {
 	return _c.mutation
@@ -239,13 +251,8 @@ func (_c *OIDCRefreshTokenCreate) check() error {
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "OIDCRefreshToken.user_id"`)}
 	}
-	if _, ok := _c.mutation.ClientID(); !ok {
-		return &ValidationError{Name: "client_id", err: errors.New(`ent: missing required field "OIDCRefreshToken.client_id"`)}
-	}
-	if v, ok := _c.mutation.ClientID(); ok {
-		if err := oidcrefreshtoken.ClientIDValidator(v); err != nil {
-			return &ValidationError{Name: "client_id", err: fmt.Errorf(`ent: validator failed for field "OIDCRefreshToken.client_id": %w`, err)}
-		}
+	if _, ok := _c.mutation.ClientRefID(); !ok {
+		return &ValidationError{Name: "client_ref_id", err: errors.New(`ent: missing required field "OIDCRefreshToken.client_ref_id"`)}
 	}
 	if _, ok := _c.mutation.Selector(); !ok {
 		return &ValidationError{Name: "selector", err: errors.New(`ent: missing required field "OIDCRefreshToken.selector"`)}
@@ -277,6 +284,9 @@ func (_c *OIDCRefreshTokenCreate) check() error {
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "OIDCRefreshToken.user"`)}
+	}
+	if len(_c.mutation.ClientIDs()) == 0 {
+		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OIDCRefreshToken.client"`)}
 	}
 	return nil
 }
@@ -312,10 +322,6 @@ func (_c *OIDCRefreshTokenCreate) createSpec() (*OIDCRefreshToken, *sqlgraph.Cre
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := _c.mutation.ClientID(); ok {
-		_spec.SetField(oidcrefreshtoken.FieldClientID, field.TypeString, value)
-		_node.ClientID = value
 	}
 	if value, ok := _c.mutation.Scopes(); ok {
 		_spec.SetField(oidcrefreshtoken.FieldScopes, field.TypeJSON, value)
@@ -401,6 +407,23 @@ func (_c *OIDCRefreshTokenCreate) createSpec() (*OIDCRefreshToken, *sqlgraph.Cre
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.ClientIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oidcrefreshtoken.ClientTable,
+			Columns: []string{oidcrefreshtoken.ClientColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclient.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.ClientRefID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

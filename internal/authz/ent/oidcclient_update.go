@@ -17,6 +17,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
+	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
@@ -158,6 +159,21 @@ func (_u *OIDCClientUpdate) AddGrants(v ...*OIDCGrant) *OIDCClientUpdate {
 	return _u.AddGrantIDs(ids...)
 }
 
+// AddRefreshTokenIDs adds the "refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
+func (_u *OIDCClientUpdate) AddRefreshTokenIDs(ids ...uuid.UUID) *OIDCClientUpdate {
+	_u.mutation.AddRefreshTokenIDs(ids...)
+	return _u
+}
+
+// AddRefreshTokens adds the "refresh_tokens" edges to the OIDCRefreshToken entity.
+func (_u *OIDCClientUpdate) AddRefreshTokens(v ...*OIDCRefreshToken) *OIDCClientUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRefreshTokenIDs(ids...)
+}
+
 // Mutation returns the OIDCClientMutation object of the builder.
 func (_u *OIDCClientUpdate) Mutation() *OIDCClientMutation {
 	return _u.mutation
@@ -224,6 +240,27 @@ func (_u *OIDCClientUpdate) RemoveGrants(v ...*OIDCGrant) *OIDCClientUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGrantIDs(ids...)
+}
+
+// ClearRefreshTokens clears all "refresh_tokens" edges to the OIDCRefreshToken entity.
+func (_u *OIDCClientUpdate) ClearRefreshTokens() *OIDCClientUpdate {
+	_u.mutation.ClearRefreshTokens()
+	return _u
+}
+
+// RemoveRefreshTokenIDs removes the "refresh_tokens" edge to OIDCRefreshToken entities by IDs.
+func (_u *OIDCClientUpdate) RemoveRefreshTokenIDs(ids ...uuid.UUID) *OIDCClientUpdate {
+	_u.mutation.RemoveRefreshTokenIDs(ids...)
+	return _u
+}
+
+// RemoveRefreshTokens removes "refresh_tokens" edges to OIDCRefreshToken entities.
+func (_u *OIDCClientUpdate) RemoveRefreshTokens(v ...*OIDCRefreshToken) *OIDCClientUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRefreshTokenIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -450,6 +487,51 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.RefreshTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRefreshTokensIDs(); len(nodes) > 0 && !_u.mutation.RefreshTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RefreshTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{oidcclient.Label}
@@ -595,6 +677,21 @@ func (_u *OIDCClientUpdateOne) AddGrants(v ...*OIDCGrant) *OIDCClientUpdateOne {
 	return _u.AddGrantIDs(ids...)
 }
 
+// AddRefreshTokenIDs adds the "refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
+func (_u *OIDCClientUpdateOne) AddRefreshTokenIDs(ids ...uuid.UUID) *OIDCClientUpdateOne {
+	_u.mutation.AddRefreshTokenIDs(ids...)
+	return _u
+}
+
+// AddRefreshTokens adds the "refresh_tokens" edges to the OIDCRefreshToken entity.
+func (_u *OIDCClientUpdateOne) AddRefreshTokens(v ...*OIDCRefreshToken) *OIDCClientUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddRefreshTokenIDs(ids...)
+}
+
 // Mutation returns the OIDCClientMutation object of the builder.
 func (_u *OIDCClientUpdateOne) Mutation() *OIDCClientMutation {
 	return _u.mutation
@@ -661,6 +758,27 @@ func (_u *OIDCClientUpdateOne) RemoveGrants(v ...*OIDCGrant) *OIDCClientUpdateOn
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveGrantIDs(ids...)
+}
+
+// ClearRefreshTokens clears all "refresh_tokens" edges to the OIDCRefreshToken entity.
+func (_u *OIDCClientUpdateOne) ClearRefreshTokens() *OIDCClientUpdateOne {
+	_u.mutation.ClearRefreshTokens()
+	return _u
+}
+
+// RemoveRefreshTokenIDs removes the "refresh_tokens" edge to OIDCRefreshToken entities by IDs.
+func (_u *OIDCClientUpdateOne) RemoveRefreshTokenIDs(ids ...uuid.UUID) *OIDCClientUpdateOne {
+	_u.mutation.RemoveRefreshTokenIDs(ids...)
+	return _u
+}
+
+// RemoveRefreshTokens removes "refresh_tokens" edges to OIDCRefreshToken entities.
+func (_u *OIDCClientUpdateOne) RemoveRefreshTokens(v ...*OIDCRefreshToken) *OIDCClientUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveRefreshTokenIDs(ids...)
 }
 
 // Where appends a list predicates to the OIDCClientUpdate builder.
@@ -910,6 +1028,51 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.RefreshTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedRefreshTokensIDs(); len(nodes) > 0 && !_u.mutation.RefreshTokensCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RefreshTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

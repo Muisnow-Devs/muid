@@ -38,6 +38,7 @@ func (OIDCClient) Fields() []ent.Field {
 func (OIDCClient) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("enabled", "deleted_at"),
+		index.Fields("client_id"),
 	}
 }
 
@@ -47,6 +48,6 @@ func (OIDCClient) Edges() []ent.Edge {
 		edge.To("callback_urls", OIDCCallbackURL.Type),
 		edge.To("secrets", OIDCClientSecret.Type),
 		edge.To("grants", OIDCGrant.Type),
-		edge.To("refresh_token", OIDCRefreshToken.Type),
+		edge.To("refresh_tokens", OIDCRefreshToken.Type),
 	}
 }

@@ -60,6 +60,11 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{OidcClientsColumns[8], OidcClientsColumns[7]},
 			},
+			{
+				Name:    "oidcclient_client_id",
+				Unique:  false,
+				Columns: []*schema.Column{OidcClientsColumns[1]},
+			},
 		},
 	}
 	// OidcClientSecretsColumns holds the columns for the "oidc_client_secrets" table.
@@ -96,11 +101,11 @@ var (
 	OidcGrantsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "scopes", Type: field.TypeJSON},
-		{Name: "authorized_at", Type: field.TypeTime},
 		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "authorized_at", Type: field.TypeTime},
 		{Name: "client_ref_id", Type: field.TypeUUID},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
@@ -132,14 +137,13 @@ var (
 			{
 				Name:    "oidcgrant_client_ref_id_revoked_at",
 				Unique:  false,
-				Columns: []*schema.Column{OidcGrantsColumns[7], OidcGrantsColumns[4]},
+				Columns: []*schema.Column{OidcGrantsColumns[7], OidcGrantsColumns[3]},
 			},
 		},
 	}
 	// OidcRefreshTokensColumns holds the columns for the "oidc_refresh_tokens" table.
 	OidcRefreshTokensColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "client_id", Type: field.TypeString},
 		{Name: "scopes", Type: field.TypeJSON, Nullable: true},
 		{Name: "selector", Type: field.TypeString, Unique: true, Size: 16},
 		{Name: "validation_hash", Type: field.TypeBytes, Size: 32},
@@ -149,6 +153,7 @@ var (
 		{Name: "expires_at", Type: field.TypeTime},
 		{Name: "used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "client_ref_id", Type: field.TypeUUID},
 		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
@@ -158,6 +163,12 @@ var (
 		Columns:    OidcRefreshTokensColumns,
 		PrimaryKey: []*schema.Column{OidcRefreshTokensColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "oidc_refresh_tokens_oidc_clients_refresh_tokens",
+				Columns:    []*schema.Column{OidcRefreshTokensColumns[10]},
+				RefColumns: []*schema.Column{OidcClientsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
 			{
 				Symbol:     "oidc_refresh_tokens_oidc_refresh_tokens_children",
 				Columns:    []*schema.Column{OidcRefreshTokensColumns[11]},
@@ -173,19 +184,19 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "oidcrefreshtoken_user_id_client_id",
+				Name:    "oidcrefreshtoken_user_id_client_ref_id",
 				Unique:  false,
-				Columns: []*schema.Column{OidcRefreshTokensColumns[12], OidcRefreshTokensColumns[1]},
+				Columns: []*schema.Column{OidcRefreshTokensColumns[12], OidcRefreshTokensColumns[10]},
 			},
 			{
 				Name:    "oidcrefreshtoken_family_id",
 				Unique:  false,
-				Columns: []*schema.Column{OidcRefreshTokensColumns[5]},
+				Columns: []*schema.Column{OidcRefreshTokensColumns[4]},
 			},
 			{
 				Name:    "oidcrefreshtoken_selector_revoked_at_expires_at",
 				Unique:  false,
-				Columns: []*schema.Column{OidcRefreshTokensColumns[3], OidcRefreshTokensColumns[10], OidcRefreshTokensColumns[8]},
+				Columns: []*schema.Column{OidcRefreshTokensColumns[2], OidcRefreshTokensColumns[9], OidcRefreshTokensColumns[7]},
 			},
 		},
 	}
@@ -217,6 +228,7 @@ func init() {
 	OidcClientSecretsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[1].RefTable = UserRefsTable
-	OidcRefreshTokensTable.ForeignKeys[0].RefTable = OidcRefreshTokensTable
-	OidcRefreshTokensTable.ForeignKeys[1].RefTable = UserRefsTable
+	OidcRefreshTokensTable.ForeignKeys[0].RefTable = OidcClientsTable
+	OidcRefreshTokensTable.ForeignKeys[1].RefTable = OidcRefreshTokensTable
+	OidcRefreshTokensTable.ForeignKeys[2].RefTable = UserRefsTable
 }

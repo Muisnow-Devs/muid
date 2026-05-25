@@ -17,19 +17,21 @@ import (
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
+	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
 // OIDCClientQuery is the builder for querying OIDCClient entities.
 type OIDCClientQuery struct {
 	config
-	ctx              *QueryContext
-	order            []oidcclient.OrderOption
-	inters           []Interceptor
-	predicates       []predicate.OIDCClient
-	withCallbackUrls *OIDCCallbackURLQuery
-	withSecrets      *OIDCClientSecretQuery
-	withGrants       *OIDCGrantQuery
+	ctx               *QueryContext
+	order             []oidcclient.OrderOption
+	inters            []Interceptor
+	predicates        []predicate.OIDCClient
+	withCallbackUrls  *OIDCCallbackURLQuery
+	withSecrets       *OIDCClientSecretQuery
+	withGrants        *OIDCGrantQuery
+	withRefreshTokens *OIDCRefreshTokenQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +127,28 @@ func (_q *OIDCClientQuery) QueryGrants() *OIDCGrantQuery {
 			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, selector),
 			sqlgraph.To(oidcgrant.Table, oidcgrant.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.GrantsTable, oidcclient.GrantsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRefreshTokens chains the current query on the "refresh_tokens" edge.
+func (_q *OIDCClientQuery) QueryRefreshTokens() *OIDCRefreshTokenQuery {
+	query := (&OIDCRefreshTokenClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, selector),
+			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.RefreshTokensTable, oidcclient.RefreshTokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -319,14 +343,15 @@ func (_q *OIDCClientQuery) Clone() *OIDCClientQuery {
 		return nil
 	}
 	return &OIDCClientQuery{
-		config:           _q.config,
-		ctx:              _q.ctx.Clone(),
-		order:            append([]oidcclient.OrderOption{}, _q.order...),
-		inters:           append([]Interceptor{}, _q.inters...),
-		predicates:       append([]predicate.OIDCClient{}, _q.predicates...),
-		withCallbackUrls: _q.withCallbackUrls.Clone(),
-		withSecrets:      _q.withSecrets.Clone(),
-		withGrants:       _q.withGrants.Clone(),
+		config:            _q.config,
+		ctx:               _q.ctx.Clone(),
+		order:             append([]oidcclient.OrderOption{}, _q.order...),
+		inters:            append([]Interceptor{}, _q.inters...),
+		predicates:        append([]predicate.OIDCClient{}, _q.predicates...),
+		withCallbackUrls:  _q.withCallbackUrls.Clone(),
+		withSecrets:       _q.withSecrets.Clone(),
+		withGrants:        _q.withGrants.Clone(),
+		withRefreshTokens: _q.withRefreshTokens.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +388,17 @@ func (_q *OIDCClientQuery) WithGrants(opts ...func(*OIDCGrantQuery)) *OIDCClient
 		opt(query)
 	}
 	_q.withGrants = query
+	return _q
+}
+
+// WithRefreshTokens tells the query-builder to eager-load the nodes that are connected to
+// the "refresh_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OIDCClientQuery) WithRefreshTokens(opts ...func(*OIDCRefreshTokenQuery)) *OIDCClientQuery {
+	query := (&OIDCRefreshTokenClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRefreshTokens = query
 	return _q
 }
 
@@ -444,10 +480,11 @@ func (_q *OIDCClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 	var (
 		nodes       = []*OIDCClient{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withCallbackUrls != nil,
 			_q.withSecrets != nil,
 			_q.withGrants != nil,
+			_q.withRefreshTokens != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -486,6 +523,13 @@ func (_q *OIDCClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 		if err := _q.loadGrants(ctx, query, nodes,
 			func(n *OIDCClient) { n.Edges.Grants = []*OIDCGrant{} },
 			func(n *OIDCClient, e *OIDCGrant) { n.Edges.Grants = append(n.Edges.Grants, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withRefreshTokens; query != nil {
+		if err := _q.loadRefreshTokens(ctx, query, nodes,
+			func(n *OIDCClient) { n.Edges.RefreshTokens = []*OIDCRefreshToken{} },
+			func(n *OIDCClient, e *OIDCRefreshToken) { n.Edges.RefreshTokens = append(n.Edges.RefreshTokens, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -567,6 +611,36 @@ func (_q *OIDCClientQuery) loadGrants(ctx context.Context, query *OIDCGrantQuery
 	}
 	query.Where(predicate.OIDCGrant(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(oidcclient.GrantsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.ClientRefID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "client_ref_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *OIDCClientQuery) loadRefreshTokens(ctx context.Context, query *OIDCRefreshTokenQuery, nodes []*OIDCClient, init func(*OIDCClient), assign func(*OIDCClient, *OIDCRefreshToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*OIDCClient)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(oidcrefreshtoken.FieldClientRefID)
+	}
+	query.Where(predicate.OIDCRefreshToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(oidcclient.RefreshTokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

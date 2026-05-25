@@ -15,6 +15,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
+	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 )
 
 // OIDCClientCreate is the builder for creating a OIDCClient entity.
@@ -169,6 +170,21 @@ func (_c *OIDCClientCreate) AddGrants(v ...*OIDCGrant) *OIDCClientCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddGrantIDs(ids...)
+}
+
+// AddRefreshTokenIDs adds the "refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
+func (_c *OIDCClientCreate) AddRefreshTokenIDs(ids ...uuid.UUID) *OIDCClientCreate {
+	_c.mutation.AddRefreshTokenIDs(ids...)
+	return _c
+}
+
+// AddRefreshTokens adds the "refresh_tokens" edges to the OIDCRefreshToken entity.
+func (_c *OIDCClientCreate) AddRefreshTokens(v ...*OIDCRefreshToken) *OIDCClientCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRefreshTokenIDs(ids...)
 }
 
 // Mutation returns the OIDCClientMutation object of the builder.
@@ -378,6 +394,22 @@ func (_c *OIDCClientCreate) createSpec() (*OIDCClient, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RefreshTokensIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.RefreshTokensTable,
+			Columns: []string{oidcclient.RefreshTokensColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

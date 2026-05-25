@@ -190,6 +190,9 @@ func (_u *OIDCRefreshTokenUpdate) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OIDCRefreshToken.user"`)
 	}
+	if _u.mutation.ClientCleared() && len(_u.mutation.ClientIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OIDCRefreshToken.client"`)
+	}
 	return nil
 }
 
@@ -471,6 +474,9 @@ func (_u *OIDCRefreshTokenUpdateOne) defaults() {
 func (_u *OIDCRefreshTokenUpdateOne) check() error {
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OIDCRefreshToken.user"`)
+	}
+	if _u.mutation.ClientCleared() && len(_u.mutation.ClientIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OIDCRefreshToken.client"`)
 	}
 	return nil
 }

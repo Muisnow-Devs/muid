@@ -602,31 +602,34 @@ func (m *OIDCCallbackURLMutation) ResetEdge(name string) error {
 // OIDCClientMutation represents an operation that mutates the OIDCClient nodes in the graph.
 type OIDCClientMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *uuid.UUID
-	client_id            *string
-	client_name          *string
-	client_type          *oidcclient.ClientType
-	scopes               *[]string
-	appendscopes         []string
-	created_at           *time.Time
-	updated_at           *time.Time
-	deleted_at           *time.Time
-	enabled              *bool
-	clearedFields        map[string]struct{}
-	callback_urls        map[uuid.UUID]struct{}
-	removedcallback_urls map[uuid.UUID]struct{}
-	clearedcallback_urls bool
-	secrets              map[uuid.UUID]struct{}
-	removedsecrets       map[uuid.UUID]struct{}
-	clearedsecrets       bool
-	grants               map[uuid.UUID]struct{}
-	removedgrants        map[uuid.UUID]struct{}
-	clearedgrants        bool
-	done                 bool
-	oldValue             func(context.Context) (*OIDCClient, error)
-	predicates           []predicate.OIDCClient
+	op                    Op
+	typ                   string
+	id                    *uuid.UUID
+	client_id             *string
+	client_name           *string
+	client_type           *oidcclient.ClientType
+	scopes                *[]string
+	appendscopes          []string
+	created_at            *time.Time
+	updated_at            *time.Time
+	deleted_at            *time.Time
+	enabled               *bool
+	clearedFields         map[string]struct{}
+	callback_urls         map[uuid.UUID]struct{}
+	removedcallback_urls  map[uuid.UUID]struct{}
+	clearedcallback_urls  bool
+	secrets               map[uuid.UUID]struct{}
+	removedsecrets        map[uuid.UUID]struct{}
+	clearedsecrets        bool
+	grants                map[uuid.UUID]struct{}
+	removedgrants         map[uuid.UUID]struct{}
+	clearedgrants         bool
+	refresh_tokens        map[uuid.UUID]struct{}
+	removedrefresh_tokens map[uuid.UUID]struct{}
+	clearedrefresh_tokens bool
+	done                  bool
+	oldValue              func(context.Context) (*OIDCClient, error)
+	predicates            []predicate.OIDCClient
 }
 
 var _ ent.Mutation = (*OIDCClientMutation)(nil)
@@ -1211,6 +1214,60 @@ func (m *OIDCClientMutation) ResetGrants() {
 	m.removedgrants = nil
 }
 
+// AddRefreshTokenIDs adds the "refresh_tokens" edge to the OIDCRefreshToken entity by ids.
+func (m *OIDCClientMutation) AddRefreshTokenIDs(ids ...uuid.UUID) {
+	if m.refresh_tokens == nil {
+		m.refresh_tokens = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.refresh_tokens[ids[i]] = struct{}{}
+	}
+}
+
+// ClearRefreshTokens clears the "refresh_tokens" edge to the OIDCRefreshToken entity.
+func (m *OIDCClientMutation) ClearRefreshTokens() {
+	m.clearedrefresh_tokens = true
+}
+
+// RefreshTokensCleared reports if the "refresh_tokens" edge to the OIDCRefreshToken entity was cleared.
+func (m *OIDCClientMutation) RefreshTokensCleared() bool {
+	return m.clearedrefresh_tokens
+}
+
+// RemoveRefreshTokenIDs removes the "refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
+func (m *OIDCClientMutation) RemoveRefreshTokenIDs(ids ...uuid.UUID) {
+	if m.removedrefresh_tokens == nil {
+		m.removedrefresh_tokens = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.refresh_tokens, ids[i])
+		m.removedrefresh_tokens[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedRefreshTokens returns the removed IDs of the "refresh_tokens" edge to the OIDCRefreshToken entity.
+func (m *OIDCClientMutation) RemovedRefreshTokensIDs() (ids []uuid.UUID) {
+	for id := range m.removedrefresh_tokens {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// RefreshTokensIDs returns the "refresh_tokens" edge IDs in the mutation.
+func (m *OIDCClientMutation) RefreshTokensIDs() (ids []uuid.UUID) {
+	for id := range m.refresh_tokens {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetRefreshTokens resets all changes to the "refresh_tokens" edge.
+func (m *OIDCClientMutation) ResetRefreshTokens() {
+	m.refresh_tokens = nil
+	m.clearedrefresh_tokens = false
+	m.removedrefresh_tokens = nil
+}
+
 // Where appends a list predicates to the OIDCClientMutation builder.
 func (m *OIDCClientMutation) Where(ps ...predicate.OIDCClient) {
 	m.predicates = append(m.predicates, ps...)
@@ -1472,7 +1529,7 @@ func (m *OIDCClientMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OIDCClientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.callback_urls != nil {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1481,6 +1538,9 @@ func (m *OIDCClientMutation) AddedEdges() []string {
 	}
 	if m.grants != nil {
 		edges = append(edges, oidcclient.EdgeGrants)
+	}
+	if m.refresh_tokens != nil {
+		edges = append(edges, oidcclient.EdgeRefreshTokens)
 	}
 	return edges
 }
@@ -1507,13 +1567,19 @@ func (m *OIDCClientMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oidcclient.EdgeRefreshTokens:
+		ids := make([]ent.Value, 0, len(m.refresh_tokens))
+		for id := range m.refresh_tokens {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OIDCClientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedcallback_urls != nil {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1522,6 +1588,9 @@ func (m *OIDCClientMutation) RemovedEdges() []string {
 	}
 	if m.removedgrants != nil {
 		edges = append(edges, oidcclient.EdgeGrants)
+	}
+	if m.removedrefresh_tokens != nil {
+		edges = append(edges, oidcclient.EdgeRefreshTokens)
 	}
 	return edges
 }
@@ -1548,13 +1617,19 @@ func (m *OIDCClientMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oidcclient.EdgeRefreshTokens:
+		ids := make([]ent.Value, 0, len(m.removedrefresh_tokens))
+		for id := range m.removedrefresh_tokens {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OIDCClientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.clearedcallback_urls {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1563,6 +1638,9 @@ func (m *OIDCClientMutation) ClearedEdges() []string {
 	}
 	if m.clearedgrants {
 		edges = append(edges, oidcclient.EdgeGrants)
+	}
+	if m.clearedrefresh_tokens {
+		edges = append(edges, oidcclient.EdgeRefreshTokens)
 	}
 	return edges
 }
@@ -1577,6 +1655,8 @@ func (m *OIDCClientMutation) EdgeCleared(name string) bool {
 		return m.clearedsecrets
 	case oidcclient.EdgeGrants:
 		return m.clearedgrants
+	case oidcclient.EdgeRefreshTokens:
+		return m.clearedrefresh_tokens
 	}
 	return false
 }
@@ -1601,6 +1681,9 @@ func (m *OIDCClientMutation) ResetEdge(name string) error {
 		return nil
 	case oidcclient.EdgeGrants:
 		m.ResetGrants()
+		return nil
+	case oidcclient.EdgeRefreshTokens:
+		m.ResetRefreshTokens()
 		return nil
 	}
 	return fmt.Errorf("unknown OIDCClient edge %s", name)
@@ -2270,11 +2353,11 @@ type OIDCGrantMutation struct {
 	id            *uuid.UUID
 	scopes        *[]string
 	appendscopes  []string
-	authorized_at *time.Time
 	last_used_at  *time.Time
 	revoked_at    *time.Time
 	created_at    *time.Time
 	updated_at    *time.Time
+	authorized_at *time.Time
 	clearedFields map[string]struct{}
 	user          *uuid.UUID
 	cleareduser   bool
@@ -2512,42 +2595,6 @@ func (m *OIDCGrantMutation) ResetScopes() {
 	m.appendscopes = nil
 }
 
-// SetAuthorizedAt sets the "authorized_at" field.
-func (m *OIDCGrantMutation) SetAuthorizedAt(t time.Time) {
-	m.authorized_at = &t
-}
-
-// AuthorizedAt returns the value of the "authorized_at" field in the mutation.
-func (m *OIDCGrantMutation) AuthorizedAt() (r time.Time, exists bool) {
-	v := m.authorized_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldAuthorizedAt returns the old "authorized_at" field's value of the OIDCGrant entity.
-// If the OIDCGrant object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OIDCGrantMutation) OldAuthorizedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldAuthorizedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldAuthorizedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldAuthorizedAt: %w", err)
-	}
-	return oldValue.AuthorizedAt, nil
-}
-
-// ResetAuthorizedAt resets all changes to the "authorized_at" field.
-func (m *OIDCGrantMutation) ResetAuthorizedAt() {
-	m.authorized_at = nil
-}
-
 // SetLastUsedAt sets the "last_used_at" field.
 func (m *OIDCGrantMutation) SetLastUsedAt(t time.Time) {
 	m.last_used_at = &t
@@ -2718,6 +2765,42 @@ func (m *OIDCGrantMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// SetAuthorizedAt sets the "authorized_at" field.
+func (m *OIDCGrantMutation) SetAuthorizedAt(t time.Time) {
+	m.authorized_at = &t
+}
+
+// AuthorizedAt returns the value of the "authorized_at" field in the mutation.
+func (m *OIDCGrantMutation) AuthorizedAt() (r time.Time, exists bool) {
+	v := m.authorized_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAuthorizedAt returns the old "authorized_at" field's value of the OIDCGrant entity.
+// If the OIDCGrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCGrantMutation) OldAuthorizedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAuthorizedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAuthorizedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAuthorizedAt: %w", err)
+	}
+	return oldValue.AuthorizedAt, nil
+}
+
+// ResetAuthorizedAt resets all changes to the "authorized_at" field.
+func (m *OIDCGrantMutation) ResetAuthorizedAt() {
+	m.authorized_at = nil
+}
+
 // ClearUser clears the "user" edge to the UserRef entity.
 func (m *OIDCGrantMutation) ClearUser() {
 	m.cleareduser = true
@@ -2829,9 +2912,6 @@ func (m *OIDCGrantMutation) Fields() []string {
 	if m.scopes != nil {
 		fields = append(fields, oidcgrant.FieldScopes)
 	}
-	if m.authorized_at != nil {
-		fields = append(fields, oidcgrant.FieldAuthorizedAt)
-	}
 	if m.last_used_at != nil {
 		fields = append(fields, oidcgrant.FieldLastUsedAt)
 	}
@@ -2843,6 +2923,9 @@ func (m *OIDCGrantMutation) Fields() []string {
 	}
 	if m.updated_at != nil {
 		fields = append(fields, oidcgrant.FieldUpdatedAt)
+	}
+	if m.authorized_at != nil {
+		fields = append(fields, oidcgrant.FieldAuthorizedAt)
 	}
 	return fields
 }
@@ -2858,8 +2941,6 @@ func (m *OIDCGrantMutation) Field(name string) (ent.Value, bool) {
 		return m.ClientRefID()
 	case oidcgrant.FieldScopes:
 		return m.Scopes()
-	case oidcgrant.FieldAuthorizedAt:
-		return m.AuthorizedAt()
 	case oidcgrant.FieldLastUsedAt:
 		return m.LastUsedAt()
 	case oidcgrant.FieldRevokedAt:
@@ -2868,6 +2949,8 @@ func (m *OIDCGrantMutation) Field(name string) (ent.Value, bool) {
 		return m.CreatedAt()
 	case oidcgrant.FieldUpdatedAt:
 		return m.UpdatedAt()
+	case oidcgrant.FieldAuthorizedAt:
+		return m.AuthorizedAt()
 	}
 	return nil, false
 }
@@ -2883,8 +2966,6 @@ func (m *OIDCGrantMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldClientRefID(ctx)
 	case oidcgrant.FieldScopes:
 		return m.OldScopes(ctx)
-	case oidcgrant.FieldAuthorizedAt:
-		return m.OldAuthorizedAt(ctx)
 	case oidcgrant.FieldLastUsedAt:
 		return m.OldLastUsedAt(ctx)
 	case oidcgrant.FieldRevokedAt:
@@ -2893,6 +2974,8 @@ func (m *OIDCGrantMutation) OldField(ctx context.Context, name string) (ent.Valu
 		return m.OldCreatedAt(ctx)
 	case oidcgrant.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
+	case oidcgrant.FieldAuthorizedAt:
+		return m.OldAuthorizedAt(ctx)
 	}
 	return nil, fmt.Errorf("unknown OIDCGrant field %s", name)
 }
@@ -2923,13 +3006,6 @@ func (m *OIDCGrantMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetScopes(v)
 		return nil
-	case oidcgrant.FieldAuthorizedAt:
-		v, ok := value.(time.Time)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetAuthorizedAt(v)
-		return nil
 	case oidcgrant.FieldLastUsedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -2957,6 +3033,13 @@ func (m *OIDCGrantMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUpdatedAt(v)
+		return nil
+	case oidcgrant.FieldAuthorizedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAuthorizedAt(v)
 		return nil
 	}
 	return fmt.Errorf("unknown OIDCGrant field %s", name)
@@ -3031,9 +3114,6 @@ func (m *OIDCGrantMutation) ResetField(name string) error {
 	case oidcgrant.FieldScopes:
 		m.ResetScopes()
 		return nil
-	case oidcgrant.FieldAuthorizedAt:
-		m.ResetAuthorizedAt()
-		return nil
 	case oidcgrant.FieldLastUsedAt:
 		m.ResetLastUsedAt()
 		return nil
@@ -3045,6 +3125,9 @@ func (m *OIDCGrantMutation) ResetField(name string) error {
 		return nil
 	case oidcgrant.FieldUpdatedAt:
 		m.ResetUpdatedAt()
+		return nil
+	case oidcgrant.FieldAuthorizedAt:
+		m.ResetAuthorizedAt()
 		return nil
 	}
 	return fmt.Errorf("unknown OIDCGrant field %s", name)
@@ -3148,7 +3231,6 @@ type OIDCRefreshTokenMutation struct {
 	op              Op
 	typ             string
 	id              *uuid.UUID
-	client_id       *string
 	scopes          *[]string
 	appendscopes    []string
 	selector        *string
@@ -3167,6 +3249,8 @@ type OIDCRefreshTokenMutation struct {
 	children        map[uuid.UUID]struct{}
 	removedchildren map[uuid.UUID]struct{}
 	clearedchildren bool
+	client          *uuid.UUID
+	clearedclient   bool
 	done            bool
 	oldValue        func(context.Context) (*OIDCRefreshToken, error)
 	predicates      []predicate.OIDCRefreshToken
@@ -3312,40 +3396,40 @@ func (m *OIDCRefreshTokenMutation) ResetUserID() {
 	m.user = nil
 }
 
-// SetClientID sets the "client_id" field.
-func (m *OIDCRefreshTokenMutation) SetClientID(s string) {
-	m.client_id = &s
+// SetClientRefID sets the "client_ref_id" field.
+func (m *OIDCRefreshTokenMutation) SetClientRefID(u uuid.UUID) {
+	m.client = &u
 }
 
-// ClientID returns the value of the "client_id" field in the mutation.
-func (m *OIDCRefreshTokenMutation) ClientID() (r string, exists bool) {
-	v := m.client_id
+// ClientRefID returns the value of the "client_ref_id" field in the mutation.
+func (m *OIDCRefreshTokenMutation) ClientRefID() (r uuid.UUID, exists bool) {
+	v := m.client
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldClientID returns the old "client_id" field's value of the OIDCRefreshToken entity.
+// OldClientRefID returns the old "client_ref_id" field's value of the OIDCRefreshToken entity.
 // If the OIDCRefreshToken object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OIDCRefreshTokenMutation) OldClientID(ctx context.Context) (v string, err error) {
+func (m *OIDCRefreshTokenMutation) OldClientRefID(ctx context.Context) (v uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldClientID is only allowed on UpdateOne operations")
+		return v, errors.New("OldClientRefID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldClientID requires an ID field in the mutation")
+		return v, errors.New("OldClientRefID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldClientID: %w", err)
+		return v, fmt.Errorf("querying old value for OldClientRefID: %w", err)
 	}
-	return oldValue.ClientID, nil
+	return oldValue.ClientRefID, nil
 }
 
-// ResetClientID resets all changes to the "client_id" field.
-func (m *OIDCRefreshTokenMutation) ResetClientID() {
-	m.client_id = nil
+// ResetClientRefID resets all changes to the "client_ref_id" field.
+func (m *OIDCRefreshTokenMutation) ResetClientRefID() {
+	m.client = nil
 }
 
 // SetScopes sets the "scopes" field.
@@ -3884,6 +3968,46 @@ func (m *OIDCRefreshTokenMutation) ResetChildren() {
 	m.removedchildren = nil
 }
 
+// SetClientID sets the "client" edge to the OIDCClient entity by id.
+func (m *OIDCRefreshTokenMutation) SetClientID(id uuid.UUID) {
+	m.client = &id
+}
+
+// ClearClient clears the "client" edge to the OIDCClient entity.
+func (m *OIDCRefreshTokenMutation) ClearClient() {
+	m.clearedclient = true
+	m.clearedFields[oidcrefreshtoken.FieldClientRefID] = struct{}{}
+}
+
+// ClientCleared reports if the "client" edge to the OIDCClient entity was cleared.
+func (m *OIDCRefreshTokenMutation) ClientCleared() bool {
+	return m.clearedclient
+}
+
+// ClientID returns the "client" edge ID in the mutation.
+func (m *OIDCRefreshTokenMutation) ClientID() (id uuid.UUID, exists bool) {
+	if m.client != nil {
+		return *m.client, true
+	}
+	return
+}
+
+// ClientIDs returns the "client" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ClientID instead. It exists only for internal usage by the builders.
+func (m *OIDCRefreshTokenMutation) ClientIDs() (ids []uuid.UUID) {
+	if id := m.client; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetClient resets all changes to the "client" edge.
+func (m *OIDCRefreshTokenMutation) ResetClient() {
+	m.client = nil
+	m.clearedclient = false
+}
+
 // Where appends a list predicates to the OIDCRefreshTokenMutation builder.
 func (m *OIDCRefreshTokenMutation) Where(ps ...predicate.OIDCRefreshToken) {
 	m.predicates = append(m.predicates, ps...)
@@ -3922,8 +4046,8 @@ func (m *OIDCRefreshTokenMutation) Fields() []string {
 	if m.user != nil {
 		fields = append(fields, oidcrefreshtoken.FieldUserID)
 	}
-	if m.client_id != nil {
-		fields = append(fields, oidcrefreshtoken.FieldClientID)
+	if m.client != nil {
+		fields = append(fields, oidcrefreshtoken.FieldClientRefID)
 	}
 	if m.scopes != nil {
 		fields = append(fields, oidcrefreshtoken.FieldScopes)
@@ -3965,8 +4089,8 @@ func (m *OIDCRefreshTokenMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case oidcrefreshtoken.FieldUserID:
 		return m.UserID()
-	case oidcrefreshtoken.FieldClientID:
-		return m.ClientID()
+	case oidcrefreshtoken.FieldClientRefID:
+		return m.ClientRefID()
 	case oidcrefreshtoken.FieldScopes:
 		return m.Scopes()
 	case oidcrefreshtoken.FieldSelector:
@@ -3998,8 +4122,8 @@ func (m *OIDCRefreshTokenMutation) OldField(ctx context.Context, name string) (e
 	switch name {
 	case oidcrefreshtoken.FieldUserID:
 		return m.OldUserID(ctx)
-	case oidcrefreshtoken.FieldClientID:
-		return m.OldClientID(ctx)
+	case oidcrefreshtoken.FieldClientRefID:
+		return m.OldClientRefID(ctx)
 	case oidcrefreshtoken.FieldScopes:
 		return m.OldScopes(ctx)
 	case oidcrefreshtoken.FieldSelector:
@@ -4036,12 +4160,12 @@ func (m *OIDCRefreshTokenMutation) SetField(name string, value ent.Value) error 
 		}
 		m.SetUserID(v)
 		return nil
-	case oidcrefreshtoken.FieldClientID:
-		v, ok := value.(string)
+	case oidcrefreshtoken.FieldClientRefID:
+		v, ok := value.(uuid.UUID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetClientID(v)
+		m.SetClientRefID(v)
 		return nil
 	case oidcrefreshtoken.FieldScopes:
 		v, ok := value.([]string)
@@ -4192,8 +4316,8 @@ func (m *OIDCRefreshTokenMutation) ResetField(name string) error {
 	case oidcrefreshtoken.FieldUserID:
 		m.ResetUserID()
 		return nil
-	case oidcrefreshtoken.FieldClientID:
-		m.ResetClientID()
+	case oidcrefreshtoken.FieldClientRefID:
+		m.ResetClientRefID()
 		return nil
 	case oidcrefreshtoken.FieldScopes:
 		m.ResetScopes()
@@ -4231,7 +4355,7 @@ func (m *OIDCRefreshTokenMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OIDCRefreshTokenMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.user != nil {
 		edges = append(edges, oidcrefreshtoken.EdgeUser)
 	}
@@ -4240,6 +4364,9 @@ func (m *OIDCRefreshTokenMutation) AddedEdges() []string {
 	}
 	if m.children != nil {
 		edges = append(edges, oidcrefreshtoken.EdgeChildren)
+	}
+	if m.client != nil {
+		edges = append(edges, oidcrefreshtoken.EdgeClient)
 	}
 	return edges
 }
@@ -4262,13 +4389,17 @@ func (m *OIDCRefreshTokenMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oidcrefreshtoken.EdgeClient:
+		if id := m.client; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OIDCRefreshTokenMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.removedchildren != nil {
 		edges = append(edges, oidcrefreshtoken.EdgeChildren)
 	}
@@ -4291,7 +4422,7 @@ func (m *OIDCRefreshTokenMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OIDCRefreshTokenMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 4)
 	if m.cleareduser {
 		edges = append(edges, oidcrefreshtoken.EdgeUser)
 	}
@@ -4300,6 +4431,9 @@ func (m *OIDCRefreshTokenMutation) ClearedEdges() []string {
 	}
 	if m.clearedchildren {
 		edges = append(edges, oidcrefreshtoken.EdgeChildren)
+	}
+	if m.clearedclient {
+		edges = append(edges, oidcrefreshtoken.EdgeClient)
 	}
 	return edges
 }
@@ -4314,6 +4448,8 @@ func (m *OIDCRefreshTokenMutation) EdgeCleared(name string) bool {
 		return m.clearedparent
 	case oidcrefreshtoken.EdgeChildren:
 		return m.clearedchildren
+	case oidcrefreshtoken.EdgeClient:
+		return m.clearedclient
 	}
 	return false
 }
@@ -4327,6 +4463,9 @@ func (m *OIDCRefreshTokenMutation) ClearEdge(name string) error {
 		return nil
 	case oidcrefreshtoken.EdgeParent:
 		m.ClearParent()
+		return nil
+	case oidcrefreshtoken.EdgeClient:
+		m.ClearClient()
 		return nil
 	}
 	return fmt.Errorf("unknown OIDCRefreshToken unique edge %s", name)
@@ -4344,6 +4483,9 @@ func (m *OIDCRefreshTokenMutation) ResetEdge(name string) error {
 		return nil
 	case oidcrefreshtoken.EdgeChildren:
 		m.ResetChildren()
+		return nil
+	case oidcrefreshtoken.EdgeClient:
+		m.ResetClient()
 		return nil
 	}
 	return fmt.Errorf("unknown OIDCRefreshToken edge %s", name)

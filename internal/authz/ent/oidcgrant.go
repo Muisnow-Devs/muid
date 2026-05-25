@@ -27,8 +27,6 @@ type OIDCGrant struct {
 	ClientRefID uuid.UUID `json:"client_ref_id,omitempty"`
 	// Scopes holds the value of the "scopes" field.
 	Scopes []string `json:"scopes,omitempty"`
-	// AuthorizedAt holds the value of the "authorized_at" field.
-	AuthorizedAt time.Time `json:"authorized_at,omitempty"`
 	// LastUsedAt holds the value of the "last_used_at" field.
 	LastUsedAt time.Time `json:"last_used_at,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
@@ -37,6 +35,8 @@ type OIDCGrant struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	// AuthorizedAt holds the value of the "authorized_at" field.
+	AuthorizedAt time.Time `json:"authorized_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OIDCGrantQuery when eager-loading is set.
 	Edges        OIDCGrantEdges `json:"edges"`
@@ -83,7 +83,7 @@ func (*OIDCGrant) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case oidcgrant.FieldScopes:
 			values[i] = new([]byte)
-		case oidcgrant.FieldAuthorizedAt, oidcgrant.FieldLastUsedAt, oidcgrant.FieldRevokedAt, oidcgrant.FieldCreatedAt, oidcgrant.FieldUpdatedAt:
+		case oidcgrant.FieldLastUsedAt, oidcgrant.FieldRevokedAt, oidcgrant.FieldCreatedAt, oidcgrant.FieldUpdatedAt, oidcgrant.FieldAuthorizedAt:
 			values[i] = new(sql.NullTime)
 		case oidcgrant.FieldID, oidcgrant.FieldUserID, oidcgrant.FieldClientRefID:
 			values[i] = new(uuid.UUID)
@@ -128,12 +128,6 @@ func (_m *OIDCGrant) assignValues(columns []string, values []any) error {
 					return fmt.Errorf("unmarshal field scopes: %w", err)
 				}
 			}
-		case oidcgrant.FieldAuthorizedAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field authorized_at", values[i])
-			} else if value.Valid {
-				_m.AuthorizedAt = value.Time
-			}
 		case oidcgrant.FieldLastUsedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field last_used_at", values[i])
@@ -157,6 +151,12 @@ func (_m *OIDCGrant) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				_m.UpdatedAt = value.Time
+			}
+		case oidcgrant.FieldAuthorizedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field authorized_at", values[i])
+			} else if value.Valid {
+				_m.AuthorizedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -213,9 +213,6 @@ func (_m *OIDCGrant) String() string {
 	builder.WriteString("scopes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Scopes))
 	builder.WriteString(", ")
-	builder.WriteString("authorized_at=")
-	builder.WriteString(_m.AuthorizedAt.Format(time.ANSIC))
-	builder.WriteString(", ")
 	builder.WriteString("last_used_at=")
 	builder.WriteString(_m.LastUsedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
@@ -227,6 +224,9 @@ func (_m *OIDCGrant) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
 	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("authorized_at=")
+	builder.WriteString(_m.AuthorizedAt.Format(time.ANSIC))
 	builder.WriteByte(')')
 	return builder.String()
 }

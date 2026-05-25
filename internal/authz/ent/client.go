@@ -553,6 +553,22 @@ func (c *OIDCClientClient) QueryGrants(_m *OIDCClient) *OIDCGrantQuery {
 	return query
 }
 
+// QueryRefreshTokens queries the refresh_tokens edge of a OIDCClient.
+func (c *OIDCClientClient) QueryRefreshTokens(_m *OIDCClient) *OIDCRefreshTokenQuery {
+	query := (&OIDCRefreshTokenClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, id),
+			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.RefreshTokensTable, oidcclient.RefreshTokensColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OIDCClientClient) Hooks() []Hook {
 	return c.hooks.OIDCClient
@@ -1041,6 +1057,22 @@ func (c *OIDCRefreshTokenClient) QueryChildren(_m *OIDCRefreshToken) *OIDCRefres
 			sqlgraph.From(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID, id),
 			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oidcrefreshtoken.ChildrenTable, oidcrefreshtoken.ChildrenColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryClient queries the client edge of a OIDCRefreshToken.
+func (c *OIDCRefreshTokenClient) QueryClient(_m *OIDCRefreshToken) *OIDCClientQuery {
+	query := (&OIDCClientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID, id),
+			sqlgraph.To(oidcclient.Table, oidcclient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oidcrefreshtoken.ClientTable, oidcrefreshtoken.ClientColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil

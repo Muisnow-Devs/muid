@@ -18,13 +18,11 @@ func TestFormatEventTimeUsesLocaleAndTimezone(t *testing.T) {
 	}{
 		{
 			name:     "english mail timestamp",
-			locale:   "en",
 			timezone: "Asia/Taipei",
 			want:     "Mon, 25 May 2026 14:30:05 +0800",
 		},
 		{
 			name:     "chinese mail timestamp",
-			locale:   "zh-TW",
 			timezone: "Asia/Taipei",
 			want:     "2026-05-25 14:30:05 +0800",
 		},
@@ -36,7 +34,7 @@ func TestFormatEventTimeUsesLocaleAndTimezone(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := FormatEventTime(ts, tt.locale, tt.timezone)
+			got := FormatEventTime(ts, tt.timezone)
 			if got != tt.want {
 				t.Fatalf("FormatEventTime() = %q, want %q", got, tt.want)
 			}

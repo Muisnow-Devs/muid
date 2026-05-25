@@ -35,7 +35,7 @@ func (Handler) Handle(
 		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
 
-	expires := handlers.FormatEventTime(ev.GetExpiresAt(), ev.GetLocale(), ev.GetTimezone())
+	expires := handlers.FormatEventTime(ev.GetExpiresAt(), ev.GetTimezone())
 
 	rendered, err := templates.Render(ctx, ev.GetLocale(), "otp", handlers.TopicOTP{
 		OTP:        ev.GetCode(),

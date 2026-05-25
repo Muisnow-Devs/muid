@@ -16,19 +16,16 @@ func TestFormat(t *testing.T) {
 	}{
 		{
 			name:     "english includes numeric timezone offset",
-			locale:   "en",
 			timezone: "Asia/Taipei",
 			want:     "Mon, 25 May 2026 14:30:05 +0800",
 		},
 		{
 			name:     "chinese includes numeric timezone offset",
-			locale:   "zh-TW",
 			timezone: "Asia/Taipei",
 			want:     "2026-05-25 14:30:05 +0800",
 		},
 		{
 			name:     "invalid timezone uses UTC",
-			locale:   "en",
 			timezone: "Not/AZone",
 			want:     "Mon, 25 May 2026 06:30:05 +0000",
 		},
@@ -40,7 +37,7 @@ func TestFormat(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			got := Format(instant, tt.locale, tt.timezone)
+			got := Format(instant, tt.timezone)
 			if got != tt.want {
 				t.Fatalf("Format() = %q, want %q", got, tt.want)
 			}

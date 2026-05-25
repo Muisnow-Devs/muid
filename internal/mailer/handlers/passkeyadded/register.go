@@ -32,7 +32,7 @@ func (Handler) Handle(
 	if email == "" {
 		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
-	when := handlers.FormatEventTime(ev.GetOccurredAt(), ev.GetLocale(), ev.GetTimezone())
+	when := handlers.FormatEventTime(ev.GetOccurredAt(), ev.GetTimezone())
 	rendered, err := tmpl.Render(ctx, ev.GetLocale(), "passkey_added", handlers.TopicPasskeyAdded{
 		PasskeyName: ev.GetPasskeyName(),
 		Time:        when,

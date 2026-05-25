@@ -8,11 +8,11 @@ import (
 )
 
 // FormatEventTime formats a protobuf timestamp for mail templates using locale and timezone.
-func FormatEventTime(ts *timestamppb.Timestamp, locale, timezone string) string {
+func FormatEventTime(ts *timestamppb.Timestamp, timezone string) string {
 	instant := time.Now().UTC()
 	if ts != nil {
 		instant = ts.AsTime()
 	}
 
-	return localetime.Format(instant, locale, timezone)
+	return localetime.Format(instant, timezone)
 }

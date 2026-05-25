@@ -35,7 +35,7 @@ func (Handler) Handle(
 		return mailer.Message{}, mailer.ErrInvalidEmailAddress
 	}
 
-	when := handlers.FormatEventTime(ev.GetOccurredAt(), ev.GetLocale(), ev.GetTimezone())
+	when := handlers.FormatEventTime(ev.GetOccurredAt(), ev.GetTimezone())
 	rendered, err := templates.Render(ctx, ev.GetLocale(), "login_alert", handlers.TopicLoginAlert{
 		Device:            ev.GetDevice(),
 		Location:          ev.GetLocation(),

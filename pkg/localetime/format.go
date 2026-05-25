@@ -8,7 +8,7 @@ import (
 // Format renders instant in the user's locale and IANA time zone.
 // Layouts include a numeric UTC offset so mail recipients can see the timezone.
 // Empty locale falls back to English; empty or invalid timezone falls back to UTC.
-func Format(instant time.Time, locale, timezone string) string {
+func Format(instant time.Time, timezone string) string {
 	local := instant.In(LoadLocation(timezone))
 	return local.Format(time.RFC1123Z)
 }

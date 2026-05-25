@@ -6,9 +6,6 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// OIDCRefreshToken is the predicate function for oidcrefreshtoken builders.
-type OIDCRefreshToken func(*sql.Selector)
-
 // UserFederatedIdentity is the predicate function for userfederatedidentity builders.
 type UserFederatedIdentity func(*sql.Selector)
 

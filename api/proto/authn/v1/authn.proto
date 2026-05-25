@@ -3,13 +3,10 @@ syntax = "proto3";
 package muid.authn.v1;
 
 import "authn/v1/basic.proto";
-import "authn/v1/certification.proto";
 import "authn/v1/challenge.proto";
-import "authn/v1/client.proto";
 import "authn/v1/proof.proto";
 import "authn/v1/session.proto";
 import "buf/validate/validate.proto";
-import "google/protobuf/timestamp.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
@@ -18,26 +15,14 @@ service AuthnService {
   rpc StartAuthSession(StartAuthSessionRequest) returns (StartAuthSessionResponse);
   rpc ContinueAuthSession(ContinueAuthSessionRequest) returns (ContinueAuthSessionResponse);
 
-  /// infrastructure APIs
-  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
-
   /// user related APIs, for user to manage their sessions.
   rpc RevokeFederatedIdentity(RevokeFederatedIdentityRequest) returns (RevokeFederatedIdentityResponse);
   rpc GetAuthorizedSession(GetAuthorizedSessionRequest) returns (GetAuthorizedSessionResponse);
+  // Resolves a session into an authenticated principal for downstream services.
+  rpc GetAuthenticatedPrincipal(GetAuthenticatedPrincipalRequest) returns (GetAuthenticatedPrincipalResponse);
 
   // user session management APIs
   rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
-
-  /// oidc token management APIs
-  // user consent
-  rpc OIDCListGrantedConsents(OIDCListGrantedConsentsRequest) returns (OIDCListGrantedConsentsResponse);
-  rpc OIDCGrantConsent(OIDCGrantConsentRequest) returns (OIDCGrantConsentResponse);
-  rpc OIDCRevokeConsent(OIDCRevokeConsentRequest) returns (OIDCRevokeConsentResponse);
-
-  // token management
-  rpc OIDCIntrospectToken(OIDCIntrospectTokenRequest) returns (OIDCIntrospectTokenResponse);
-  rpc OIDCRevokeRefreshToken(OIDCRevokeRefreshTokenRequest) returns (OIDCRevokeRefreshTokenResponse);
-  rpc OIDCRotateAndGetAccessToken(OIDCRotateAndGetAccessTokenRequest) returns (OIDCRotateAndGetAccessTokenResponse);
 }
 
 message StartAuthSessionRequest {
@@ -76,12 +61,6 @@ message ContinueAuthSessionResponse {
   }
 }
 
-message GetPublicKeysRequest {}
-
-message GetPublicKeysResponse {
-  repeated muid.authn.v1.certification.PublicKey public_keys = 1;
-}
-
 message GetAuthorizedSessionRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
 }
@@ -89,6 +68,15 @@ message GetAuthorizedSessionRequest {
 message GetAuthorizedSessionResponse {
   bool valid = 1;
   muid.authn.v1.session.AuthenticatedResult session = 2;
+}
+
+message GetAuthenticatedPrincipalRequest {
+  muid.authn.v1.session.SessionToken session_token = 1;
+}
+
+message GetAuthenticatedPrincipalResponse {
+  bool valid = 1;
+  muid.authn.v1.session.AuthenticatedPrincipal principal = 2;
 }
 
 message RevokeFederatedIdentityRequest {
@@ -100,73 +88,10 @@ message RevokeFederatedIdentityResponse {
   bool success = 1;
 }
 
-message OIDCIntrospectTokenRequest {
-  string token = 1;
-  optional string hint = 2;
-}
-
-message OIDCIntrospectTokenResponse {
-  bool active = 1;
-  string user_id = 2 [(buf.validate.field).string.uuid = true];
-  string client_id = 3;
-  string type = 4;
-
-  optional string audience = 5;
-  repeated string scopes = 6;
-
-  google.protobuf.Timestamp created_at = 7;
-  google.protobuf.Timestamp expires_at = 8;
-}
-
-message OIDCGrantConsentRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-  string client_id = 2;
-  repeated string scopes = 3;
-}
-
-message OIDCGrantConsentResponse {
-  bool success = 1;
-}
-
-message OIDCRevokeConsentRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-  string client_id = 2;
-}
-
-message OIDCRevokeConsentResponse {
-  bool success = 1;
-}
-
-message OIDCListGrantedConsentsRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-}
-
-message OIDCListGrantedConsentsResponse {
-  repeated muid.authn.v1.client.AuthorizedClient clients = 1;
-}
-
 message RevokeSessionRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
 }
 
 message RevokeSessionResponse {
   bool success = 1;
-}
-
-message OIDCRevokeRefreshTokenRequest {
-  string refresh_token = 1;
-}
-
-message OIDCRevokeRefreshTokenResponse {
-  bool success = 1;
-}
-
-message OIDCRotateAndGetAccessTokenRequest {
-  string refresh_token = 1;
-}
-
-message OIDCRotateAndGetAccessTokenResponse {
-  string access_token = 1;
-  string refresh_token = 2;
-  google.protobuf.Timestamp expires_at = 3;
 }

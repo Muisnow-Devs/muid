@@ -252,6 +252,18 @@ func (s *sessionService) AuthenticatedResultFromResolved(
 	return out
 }
 
+// AuthenticatedPrincipalFromResolved rebuilds principal data for an existing session.
+func (s *sessionService) AuthenticatedPrincipalFromResolved(
+	resolved ResolvedSession,
+) *sessionpb.AuthenticatedPrincipal {
+	out := &sessionpb.AuthenticatedPrincipal{}
+	out.SetUserId(resolved.UserID.String())
+	out.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM)
+	out.SetIssuedAt(timestamppb.New(resolved.IssuedAt.UTC()))
+	out.SetExpiresAt(timestamppb.New(resolved.ExpiresAt.UTC()))
+	return out
+}
+
 func errorsIsSessionMiss(err error) bool {
 	return errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired)
 }

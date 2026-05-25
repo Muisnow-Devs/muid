@@ -24,7 +24,7 @@ type UserSession struct {
 	// Selector holds the value of the "selector" field.
 	Selector []byte `json:"selector,omitempty"`
 	// ValidatorHash holds the value of the "validator_hash" field.
-	ValidatorHash []byte `json:"validator_hash,omitempty"`
+	ValidatorHash []byte `json:"-"`
 	// IPAddress holds the value of the "ip_address" field.
 	IPAddress string `json:"ip_address,omitempty"`
 	// UserAgent holds the value of the "user_agent" field.
@@ -214,8 +214,7 @@ func (_m *UserSession) String() string {
 	builder.WriteString("selector=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Selector))
 	builder.WriteString(", ")
-	builder.WriteString("validator_hash=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ValidatorHash))
+	builder.WriteString("validator_hash=<sensitive>")
 	builder.WriteString(", ")
 	builder.WriteString("ip_address=")
 	builder.WriteString(_m.IPAddress)

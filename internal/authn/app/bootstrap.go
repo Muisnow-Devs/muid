@@ -13,11 +13,9 @@ import (
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/redis"
-	gcpsecretmanager "sanzi.io/muid/infra/secretmanager"
 	"sanzi.io/muid/internal/authn/account"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/kv"
-	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
@@ -77,15 +75,6 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		profileCli = profilepb.NewProfileServiceClient(profileConn)
 	}
 
-	signatureManager, err := newSignatureManager(ctx, cfg)
-	if err != nil {
-		errutil.Close(profileConn)
-		errutil.Close(entClient)
-		errutil.CloseIf(pubSub)
-		errutil.CloseIf(redisKV)
-		return nil, fmt.Errorf("signature manager: %w", err)
-	}
-
 	store := &account.Store{
 		DB:                 entClient,
 		Profile:            profileCli,
@@ -103,7 +92,6 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		accounts,
 	)
 	if err != nil {
-		errutil.CloseIf(signatureManager)
 		errutil.Close(profileConn)
 		errutil.Close(entClient)
 		errutil.CloseIf(pubSub)
@@ -112,51 +100,17 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	}
 
 	return &InfraDependencies{
-		GlobalConfig:     cfg,
-		Redis:            redisKV,
-		OTPStore:         otpStore,
-		TransitionStore:  transitionStore,
-		SessionCache:     sessionCache,
-		PubSub:           pubSub,
-		IdentityManager:  ipm,
-		Accounts:         accounts,
-		SignatureManager: signatureManager,
-		entClient:        entClient,
-		profileConn:      profileConn,
+		GlobalConfig:    cfg,
+		Redis:           redisKV,
+		OTPStore:        otpStore,
+		TransitionStore: transitionStore,
+		SessionCache:    sessionCache,
+		PubSub:          pubSub,
+		IdentityManager: ipm,
+		Accounts:        accounts,
+		entClient:       entClient,
+		profileConn:     profileConn,
 	}, nil
-}
-
-func newSignatureManager(ctx context.Context, cfg Config) (signature.SignatureManager, error) {
-	if strings.TrimSpace(cfg.SignatureSecretName) == "" {
-		return nil, nil
-	}
-
-	secretStore, err := gcpsecretmanager.NewGCPSecretManager(ctx, gcpsecretmanager.GCPConfig{
-		ProjectID:       cfg.SecretManagerGCPProjectID,
-		CredentialsFile: cfg.SecretManagerGCPCredentials,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	manager, err := signature.NewSignatureManager(secretStore, signature.ManagerConfig{
-		SecretName:          cfg.SignatureSecretName,
-		KeyBits:             cfg.SignatureKeyBits,
-		PreviousGenerations: cfg.SignaturePreviousGenerations,
-		RotationPeriod:      signatureRotationPeriod(cfg),
-	})
-	if err != nil {
-		errutil.CloseIf(secretStore)
-		return nil, err
-	}
-	return manager, nil
-}
-
-func signatureRotationPeriod(cfg Config) time.Duration {
-	if cfg.SignatureRotationPeriodHours <= 0 {
-		return -1
-	}
-	return time.Duration(cfg.SignatureRotationPeriodHours) * time.Hour
 }
 
 func profileGRPCResilience(cfg Config) grpcutils.ClientResilienceConfig {

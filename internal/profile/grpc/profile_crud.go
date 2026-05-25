@@ -22,6 +22,7 @@ import (
 	"sanzi.io/muid/pkg/enttx"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	sharedauthn "sanzi.io/muid/pkg/shared/authn"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 	"sanzi.io/muid/pkg/shared/tracing"
@@ -117,7 +118,7 @@ func (g *GRPCHandler) GetProfile(
 	ctx context.Context,
 	req *pb.GetProfileRequest,
 ) (*pb.GetProfileResponse, error) {
-	id, err := requiredProfileUserID(ctx)
+	id, err := sharedauthn.RequiredAuthenticatedUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func (g *GRPCHandler) UpdateProfile(
 	ctx context.Context,
 	req *pb.UpdateProfileRequest,
 ) (*pb.UpdateProfileResponse, error) {
-	id, err := requiredProfileUserID(ctx)
+	id, err := sharedauthn.RequiredAuthenticatedUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}

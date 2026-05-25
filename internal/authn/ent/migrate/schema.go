@@ -8,59 +8,6 @@ import (
 )
 
 var (
-	// OidcRefreshTokensColumns holds the columns for the "oidc_refresh_tokens" table.
-	OidcRefreshTokensColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "client_id", Type: field.TypeString},
-		{Name: "scopes", Type: field.TypeJSON, Nullable: true},
-		{Name: "selector", Type: field.TypeString, Unique: true, Size: 16},
-		{Name: "validation_hash", Type: field.TypeBytes, Size: 32},
-		{Name: "family_id", Type: field.TypeUUID},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "expires_at", Type: field.TypeTime},
-		{Name: "used_at", Type: field.TypeTime, Nullable: true},
-		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
-		{Name: "parent_id", Type: field.TypeUUID, Nullable: true},
-		{Name: "user_id", Type: field.TypeUUID},
-	}
-	// OidcRefreshTokensTable holds the schema information for the "oidc_refresh_tokens" table.
-	OidcRefreshTokensTable = &schema.Table{
-		Name:       "oidc_refresh_tokens",
-		Columns:    OidcRefreshTokensColumns,
-		PrimaryKey: []*schema.Column{OidcRefreshTokensColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "oidc_refresh_tokens_oidc_refresh_tokens_children",
-				Columns:    []*schema.Column{OidcRefreshTokensColumns[11]},
-				RefColumns: []*schema.Column{OidcRefreshTokensColumns[0]},
-				OnDelete:   schema.SetNull,
-			},
-			{
-				Symbol:     "oidc_refresh_tokens_user_refs_oidc_refresh_tokens",
-				Columns:    []*schema.Column{OidcRefreshTokensColumns[12]},
-				RefColumns: []*schema.Column{UserRefsColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "oidcrefreshtoken_user_id_client_id",
-				Unique:  false,
-				Columns: []*schema.Column{OidcRefreshTokensColumns[12], OidcRefreshTokensColumns[1]},
-			},
-			{
-				Name:    "oidcrefreshtoken_family_id",
-				Unique:  false,
-				Columns: []*schema.Column{OidcRefreshTokensColumns[5]},
-			},
-			{
-				Name:    "oidcrefreshtoken_selector_revoked_at_expires_at",
-				Unique:  false,
-				Columns: []*schema.Column{OidcRefreshTokensColumns[3], OidcRefreshTokensColumns[10], OidcRefreshTokensColumns[8]},
-			},
-		},
-	}
 	// UserFederatedIdentitiesColumns holds the columns for the "user_federated_identities" table.
 	UserFederatedIdentitiesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -218,7 +165,6 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		OidcRefreshTokensTable,
 		UserFederatedIdentitiesTable,
 		UserPasskeysTable,
 		UserRefsTable,
@@ -227,8 +173,6 @@ var (
 )
 
 func init() {
-	OidcRefreshTokensTable.ForeignKeys[0].RefTable = OidcRefreshTokensTable
-	OidcRefreshTokensTable.ForeignKeys[1].RefTable = UserRefsTable
 	UserFederatedIdentitiesTable.ForeignKeys[0].RefTable = UserRefsTable
 	UserPasskeysTable.ForeignKeys[0].RefTable = UserRefsTable
 	UserSessionsTable.ForeignKeys[0].RefTable = UserRefsTable

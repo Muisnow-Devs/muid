@@ -88,4 +88,7 @@ type Session interface {
 		wireToken string,
 		resolved ResolvedSession,
 	) *sessionpb.AuthenticatedResult
+	AuthenticatedPrincipalFromResolved(
+		resolved ResolvedSession,
+	) *sessionpb.AuthenticatedPrincipal
 }

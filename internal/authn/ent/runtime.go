@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/schema"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -18,66 +17,6 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	oidcrefreshtokenFields := schema.OIDCRefreshToken{}.Fields()
-	_ = oidcrefreshtokenFields
-	// oidcrefreshtokenDescClientID is the schema descriptor for client_id field.
-	oidcrefreshtokenDescClientID := oidcrefreshtokenFields[2].Descriptor()
-	// oidcrefreshtoken.ClientIDValidator is a validator for the "client_id" field. It is called by the builders before save.
-	oidcrefreshtoken.ClientIDValidator = oidcrefreshtokenDescClientID.Validators[0].(func(string) error)
-	// oidcrefreshtokenDescSelector is the schema descriptor for selector field.
-	oidcrefreshtokenDescSelector := oidcrefreshtokenFields[4].Descriptor()
-	// oidcrefreshtoken.SelectorValidator is a validator for the "selector" field. It is called by the builders before save.
-	oidcrefreshtoken.SelectorValidator = func() func(string) error {
-		validators := oidcrefreshtokenDescSelector.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(selector string) error {
-			for _, fn := range fns {
-				if err := fn(selector); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// oidcrefreshtokenDescValidationHash is the schema descriptor for validation_hash field.
-	oidcrefreshtokenDescValidationHash := oidcrefreshtokenFields[5].Descriptor()
-	// oidcrefreshtoken.ValidationHashValidator is a validator for the "validation_hash" field. It is called by the builders before save.
-	oidcrefreshtoken.ValidationHashValidator = func() func([]byte) error {
-		validators := oidcrefreshtokenDescValidationHash.Validators
-		fns := [...]func([]byte) error{
-			validators[0].(func([]byte) error),
-			validators[1].(func([]byte) error),
-		}
-		return func(validation_hash []byte) error {
-			for _, fn := range fns {
-				if err := fn(validation_hash); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// oidcrefreshtokenDescCreatedAt is the schema descriptor for created_at field.
-	oidcrefreshtokenDescCreatedAt := oidcrefreshtokenFields[8].Descriptor()
-	// oidcrefreshtoken.DefaultCreatedAt holds the default value on creation for the created_at field.
-	oidcrefreshtoken.DefaultCreatedAt = oidcrefreshtokenDescCreatedAt.Default.(func() time.Time)
-	// oidcrefreshtokenDescUpdatedAt is the schema descriptor for updated_at field.
-	oidcrefreshtokenDescUpdatedAt := oidcrefreshtokenFields[9].Descriptor()
-	// oidcrefreshtoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	oidcrefreshtoken.DefaultUpdatedAt = oidcrefreshtokenDescUpdatedAt.Default.(func() time.Time)
-	// oidcrefreshtoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	oidcrefreshtoken.UpdateDefaultUpdatedAt = oidcrefreshtokenDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// oidcrefreshtokenDescExpiresAt is the schema descriptor for expires_at field.
-	oidcrefreshtokenDescExpiresAt := oidcrefreshtokenFields[10].Descriptor()
-	// oidcrefreshtoken.DefaultExpiresAt holds the default value on creation for the expires_at field.
-	oidcrefreshtoken.DefaultExpiresAt = oidcrefreshtokenDescExpiresAt.Default.(func() time.Time)
-	// oidcrefreshtokenDescID is the schema descriptor for id field.
-	oidcrefreshtokenDescID := oidcrefreshtokenFields[0].Descriptor()
-	// oidcrefreshtoken.DefaultID holds the default value on creation for the id field.
-	oidcrefreshtoken.DefaultID = oidcrefreshtokenDescID.Default.(func() uuid.UUID)
 	userfederatedidentityFields := schema.UserFederatedIdentity{}.Fields()
 	_ = userfederatedidentityFields
 	// userfederatedidentityDescProvider is the schema descriptor for provider field.

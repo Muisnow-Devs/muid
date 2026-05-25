@@ -1,5 +1,92 @@
 syntax = "proto3";
 
-package one.muisnowdevs.apps.muid.authz.v1;
+package muid.authz.v1;
+
+import "authz/v1/certification.proto";
+import "authz/v1/client.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
+
+service AuthzService {
+  /// OIDC/JWK infrastructure APIs.
+  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
+
+  /// OIDC user consent APIs (requires x-authn-user-id metadata).
+  rpc OIDCListGrantedConsents(OIDCListGrantedConsentsRequest) returns (OIDCListGrantedConsentsResponse);
+  rpc OIDCGrantConsent(OIDCGrantConsentRequest) returns (OIDCGrantConsentResponse);
+  rpc OIDCRevokeConsent(OIDCRevokeConsentRequest) returns (OIDCRevokeConsentResponse);
+
+  /// OIDC token management APIs.
+  rpc OIDCIntrospectToken(OIDCIntrospectTokenRequest) returns (OIDCIntrospectTokenResponse);
+  rpc OIDCRevokeRefreshToken(OIDCRevokeRefreshTokenRequest) returns (OIDCRevokeRefreshTokenResponse);
+  rpc OIDCRotateAndGetAccessToken(OIDCRotateAndGetAccessTokenRequest) returns (OIDCRotateAndGetAccessTokenResponse);
+}
+
+message GetPublicKeysRequest {}
+
+message GetPublicKeysResponse {
+  repeated muid.authz.v1.certification.PublicKey public_keys = 1;
+}
+
+message OIDCIntrospectTokenRequest {
+  string token = 1;
+  optional string hint = 2;
+}
+
+message OIDCIntrospectTokenResponse {
+  bool active = 1;
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  string client_id = 3;
+  string type = 4;
+
+  optional string audience = 5;
+  repeated string scopes = 6;
+
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp expires_at = 8;
+}
+
+message OIDCGrantConsentRequest {
+  string client_id = 1;
+  repeated string scopes = 2;
+}
+
+message OIDCGrantConsentResponse {
+  bool success = 1;
+}
+
+message OIDCRevokeConsentRequest {
+  string client_id = 1;
+}
+
+message OIDCRevokeConsentResponse {
+  bool success = 1;
+}
+
+message OIDCListGrantedConsentsRequest {
+  // Empty; authenticated principal is carried via gRPC metadata (x-authn-user-id).
+}
+
+message OIDCListGrantedConsentsResponse {
+  repeated muid.authz.v1.client.AuthorizedClient clients = 1;
+}
+
+message OIDCRevokeRefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message OIDCRevokeRefreshTokenResponse {
+  bool success = 1;
+}
+
+message OIDCRotateAndGetAccessTokenRequest {
+  string refresh_token = 1;
+}
+
+message OIDCRotateAndGetAccessTokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}

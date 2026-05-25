@@ -10,12 +10,9 @@ import (
 	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	basic "sanzi.io/muid/api/proto/authn/v1/basic"
-	certification "sanzi.io/muid/api/proto/authn/v1/certification"
 	challenge "sanzi.io/muid/api/proto/authn/v1/challenge"
-	client "sanzi.io/muid/api/proto/authn/v1/client"
 	proof "sanzi.io/muid/api/proto/authn/v1/proof"
 	session "sanzi.io/muid/api/proto/authn/v1/session"
 	unsafe "unsafe"
@@ -603,108 +600,6 @@ func (*continueAuthSessionResponse_AuthSuccess) isContinueAuthSessionResponse_Re
 
 func (*continueAuthSessionResponse_AuthFailure) isContinueAuthSessionResponse_Result() {}
 
-type GetPublicKeysRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetPublicKeysRequest) Reset() {
-	*x = GetPublicKeysRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetPublicKeysRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetPublicKeysRequest) ProtoMessage() {}
-
-func (x *GetPublicKeysRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-type GetPublicKeysRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-}
-
-func (b0 GetPublicKeysRequest_builder) Build() *GetPublicKeysRequest {
-	m0 := &GetPublicKeysRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	return m0
-}
-
-type GetPublicKeysResponse struct {
-	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_PublicKeys *[]*certification.PublicKey `protobuf:"bytes,1,rep,name=public_keys,json=publicKeys,proto3"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
-}
-
-func (x *GetPublicKeysResponse) Reset() {
-	*x = GetPublicKeysResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetPublicKeysResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetPublicKeysResponse) ProtoMessage() {}
-
-func (x *GetPublicKeysResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *GetPublicKeysResponse) GetPublicKeys() []*certification.PublicKey {
-	if x != nil {
-		if x.xxx_hidden_PublicKeys != nil {
-			return *x.xxx_hidden_PublicKeys
-		}
-	}
-	return nil
-}
-
-func (x *GetPublicKeysResponse) SetPublicKeys(v []*certification.PublicKey) {
-	x.xxx_hidden_PublicKeys = &v
-}
-
-type GetPublicKeysResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	PublicKeys []*certification.PublicKey
-}
-
-func (b0 GetPublicKeysResponse_builder) Build() *GetPublicKeysResponse {
-	m0 := &GetPublicKeysResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_PublicKeys = &b.PublicKeys
-	return m0
-}
-
 type GetAuthorizedSessionRequest struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
@@ -714,7 +609,7 @@ type GetAuthorizedSessionRequest struct {
 
 func (x *GetAuthorizedSessionRequest) Reset() {
 	*x = GetAuthorizedSessionRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[6]
+	mi := &file_authn_v1_authn_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -726,7 +621,7 @@ func (x *GetAuthorizedSessionRequest) String() string {
 func (*GetAuthorizedSessionRequest) ProtoMessage() {}
 
 func (x *GetAuthorizedSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[6]
+	mi := &file_authn_v1_authn_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -783,7 +678,7 @@ type GetAuthorizedSessionResponse struct {
 
 func (x *GetAuthorizedSessionResponse) Reset() {
 	*x = GetAuthorizedSessionResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[7]
+	mi := &file_authn_v1_authn_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -795,7 +690,7 @@ func (x *GetAuthorizedSessionResponse) String() string {
 func (*GetAuthorizedSessionResponse) ProtoMessage() {}
 
 func (x *GetAuthorizedSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[7]
+	mi := &file_authn_v1_authn_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -852,6 +747,156 @@ func (b0 GetAuthorizedSessionResponse_builder) Build() *GetAuthorizedSessionResp
 	_, _ = b, x
 	x.xxx_hidden_Valid = b.Valid
 	x.xxx_hidden_Session = b.Session
+	return m0
+}
+
+type GetAuthenticatedPrincipalRequest struct {
+	state                   protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
+	unknownFields           protoimpl.UnknownFields
+	sizeCache               protoimpl.SizeCache
+}
+
+func (x *GetAuthenticatedPrincipalRequest) Reset() {
+	*x = GetAuthenticatedPrincipalRequest{}
+	mi := &file_authn_v1_authn_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAuthenticatedPrincipalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAuthenticatedPrincipalRequest) ProtoMessage() {}
+
+func (x *GetAuthenticatedPrincipalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_authn_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetAuthenticatedPrincipalRequest) GetSessionToken() *session.SessionToken {
+	if x != nil {
+		return x.xxx_hidden_SessionToken
+	}
+	return nil
+}
+
+func (x *GetAuthenticatedPrincipalRequest) SetSessionToken(v *session.SessionToken) {
+	x.xxx_hidden_SessionToken = v
+}
+
+func (x *GetAuthenticatedPrincipalRequest) HasSessionToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_SessionToken != nil
+}
+
+func (x *GetAuthenticatedPrincipalRequest) ClearSessionToken() {
+	x.xxx_hidden_SessionToken = nil
+}
+
+type GetAuthenticatedPrincipalRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	SessionToken *session.SessionToken
+}
+
+func (b0 GetAuthenticatedPrincipalRequest_builder) Build() *GetAuthenticatedPrincipalRequest {
+	m0 := &GetAuthenticatedPrincipalRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_SessionToken = b.SessionToken
+	return m0
+}
+
+type GetAuthenticatedPrincipalResponse struct {
+	state                protoimpl.MessageState          `protogen:"opaque.v1"`
+	xxx_hidden_Valid     bool                            `protobuf:"varint,1,opt,name=valid,proto3"`
+	xxx_hidden_Principal *session.AuthenticatedPrincipal `protobuf:"bytes,2,opt,name=principal,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GetAuthenticatedPrincipalResponse) Reset() {
+	*x = GetAuthenticatedPrincipalResponse{}
+	mi := &file_authn_v1_authn_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetAuthenticatedPrincipalResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetAuthenticatedPrincipalResponse) ProtoMessage() {}
+
+func (x *GetAuthenticatedPrincipalResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_authn_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetAuthenticatedPrincipalResponse) GetValid() bool {
+	if x != nil {
+		return x.xxx_hidden_Valid
+	}
+	return false
+}
+
+func (x *GetAuthenticatedPrincipalResponse) GetPrincipal() *session.AuthenticatedPrincipal {
+	if x != nil {
+		return x.xxx_hidden_Principal
+	}
+	return nil
+}
+
+func (x *GetAuthenticatedPrincipalResponse) SetValid(v bool) {
+	x.xxx_hidden_Valid = v
+}
+
+func (x *GetAuthenticatedPrincipalResponse) SetPrincipal(v *session.AuthenticatedPrincipal) {
+	x.xxx_hidden_Principal = v
+}
+
+func (x *GetAuthenticatedPrincipalResponse) HasPrincipal() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Principal != nil
+}
+
+func (x *GetAuthenticatedPrincipalResponse) ClearPrincipal() {
+	x.xxx_hidden_Principal = nil
+}
+
+type GetAuthenticatedPrincipalResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Valid     bool
+	Principal *session.AuthenticatedPrincipal
+}
+
+func (b0 GetAuthenticatedPrincipalResponse_builder) Build() *GetAuthenticatedPrincipalResponse {
+	m0 := &GetAuthenticatedPrincipalResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Valid = b.Valid
+	x.xxx_hidden_Principal = b.Principal
 	return m0
 }
 
@@ -994,715 +1039,6 @@ func (b0 RevokeFederatedIdentityResponse_builder) Build() *RevokeFederatedIdenti
 	return m0
 }
 
-type OIDCIntrospectTokenRequest struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Token       string                 `protobuf:"bytes,1,opt,name=token,proto3"`
-	xxx_hidden_Hint        *string                `protobuf:"bytes,2,opt,name=hint,proto3,oneof"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
-}
-
-func (x *OIDCIntrospectTokenRequest) Reset() {
-	*x = OIDCIntrospectTokenRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCIntrospectTokenRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCIntrospectTokenRequest) ProtoMessage() {}
-
-func (x *OIDCIntrospectTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCIntrospectTokenRequest) GetToken() string {
-	if x != nil {
-		return x.xxx_hidden_Token
-	}
-	return ""
-}
-
-func (x *OIDCIntrospectTokenRequest) GetHint() string {
-	if x != nil {
-		if x.xxx_hidden_Hint != nil {
-			return *x.xxx_hidden_Hint
-		}
-		return ""
-	}
-	return ""
-}
-
-func (x *OIDCIntrospectTokenRequest) SetToken(v string) {
-	x.xxx_hidden_Token = v
-}
-
-func (x *OIDCIntrospectTokenRequest) SetHint(v string) {
-	x.xxx_hidden_Hint = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 2)
-}
-
-func (x *OIDCIntrospectTokenRequest) HasHint() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
-}
-
-func (x *OIDCIntrospectTokenRequest) ClearHint() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
-	x.xxx_hidden_Hint = nil
-}
-
-type OIDCIntrospectTokenRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Token string
-	Hint  *string
-}
-
-func (b0 OIDCIntrospectTokenRequest_builder) Build() *OIDCIntrospectTokenRequest {
-	m0 := &OIDCIntrospectTokenRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Token = b.Token
-	if b.Hint != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 2)
-		x.xxx_hidden_Hint = b.Hint
-	}
-	return m0
-}
-
-type OIDCIntrospectTokenResponse struct {
-	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Active      bool                   `protobuf:"varint,1,opt,name=active,proto3"`
-	xxx_hidden_UserId      string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3"`
-	xxx_hidden_ClientId    string                 `protobuf:"bytes,3,opt,name=client_id,json=clientId,proto3"`
-	xxx_hidden_Type        string                 `protobuf:"bytes,4,opt,name=type,proto3"`
-	xxx_hidden_Audience    *string                `protobuf:"bytes,5,opt,name=audience,proto3,oneof"`
-	xxx_hidden_Scopes      []string               `protobuf:"bytes,6,rep,name=scopes,proto3"`
-	xxx_hidden_CreatedAt   *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3"`
-	xxx_hidden_ExpiresAt   *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=expires_at,json=expiresAt,proto3"`
-	XXX_raceDetectHookData protoimpl.RaceDetectHookData
-	XXX_presence           [1]uint32
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
-}
-
-func (x *OIDCIntrospectTokenResponse) Reset() {
-	*x = OIDCIntrospectTokenResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCIntrospectTokenResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCIntrospectTokenResponse) ProtoMessage() {}
-
-func (x *OIDCIntrospectTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCIntrospectTokenResponse) GetActive() bool {
-	if x != nil {
-		return x.xxx_hidden_Active
-	}
-	return false
-}
-
-func (x *OIDCIntrospectTokenResponse) GetUserId() string {
-	if x != nil {
-		return x.xxx_hidden_UserId
-	}
-	return ""
-}
-
-func (x *OIDCIntrospectTokenResponse) GetClientId() string {
-	if x != nil {
-		return x.xxx_hidden_ClientId
-	}
-	return ""
-}
-
-func (x *OIDCIntrospectTokenResponse) GetType() string {
-	if x != nil {
-		return x.xxx_hidden_Type
-	}
-	return ""
-}
-
-func (x *OIDCIntrospectTokenResponse) GetAudience() string {
-	if x != nil {
-		if x.xxx_hidden_Audience != nil {
-			return *x.xxx_hidden_Audience
-		}
-		return ""
-	}
-	return ""
-}
-
-func (x *OIDCIntrospectTokenResponse) GetScopes() []string {
-	if x != nil {
-		return x.xxx_hidden_Scopes
-	}
-	return nil
-}
-
-func (x *OIDCIntrospectTokenResponse) GetCreatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.xxx_hidden_CreatedAt
-	}
-	return nil
-}
-
-func (x *OIDCIntrospectTokenResponse) GetExpiresAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.xxx_hidden_ExpiresAt
-	}
-	return nil
-}
-
-func (x *OIDCIntrospectTokenResponse) SetActive(v bool) {
-	x.xxx_hidden_Active = v
-}
-
-func (x *OIDCIntrospectTokenResponse) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
-}
-
-func (x *OIDCIntrospectTokenResponse) SetClientId(v string) {
-	x.xxx_hidden_ClientId = v
-}
-
-func (x *OIDCIntrospectTokenResponse) SetType(v string) {
-	x.xxx_hidden_Type = v
-}
-
-func (x *OIDCIntrospectTokenResponse) SetAudience(v string) {
-	x.xxx_hidden_Audience = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 8)
-}
-
-func (x *OIDCIntrospectTokenResponse) SetScopes(v []string) {
-	x.xxx_hidden_Scopes = v
-}
-
-func (x *OIDCIntrospectTokenResponse) SetCreatedAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_CreatedAt = v
-}
-
-func (x *OIDCIntrospectTokenResponse) SetExpiresAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ExpiresAt = v
-}
-
-func (x *OIDCIntrospectTokenResponse) HasAudience() bool {
-	if x == nil {
-		return false
-	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
-}
-
-func (x *OIDCIntrospectTokenResponse) HasCreatedAt() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_CreatedAt != nil
-}
-
-func (x *OIDCIntrospectTokenResponse) HasExpiresAt() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_ExpiresAt != nil
-}
-
-func (x *OIDCIntrospectTokenResponse) ClearAudience() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
-	x.xxx_hidden_Audience = nil
-}
-
-func (x *OIDCIntrospectTokenResponse) ClearCreatedAt() {
-	x.xxx_hidden_CreatedAt = nil
-}
-
-func (x *OIDCIntrospectTokenResponse) ClearExpiresAt() {
-	x.xxx_hidden_ExpiresAt = nil
-}
-
-type OIDCIntrospectTokenResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Active    bool
-	UserId    string
-	ClientId  string
-	Type      string
-	Audience  *string
-	Scopes    []string
-	CreatedAt *timestamppb.Timestamp
-	ExpiresAt *timestamppb.Timestamp
-}
-
-func (b0 OIDCIntrospectTokenResponse_builder) Build() *OIDCIntrospectTokenResponse {
-	m0 := &OIDCIntrospectTokenResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Active = b.Active
-	x.xxx_hidden_UserId = b.UserId
-	x.xxx_hidden_ClientId = b.ClientId
-	x.xxx_hidden_Type = b.Type
-	if b.Audience != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 8)
-		x.xxx_hidden_Audience = b.Audience
-	}
-	x.xxx_hidden_Scopes = b.Scopes
-	x.xxx_hidden_CreatedAt = b.CreatedAt
-	x.xxx_hidden_ExpiresAt = b.ExpiresAt
-	return m0
-}
-
-type OIDCGrantConsentRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	xxx_hidden_ClientId     string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3"`
-	xxx_hidden_Scopes       []string               `protobuf:"bytes,3,rep,name=scopes,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
-}
-
-func (x *OIDCGrantConsentRequest) Reset() {
-	*x = OIDCGrantConsentRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCGrantConsentRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCGrantConsentRequest) ProtoMessage() {}
-
-func (x *OIDCGrantConsentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCGrantConsentRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *OIDCGrantConsentRequest) GetClientId() string {
-	if x != nil {
-		return x.xxx_hidden_ClientId
-	}
-	return ""
-}
-
-func (x *OIDCGrantConsentRequest) GetScopes() []string {
-	if x != nil {
-		return x.xxx_hidden_Scopes
-	}
-	return nil
-}
-
-func (x *OIDCGrantConsentRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *OIDCGrantConsentRequest) SetClientId(v string) {
-	x.xxx_hidden_ClientId = v
-}
-
-func (x *OIDCGrantConsentRequest) SetScopes(v []string) {
-	x.xxx_hidden_Scopes = v
-}
-
-func (x *OIDCGrantConsentRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *OIDCGrantConsentRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
-type OIDCGrantConsentRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	SessionToken *session.SessionToken
-	ClientId     string
-	Scopes       []string
-}
-
-func (b0 OIDCGrantConsentRequest_builder) Build() *OIDCGrantConsentRequest {
-	m0 := &OIDCGrantConsentRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
-	x.xxx_hidden_ClientId = b.ClientId
-	x.xxx_hidden_Scopes = b.Scopes
-	return m0
-}
-
-type OIDCGrantConsentResponse struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *OIDCGrantConsentResponse) Reset() {
-	*x = OIDCGrantConsentResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCGrantConsentResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCGrantConsentResponse) ProtoMessage() {}
-
-func (x *OIDCGrantConsentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCGrantConsentResponse) GetSuccess() bool {
-	if x != nil {
-		return x.xxx_hidden_Success
-	}
-	return false
-}
-
-func (x *OIDCGrantConsentResponse) SetSuccess(v bool) {
-	x.xxx_hidden_Success = v
-}
-
-type OIDCGrantConsentResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Success bool
-}
-
-func (b0 OIDCGrantConsentResponse_builder) Build() *OIDCGrantConsentResponse {
-	m0 := &OIDCGrantConsentResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Success = b.Success
-	return m0
-}
-
-type OIDCRevokeConsentRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	xxx_hidden_ClientId     string                 `protobuf:"bytes,2,opt,name=client_id,json=clientId,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
-}
-
-func (x *OIDCRevokeConsentRequest) Reset() {
-	*x = OIDCRevokeConsentRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCRevokeConsentRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCRevokeConsentRequest) ProtoMessage() {}
-
-func (x *OIDCRevokeConsentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCRevokeConsentRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *OIDCRevokeConsentRequest) GetClientId() string {
-	if x != nil {
-		return x.xxx_hidden_ClientId
-	}
-	return ""
-}
-
-func (x *OIDCRevokeConsentRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *OIDCRevokeConsentRequest) SetClientId(v string) {
-	x.xxx_hidden_ClientId = v
-}
-
-func (x *OIDCRevokeConsentRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *OIDCRevokeConsentRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
-type OIDCRevokeConsentRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	SessionToken *session.SessionToken
-	ClientId     string
-}
-
-func (b0 OIDCRevokeConsentRequest_builder) Build() *OIDCRevokeConsentRequest {
-	m0 := &OIDCRevokeConsentRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
-	x.xxx_hidden_ClientId = b.ClientId
-	return m0
-}
-
-type OIDCRevokeConsentResponse struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *OIDCRevokeConsentResponse) Reset() {
-	*x = OIDCRevokeConsentResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCRevokeConsentResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCRevokeConsentResponse) ProtoMessage() {}
-
-func (x *OIDCRevokeConsentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCRevokeConsentResponse) GetSuccess() bool {
-	if x != nil {
-		return x.xxx_hidden_Success
-	}
-	return false
-}
-
-func (x *OIDCRevokeConsentResponse) SetSuccess(v bool) {
-	x.xxx_hidden_Success = v
-}
-
-type OIDCRevokeConsentResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Success bool
-}
-
-func (b0 OIDCRevokeConsentResponse_builder) Build() *OIDCRevokeConsentResponse {
-	m0 := &OIDCRevokeConsentResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Success = b.Success
-	return m0
-}
-
-type OIDCListGrantedConsentsRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
-}
-
-func (x *OIDCListGrantedConsentsRequest) Reset() {
-	*x = OIDCListGrantedConsentsRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCListGrantedConsentsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCListGrantedConsentsRequest) ProtoMessage() {}
-
-func (x *OIDCListGrantedConsentsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCListGrantedConsentsRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *OIDCListGrantedConsentsRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *OIDCListGrantedConsentsRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *OIDCListGrantedConsentsRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
-type OIDCListGrantedConsentsRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	SessionToken *session.SessionToken
-}
-
-func (b0 OIDCListGrantedConsentsRequest_builder) Build() *OIDCListGrantedConsentsRequest {
-	m0 := &OIDCListGrantedConsentsRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
-	return m0
-}
-
-type OIDCListGrantedConsentsResponse struct {
-	state              protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Clients *[]*client.AuthorizedClient `protobuf:"bytes,1,rep,name=clients,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *OIDCListGrantedConsentsResponse) Reset() {
-	*x = OIDCListGrantedConsentsResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCListGrantedConsentsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCListGrantedConsentsResponse) ProtoMessage() {}
-
-func (x *OIDCListGrantedConsentsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCListGrantedConsentsResponse) GetClients() []*client.AuthorizedClient {
-	if x != nil {
-		if x.xxx_hidden_Clients != nil {
-			return *x.xxx_hidden_Clients
-		}
-	}
-	return nil
-}
-
-func (x *OIDCListGrantedConsentsResponse) SetClients(v []*client.AuthorizedClient) {
-	x.xxx_hidden_Clients = &v
-}
-
-type OIDCListGrantedConsentsResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Clients []*client.AuthorizedClient
-}
-
-func (b0 OIDCListGrantedConsentsResponse_builder) Build() *OIDCListGrantedConsentsResponse {
-	m0 := &OIDCListGrantedConsentsResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Clients = &b.Clients
-	return m0
-}
-
 type RevokeSessionRequest struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
@@ -1712,7 +1048,7 @@ type RevokeSessionRequest struct {
 
 func (x *RevokeSessionRequest) Reset() {
 	*x = RevokeSessionRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[18]
+	mi := &file_authn_v1_authn_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1724,7 +1060,7 @@ func (x *RevokeSessionRequest) String() string {
 func (*RevokeSessionRequest) ProtoMessage() {}
 
 func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[18]
+	mi := &file_authn_v1_authn_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1780,7 +1116,7 @@ type RevokeSessionResponse struct {
 
 func (x *RevokeSessionResponse) Reset() {
 	*x = RevokeSessionResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[19]
+	mi := &file_authn_v1_authn_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1792,7 +1128,7 @@ func (x *RevokeSessionResponse) String() string {
 func (*RevokeSessionResponse) ProtoMessage() {}
 
 func (x *RevokeSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[19]
+	mi := &file_authn_v1_authn_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1828,278 +1164,11 @@ func (b0 RevokeSessionResponse_builder) Build() *RevokeSessionResponse {
 	return m0
 }
 
-type OIDCRevokeRefreshTokenRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RefreshToken string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
-}
-
-func (x *OIDCRevokeRefreshTokenRequest) Reset() {
-	*x = OIDCRevokeRefreshTokenRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCRevokeRefreshTokenRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCRevokeRefreshTokenRequest) ProtoMessage() {}
-
-func (x *OIDCRevokeRefreshTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCRevokeRefreshTokenRequest) GetRefreshToken() string {
-	if x != nil {
-		return x.xxx_hidden_RefreshToken
-	}
-	return ""
-}
-
-func (x *OIDCRevokeRefreshTokenRequest) SetRefreshToken(v string) {
-	x.xxx_hidden_RefreshToken = v
-}
-
-type OIDCRevokeRefreshTokenRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	RefreshToken string
-}
-
-func (b0 OIDCRevokeRefreshTokenRequest_builder) Build() *OIDCRevokeRefreshTokenRequest {
-	m0 := &OIDCRevokeRefreshTokenRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_RefreshToken = b.RefreshToken
-	return m0
-}
-
-type OIDCRevokeRefreshTokenResponse struct {
-	state              protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *OIDCRevokeRefreshTokenResponse) Reset() {
-	*x = OIDCRevokeRefreshTokenResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCRevokeRefreshTokenResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCRevokeRefreshTokenResponse) ProtoMessage() {}
-
-func (x *OIDCRevokeRefreshTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCRevokeRefreshTokenResponse) GetSuccess() bool {
-	if x != nil {
-		return x.xxx_hidden_Success
-	}
-	return false
-}
-
-func (x *OIDCRevokeRefreshTokenResponse) SetSuccess(v bool) {
-	x.xxx_hidden_Success = v
-}
-
-type OIDCRevokeRefreshTokenResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Success bool
-}
-
-func (b0 OIDCRevokeRefreshTokenResponse_builder) Build() *OIDCRevokeRefreshTokenResponse {
-	m0 := &OIDCRevokeRefreshTokenResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Success = b.Success
-	return m0
-}
-
-type OIDCRotateAndGetAccessTokenRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_RefreshToken string                 `protobuf:"bytes,1,opt,name=refresh_token,json=refreshToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
-}
-
-func (x *OIDCRotateAndGetAccessTokenRequest) Reset() {
-	*x = OIDCRotateAndGetAccessTokenRequest{}
-	mi := &file_authn_v1_authn_proto_msgTypes[22]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCRotateAndGetAccessTokenRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCRotateAndGetAccessTokenRequest) ProtoMessage() {}
-
-func (x *OIDCRotateAndGetAccessTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[22]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCRotateAndGetAccessTokenRequest) GetRefreshToken() string {
-	if x != nil {
-		return x.xxx_hidden_RefreshToken
-	}
-	return ""
-}
-
-func (x *OIDCRotateAndGetAccessTokenRequest) SetRefreshToken(v string) {
-	x.xxx_hidden_RefreshToken = v
-}
-
-type OIDCRotateAndGetAccessTokenRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	RefreshToken string
-}
-
-func (b0 OIDCRotateAndGetAccessTokenRequest_builder) Build() *OIDCRotateAndGetAccessTokenRequest {
-	m0 := &OIDCRotateAndGetAccessTokenRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_RefreshToken = b.RefreshToken
-	return m0
-}
-
-type OIDCRotateAndGetAccessTokenResponse struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_AccessToken  string                 `protobuf:"bytes,1,opt,name=access_token,json=accessToken,proto3"`
-	xxx_hidden_RefreshToken string                 `protobuf:"bytes,2,opt,name=refresh_token,json=refreshToken,proto3"`
-	xxx_hidden_ExpiresAt    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) Reset() {
-	*x = OIDCRotateAndGetAccessTokenResponse{}
-	mi := &file_authn_v1_authn_proto_msgTypes[23]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OIDCRotateAndGetAccessTokenResponse) ProtoMessage() {}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_authn_proto_msgTypes[23]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) GetAccessToken() string {
-	if x != nil {
-		return x.xxx_hidden_AccessToken
-	}
-	return ""
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) GetRefreshToken() string {
-	if x != nil {
-		return x.xxx_hidden_RefreshToken
-	}
-	return ""
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) GetExpiresAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.xxx_hidden_ExpiresAt
-	}
-	return nil
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) SetAccessToken(v string) {
-	x.xxx_hidden_AccessToken = v
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) SetRefreshToken(v string) {
-	x.xxx_hidden_RefreshToken = v
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) SetExpiresAt(v *timestamppb.Timestamp) {
-	x.xxx_hidden_ExpiresAt = v
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) HasExpiresAt() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_ExpiresAt != nil
-}
-
-func (x *OIDCRotateAndGetAccessTokenResponse) ClearExpiresAt() {
-	x.xxx_hidden_ExpiresAt = nil
-}
-
-type OIDCRotateAndGetAccessTokenResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	AccessToken  string
-	RefreshToken string
-	ExpiresAt    *timestamppb.Timestamp
-}
-
-func (b0 OIDCRotateAndGetAccessTokenResponse_builder) Build() *OIDCRotateAndGetAccessTokenResponse {
-	m0 := &OIDCRotateAndGetAccessTokenResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_AccessToken = b.AccessToken
-	x.xxx_hidden_RefreshToken = b.RefreshToken
-	x.xxx_hidden_ExpiresAt = b.ExpiresAt
-	return m0
-}
-
 var File_authn_v1_authn_proto protoreflect.FileDescriptor
 
 const file_authn_v1_authn_proto_rawDesc = "" +
 	"\n" +
-	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x1cauthn/v1/certification.proto\x1a\x18authn/v1/challenge.proto\x1a\x15authn/v1/client.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xc5\x02\n" +
+	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xc5\x02\n" +
 	"\x17StartAuthSessionRequest\x127\n" +
 	"\x06method\x18\x01 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthMethodR\x06method\x12(\n" +
 	"\n" +
@@ -2122,176 +1191,96 @@ const file_authn_v1_authn_proto_rawDesc = "" +
 	"\x12challenge_required\x18\x03 \x01(\v2(.muid.authn.v1.session.ChallengeRequiredH\x00R\x11challengeRequired\x12G\n" +
 	"\fauth_success\x18\x04 \x01(\v2\".muid.authn.v1.session.AuthSuccessH\x00R\vauthSuccess\x12G\n" +
 	"\fauth_failure\x18\x05 \x01(\v2\".muid.authn.v1.session.AuthFailureH\x00R\vauthFailureB\b\n" +
-	"\x06result\"\x16\n" +
-	"\x14GetPublicKeysRequest\"`\n" +
-	"\x15GetPublicKeysResponse\x12G\n" +
-	"\vpublic_keys\x18\x01 \x03(\v2&.muid.authn.v1.certification.PublicKeyR\n" +
-	"publicKeys\"g\n" +
+	"\x06result\"g\n" +
 	"\x1bGetAuthorizedSessionRequest\x12H\n" +
 	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"z\n" +
 	"\x1cGetAuthorizedSessionResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12D\n" +
-	"\asession\x18\x02 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\asession\"\x86\x01\n" +
+	"\asession\x18\x02 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\asession\"l\n" +
+	" GetAuthenticatedPrincipalRequest\x12H\n" +
+	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\x86\x01\n" +
+	"!GetAuthenticatedPrincipalResponse\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12K\n" +
+	"\tprincipal\x18\x02 \x01(\v2-.muid.authn.v1.session.AuthenticatedPrincipalR\tprincipal\"\x86\x01\n" +
 	"\x1eRevokeFederatedIdentityRequest\x12H\n" +
 	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12\x1a\n" +
 	"\bprovider\x18\x02 \x01(\tR\bprovider\";\n" +
 	"\x1fRevokeFederatedIdentityResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"T\n" +
-	"\x1aOIDCIntrospectTokenRequest\x12\x14\n" +
-	"\x05token\x18\x01 \x01(\tR\x05token\x12\x17\n" +
-	"\x04hint\x18\x02 \x01(\tH\x00R\x04hint\x88\x01\x01B\a\n" +
-	"\x05_hint\"\xc5\x02\n" +
-	"\x1bOIDCIntrospectTokenResponse\x12\x16\n" +
-	"\x06active\x18\x01 \x01(\bR\x06active\x12!\n" +
-	"\auser_id\x18\x02 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12\x1b\n" +
-	"\tclient_id\x18\x03 \x01(\tR\bclientId\x12\x12\n" +
-	"\x04type\x18\x04 \x01(\tR\x04type\x12\x1f\n" +
-	"\baudience\x18\x05 \x01(\tH\x00R\baudience\x88\x01\x01\x12\x16\n" +
-	"\x06scopes\x18\x06 \x03(\tR\x06scopes\x129\n" +
-	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
-	"\n" +
-	"expires_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAtB\v\n" +
-	"\t_audience\"\x98\x01\n" +
-	"\x17OIDCGrantConsentRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12\x1b\n" +
-	"\tclient_id\x18\x02 \x01(\tR\bclientId\x12\x16\n" +
-	"\x06scopes\x18\x03 \x03(\tR\x06scopes\"4\n" +
-	"\x18OIDCGrantConsentResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x81\x01\n" +
-	"\x18OIDCRevokeConsentRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12\x1b\n" +
-	"\tclient_id\x18\x02 \x01(\tR\bclientId\"5\n" +
-	"\x19OIDCRevokeConsentResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"j\n" +
-	"\x1eOIDCListGrantedConsentsRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"c\n" +
-	"\x1fOIDCListGrantedConsentsResponse\x12@\n" +
-	"\aclients\x18\x01 \x03(\v2&.muid.authn.v1.client.AuthorizedClientR\aclients\"`\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"`\n" +
 	"\x14RevokeSessionRequest\x12H\n" +
 	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"1\n" +
 	"\x15RevokeSessionResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"D\n" +
-	"\x1dOIDCRevokeRefreshTokenRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\":\n" +
-	"\x1eOIDCRevokeRefreshTokenResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"I\n" +
-	"\"OIDCRotateAndGetAccessTokenRequest\x12#\n" +
-	"\rrefresh_token\x18\x01 \x01(\tR\frefreshToken\"\xa8\x01\n" +
-	"#OIDCRotateAndGetAccessTokenResponse\x12!\n" +
-	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
-	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x129\n" +
-	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt2\xb7\n" +
-	"\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\xa8\x05\n" +
 	"\fAuthnService\x12c\n" +
 	"\x10StartAuthSession\x12&.muid.authn.v1.StartAuthSessionRequest\x1a'.muid.authn.v1.StartAuthSessionResponse\x12l\n" +
-	"\x13ContinueAuthSession\x12).muid.authn.v1.ContinueAuthSessionRequest\x1a*.muid.authn.v1.ContinueAuthSessionResponse\x12Z\n" +
-	"\rGetPublicKeys\x12#.muid.authn.v1.GetPublicKeysRequest\x1a$.muid.authn.v1.GetPublicKeysResponse\x12x\n" +
+	"\x13ContinueAuthSession\x12).muid.authn.v1.ContinueAuthSessionRequest\x1a*.muid.authn.v1.ContinueAuthSessionResponse\x12x\n" +
 	"\x17RevokeFederatedIdentity\x12-.muid.authn.v1.RevokeFederatedIdentityRequest\x1a..muid.authn.v1.RevokeFederatedIdentityResponse\x12o\n" +
-	"\x14GetAuthorizedSession\x12*.muid.authn.v1.GetAuthorizedSessionRequest\x1a+.muid.authn.v1.GetAuthorizedSessionResponse\x12Z\n" +
-	"\rRevokeSession\x12#.muid.authn.v1.RevokeSessionRequest\x1a$.muid.authn.v1.RevokeSessionResponse\x12x\n" +
-	"\x17OIDCListGrantedConsents\x12-.muid.authn.v1.OIDCListGrantedConsentsRequest\x1a..muid.authn.v1.OIDCListGrantedConsentsResponse\x12c\n" +
-	"\x10OIDCGrantConsent\x12&.muid.authn.v1.OIDCGrantConsentRequest\x1a'.muid.authn.v1.OIDCGrantConsentResponse\x12f\n" +
-	"\x11OIDCRevokeConsent\x12'.muid.authn.v1.OIDCRevokeConsentRequest\x1a(.muid.authn.v1.OIDCRevokeConsentResponse\x12l\n" +
-	"\x13OIDCIntrospectToken\x12).muid.authn.v1.OIDCIntrospectTokenRequest\x1a*.muid.authn.v1.OIDCIntrospectTokenResponse\x12u\n" +
-	"\x16OIDCRevokeRefreshToken\x12,.muid.authn.v1.OIDCRevokeRefreshTokenRequest\x1a-.muid.authn.v1.OIDCRevokeRefreshTokenResponse\x12\x84\x01\n" +
-	"\x1bOIDCRotateAndGetAccessToken\x121.muid.authn.v1.OIDCRotateAndGetAccessTokenRequest\x1a2.muid.authn.v1.OIDCRotateAndGetAccessTokenResponseB\x9d\x01\n" +
+	"\x14GetAuthorizedSession\x12*.muid.authn.v1.GetAuthorizedSessionRequest\x1a+.muid.authn.v1.GetAuthorizedSessionResponse\x12~\n" +
+	"\x19GetAuthenticatedPrincipal\x12/.muid.authn.v1.GetAuthenticatedPrincipalRequest\x1a0.muid.authn.v1.GetAuthenticatedPrincipalResponse\x12Z\n" +
+	"\rRevokeSession\x12#.muid.authn.v1.RevokeSessionRequest\x1a$.muid.authn.v1.RevokeSessionResponseB\x9d\x01\n" +
 	"\x11com.muid.authn.v1B\n" +
 	"AuthnProtoP\x01Z&sanzi.io/muid/api/proto/authn/v1;authn\xa2\x02\x03MAX\xaa\x02\rMuid.Authn.V1\xca\x02\rMuid\\Authn\\V1\xe2\x02\x19Muid\\Authn\\V1\\GPBMetadata\xea\x02\x0fMuid::Authn::V1b\x06proto3"
 
-var file_authn_v1_authn_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_authn_v1_authn_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
 var file_authn_v1_authn_proto_goTypes = []any{
-	(*StartAuthSessionRequest)(nil),             // 0: muid.authn.v1.StartAuthSessionRequest
-	(*StartAuthSessionResponse)(nil),            // 1: muid.authn.v1.StartAuthSessionResponse
-	(*ContinueAuthSessionRequest)(nil),          // 2: muid.authn.v1.ContinueAuthSessionRequest
-	(*ContinueAuthSessionResponse)(nil),         // 3: muid.authn.v1.ContinueAuthSessionResponse
-	(*GetPublicKeysRequest)(nil),                // 4: muid.authn.v1.GetPublicKeysRequest
-	(*GetPublicKeysResponse)(nil),               // 5: muid.authn.v1.GetPublicKeysResponse
-	(*GetAuthorizedSessionRequest)(nil),         // 6: muid.authn.v1.GetAuthorizedSessionRequest
-	(*GetAuthorizedSessionResponse)(nil),        // 7: muid.authn.v1.GetAuthorizedSessionResponse
-	(*RevokeFederatedIdentityRequest)(nil),      // 8: muid.authn.v1.RevokeFederatedIdentityRequest
-	(*RevokeFederatedIdentityResponse)(nil),     // 9: muid.authn.v1.RevokeFederatedIdentityResponse
-	(*OIDCIntrospectTokenRequest)(nil),          // 10: muid.authn.v1.OIDCIntrospectTokenRequest
-	(*OIDCIntrospectTokenResponse)(nil),         // 11: muid.authn.v1.OIDCIntrospectTokenResponse
-	(*OIDCGrantConsentRequest)(nil),             // 12: muid.authn.v1.OIDCGrantConsentRequest
-	(*OIDCGrantConsentResponse)(nil),            // 13: muid.authn.v1.OIDCGrantConsentResponse
-	(*OIDCRevokeConsentRequest)(nil),            // 14: muid.authn.v1.OIDCRevokeConsentRequest
-	(*OIDCRevokeConsentResponse)(nil),           // 15: muid.authn.v1.OIDCRevokeConsentResponse
-	(*OIDCListGrantedConsentsRequest)(nil),      // 16: muid.authn.v1.OIDCListGrantedConsentsRequest
-	(*OIDCListGrantedConsentsResponse)(nil),     // 17: muid.authn.v1.OIDCListGrantedConsentsResponse
-	(*RevokeSessionRequest)(nil),                // 18: muid.authn.v1.RevokeSessionRequest
-	(*RevokeSessionResponse)(nil),               // 19: muid.authn.v1.RevokeSessionResponse
-	(*OIDCRevokeRefreshTokenRequest)(nil),       // 20: muid.authn.v1.OIDCRevokeRefreshTokenRequest
-	(*OIDCRevokeRefreshTokenResponse)(nil),      // 21: muid.authn.v1.OIDCRevokeRefreshTokenResponse
-	(*OIDCRotateAndGetAccessTokenRequest)(nil),  // 22: muid.authn.v1.OIDCRotateAndGetAccessTokenRequest
-	(*OIDCRotateAndGetAccessTokenResponse)(nil), // 23: muid.authn.v1.OIDCRotateAndGetAccessTokenResponse
-	(basic.AuthMethod)(0),                       // 24: muid.authn.v1.basic.AuthMethod
-	(basic.AuthIntent)(0),                       // 25: muid.authn.v1.basic.AuthIntent
-	(*session.SessionToken)(nil),                // 26: muid.authn.v1.session.SessionToken
-	(*challenge.AuthChallenge)(nil),             // 27: muid.authn.v1.challenge.AuthChallenge
-	(*proof.AuthProof)(nil),                     // 28: muid.authn.v1.proof.AuthProof
-	(basic.AuthStatus)(0),                       // 29: muid.authn.v1.basic.AuthStatus
-	(*session.ChallengeRequired)(nil),           // 30: muid.authn.v1.session.ChallengeRequired
-	(*session.AuthSuccess)(nil),                 // 31: muid.authn.v1.session.AuthSuccess
-	(*session.AuthFailure)(nil),                 // 32: muid.authn.v1.session.AuthFailure
-	(*certification.PublicKey)(nil),             // 33: muid.authn.v1.certification.PublicKey
-	(*session.AuthenticatedResult)(nil),         // 34: muid.authn.v1.session.AuthenticatedResult
-	(*timestamppb.Timestamp)(nil),               // 35: google.protobuf.Timestamp
-	(*client.AuthorizedClient)(nil),             // 36: muid.authn.v1.client.AuthorizedClient
+	(*StartAuthSessionRequest)(nil),           // 0: muid.authn.v1.StartAuthSessionRequest
+	(*StartAuthSessionResponse)(nil),          // 1: muid.authn.v1.StartAuthSessionResponse
+	(*ContinueAuthSessionRequest)(nil),        // 2: muid.authn.v1.ContinueAuthSessionRequest
+	(*ContinueAuthSessionResponse)(nil),       // 3: muid.authn.v1.ContinueAuthSessionResponse
+	(*GetAuthorizedSessionRequest)(nil),       // 4: muid.authn.v1.GetAuthorizedSessionRequest
+	(*GetAuthorizedSessionResponse)(nil),      // 5: muid.authn.v1.GetAuthorizedSessionResponse
+	(*GetAuthenticatedPrincipalRequest)(nil),  // 6: muid.authn.v1.GetAuthenticatedPrincipalRequest
+	(*GetAuthenticatedPrincipalResponse)(nil), // 7: muid.authn.v1.GetAuthenticatedPrincipalResponse
+	(*RevokeFederatedIdentityRequest)(nil),    // 8: muid.authn.v1.RevokeFederatedIdentityRequest
+	(*RevokeFederatedIdentityResponse)(nil),   // 9: muid.authn.v1.RevokeFederatedIdentityResponse
+	(*RevokeSessionRequest)(nil),              // 10: muid.authn.v1.RevokeSessionRequest
+	(*RevokeSessionResponse)(nil),             // 11: muid.authn.v1.RevokeSessionResponse
+	(basic.AuthMethod)(0),                     // 12: muid.authn.v1.basic.AuthMethod
+	(basic.AuthIntent)(0),                     // 13: muid.authn.v1.basic.AuthIntent
+	(*session.SessionToken)(nil),              // 14: muid.authn.v1.session.SessionToken
+	(*challenge.AuthChallenge)(nil),           // 15: muid.authn.v1.challenge.AuthChallenge
+	(*proof.AuthProof)(nil),                   // 16: muid.authn.v1.proof.AuthProof
+	(basic.AuthStatus)(0),                     // 17: muid.authn.v1.basic.AuthStatus
+	(*session.ChallengeRequired)(nil),         // 18: muid.authn.v1.session.ChallengeRequired
+	(*session.AuthSuccess)(nil),               // 19: muid.authn.v1.session.AuthSuccess
+	(*session.AuthFailure)(nil),               // 20: muid.authn.v1.session.AuthFailure
+	(*session.AuthenticatedResult)(nil),       // 21: muid.authn.v1.session.AuthenticatedResult
+	(*session.AuthenticatedPrincipal)(nil),    // 22: muid.authn.v1.session.AuthenticatedPrincipal
 }
 var file_authn_v1_authn_proto_depIdxs = []int32{
-	24, // 0: muid.authn.v1.StartAuthSessionRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
-	25, // 1: muid.authn.v1.StartAuthSessionRequest.intent:type_name -> muid.authn.v1.basic.AuthIntent
-	26, // 2: muid.authn.v1.StartAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	27, // 3: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	28, // 4: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
-	26, // 5: muid.authn.v1.ContinueAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	29, // 6: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
-	30, // 7: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
-	31, // 8: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
-	32, // 9: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
-	33, // 10: muid.authn.v1.GetPublicKeysResponse.public_keys:type_name -> muid.authn.v1.certification.PublicKey
-	26, // 11: muid.authn.v1.GetAuthorizedSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	34, // 12: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
-	26, // 13: muid.authn.v1.RevokeFederatedIdentityRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	35, // 14: muid.authn.v1.OIDCIntrospectTokenResponse.created_at:type_name -> google.protobuf.Timestamp
-	35, // 15: muid.authn.v1.OIDCIntrospectTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	26, // 16: muid.authn.v1.OIDCGrantConsentRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	26, // 17: muid.authn.v1.OIDCRevokeConsentRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	26, // 18: muid.authn.v1.OIDCListGrantedConsentsRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	36, // 19: muid.authn.v1.OIDCListGrantedConsentsResponse.clients:type_name -> muid.authn.v1.client.AuthorizedClient
-	26, // 20: muid.authn.v1.RevokeSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	35, // 21: muid.authn.v1.OIDCRotateAndGetAccessTokenResponse.expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 22: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
-	2,  // 23: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
-	4,  // 24: muid.authn.v1.AuthnService.GetPublicKeys:input_type -> muid.authn.v1.GetPublicKeysRequest
-	8,  // 25: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
-	6,  // 26: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetAuthorizedSessionRequest
-	18, // 27: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
-	16, // 28: muid.authn.v1.AuthnService.OIDCListGrantedConsents:input_type -> muid.authn.v1.OIDCListGrantedConsentsRequest
-	12, // 29: muid.authn.v1.AuthnService.OIDCGrantConsent:input_type -> muid.authn.v1.OIDCGrantConsentRequest
-	14, // 30: muid.authn.v1.AuthnService.OIDCRevokeConsent:input_type -> muid.authn.v1.OIDCRevokeConsentRequest
-	10, // 31: muid.authn.v1.AuthnService.OIDCIntrospectToken:input_type -> muid.authn.v1.OIDCIntrospectTokenRequest
-	20, // 32: muid.authn.v1.AuthnService.OIDCRevokeRefreshToken:input_type -> muid.authn.v1.OIDCRevokeRefreshTokenRequest
-	22, // 33: muid.authn.v1.AuthnService.OIDCRotateAndGetAccessToken:input_type -> muid.authn.v1.OIDCRotateAndGetAccessTokenRequest
-	1,  // 34: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
-	3,  // 35: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
-	5,  // 36: muid.authn.v1.AuthnService.GetPublicKeys:output_type -> muid.authn.v1.GetPublicKeysResponse
-	9,  // 37: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
-	7,  // 38: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetAuthorizedSessionResponse
-	19, // 39: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
-	17, // 40: muid.authn.v1.AuthnService.OIDCListGrantedConsents:output_type -> muid.authn.v1.OIDCListGrantedConsentsResponse
-	13, // 41: muid.authn.v1.AuthnService.OIDCGrantConsent:output_type -> muid.authn.v1.OIDCGrantConsentResponse
-	15, // 42: muid.authn.v1.AuthnService.OIDCRevokeConsent:output_type -> muid.authn.v1.OIDCRevokeConsentResponse
-	11, // 43: muid.authn.v1.AuthnService.OIDCIntrospectToken:output_type -> muid.authn.v1.OIDCIntrospectTokenResponse
-	21, // 44: muid.authn.v1.AuthnService.OIDCRevokeRefreshToken:output_type -> muid.authn.v1.OIDCRevokeRefreshTokenResponse
-	23, // 45: muid.authn.v1.AuthnService.OIDCRotateAndGetAccessToken:output_type -> muid.authn.v1.OIDCRotateAndGetAccessTokenResponse
-	34, // [34:46] is the sub-list for method output_type
-	22, // [22:34] is the sub-list for method input_type
-	22, // [22:22] is the sub-list for extension type_name
-	22, // [22:22] is the sub-list for extension extendee
-	0,  // [0:22] is the sub-list for field type_name
+	12, // 0: muid.authn.v1.StartAuthSessionRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
+	13, // 1: muid.authn.v1.StartAuthSessionRequest.intent:type_name -> muid.authn.v1.basic.AuthIntent
+	14, // 2: muid.authn.v1.StartAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	15, // 3: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	16, // 4: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
+	14, // 5: muid.authn.v1.ContinueAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	17, // 6: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
+	18, // 7: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
+	19, // 8: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
+	20, // 9: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
+	14, // 10: muid.authn.v1.GetAuthorizedSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	21, // 11: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
+	14, // 12: muid.authn.v1.GetAuthenticatedPrincipalRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	22, // 13: muid.authn.v1.GetAuthenticatedPrincipalResponse.principal:type_name -> muid.authn.v1.session.AuthenticatedPrincipal
+	14, // 14: muid.authn.v1.RevokeFederatedIdentityRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	14, // 15: muid.authn.v1.RevokeSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
+	0,  // 16: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
+	2,  // 17: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
+	8,  // 18: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
+	4,  // 19: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetAuthorizedSessionRequest
+	6,  // 20: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:input_type -> muid.authn.v1.GetAuthenticatedPrincipalRequest
+	10, // 21: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
+	1,  // 22: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
+	3,  // 23: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
+	9,  // 24: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
+	5,  // 25: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetAuthorizedSessionResponse
+	7,  // 26: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:output_type -> muid.authn.v1.GetAuthenticatedPrincipalResponse
+	11, // 27: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
+	22, // [22:28] is the sub-list for method output_type
+	16, // [16:22] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_authn_proto_init() }
@@ -2304,15 +1293,13 @@ func file_authn_v1_authn_proto_init() {
 		(*continueAuthSessionResponse_AuthSuccess)(nil),
 		(*continueAuthSessionResponse_AuthFailure)(nil),
 	}
-	file_authn_v1_authn_proto_msgTypes[10].OneofWrappers = []any{}
-	file_authn_v1_authn_proto_msgTypes[11].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_authn_proto_rawDesc), len(file_authn_v1_authn_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   24,
+			NumMessages:   12,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

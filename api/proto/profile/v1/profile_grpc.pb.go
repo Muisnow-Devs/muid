@@ -32,9 +32,12 @@ const (
 type ProfileServiceClient interface {
 	CreateProfile(ctx context.Context, in *CreateProfileRequest, opts ...grpc.CallOption) (*CreateProfileResponse, error)
 	GetProfile(ctx context.Context, in *GetProfileRequest, opts ...grpc.CallOption) (*GetProfileResponse, error)
+	// Requires authenticated principal in metadata (x-authn-user-id).
 	UpdateProfile(ctx context.Context, in *UpdateProfileRequest, opts ...grpc.CallOption) (*UpdateProfileResponse, error)
 	// Presigned PUT to Cloudflare R2 (S3-compatible). Client uploads bytes, then calls CompleteAvatarUpload.
+	// Requires authenticated principal in metadata (x-authn-user-id).
 	StartAvatarUpload(ctx context.Context, in *StartAvatarUploadRequest, opts ...grpc.CallOption) (*StartAvatarUploadResponse, error)
+	// Requires authenticated principal in metadata (x-authn-user-id).
 	CompleteAvatarUpload(ctx context.Context, in *CompleteAvatarUploadRequest, opts ...grpc.CallOption) (*CompleteAvatarUploadResponse, error)
 }
 
@@ -102,9 +105,12 @@ func (c *profileServiceClient) CompleteAvatarUpload(ctx context.Context, in *Com
 type ProfileServiceServer interface {
 	CreateProfile(context.Context, *CreateProfileRequest) (*CreateProfileResponse, error)
 	GetProfile(context.Context, *GetProfileRequest) (*GetProfileResponse, error)
+	// Requires authenticated principal in metadata (x-authn-user-id).
 	UpdateProfile(context.Context, *UpdateProfileRequest) (*UpdateProfileResponse, error)
 	// Presigned PUT to Cloudflare R2 (S3-compatible). Client uploads bytes, then calls CompleteAvatarUpload.
+	// Requires authenticated principal in metadata (x-authn-user-id).
 	StartAvatarUpload(context.Context, *StartAvatarUploadRequest) (*StartAvatarUploadResponse, error)
+	// Requires authenticated principal in metadata (x-authn-user-id).
 	CompleteAvatarUpload(context.Context, *CompleteAvatarUploadRequest) (*CompleteAvatarUploadResponse, error)
 	mustEmbedUnimplementedProfileServiceServer()
 }

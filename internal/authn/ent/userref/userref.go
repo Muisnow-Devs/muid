@@ -26,8 +26,6 @@ const (
 	EdgeSessions = "sessions"
 	// EdgePasskeys holds the string denoting the passkeys edge name in mutations.
 	EdgePasskeys = "passkeys"
-	// EdgeOidcRefreshTokens holds the string denoting the oidc_refresh_tokens edge name in mutations.
-	EdgeOidcRefreshTokens = "oidc_refresh_tokens"
 	// EdgeFederatedIdentities holds the string denoting the federated_identities edge name in mutations.
 	EdgeFederatedIdentities = "federated_identities"
 	// Table holds the table name of the userref in the database.
@@ -46,13 +44,6 @@ const (
 	PasskeysInverseTable = "user_passkeys"
 	// PasskeysColumn is the table column denoting the passkeys relation/edge.
 	PasskeysColumn = "user_id"
-	// OidcRefreshTokensTable is the table that holds the oidc_refresh_tokens relation/edge.
-	OidcRefreshTokensTable = "oidc_refresh_tokens"
-	// OidcRefreshTokensInverseTable is the table name for the OIDCRefreshToken entity.
-	// It exists in this package in order to avoid circular dependency with the "oidcrefreshtoken" package.
-	OidcRefreshTokensInverseTable = "oidc_refresh_tokens"
-	// OidcRefreshTokensColumn is the table column denoting the oidc_refresh_tokens relation/edge.
-	OidcRefreshTokensColumn = "user_id"
 	// FederatedIdentitiesTable is the table that holds the federated_identities relation/edge.
 	FederatedIdentitiesTable = "user_federated_identities"
 	// FederatedIdentitiesInverseTable is the table name for the UserFederatedIdentity entity.
@@ -148,20 +139,6 @@ func ByPasskeys(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByOidcRefreshTokensCount orders the results by oidc_refresh_tokens count.
-func ByOidcRefreshTokensCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newOidcRefreshTokensStep(), opts...)
-	}
-}
-
-// ByOidcRefreshTokens orders the results by oidc_refresh_tokens terms.
-func ByOidcRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newOidcRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByFederatedIdentitiesCount orders the results by federated_identities count.
 func ByFederatedIdentitiesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -187,13 +164,6 @@ func newPasskeysStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(PasskeysInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, PasskeysTable, PasskeysColumn),
-	)
-}
-func newOidcRefreshTokensStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(OidcRefreshTokensInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
 	)
 }
 func newFederatedIdentitiesStep() *sqlgraph.Step {

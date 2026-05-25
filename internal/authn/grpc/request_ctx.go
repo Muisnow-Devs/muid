@@ -45,10 +45,11 @@ func TransitionIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 // AuthnRequestContextInterceptor validates wire session tokens and attaches safe log attrs.
 func AuthnRequestContextInterceptor() grpc.UnaryServerInterceptor {
 	return grpcutils.UnaryRequestContextInterceptor(map[string]grpcutils.RequestContextFunc{
-		pb.AuthnService_StartAuthSession_FullMethodName:     enrichStartAuthSession,
-		pb.AuthnService_ContinueAuthSession_FullMethodName:  enrichContinueAuthSession,
-		pb.AuthnService_GetAuthorizedSession_FullMethodName: enrichRequiredWireSession,
-		pb.AuthnService_RevokeSession_FullMethodName:        enrichRequiredWireSession,
+		pb.AuthnService_StartAuthSession_FullMethodName:          enrichStartAuthSession,
+		pb.AuthnService_ContinueAuthSession_FullMethodName:       enrichContinueAuthSession,
+		pb.AuthnService_GetAuthorizedSession_FullMethodName:      enrichRequiredWireSession,
+		pb.AuthnService_GetAuthenticatedPrincipal_FullMethodName: enrichRequiredWireSession,
+		pb.AuthnService_RevokeSession_FullMethodName:             enrichRequiredWireSession,
 	})
 }
 
@@ -79,6 +80,8 @@ func enrichContinueAuthSession(ctx context.Context, _ string, req any) (context.
 func enrichRequiredWireSession(ctx context.Context, _ string, req any) (context.Context, error) {
 	switch r := req.(type) {
 	case *pb.GetAuthorizedSessionRequest:
+		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
+	case *pb.GetAuthenticatedPrincipalRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	case *pb.RevokeSessionRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())

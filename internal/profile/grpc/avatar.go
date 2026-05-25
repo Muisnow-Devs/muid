@@ -25,11 +25,10 @@ import (
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
+	sharedauthn "sanzi.io/muid/pkg/shared/authn"
 	"sanzi.io/muid/pkg/shared/storage"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
-
-const msgInvalidUserID = "invalid user id"
 
 func (g *GRPCHandler) StartAvatarUpload(
 	ctx context.Context,
@@ -42,7 +41,7 @@ func (g *GRPCHandler) StartAvatarUpload(
 		)
 	}
 
-	userID, err := requiredProfileUserID(ctx)
+	userID, err := sharedauthn.RequiredAuthenticatedUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +106,7 @@ func (g *GRPCHandler) CompleteAvatarUpload(
 		)
 	}
 
-	userID, err := requiredProfileUserID(ctx)
+	userID, err := sharedauthn.RequiredAuthenticatedUserIDFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}

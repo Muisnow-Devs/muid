@@ -12,10 +12,13 @@ option go_package = "sanzi.io/muid/api/proto/profile/v1;profile";
 service ProfileService {
   rpc CreateProfile(CreateProfileRequest) returns (CreateProfileResponse);
   rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  // Requires authenticated principal in metadata (x-authn-user-id).
   rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
 
   // Presigned PUT to Cloudflare R2 (S3-compatible). Client uploads bytes, then calls CompleteAvatarUpload.
+  // Requires authenticated principal in metadata (x-authn-user-id).
   rpc StartAvatarUpload(StartAvatarUploadRequest) returns (StartAvatarUploadResponse);
+  // Requires authenticated principal in metadata (x-authn-user-id).
   rpc CompleteAvatarUpload(CompleteAvatarUploadRequest) returns (CompleteAvatarUploadResponse);
 }
 
@@ -54,7 +57,8 @@ message GetProfileResponse {
 }
 
 message UpdateProfileRequest {
-  string id = 1 [(buf.validate.field).string.uuid = true];
+  reserved 1;
+  // Authenticated principal is carried via gRPC metadata (x-authn-user-id).
   // Mask paths are relative to this message: proto snake_case prefix `identity.` for
   // IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username").
   // JSON clients may send camelCase in the second segment (e.g. "identity.emailVerified");
@@ -69,7 +73,8 @@ message UpdateProfileResponse {
 }
 
 message StartAvatarUploadRequest {
-  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  reserved 1;
+  // Authenticated principal is carried via gRPC metadata (x-authn-user-id).
   string content_type = 2 [(buf.validate.field).string = {
     min_len: 3
     max_len: 128
@@ -84,7 +89,8 @@ message StartAvatarUploadResponse {
 }
 
 message CompleteAvatarUploadRequest {
-  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  reserved 1;
+  // Authenticated principal is carried via gRPC metadata (x-authn-user-id).
   string object_key = 2 [(buf.validate.field).string = {
     min_len: 1
     max_len: 512

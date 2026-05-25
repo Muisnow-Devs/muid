@@ -25,7 +25,7 @@ func (UserSession) Fields() []ent.Field {
 		// Selector should be a random bytes. It is used to look up the session without revealing the actual session ID (which is the validator).
 		// DON'T CHANGE THIS TO HEX. THIS IS NOT THE MAIN POINT.
 		field.Bytes("selector").MaxLen(16).NotEmpty().Immutable(),
-		field.Bytes("validator_hash").MaxLen(32).NotEmpty().Immutable(),
+		field.Bytes("validator_hash").MaxLen(32).NotEmpty().Immutable().Sensitive(),
 
 		field.String("ip_address").Optional().Immutable().MaxLen(45),
 		field.String("user_agent").Optional().Immutable().MaxLen(512),

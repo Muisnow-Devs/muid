@@ -38,13 +38,11 @@ type UserRefEdges struct {
 	Sessions []*UserSession `json:"sessions,omitempty"`
 	// Passkeys holds the value of the passkeys edge.
 	Passkeys []*UserPasskey `json:"passkeys,omitempty"`
-	// OidcRefreshTokens holds the value of the oidc_refresh_tokens edge.
-	OidcRefreshTokens []*OIDCRefreshToken `json:"oidc_refresh_tokens,omitempty"`
 	// FederatedIdentities holds the value of the federated_identities edge.
 	FederatedIdentities []*UserFederatedIdentity `json:"federated_identities,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [3]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -65,19 +63,10 @@ func (e UserRefEdges) PasskeysOrErr() ([]*UserPasskey, error) {
 	return nil, &NotLoadedError{edge: "passkeys"}
 }
 
-// OidcRefreshTokensOrErr returns the OidcRefreshTokens value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserRefEdges) OidcRefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
-	if e.loadedTypes[2] {
-		return e.OidcRefreshTokens, nil
-	}
-	return nil, &NotLoadedError{edge: "oidc_refresh_tokens"}
-}
-
 // FederatedIdentitiesOrErr returns the FederatedIdentities value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserRefEdges) FederatedIdentitiesOrErr() ([]*UserFederatedIdentity, error) {
-	if e.loadedTypes[3] {
+	if e.loadedTypes[2] {
 		return e.FederatedIdentities, nil
 	}
 	return nil, &NotLoadedError{edge: "federated_identities"}
@@ -160,11 +149,6 @@ func (_m *UserRef) QuerySessions() *UserSessionQuery {
 // QueryPasskeys queries the "passkeys" edge of the UserRef entity.
 func (_m *UserRef) QueryPasskeys() *UserPasskeyQuery {
 	return NewUserRefClient(_m.config).QueryPasskeys(_m)
-}
-
-// QueryOidcRefreshTokens queries the "oidc_refresh_tokens" edge of the UserRef entity.
-func (_m *UserRef) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
-	return NewUserRefClient(_m.config).QueryOidcRefreshTokens(_m)
 }
 
 // QueryFederatedIdentities queries the "federated_identities" edge of the UserRef entity.

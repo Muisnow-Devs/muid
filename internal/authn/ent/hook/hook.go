@@ -9,18 +9,6 @@ import (
 	"sanzi.io/muid/internal/authn/ent"
 )
 
-// The OIDCRefreshTokenFunc type is an adapter to allow the use of ordinary
-// function as OIDCRefreshToken mutator.
-type OIDCRefreshTokenFunc func(context.Context, *ent.OIDCRefreshTokenMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OIDCRefreshTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCRefreshTokenMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCRefreshTokenMutation", m)
-}
-
 // The UserFederatedIdentityFunc type is an adapter to allow the use of ordinary
 // function as UserFederatedIdentity mutator.
 type UserFederatedIdentityFunc func(context.Context, *ent.UserFederatedIdentityMutation) (ent.Value, error)

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"sanzi.io/muid/api/proto/authn/v1/certification"
+	"sanzi.io/muid/api/proto/authz/v1/certification"
 )
 
 const (

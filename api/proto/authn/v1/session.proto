@@ -18,8 +18,7 @@ enum AuthLevel {
 message SessionToken {
   string value = 1 [(buf.validate.field).string = {
     pattern: "^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$"
-    max_len: 66
-    min_len: 66
+    len: 66
   }];
 }
 
@@ -35,6 +34,13 @@ message AuthenticatedResult {
 
   SessionContext session_context = 2;
   AuthLevel auth_level = 3;
+}
+
+message AuthenticatedPrincipal {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  AuthLevel auth_level = 2;
+  google.protobuf.Timestamp issued_at = 3;
+  google.protobuf.Timestamp expires_at = 4;
 }
 
 message ChallengeRequired {

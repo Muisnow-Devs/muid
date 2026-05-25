@@ -19,18 +19,12 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthnService_StartAuthSession_FullMethodName            = "/muid.authn.v1.AuthnService/StartAuthSession"
-	AuthnService_ContinueAuthSession_FullMethodName         = "/muid.authn.v1.AuthnService/ContinueAuthSession"
-	AuthnService_GetPublicKeys_FullMethodName               = "/muid.authn.v1.AuthnService/GetPublicKeys"
-	AuthnService_RevokeFederatedIdentity_FullMethodName     = "/muid.authn.v1.AuthnService/RevokeFederatedIdentity"
-	AuthnService_GetAuthorizedSession_FullMethodName        = "/muid.authn.v1.AuthnService/GetAuthorizedSession"
-	AuthnService_RevokeSession_FullMethodName               = "/muid.authn.v1.AuthnService/RevokeSession"
-	AuthnService_OIDCListGrantedConsents_FullMethodName     = "/muid.authn.v1.AuthnService/OIDCListGrantedConsents"
-	AuthnService_OIDCGrantConsent_FullMethodName            = "/muid.authn.v1.AuthnService/OIDCGrantConsent"
-	AuthnService_OIDCRevokeConsent_FullMethodName           = "/muid.authn.v1.AuthnService/OIDCRevokeConsent"
-	AuthnService_OIDCIntrospectToken_FullMethodName         = "/muid.authn.v1.AuthnService/OIDCIntrospectToken"
-	AuthnService_OIDCRevokeRefreshToken_FullMethodName      = "/muid.authn.v1.AuthnService/OIDCRevokeRefreshToken"
-	AuthnService_OIDCRotateAndGetAccessToken_FullMethodName = "/muid.authn.v1.AuthnService/OIDCRotateAndGetAccessToken"
+	AuthnService_StartAuthSession_FullMethodName          = "/muid.authn.v1.AuthnService/StartAuthSession"
+	AuthnService_ContinueAuthSession_FullMethodName       = "/muid.authn.v1.AuthnService/ContinueAuthSession"
+	AuthnService_RevokeFederatedIdentity_FullMethodName   = "/muid.authn.v1.AuthnService/RevokeFederatedIdentity"
+	AuthnService_GetAuthorizedSession_FullMethodName      = "/muid.authn.v1.AuthnService/GetAuthorizedSession"
+	AuthnService_GetAuthenticatedPrincipal_FullMethodName = "/muid.authn.v1.AuthnService/GetAuthenticatedPrincipal"
+	AuthnService_RevokeSession_FullMethodName             = "/muid.authn.v1.AuthnService/RevokeSession"
 )
 
 // AuthnServiceClient is the client API for AuthnService service.
@@ -40,22 +34,13 @@ type AuthnServiceClient interface {
 	// / authentication APIs
 	StartAuthSession(ctx context.Context, in *StartAuthSessionRequest, opts ...grpc.CallOption) (*StartAuthSessionResponse, error)
 	ContinueAuthSession(ctx context.Context, in *ContinueAuthSessionRequest, opts ...grpc.CallOption) (*ContinueAuthSessionResponse, error)
-	// / infrastructure APIs
-	GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error)
 	// / user related APIs, for user to manage their sessions.
 	RevokeFederatedIdentity(ctx context.Context, in *RevokeFederatedIdentityRequest, opts ...grpc.CallOption) (*RevokeFederatedIdentityResponse, error)
 	GetAuthorizedSession(ctx context.Context, in *GetAuthorizedSessionRequest, opts ...grpc.CallOption) (*GetAuthorizedSessionResponse, error)
+	// Resolves a session into an authenticated principal for downstream services.
+	GetAuthenticatedPrincipal(ctx context.Context, in *GetAuthenticatedPrincipalRequest, opts ...grpc.CallOption) (*GetAuthenticatedPrincipalResponse, error)
 	// user session management APIs
 	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
-	// / oidc token management APIs
-	// user consent
-	OIDCListGrantedConsents(ctx context.Context, in *OIDCListGrantedConsentsRequest, opts ...grpc.CallOption) (*OIDCListGrantedConsentsResponse, error)
-	OIDCGrantConsent(ctx context.Context, in *OIDCGrantConsentRequest, opts ...grpc.CallOption) (*OIDCGrantConsentResponse, error)
-	OIDCRevokeConsent(ctx context.Context, in *OIDCRevokeConsentRequest, opts ...grpc.CallOption) (*OIDCRevokeConsentResponse, error)
-	// token management
-	OIDCIntrospectToken(ctx context.Context, in *OIDCIntrospectTokenRequest, opts ...grpc.CallOption) (*OIDCIntrospectTokenResponse, error)
-	OIDCRevokeRefreshToken(ctx context.Context, in *OIDCRevokeRefreshTokenRequest, opts ...grpc.CallOption) (*OIDCRevokeRefreshTokenResponse, error)
-	OIDCRotateAndGetAccessToken(ctx context.Context, in *OIDCRotateAndGetAccessTokenRequest, opts ...grpc.CallOption) (*OIDCRotateAndGetAccessTokenResponse, error)
 }
 
 type authnServiceClient struct {
@@ -86,16 +71,6 @@ func (c *authnServiceClient) ContinueAuthSession(ctx context.Context, in *Contin
 	return out, nil
 }
 
-func (c *authnServiceClient) GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetPublicKeysResponse)
-	err := c.cc.Invoke(ctx, AuthnService_GetPublicKeys_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *authnServiceClient) RevokeFederatedIdentity(ctx context.Context, in *RevokeFederatedIdentityRequest, opts ...grpc.CallOption) (*RevokeFederatedIdentityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RevokeFederatedIdentityResponse)
@@ -116,70 +91,20 @@ func (c *authnServiceClient) GetAuthorizedSession(ctx context.Context, in *GetAu
 	return out, nil
 }
 
+func (c *authnServiceClient) GetAuthenticatedPrincipal(ctx context.Context, in *GetAuthenticatedPrincipalRequest, opts ...grpc.CallOption) (*GetAuthenticatedPrincipalResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetAuthenticatedPrincipalResponse)
+	err := c.cc.Invoke(ctx, AuthnService_GetAuthenticatedPrincipal_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authnServiceClient) RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RevokeSessionResponse)
 	err := c.cc.Invoke(ctx, AuthnService_RevokeSession_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authnServiceClient) OIDCListGrantedConsents(ctx context.Context, in *OIDCListGrantedConsentsRequest, opts ...grpc.CallOption) (*OIDCListGrantedConsentsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCListGrantedConsentsResponse)
-	err := c.cc.Invoke(ctx, AuthnService_OIDCListGrantedConsents_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authnServiceClient) OIDCGrantConsent(ctx context.Context, in *OIDCGrantConsentRequest, opts ...grpc.CallOption) (*OIDCGrantConsentResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCGrantConsentResponse)
-	err := c.cc.Invoke(ctx, AuthnService_OIDCGrantConsent_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authnServiceClient) OIDCRevokeConsent(ctx context.Context, in *OIDCRevokeConsentRequest, opts ...grpc.CallOption) (*OIDCRevokeConsentResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCRevokeConsentResponse)
-	err := c.cc.Invoke(ctx, AuthnService_OIDCRevokeConsent_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authnServiceClient) OIDCIntrospectToken(ctx context.Context, in *OIDCIntrospectTokenRequest, opts ...grpc.CallOption) (*OIDCIntrospectTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCIntrospectTokenResponse)
-	err := c.cc.Invoke(ctx, AuthnService_OIDCIntrospectToken_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authnServiceClient) OIDCRevokeRefreshToken(ctx context.Context, in *OIDCRevokeRefreshTokenRequest, opts ...grpc.CallOption) (*OIDCRevokeRefreshTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCRevokeRefreshTokenResponse)
-	err := c.cc.Invoke(ctx, AuthnService_OIDCRevokeRefreshToken_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authnServiceClient) OIDCRotateAndGetAccessToken(ctx context.Context, in *OIDCRotateAndGetAccessTokenRequest, opts ...grpc.CallOption) (*OIDCRotateAndGetAccessTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCRotateAndGetAccessTokenResponse)
-	err := c.cc.Invoke(ctx, AuthnService_OIDCRotateAndGetAccessToken_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -193,22 +118,13 @@ type AuthnServiceServer interface {
 	// / authentication APIs
 	StartAuthSession(context.Context, *StartAuthSessionRequest) (*StartAuthSessionResponse, error)
 	ContinueAuthSession(context.Context, *ContinueAuthSessionRequest) (*ContinueAuthSessionResponse, error)
-	// / infrastructure APIs
-	GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error)
 	// / user related APIs, for user to manage their sessions.
 	RevokeFederatedIdentity(context.Context, *RevokeFederatedIdentityRequest) (*RevokeFederatedIdentityResponse, error)
 	GetAuthorizedSession(context.Context, *GetAuthorizedSessionRequest) (*GetAuthorizedSessionResponse, error)
+	// Resolves a session into an authenticated principal for downstream services.
+	GetAuthenticatedPrincipal(context.Context, *GetAuthenticatedPrincipalRequest) (*GetAuthenticatedPrincipalResponse, error)
 	// user session management APIs
 	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
-	// / oidc token management APIs
-	// user consent
-	OIDCListGrantedConsents(context.Context, *OIDCListGrantedConsentsRequest) (*OIDCListGrantedConsentsResponse, error)
-	OIDCGrantConsent(context.Context, *OIDCGrantConsentRequest) (*OIDCGrantConsentResponse, error)
-	OIDCRevokeConsent(context.Context, *OIDCRevokeConsentRequest) (*OIDCRevokeConsentResponse, error)
-	// token management
-	OIDCIntrospectToken(context.Context, *OIDCIntrospectTokenRequest) (*OIDCIntrospectTokenResponse, error)
-	OIDCRevokeRefreshToken(context.Context, *OIDCRevokeRefreshTokenRequest) (*OIDCRevokeRefreshTokenResponse, error)
-	OIDCRotateAndGetAccessToken(context.Context, *OIDCRotateAndGetAccessTokenRequest) (*OIDCRotateAndGetAccessTokenResponse, error)
 	mustEmbedUnimplementedAuthnServiceServer()
 }
 
@@ -225,35 +141,17 @@ func (UnimplementedAuthnServiceServer) StartAuthSession(context.Context, *StartA
 func (UnimplementedAuthnServiceServer) ContinueAuthSession(context.Context, *ContinueAuthSessionRequest) (*ContinueAuthSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ContinueAuthSession not implemented")
 }
-func (UnimplementedAuthnServiceServer) GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetPublicKeys not implemented")
-}
 func (UnimplementedAuthnServiceServer) RevokeFederatedIdentity(context.Context, *RevokeFederatedIdentityRequest) (*RevokeFederatedIdentityResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeFederatedIdentity not implemented")
 }
 func (UnimplementedAuthnServiceServer) GetAuthorizedSession(context.Context, *GetAuthorizedSessionRequest) (*GetAuthorizedSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetAuthorizedSession not implemented")
 }
+func (UnimplementedAuthnServiceServer) GetAuthenticatedPrincipal(context.Context, *GetAuthenticatedPrincipalRequest) (*GetAuthenticatedPrincipalResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetAuthenticatedPrincipal not implemented")
+}
 func (UnimplementedAuthnServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeSession not implemented")
-}
-func (UnimplementedAuthnServiceServer) OIDCListGrantedConsents(context.Context, *OIDCListGrantedConsentsRequest) (*OIDCListGrantedConsentsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCListGrantedConsents not implemented")
-}
-func (UnimplementedAuthnServiceServer) OIDCGrantConsent(context.Context, *OIDCGrantConsentRequest) (*OIDCGrantConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCGrantConsent not implemented")
-}
-func (UnimplementedAuthnServiceServer) OIDCRevokeConsent(context.Context, *OIDCRevokeConsentRequest) (*OIDCRevokeConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRevokeConsent not implemented")
-}
-func (UnimplementedAuthnServiceServer) OIDCIntrospectToken(context.Context, *OIDCIntrospectTokenRequest) (*OIDCIntrospectTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCIntrospectToken not implemented")
-}
-func (UnimplementedAuthnServiceServer) OIDCRevokeRefreshToken(context.Context, *OIDCRevokeRefreshTokenRequest) (*OIDCRevokeRefreshTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRevokeRefreshToken not implemented")
-}
-func (UnimplementedAuthnServiceServer) OIDCRotateAndGetAccessToken(context.Context, *OIDCRotateAndGetAccessTokenRequest) (*OIDCRotateAndGetAccessTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRotateAndGetAccessToken not implemented")
 }
 func (UnimplementedAuthnServiceServer) mustEmbedUnimplementedAuthnServiceServer() {}
 func (UnimplementedAuthnServiceServer) testEmbeddedByValue()                      {}
@@ -312,24 +210,6 @@ func _AuthnService_ContinueAuthSession_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthnService_GetPublicKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPublicKeysRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).GetPublicKeys(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_GetPublicKeys_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).GetPublicKeys(ctx, req.(*GetPublicKeysRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _AuthnService_RevokeFederatedIdentity_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RevokeFederatedIdentityRequest)
 	if err := dec(in); err != nil {
@@ -366,6 +246,24 @@ func _AuthnService_GetAuthorizedSession_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthnService_GetAuthenticatedPrincipal_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAuthenticatedPrincipalRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthnServiceServer).GetAuthenticatedPrincipal(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthnService_GetAuthenticatedPrincipal_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthnServiceServer).GetAuthenticatedPrincipal(ctx, req.(*GetAuthenticatedPrincipalRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthnService_RevokeSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(RevokeSessionRequest)
 	if err := dec(in); err != nil {
@@ -380,114 +278,6 @@ func _AuthnService_RevokeSession_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AuthnServiceServer).RevokeSession(ctx, req.(*RevokeSessionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthnService_OIDCListGrantedConsents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCListGrantedConsentsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).OIDCListGrantedConsents(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_OIDCListGrantedConsents_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).OIDCListGrantedConsents(ctx, req.(*OIDCListGrantedConsentsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthnService_OIDCGrantConsent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCGrantConsentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).OIDCGrantConsent(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_OIDCGrantConsent_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).OIDCGrantConsent(ctx, req.(*OIDCGrantConsentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthnService_OIDCRevokeConsent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCRevokeConsentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).OIDCRevokeConsent(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_OIDCRevokeConsent_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).OIDCRevokeConsent(ctx, req.(*OIDCRevokeConsentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthnService_OIDCIntrospectToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCIntrospectTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).OIDCIntrospectToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_OIDCIntrospectToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).OIDCIntrospectToken(ctx, req.(*OIDCIntrospectTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthnService_OIDCRevokeRefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCRevokeRefreshTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).OIDCRevokeRefreshToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_OIDCRevokeRefreshToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).OIDCRevokeRefreshToken(ctx, req.(*OIDCRevokeRefreshTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthnService_OIDCRotateAndGetAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCRotateAndGetAccessTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthnServiceServer).OIDCRotateAndGetAccessToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthnService_OIDCRotateAndGetAccessToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthnServiceServer).OIDCRotateAndGetAccessToken(ctx, req.(*OIDCRotateAndGetAccessTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -508,10 +298,6 @@ var AuthnService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthnService_ContinueAuthSession_Handler,
 		},
 		{
-			MethodName: "GetPublicKeys",
-			Handler:    _AuthnService_GetPublicKeys_Handler,
-		},
-		{
 			MethodName: "RevokeFederatedIdentity",
 			Handler:    _AuthnService_RevokeFederatedIdentity_Handler,
 		},
@@ -520,32 +306,12 @@ var AuthnService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthnService_GetAuthorizedSession_Handler,
 		},
 		{
+			MethodName: "GetAuthenticatedPrincipal",
+			Handler:    _AuthnService_GetAuthenticatedPrincipal_Handler,
+		},
+		{
 			MethodName: "RevokeSession",
 			Handler:    _AuthnService_RevokeSession_Handler,
-		},
-		{
-			MethodName: "OIDCListGrantedConsents",
-			Handler:    _AuthnService_OIDCListGrantedConsents_Handler,
-		},
-		{
-			MethodName: "OIDCGrantConsent",
-			Handler:    _AuthnService_OIDCGrantConsent_Handler,
-		},
-		{
-			MethodName: "OIDCRevokeConsent",
-			Handler:    _AuthnService_OIDCRevokeConsent_Handler,
-		},
-		{
-			MethodName: "OIDCIntrospectToken",
-			Handler:    _AuthnService_OIDCIntrospectToken_Handler,
-		},
-		{
-			MethodName: "OIDCRevokeRefreshToken",
-			Handler:    _AuthnService_OIDCRevokeRefreshToken_Handler,
-		},
-		{
-			MethodName: "OIDCRotateAndGetAccessToken",
-			Handler:    _AuthnService_OIDCRotateAndGetAccessToken_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

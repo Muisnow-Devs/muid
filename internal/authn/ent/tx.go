@@ -12,8 +12,6 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
-	OIDCRefreshToken *OIDCRefreshTokenClient
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
 	UserFederatedIdentity *UserFederatedIdentityClient
 	// UserPasskey is the client for interacting with the UserPasskey builders.
@@ -153,7 +151,6 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.OIDCRefreshToken = NewOIDCRefreshTokenClient(tx.config)
 	tx.UserFederatedIdentity = NewUserFederatedIdentityClient(tx.config)
 	tx.UserPasskey = NewUserPasskeyClient(tx.config)
 	tx.UserRef = NewUserRefClient(tx.config)
@@ -167,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: OIDCRefreshToken.QueryXXX(), the query will be executed
+// applies a query, for example: UserFederatedIdentity.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

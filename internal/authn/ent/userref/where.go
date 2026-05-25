@@ -317,29 +317,6 @@ func HasPasskeysWith(preds ...predicate.UserPasskey) predicate.UserRef {
 	})
 }
 
-// HasOidcRefreshTokens applies the HasEdge predicate on the "oidc_refresh_tokens" edge.
-func HasOidcRefreshTokens() predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOidcRefreshTokensWith applies the HasEdge predicate on the "oidc_refresh_tokens" edge with a given conditions (other predicates).
-func HasOidcRefreshTokensWith(preds ...predicate.OIDCRefreshToken) predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := newOidcRefreshTokensStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasFederatedIdentities applies the HasEdge predicate on the "federated_identities" edge.
 func HasFederatedIdentities() predicate.UserRef {
 	return predicate.UserRef(func(s *sql.Selector) {

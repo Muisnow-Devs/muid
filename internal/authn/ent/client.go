@@ -16,7 +16,6 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
@@ -28,8 +27,6 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
-	OIDCRefreshToken *OIDCRefreshTokenClient
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
 	UserFederatedIdentity *UserFederatedIdentityClient
 	// UserPasskey is the client for interacting with the UserPasskey builders.
@@ -49,7 +46,6 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.OIDCRefreshToken = NewOIDCRefreshTokenClient(c.config)
 	c.UserFederatedIdentity = NewUserFederatedIdentityClient(c.config)
 	c.UserPasskey = NewUserPasskeyClient(c.config)
 	c.UserRef = NewUserRefClient(c.config)
@@ -146,7 +142,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
-		OIDCRefreshToken:      NewOIDCRefreshTokenClient(cfg),
 		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
 		UserPasskey:           NewUserPasskeyClient(cfg),
 		UserRef:               NewUserRefClient(cfg),
@@ -170,7 +165,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
-		OIDCRefreshToken:      NewOIDCRefreshTokenClient(cfg),
 		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
 		UserPasskey:           NewUserPasskeyClient(cfg),
 		UserRef:               NewUserRefClient(cfg),
@@ -181,7 +175,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		OIDCRefreshToken.
+//		UserFederatedIdentity.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -203,7 +197,6 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.OIDCRefreshToken.Use(hooks...)
 	c.UserFederatedIdentity.Use(hooks...)
 	c.UserPasskey.Use(hooks...)
 	c.UserRef.Use(hooks...)
@@ -213,7 +206,6 @@ func (c *Client) Use(hooks ...Hook) {
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.OIDCRefreshToken.Intercept(interceptors...)
 	c.UserFederatedIdentity.Intercept(interceptors...)
 	c.UserPasskey.Intercept(interceptors...)
 	c.UserRef.Intercept(interceptors...)
@@ -223,8 +215,6 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *OIDCRefreshTokenMutation:
-		return c.OIDCRefreshToken.mutate(ctx, m)
 	case *UserFederatedIdentityMutation:
 		return c.UserFederatedIdentity.mutate(ctx, m)
 	case *UserPasskeyMutation:
@@ -235,187 +225,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserSession.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
-	}
-}
-
-// OIDCRefreshTokenClient is a client for the OIDCRefreshToken schema.
-type OIDCRefreshTokenClient struct {
-	config
-}
-
-// NewOIDCRefreshTokenClient returns a client for the OIDCRefreshToken from the given config.
-func NewOIDCRefreshTokenClient(c config) *OIDCRefreshTokenClient {
-	return &OIDCRefreshTokenClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `oidcrefreshtoken.Hooks(f(g(h())))`.
-func (c *OIDCRefreshTokenClient) Use(hooks ...Hook) {
-	c.hooks.OIDCRefreshToken = append(c.hooks.OIDCRefreshToken, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `oidcrefreshtoken.Intercept(f(g(h())))`.
-func (c *OIDCRefreshTokenClient) Intercept(interceptors ...Interceptor) {
-	c.inters.OIDCRefreshToken = append(c.inters.OIDCRefreshToken, interceptors...)
-}
-
-// Create returns a builder for creating a OIDCRefreshToken entity.
-func (c *OIDCRefreshTokenClient) Create() *OIDCRefreshTokenCreate {
-	mutation := newOIDCRefreshTokenMutation(c.config, OpCreate)
-	return &OIDCRefreshTokenCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of OIDCRefreshToken entities.
-func (c *OIDCRefreshTokenClient) CreateBulk(builders ...*OIDCRefreshTokenCreate) *OIDCRefreshTokenCreateBulk {
-	return &OIDCRefreshTokenCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *OIDCRefreshTokenClient) MapCreateBulk(slice any, setFunc func(*OIDCRefreshTokenCreate, int)) *OIDCRefreshTokenCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &OIDCRefreshTokenCreateBulk{err: fmt.Errorf("calling to OIDCRefreshTokenClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*OIDCRefreshTokenCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &OIDCRefreshTokenCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for OIDCRefreshToken.
-func (c *OIDCRefreshTokenClient) Update() *OIDCRefreshTokenUpdate {
-	mutation := newOIDCRefreshTokenMutation(c.config, OpUpdate)
-	return &OIDCRefreshTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *OIDCRefreshTokenClient) UpdateOne(_m *OIDCRefreshToken) *OIDCRefreshTokenUpdateOne {
-	mutation := newOIDCRefreshTokenMutation(c.config, OpUpdateOne, withOIDCRefreshToken(_m))
-	return &OIDCRefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *OIDCRefreshTokenClient) UpdateOneID(id uuid.UUID) *OIDCRefreshTokenUpdateOne {
-	mutation := newOIDCRefreshTokenMutation(c.config, OpUpdateOne, withOIDCRefreshTokenID(id))
-	return &OIDCRefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for OIDCRefreshToken.
-func (c *OIDCRefreshTokenClient) Delete() *OIDCRefreshTokenDelete {
-	mutation := newOIDCRefreshTokenMutation(c.config, OpDelete)
-	return &OIDCRefreshTokenDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *OIDCRefreshTokenClient) DeleteOne(_m *OIDCRefreshToken) *OIDCRefreshTokenDeleteOne {
-	return c.DeleteOneID(_m.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *OIDCRefreshTokenClient) DeleteOneID(id uuid.UUID) *OIDCRefreshTokenDeleteOne {
-	builder := c.Delete().Where(oidcrefreshtoken.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &OIDCRefreshTokenDeleteOne{builder}
-}
-
-// Query returns a query builder for OIDCRefreshToken.
-func (c *OIDCRefreshTokenClient) Query() *OIDCRefreshTokenQuery {
-	return &OIDCRefreshTokenQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeOIDCRefreshToken},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a OIDCRefreshToken entity by its id.
-func (c *OIDCRefreshTokenClient) Get(ctx context.Context, id uuid.UUID) (*OIDCRefreshToken, error) {
-	return c.Query().Where(oidcrefreshtoken.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *OIDCRefreshTokenClient) GetX(ctx context.Context, id uuid.UUID) *OIDCRefreshToken {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// QueryUser queries the user edge of a OIDCRefreshToken.
-func (c *OIDCRefreshTokenClient) QueryUser(_m *OIDCRefreshToken) *UserRefQuery {
-	query := (&UserRefClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID, id),
-			sqlgraph.To(userref.Table, userref.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, oidcrefreshtoken.UserTable, oidcrefreshtoken.UserColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryParent queries the parent edge of a OIDCRefreshToken.
-func (c *OIDCRefreshTokenClient) QueryParent(_m *OIDCRefreshToken) *OIDCRefreshTokenQuery {
-	query := (&OIDCRefreshTokenClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID, id),
-			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, oidcrefreshtoken.ParentTable, oidcrefreshtoken.ParentColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryChildren queries the children edge of a OIDCRefreshToken.
-func (c *OIDCRefreshTokenClient) QueryChildren(_m *OIDCRefreshToken) *OIDCRefreshTokenQuery {
-	query := (&OIDCRefreshTokenClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID, id),
-			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, oidcrefreshtoken.ChildrenTable, oidcrefreshtoken.ChildrenColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// Hooks returns the client hooks.
-func (c *OIDCRefreshTokenClient) Hooks() []Hook {
-	return c.hooks.OIDCRefreshToken
-}
-
-// Interceptors returns the client interceptors.
-func (c *OIDCRefreshTokenClient) Interceptors() []Interceptor {
-	return c.inters.OIDCRefreshToken
-}
-
-func (c *OIDCRefreshTokenClient) mutate(ctx context.Context, m *OIDCRefreshTokenMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&OIDCRefreshTokenCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&OIDCRefreshTokenUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&OIDCRefreshTokenUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&OIDCRefreshTokenDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("ent: unknown OIDCRefreshToken mutation op: %q", m.Op())
 	}
 }
 
@@ -857,22 +666,6 @@ func (c *UserRefClient) QueryPasskeys(_m *UserRef) *UserPasskeyQuery {
 	return query
 }
 
-// QueryOidcRefreshTokens queries the oidc_refresh_tokens edge of a UserRef.
-func (c *UserRefClient) QueryOidcRefreshTokens(_m *UserRef) *OIDCRefreshTokenQuery {
-	query := (&OIDCRefreshTokenClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userref.Table, userref.FieldID, id),
-			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcRefreshTokensTable, userref.OidcRefreshTokensColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryFederatedIdentities queries the federated_identities edge of a UserRef.
 func (c *UserRefClient) QueryFederatedIdentities(_m *UserRef) *UserFederatedIdentityQuery {
 	query := (&UserFederatedIdentityClient{config: c.config}).Query()
@@ -1066,11 +859,9 @@ func (c *UserSessionClient) mutate(ctx context.Context, m *UserSessionMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		OIDCRefreshToken, UserFederatedIdentity, UserPasskey, UserRef,
-		UserSession []ent.Hook
+		UserFederatedIdentity, UserPasskey, UserRef, UserSession []ent.Hook
 	}
 	inters struct {
-		OIDCRefreshToken, UserFederatedIdentity, UserPasskey, UserRef,
-		UserSession []ent.Interceptor
+		UserFederatedIdentity, UserPasskey, UserRef, UserSession []ent.Interceptor
 	}
 )

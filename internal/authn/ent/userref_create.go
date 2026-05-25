@@ -11,7 +11,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
@@ -107,21 +106,6 @@ func (_c *UserRefCreate) AddPasskeys(v ...*UserPasskey) *UserRefCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddPasskeyIDs(ids...)
-}
-
-// AddOidcRefreshTokenIDs adds the "oidc_refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
-func (_c *UserRefCreate) AddOidcRefreshTokenIDs(ids ...uuid.UUID) *UserRefCreate {
-	_c.mutation.AddOidcRefreshTokenIDs(ids...)
-	return _c
-}
-
-// AddOidcRefreshTokens adds the "oidc_refresh_tokens" edges to the OIDCRefreshToken entity.
-func (_c *UserRefCreate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddOidcRefreshTokenIDs(ids...)
 }
 
 // AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
@@ -276,22 +260,6 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.OidcRefreshTokensIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

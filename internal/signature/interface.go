@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"sanzi.io/muid/api/proto/authn/v1/certification"
+	"sanzi.io/muid/api/proto/authz/v1/certification"
 	gsm "sanzi.io/muid/pkg/shared/secretmanager"
 )
 

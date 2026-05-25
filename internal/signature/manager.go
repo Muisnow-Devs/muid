@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"sanzi.io/muid/api/proto/authn/v1/certification"
+	"sanzi.io/muid/api/proto/authz/v1/certification"
 	"sanzi.io/muid/pkg/log"
 	gsm "sanzi.io/muid/pkg/shared/secretmanager"
 )

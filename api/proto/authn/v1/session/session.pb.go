@@ -341,6 +341,127 @@ func (b0 AuthenticatedResult_builder) Build() *AuthenticatedResult {
 	return m0
 }
 
+type AuthenticatedPrincipal struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_AuthLevel AuthLevel              `protobuf:"varint,2,opt,name=auth_level,json=authLevel,proto3,enum=muid.authn.v1.session.AuthLevel"`
+	xxx_hidden_IssuedAt  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=issued_at,json=issuedAt,proto3"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *AuthenticatedPrincipal) Reset() {
+	*x = AuthenticatedPrincipal{}
+	mi := &file_authn_v1_session_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AuthenticatedPrincipal) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AuthenticatedPrincipal) ProtoMessage() {}
+
+func (x *AuthenticatedPrincipal) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *AuthenticatedPrincipal) GetUserId() string {
+	if x != nil {
+		return x.xxx_hidden_UserId
+	}
+	return ""
+}
+
+func (x *AuthenticatedPrincipal) GetAuthLevel() AuthLevel {
+	if x != nil {
+		return x.xxx_hidden_AuthLevel
+	}
+	return AuthLevel_AUTH_LEVEL_UNSPECIFIED
+}
+
+func (x *AuthenticatedPrincipal) GetIssuedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_IssuedAt
+	}
+	return nil
+}
+
+func (x *AuthenticatedPrincipal) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ExpiresAt
+	}
+	return nil
+}
+
+func (x *AuthenticatedPrincipal) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *AuthenticatedPrincipal) SetAuthLevel(v AuthLevel) {
+	x.xxx_hidden_AuthLevel = v
+}
+
+func (x *AuthenticatedPrincipal) SetIssuedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_IssuedAt = v
+}
+
+func (x *AuthenticatedPrincipal) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *AuthenticatedPrincipal) HasIssuedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_IssuedAt != nil
+}
+
+func (x *AuthenticatedPrincipal) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *AuthenticatedPrincipal) ClearIssuedAt() {
+	x.xxx_hidden_IssuedAt = nil
+}
+
+func (x *AuthenticatedPrincipal) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+type AuthenticatedPrincipal_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId    string
+	AuthLevel AuthLevel
+	IssuedAt  *timestamppb.Timestamp
+	ExpiresAt *timestamppb.Timestamp
+}
+
+func (b0 AuthenticatedPrincipal_builder) Build() *AuthenticatedPrincipal {
+	m0 := &AuthenticatedPrincipal{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_AuthLevel = b.AuthLevel
+	x.xxx_hidden_IssuedAt = b.IssuedAt
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	return m0
+}
+
 type ChallengeRequired struct {
 	state                protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_Challenge *challenge.AuthChallenge `protobuf:"bytes,1,opt,name=challenge,proto3"`
@@ -350,7 +471,7 @@ type ChallengeRequired struct {
 
 func (x *ChallengeRequired) Reset() {
 	*x = ChallengeRequired{}
-	mi := &file_authn_v1_session_proto_msgTypes[3]
+	mi := &file_authn_v1_session_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -362,7 +483,7 @@ func (x *ChallengeRequired) String() string {
 func (*ChallengeRequired) ProtoMessage() {}
 
 func (x *ChallengeRequired) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[3]
+	mi := &file_authn_v1_session_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -418,7 +539,7 @@ type AuthSuccess struct {
 
 func (x *AuthSuccess) Reset() {
 	*x = AuthSuccess{}
-	mi := &file_authn_v1_session_proto_msgTypes[4]
+	mi := &file_authn_v1_session_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +551,7 @@ func (x *AuthSuccess) String() string {
 func (*AuthSuccess) ProtoMessage() {}
 
 func (x *AuthSuccess) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[4]
+	mi := &file_authn_v1_session_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -487,7 +608,7 @@ type AuthFailure struct {
 
 func (x *AuthFailure) Reset() {
 	*x = AuthFailure{}
-	mi := &file_authn_v1_session_proto_msgTypes[5]
+	mi := &file_authn_v1_session_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -499,7 +620,7 @@ func (x *AuthFailure) String() string {
 func (*AuthFailure) ProtoMessage() {}
 
 func (x *AuthFailure) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[5]
+	mi := &file_authn_v1_session_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -552,9 +673,9 @@ var File_authn_v1_session_proto protoreflect.FileDescriptor
 
 const file_authn_v1_session_proto_rawDesc = "" +
 	"\n" +
-	"\x16authn/v1/session.proto\x12\x15muid.authn.v1.session\x1a\x18authn/v1/challenge.proto\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"W\n" +
-	"\fSessionToken\x12G\n" +
-	"\x05value\x18\x01 \x01(\tB1\xbaH.r,\x10B\x18B2&^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$R\x05value\"\xce\x01\n" +
+	"\x16authn/v1/session.proto\x12\x15muid.authn.v1.session\x1a\x18authn/v1/challenge.proto\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"V\n" +
+	"\fSessionToken\x12F\n" +
+	"\x05value\x18\x01 \x01(\tB0\xbaH-r+2&^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$\x98\x01BR\x05value\"\xce\x01\n" +
 	"\x0eSessionContext\x12H\n" +
 	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x127\n" +
 	"\tissued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
@@ -564,7 +685,14 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12N\n" +
 	"\x0fsession_context\x18\x02 \x01(\v2%.muid.authn.v1.session.SessionContextR\x0esessionContext\x12?\n" +
 	"\n" +
-	"auth_level\x18\x03 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\"Y\n" +
+	"auth_level\x18\x03 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\"\xf0\x01\n" +
+	"\x16AuthenticatedPrincipal\x12!\n" +
+	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12?\n" +
+	"\n" +
+	"auth_level\x18\x02 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\x127\n" +
+	"\tissued_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"Y\n" +
 	"\x11ChallengeRequired\x12D\n" +
 	"\tchallenge\x18\x01 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"Q\n" +
 	"\vAuthSuccess\x12B\n" +
@@ -581,31 +709,35 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\x19com.muid.authn.v1.sessionB\fSessionProtoP\x01Z0sanzi.io/muid/api/proto/authn/v1/session;session\xa2\x02\x04MAVS\xaa\x02\x15Muid.Authn.V1.Session\xca\x02\x15Muid\\Authn\\V1\\Session\xe2\x02!Muid\\Authn\\V1\\Session\\GPBMetadata\xea\x02\x18Muid::Authn::V1::Sessionb\x06proto3"
 
 var file_authn_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_authn_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_authn_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_authn_v1_session_proto_goTypes = []any{
 	(AuthLevel)(0),                  // 0: muid.authn.v1.session.AuthLevel
 	(*SessionToken)(nil),            // 1: muid.authn.v1.session.SessionToken
 	(*SessionContext)(nil),          // 2: muid.authn.v1.session.SessionContext
 	(*AuthenticatedResult)(nil),     // 3: muid.authn.v1.session.AuthenticatedResult
-	(*ChallengeRequired)(nil),       // 4: muid.authn.v1.session.ChallengeRequired
-	(*AuthSuccess)(nil),             // 5: muid.authn.v1.session.AuthSuccess
-	(*AuthFailure)(nil),             // 6: muid.authn.v1.session.AuthFailure
-	(*timestamppb.Timestamp)(nil),   // 7: google.protobuf.Timestamp
-	(*challenge.AuthChallenge)(nil), // 8: muid.authn.v1.challenge.AuthChallenge
+	(*AuthenticatedPrincipal)(nil),  // 4: muid.authn.v1.session.AuthenticatedPrincipal
+	(*ChallengeRequired)(nil),       // 5: muid.authn.v1.session.ChallengeRequired
+	(*AuthSuccess)(nil),             // 6: muid.authn.v1.session.AuthSuccess
+	(*AuthFailure)(nil),             // 7: muid.authn.v1.session.AuthFailure
+	(*timestamppb.Timestamp)(nil),   // 8: google.protobuf.Timestamp
+	(*challenge.AuthChallenge)(nil), // 9: muid.authn.v1.challenge.AuthChallenge
 }
 var file_authn_v1_session_proto_depIdxs = []int32{
-	1, // 0: muid.authn.v1.session.SessionContext.session_token:type_name -> muid.authn.v1.session.SessionToken
-	7, // 1: muid.authn.v1.session.SessionContext.issued_at:type_name -> google.protobuf.Timestamp
-	7, // 2: muid.authn.v1.session.SessionContext.expires_at:type_name -> google.protobuf.Timestamp
-	2, // 3: muid.authn.v1.session.AuthenticatedResult.session_context:type_name -> muid.authn.v1.session.SessionContext
-	0, // 4: muid.authn.v1.session.AuthenticatedResult.auth_level:type_name -> muid.authn.v1.session.AuthLevel
-	8, // 5: muid.authn.v1.session.ChallengeRequired.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	3, // 6: muid.authn.v1.session.AuthSuccess.result:type_name -> muid.authn.v1.session.AuthenticatedResult
-	7, // [7:7] is the sub-list for method output_type
-	7, // [7:7] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	1,  // 0: muid.authn.v1.session.SessionContext.session_token:type_name -> muid.authn.v1.session.SessionToken
+	8,  // 1: muid.authn.v1.session.SessionContext.issued_at:type_name -> google.protobuf.Timestamp
+	8,  // 2: muid.authn.v1.session.SessionContext.expires_at:type_name -> google.protobuf.Timestamp
+	2,  // 3: muid.authn.v1.session.AuthenticatedResult.session_context:type_name -> muid.authn.v1.session.SessionContext
+	0,  // 4: muid.authn.v1.session.AuthenticatedResult.auth_level:type_name -> muid.authn.v1.session.AuthLevel
+	0,  // 5: muid.authn.v1.session.AuthenticatedPrincipal.auth_level:type_name -> muid.authn.v1.session.AuthLevel
+	8,  // 6: muid.authn.v1.session.AuthenticatedPrincipal.issued_at:type_name -> google.protobuf.Timestamp
+	8,  // 7: muid.authn.v1.session.AuthenticatedPrincipal.expires_at:type_name -> google.protobuf.Timestamp
+	9,  // 8: muid.authn.v1.session.ChallengeRequired.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	3,  // 9: muid.authn.v1.session.AuthSuccess.result:type_name -> muid.authn.v1.session.AuthenticatedResult
+	10, // [10:10] is the sub-list for method output_type
+	10, // [10:10] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_session_proto_init() }
@@ -619,7 +751,7 @@ func file_authn_v1_session_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_session_proto_rawDesc), len(file_authn_v1_session_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

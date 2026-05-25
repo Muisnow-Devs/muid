@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package muid.authz.v1.client;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authz/v1/client;client";
+
+message AuthorizedClient {
+  string client_id = 1;
+  string client_name = 2;
+
+  repeated string scopes = 3;
+
+  google.protobuf.Timestamp authorized_at = 4;
+  google.protobuf.Timestamp last_used_at = 5;
+}

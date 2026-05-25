@@ -87,6 +87,12 @@ func (stubSessionIssuer) AuthenticatedResultFromResolved(
 	panic("not used")
 }
 
+func (stubSessionIssuer) AuthenticatedPrincipalFromResolved(
+	account.ResolvedSession,
+) *sessionpb.AuthenticatedPrincipal {
+	panic("not used")
+}
+
 func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.T) {
 	t.Parallel()
 

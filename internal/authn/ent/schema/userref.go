@@ -39,7 +39,6 @@ func (UserRef) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sessions", UserSession.Type),
 		edge.To("passkeys", UserPasskey.Type),
-		edge.To("oidc_refresh_tokens", OIDCRefreshToken.Type),
 		edge.To("federated_identities", UserFederatedIdentity.Type),
 	}
 }

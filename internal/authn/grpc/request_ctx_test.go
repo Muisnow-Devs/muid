@@ -66,6 +66,40 @@ func TestAuthnRequestContextInterceptor_requiredWireSession(t *testing.T) {
 	}
 }
 
+func TestAuthnRequestContextInterceptor_requiredWireSession_principal(t *testing.T) {
+	t.Parallel()
+
+	interceptor := AuthnRequestContextInterceptor()
+	wire := validWireToken(t)
+
+	req := &pb.GetAuthenticatedPrincipalRequest{}
+	tok := &sessionpb.SessionToken{}
+	tok.SetValue(wire)
+	req.SetSessionToken(tok)
+
+	var got string
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_GetAuthenticatedPrincipal_FullMethodName}
+	_, err := interceptor(
+		context.Background(),
+		req,
+		info,
+		func(ctx context.Context, _ any) (any, error) {
+			var ok bool
+			got, ok = WireSessionFromContext(ctx)
+			if !ok {
+				t.Fatal("missing wire session on context")
+			}
+			return nil, nil
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got != wire {
+		t.Fatalf("wire: got %q want %q", got, wire)
+	}
+}
+
 func TestAuthnRequestContextInterceptor_missingWireSession(t *testing.T) {
 	t.Parallel()
 

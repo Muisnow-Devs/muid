@@ -416,7 +416,6 @@ func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
 
 type UpdateProfileRequest struct {
 	state                 protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Id         string                      `protobuf:"bytes,1,opt,name=id,proto3"`
 	xxx_hidden_UpdateMask *fieldmaskpb.FieldMask      `protobuf:"bytes,2,opt,name=update_mask,json=updateMask,proto3"`
 	xxx_hidden_Identity   *claims.IdentityInformation `protobuf:"bytes,3,opt,name=identity,proto3,oneof"`
 	unknownFields         protoimpl.UnknownFields
@@ -448,13 +447,6 @@ func (x *UpdateProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *UpdateProfileRequest) GetId() string {
-	if x != nil {
-		return x.xxx_hidden_Id
-	}
-	return ""
-}
-
 func (x *UpdateProfileRequest) GetUpdateMask() *fieldmaskpb.FieldMask {
 	if x != nil {
 		return x.xxx_hidden_UpdateMask
@@ -467,10 +459,6 @@ func (x *UpdateProfileRequest) GetIdentity() *claims.IdentityInformation {
 		return x.xxx_hidden_Identity
 	}
 	return nil
-}
-
-func (x *UpdateProfileRequest) SetId(v string) {
-	x.xxx_hidden_Id = v
 }
 
 func (x *UpdateProfileRequest) SetUpdateMask(v *fieldmaskpb.FieldMask) {
@@ -506,7 +494,7 @@ func (x *UpdateProfileRequest) ClearIdentity() {
 type UpdateProfileRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Id string
+	// Authenticated principal is carried via gRPC metadata (x-authn-user-id).
 	// Mask paths are relative to this message: proto snake_case prefix `identity.` for
 	// IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username").
 	// JSON clients may send camelCase in the second segment (e.g. "identity.emailVerified");
@@ -520,7 +508,6 @@ func (b0 UpdateProfileRequest_builder) Build() *UpdateProfileRequest {
 	m0 := &UpdateProfileRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Id = b.Id
 	x.xxx_hidden_UpdateMask = b.UpdateMask
 	x.xxx_hidden_Identity = b.Identity
 	return m0
@@ -585,7 +572,6 @@ func (b0 UpdateProfileResponse_builder) Build() *UpdateProfileResponse {
 
 type StartAvatarUploadRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId      string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
 	xxx_hidden_ContentType string                 `protobuf:"bytes,2,opt,name=content_type,json=contentType,proto3"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
@@ -616,22 +602,11 @@ func (x *StartAvatarUploadRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *StartAvatarUploadRequest) GetUserId() string {
-	if x != nil {
-		return x.xxx_hidden_UserId
-	}
-	return ""
-}
-
 func (x *StartAvatarUploadRequest) GetContentType() string {
 	if x != nil {
 		return x.xxx_hidden_ContentType
 	}
 	return ""
-}
-
-func (x *StartAvatarUploadRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
 }
 
 func (x *StartAvatarUploadRequest) SetContentType(v string) {
@@ -641,7 +616,7 @@ func (x *StartAvatarUploadRequest) SetContentType(v string) {
 type StartAvatarUploadRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	UserId      string
+	// Authenticated principal is carried via gRPC metadata (x-authn-user-id).
 	ContentType string
 }
 
@@ -649,7 +624,6 @@ func (b0 StartAvatarUploadRequest_builder) Build() *StartAvatarUploadRequest {
 	m0 := &StartAvatarUploadRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
 	x.xxx_hidden_ContentType = b.ContentType
 	return m0
 }
@@ -752,7 +726,6 @@ func (b0 StartAvatarUploadResponse_builder) Build() *StartAvatarUploadResponse {
 
 type CompleteAvatarUploadRequest struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
 	xxx_hidden_ObjectKey string                 `protobuf:"bytes,2,opt,name=object_key,json=objectKey,proto3"`
 	xxx_hidden_ByteSize  int64                  `protobuf:"varint,3,opt,name=byte_size,json=byteSize,proto3"`
 	unknownFields        protoimpl.UnknownFields
@@ -784,13 +757,6 @@ func (x *CompleteAvatarUploadRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *CompleteAvatarUploadRequest) GetUserId() string {
-	if x != nil {
-		return x.xxx_hidden_UserId
-	}
-	return ""
-}
-
 func (x *CompleteAvatarUploadRequest) GetObjectKey() string {
 	if x != nil {
 		return x.xxx_hidden_ObjectKey
@@ -805,10 +771,6 @@ func (x *CompleteAvatarUploadRequest) GetByteSize() int64 {
 	return 0
 }
 
-func (x *CompleteAvatarUploadRequest) SetUserId(v string) {
-	x.xxx_hidden_UserId = v
-}
-
 func (x *CompleteAvatarUploadRequest) SetObjectKey(v string) {
 	x.xxx_hidden_ObjectKey = v
 }
@@ -820,7 +782,7 @@ func (x *CompleteAvatarUploadRequest) SetByteSize(v int64) {
 type CompleteAvatarUploadRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	UserId    string
+	// Authenticated principal is carried via gRPC metadata (x-authn-user-id).
 	ObjectKey string
 	ByteSize  int64
 }
@@ -829,7 +791,6 @@ func (b0 CompleteAvatarUploadRequest_builder) Build() *CompleteAvatarUploadReque
 	m0 := &CompleteAvatarUploadRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_UserId = b.UserId
 	x.xxx_hidden_ObjectKey = b.ObjectKey
 	x.xxx_hidden_ByteSize = b.ByteSize
 	return m0
@@ -916,32 +877,29 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\x12\x1a\n" +
 	"\btimezone\x18\t \x01(\tR\btimezone\x120\n" +
 	"\x11original_identity\x18\b \x01(\tH\x00R\x10originalIdentity\x88\x01\x01B\x14\n" +
-	"\x12_original_identity\"\xc7\x01\n" +
-	"\x14UpdateProfileRequest\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\x12;\n" +
+	"\x12_original_identity\"\xb3\x01\n" +
+	"\x14UpdateProfileRequest\x12;\n" +
 	"\vupdate_mask\x18\x02 \x01(\v2\x1a.google.protobuf.FieldMaskR\n" +
 	"updateMask\x12K\n" +
 	"\bidentity\x18\x03 \x01(\v2*.muid.shared.v1.claims.IdentityInformationH\x00R\bidentity\x88\x01\x01B\v\n" +
-	"\t_identity\"1\n" +
+	"\t_identityJ\x04\b\x01\x10\x02\"1\n" +
 	"\x15UpdateProfileResponse\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"l\n" +
-	"\x18StartAvatarUploadRequest\x12!\n" +
-	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12-\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"O\n" +
+	"\x18StartAvatarUploadRequest\x12-\n" +
 	"\fcontent_type\x18\x02 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x03\x18\x80\x01R\vcontentType\"\x94\x01\n" +
+	"\xbaH\ar\x05\x10\x03\x18\x80\x01R\vcontentTypeJ\x04\b\x01\x10\x02\"\x94\x01\n" +
 	"\x19StartAvatarUploadResponse\x12\x1d\n" +
 	"\n" +
 	"upload_url\x18\x01 \x01(\tR\tuploadUrl\x12\x1d\n" +
 	"\n" +
 	"object_key\x18\x02 \x01(\tR\tobjectKey\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x91\x01\n" +
-	"\x1bCompleteAvatarUploadRequest\x12!\n" +
-	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12)\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"t\n" +
+	"\x1bCompleteAvatarUploadRequest\x12)\n" +
 	"\n" +
 	"object_key\x18\x02 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\x80\x04R\tobjectKey\x12$\n" +
-	"\tbyte_size\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x01R\bbyteSize\"=\n" +
+	"\tbyte_size\x18\x03 \x01(\x03B\a\xbaH\x04\"\x02(\x01R\bbyteSizeJ\x04\b\x01\x10\x02\"=\n" +
 	"\x1cCompleteAvatarUploadResponse\x12\x1d\n" +
 	"\n" +
 	"avatar_url\x18\x01 \x01(\tR\tavatarUrl2\x88\x04\n" +

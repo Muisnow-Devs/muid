@@ -14,7 +14,6 @@ import (
 	authnflow "sanzi.io/muid/internal/authn/flow"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/internal/signature"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
@@ -24,12 +23,10 @@ type GRPCHandler struct {
 
 	flow     *authnflow.Service
 	accounts *account.Accounts
-	signing  signature.SignatureManager
 }
 
 type HandlerConfig struct {
 	OTPSendCooldownSeconds int
-	SignatureManager       signature.SignatureManager
 }
 
 func NewGRPCHandler(
@@ -46,7 +43,6 @@ func NewGRPCHandler(
 			OTPSendCooldownSeconds: config.OTPSendCooldownSeconds,
 		}),
 		accounts: accounts,
-		signing:  config.SignatureManager,
 	}
 }
 
@@ -96,68 +92,31 @@ func (g *GRPCHandler) GetAuthorizedSession(
 	return out, nil
 }
 
-func (g *GRPCHandler) GetPublicKeys(
+func (g *GRPCHandler) GetAuthenticatedPrincipal(
 	ctx context.Context,
-	_ *pb.GetPublicKeysRequest,
-) (*pb.GetPublicKeysResponse, error) {
-	if g.signing == nil {
-		return nil, status.Error(codes.Unavailable, "signature manager unavailable")
+	_ *pb.GetAuthenticatedPrincipalRequest,
+) (*pb.GetAuthenticatedPrincipalResponse, error) {
+	wire, err := requiredWireSession(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	keys, err := g.signing.PublicKeys(ctx)
+	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
+	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
+		out := &pb.GetAuthenticatedPrincipalResponse{}
+		out.SetValid(false)
+		return out, nil
+	}
 	if err != nil {
-		log.LogUnexpected(ctx, "authn public keys", err.Error())
+		log.LogUnexpected(ctx, "authn get principal", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	out := &pb.GetPublicKeysResponse{}
-	out.SetPublicKeys(keys)
+	out := &pb.GetAuthenticatedPrincipalResponse{}
+	out.SetValid(true)
+	out.SetPrincipal(g.accounts.Session.AuthenticatedPrincipalFromResolved(res))
+
 	return out, nil
-}
-
-func (g *GRPCHandler) OIDCGrantConsent(
-	context.Context,
-	*pb.OIDCGrantConsentRequest,
-) (*pb.OIDCGrantConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCGrantConsent not implemented")
-}
-
-func (g *GRPCHandler) OIDCIntrospectToken(
-	context.Context,
-	*pb.OIDCIntrospectTokenRequest,
-) (*pb.OIDCIntrospectTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCIntrospectToken not implemented")
-}
-
-func (g *GRPCHandler) OIDCListGrantedConsents(
-	context.Context,
-	*pb.OIDCListGrantedConsentsRequest,
-) (*pb.OIDCListGrantedConsentsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCListGrantedConsents not implemented")
-}
-
-func (g *GRPCHandler) OIDCRevokeConsent(
-	context.Context,
-	*pb.OIDCRevokeConsentRequest,
-) (*pb.OIDCRevokeConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRevokeConsent not implemented")
-}
-
-func (g *GRPCHandler) OIDCRevokeRefreshToken(
-	context.Context,
-	*pb.OIDCRevokeRefreshTokenRequest,
-) (*pb.OIDCRevokeRefreshTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRevokeRefreshToken not implemented")
-}
-
-func (g *GRPCHandler) OIDCRotateAndGetAccessToken(
-	context.Context,
-	*pb.OIDCRotateAndGetAccessTokenRequest,
-) (*pb.OIDCRotateAndGetAccessTokenResponse, error) {
-	return nil, status.Error(
-		codes.Unimplemented,
-		"method OIDCRotateAndGetAccessToken not implemented",
-	)
 }
 
 func (g *GRPCHandler) RevokeFederatedIdentity(

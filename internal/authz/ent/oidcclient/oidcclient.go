@@ -43,10 +43,10 @@ const (
 	// Table holds the table name of the oidcclient in the database.
 	Table = "oidc_clients"
 	// CallbackUrlsTable is the table that holds the callback_urls relation/edge.
-	CallbackUrlsTable = "oidc_callback_ur_ls"
-	// CallbackUrlsInverseTable is the table name for the OIDCCallbackURL entity.
-	// It exists in this package in order to avoid circular dependency with the "oidccallbackurl" package.
-	CallbackUrlsInverseTable = "oidc_callback_ur_ls"
+	CallbackUrlsTable = "oidc_callback_ur_is"
+	// CallbackUrlsInverseTable is the table name for the OIDCCallbackURI entity.
+	// It exists in this package in order to avoid circular dependency with the "oidccallbackuri" package.
+	CallbackUrlsInverseTable = "oidc_callback_ur_is"
 	// CallbackUrlsColumn is the table column denoting the callback_urls relation/edge.
 	CallbackUrlsColumn = "client_ref_id"
 	// SecretsTable is the table that holds the secrets relation/edge.

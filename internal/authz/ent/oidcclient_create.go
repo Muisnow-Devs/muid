@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
@@ -127,14 +127,14 @@ func (_c *OIDCClientCreate) SetNillableID(v *uuid.UUID) *OIDCClientCreate {
 	return _c
 }
 
-// AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURL entity by IDs.
+// AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURI entity by IDs.
 func (_c *OIDCClientCreate) AddCallbackURLIDs(ids ...uuid.UUID) *OIDCClientCreate {
 	_c.mutation.AddCallbackURLIDs(ids...)
 	return _c
 }
 
-// AddCallbackUrls adds the "callback_urls" edges to the OIDCCallbackURL entity.
-func (_c *OIDCClientCreate) AddCallbackUrls(v ...*OIDCCallbackURL) *OIDCClientCreate {
+// AddCallbackUrls adds the "callback_urls" edges to the OIDCCallbackURI entity.
+func (_c *OIDCClientCreate) AddCallbackUrls(v ...*OIDCCallbackURI) *OIDCClientCreate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -361,7 +361,7 @@ func (_c *OIDCClientCreate) createSpec() (*OIDCClient, *sqlgraph.CreateSpec) {
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

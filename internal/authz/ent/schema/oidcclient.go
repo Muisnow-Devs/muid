@@ -45,7 +45,7 @@ func (OIDCClient) Indexes() []ent.Index {
 // Edges of the OIDCClient.
 func (OIDCClient) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("callback_urls", OIDCCallbackURL.Type),
+		edge.To("callback_urls", OIDCCallbackURI.Type),
 		edge.To("secrets", OIDCClientSecret.Type),
 		edge.To("grants", OIDCGrant.Type),
 		edge.To("refresh_tokens", OIDCRefreshToken.Type),

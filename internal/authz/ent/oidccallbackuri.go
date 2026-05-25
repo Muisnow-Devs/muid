@@ -10,31 +10,31 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 )
 
-// OIDCCallbackURL is the model entity for the OIDCCallbackURL schema.
-type OIDCCallbackURL struct {
+// OIDCCallbackURI is the model entity for the OIDCCallbackURI schema.
+type OIDCCallbackURI struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
 	// ClientRefID holds the value of the "client_ref_id" field.
 	ClientRefID uuid.UUID `json:"client_ref_id,omitempty"`
-	// URL holds the value of the "url" field.
-	URL string `json:"url,omitempty"`
+	// URI holds the value of the "uri" field.
+	URI string `json:"uri,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
-	// The values are being populated by the OIDCCallbackURLQuery when eager-loading is set.
-	Edges        OIDCCallbackURLEdges `json:"edges"`
+	// The values are being populated by the OIDCCallbackURIQuery when eager-loading is set.
+	Edges        OIDCCallbackURIEdges `json:"edges"`
 	selectValues sql.SelectValues
 }
 
-// OIDCCallbackURLEdges holds the relations/edges for other nodes in the graph.
-type OIDCCallbackURLEdges struct {
+// OIDCCallbackURIEdges holds the relations/edges for other nodes in the graph.
+type OIDCCallbackURIEdges struct {
 	// Client holds the value of the client edge.
 	Client *OIDCClient `json:"client,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -44,7 +44,7 @@ type OIDCCallbackURLEdges struct {
 
 // ClientOrErr returns the Client value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e OIDCCallbackURLEdges) ClientOrErr() (*OIDCClient, error) {
+func (e OIDCCallbackURIEdges) ClientOrErr() (*OIDCClient, error) {
 	if e.Client != nil {
 		return e.Client, nil
 	} else if e.loadedTypes[0] {
@@ -54,15 +54,15 @@ func (e OIDCCallbackURLEdges) ClientOrErr() (*OIDCClient, error) {
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
-func (*OIDCCallbackURL) scanValues(columns []string) ([]any, error) {
+func (*OIDCCallbackURI) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case oidccallbackurl.FieldURL:
+		case oidccallbackuri.FieldURI:
 			values[i] = new(sql.NullString)
-		case oidccallbackurl.FieldCreatedAt, oidccallbackurl.FieldUpdatedAt:
+		case oidccallbackuri.FieldCreatedAt, oidccallbackuri.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case oidccallbackurl.FieldID, oidccallbackurl.FieldClientRefID:
+		case oidccallbackuri.FieldID, oidccallbackuri.FieldClientRefID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -72,38 +72,38 @@ func (*OIDCCallbackURL) scanValues(columns []string) ([]any, error) {
 }
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
-// to the OIDCCallbackURL fields.
-func (_m *OIDCCallbackURL) assignValues(columns []string, values []any) error {
+// to the OIDCCallbackURI fields.
+func (_m *OIDCCallbackURI) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
 	for i := range columns {
 		switch columns[i] {
-		case oidccallbackurl.FieldID:
+		case oidccallbackuri.FieldID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case oidccallbackurl.FieldClientRefID:
+		case oidccallbackuri.FieldClientRefID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
 				return fmt.Errorf("unexpected type %T for field client_ref_id", values[i])
 			} else if value != nil {
 				_m.ClientRefID = *value
 			}
-		case oidccallbackurl.FieldURL:
+		case oidccallbackuri.FieldURI:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field url", values[i])
+				return fmt.Errorf("unexpected type %T for field uri", values[i])
 			} else if value.Valid {
-				_m.URL = value.String
+				_m.URI = value.String
 			}
-		case oidccallbackurl.FieldCreatedAt:
+		case oidccallbackuri.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				_m.CreatedAt = value.Time
 			}
-		case oidccallbackurl.FieldUpdatedAt:
+		case oidccallbackuri.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
@@ -116,45 +116,45 @@ func (_m *OIDCCallbackURL) assignValues(columns []string, values []any) error {
 	return nil
 }
 
-// Value returns the ent.Value that was dynamically selected and assigned to the OIDCCallbackURL.
+// Value returns the ent.Value that was dynamically selected and assigned to the OIDCCallbackURI.
 // This includes values selected through modifiers, order, etc.
-func (_m *OIDCCallbackURL) Value(name string) (ent.Value, error) {
+func (_m *OIDCCallbackURI) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryClient queries the "client" edge of the OIDCCallbackURL entity.
-func (_m *OIDCCallbackURL) QueryClient() *OIDCClientQuery {
-	return NewOIDCCallbackURLClient(_m.config).QueryClient(_m)
+// QueryClient queries the "client" edge of the OIDCCallbackURI entity.
+func (_m *OIDCCallbackURI) QueryClient() *OIDCClientQuery {
+	return NewOIDCCallbackURIClient(_m.config).QueryClient(_m)
 }
 
-// Update returns a builder for updating this OIDCCallbackURL.
-// Note that you need to call OIDCCallbackURL.Unwrap() before calling this method if this OIDCCallbackURL
+// Update returns a builder for updating this OIDCCallbackURI.
+// Note that you need to call OIDCCallbackURI.Unwrap() before calling this method if this OIDCCallbackURI
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (_m *OIDCCallbackURL) Update() *OIDCCallbackURLUpdateOne {
-	return NewOIDCCallbackURLClient(_m.config).UpdateOne(_m)
+func (_m *OIDCCallbackURI) Update() *OIDCCallbackURIUpdateOne {
+	return NewOIDCCallbackURIClient(_m.config).UpdateOne(_m)
 }
 
-// Unwrap unwraps the OIDCCallbackURL entity that was returned from a transaction after it was closed,
+// Unwrap unwraps the OIDCCallbackURI entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (_m *OIDCCallbackURL) Unwrap() *OIDCCallbackURL {
+func (_m *OIDCCallbackURI) Unwrap() *OIDCCallbackURI {
 	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
-		panic("ent: OIDCCallbackURL is not a transactional entity")
+		panic("ent: OIDCCallbackURI is not a transactional entity")
 	}
 	_m.config.driver = _tx.drv
 	return _m
 }
 
 // String implements the fmt.Stringer.
-func (_m *OIDCCallbackURL) String() string {
+func (_m *OIDCCallbackURI) String() string {
 	var builder strings.Builder
-	builder.WriteString("OIDCCallbackURL(")
+	builder.WriteString("OIDCCallbackURI(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("client_ref_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.ClientRefID))
 	builder.WriteString(", ")
-	builder.WriteString("url=")
-	builder.WriteString(_m.URL)
+	builder.WriteString("uri=")
+	builder.WriteString(_m.URI)
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -165,5 +165,5 @@ func (_m *OIDCCallbackURL) String() string {
 	return builder.String()
 }
 
-// OIDCCallbackURLs is a parsable slice of OIDCCallbackURL.
-type OIDCCallbackURLs []*OIDCCallbackURL
+// OIDCCallbackURIs is a parsable slice of OIDCCallbackURI.
+type OIDCCallbackURIs []*OIDCCallbackURI

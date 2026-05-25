@@ -11,37 +11,37 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 )
 
-// OIDCCallbackURLCreate is the builder for creating a OIDCCallbackURL entity.
-type OIDCCallbackURLCreate struct {
+// OIDCCallbackURICreate is the builder for creating a OIDCCallbackURI entity.
+type OIDCCallbackURICreate struct {
 	config
-	mutation *OIDCCallbackURLMutation
+	mutation *OIDCCallbackURIMutation
 	hooks    []Hook
 }
 
 // SetClientRefID sets the "client_ref_id" field.
-func (_c *OIDCCallbackURLCreate) SetClientRefID(v uuid.UUID) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetClientRefID(v uuid.UUID) *OIDCCallbackURICreate {
 	_c.mutation.SetClientRefID(v)
 	return _c
 }
 
-// SetURL sets the "url" field.
-func (_c *OIDCCallbackURLCreate) SetURL(v string) *OIDCCallbackURLCreate {
-	_c.mutation.SetURL(v)
+// SetURI sets the "uri" field.
+func (_c *OIDCCallbackURICreate) SetURI(v string) *OIDCCallbackURICreate {
+	_c.mutation.SetURI(v)
 	return _c
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (_c *OIDCCallbackURLCreate) SetCreatedAt(v time.Time) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetCreatedAt(v time.Time) *OIDCCallbackURICreate {
 	_c.mutation.SetCreatedAt(v)
 	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (_c *OIDCCallbackURLCreate) SetNillableCreatedAt(v *time.Time) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetNillableCreatedAt(v *time.Time) *OIDCCallbackURICreate {
 	if v != nil {
 		_c.SetCreatedAt(*v)
 	}
@@ -49,13 +49,13 @@ func (_c *OIDCCallbackURLCreate) SetNillableCreatedAt(v *time.Time) *OIDCCallbac
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_c *OIDCCallbackURLCreate) SetUpdatedAt(v time.Time) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetUpdatedAt(v time.Time) *OIDCCallbackURICreate {
 	_c.mutation.SetUpdatedAt(v)
 	return _c
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (_c *OIDCCallbackURLCreate) SetNillableUpdatedAt(v *time.Time) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetNillableUpdatedAt(v *time.Time) *OIDCCallbackURICreate {
 	if v != nil {
 		_c.SetUpdatedAt(*v)
 	}
@@ -63,13 +63,13 @@ func (_c *OIDCCallbackURLCreate) SetNillableUpdatedAt(v *time.Time) *OIDCCallbac
 }
 
 // SetID sets the "id" field.
-func (_c *OIDCCallbackURLCreate) SetID(v uuid.UUID) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetID(v uuid.UUID) *OIDCCallbackURICreate {
 	_c.mutation.SetID(v)
 	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (_c *OIDCCallbackURLCreate) SetNillableID(v *uuid.UUID) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetNillableID(v *uuid.UUID) *OIDCCallbackURICreate {
 	if v != nil {
 		_c.SetID(*v)
 	}
@@ -77,29 +77,29 @@ func (_c *OIDCCallbackURLCreate) SetNillableID(v *uuid.UUID) *OIDCCallbackURLCre
 }
 
 // SetClientID sets the "client" edge to the OIDCClient entity by ID.
-func (_c *OIDCCallbackURLCreate) SetClientID(id uuid.UUID) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetClientID(id uuid.UUID) *OIDCCallbackURICreate {
 	_c.mutation.SetClientID(id)
 	return _c
 }
 
 // SetClient sets the "client" edge to the OIDCClient entity.
-func (_c *OIDCCallbackURLCreate) SetClient(v *OIDCClient) *OIDCCallbackURLCreate {
+func (_c *OIDCCallbackURICreate) SetClient(v *OIDCClient) *OIDCCallbackURICreate {
 	return _c.SetClientID(v.ID)
 }
 
-// Mutation returns the OIDCCallbackURLMutation object of the builder.
-func (_c *OIDCCallbackURLCreate) Mutation() *OIDCCallbackURLMutation {
+// Mutation returns the OIDCCallbackURIMutation object of the builder.
+func (_c *OIDCCallbackURICreate) Mutation() *OIDCCallbackURIMutation {
 	return _c.mutation
 }
 
-// Save creates the OIDCCallbackURL in the database.
-func (_c *OIDCCallbackURLCreate) Save(ctx context.Context) (*OIDCCallbackURL, error) {
+// Save creates the OIDCCallbackURI in the database.
+func (_c *OIDCCallbackURICreate) Save(ctx context.Context) (*OIDCCallbackURI, error) {
 	_c.defaults()
 	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (_c *OIDCCallbackURLCreate) SaveX(ctx context.Context) *OIDCCallbackURL {
+func (_c *OIDCCallbackURICreate) SaveX(ctx context.Context) *OIDCCallbackURI {
 	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -108,60 +108,60 @@ func (_c *OIDCCallbackURLCreate) SaveX(ctx context.Context) *OIDCCallbackURL {
 }
 
 // Exec executes the query.
-func (_c *OIDCCallbackURLCreate) Exec(ctx context.Context) error {
+func (_c *OIDCCallbackURICreate) Exec(ctx context.Context) error {
 	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *OIDCCallbackURLCreate) ExecX(ctx context.Context) {
+func (_c *OIDCCallbackURICreate) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_c *OIDCCallbackURLCreate) defaults() {
+func (_c *OIDCCallbackURICreate) defaults() {
 	if _, ok := _c.mutation.CreatedAt(); !ok {
-		v := oidccallbackurl.DefaultCreatedAt()
+		v := oidccallbackuri.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		v := oidccallbackurl.DefaultUpdatedAt()
+		v := oidccallbackuri.DefaultUpdatedAt()
 		_c.mutation.SetUpdatedAt(v)
 	}
 	if _, ok := _c.mutation.ID(); !ok {
-		v := oidccallbackurl.DefaultID()
+		v := oidccallbackuri.DefaultID()
 		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_c *OIDCCallbackURLCreate) check() error {
+func (_c *OIDCCallbackURICreate) check() error {
 	if _, ok := _c.mutation.ClientRefID(); !ok {
-		return &ValidationError{Name: "client_ref_id", err: errors.New(`ent: missing required field "OIDCCallbackURL.client_ref_id"`)}
+		return &ValidationError{Name: "client_ref_id", err: errors.New(`ent: missing required field "OIDCCallbackURI.client_ref_id"`)}
 	}
-	if _, ok := _c.mutation.URL(); !ok {
-		return &ValidationError{Name: "url", err: errors.New(`ent: missing required field "OIDCCallbackURL.url"`)}
+	if _, ok := _c.mutation.URI(); !ok {
+		return &ValidationError{Name: "uri", err: errors.New(`ent: missing required field "OIDCCallbackURI.uri"`)}
 	}
-	if v, ok := _c.mutation.URL(); ok {
-		if err := oidccallbackurl.URLValidator(v); err != nil {
-			return &ValidationError{Name: "url", err: fmt.Errorf(`ent: validator failed for field "OIDCCallbackURL.url": %w`, err)}
+	if v, ok := _c.mutation.URI(); ok {
+		if err := oidccallbackuri.URIValidator(v); err != nil {
+			return &ValidationError{Name: "uri", err: fmt.Errorf(`ent: validator failed for field "OIDCCallbackURI.uri": %w`, err)}
 		}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
-		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "OIDCCallbackURL.created_at"`)}
+		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "OIDCCallbackURI.created_at"`)}
 	}
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
-		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "OIDCCallbackURL.updated_at"`)}
+		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "OIDCCallbackURI.updated_at"`)}
 	}
 	if len(_c.mutation.ClientIDs()) == 0 {
-		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OIDCCallbackURL.client"`)}
+		return &ValidationError{Name: "client", err: errors.New(`ent: missing required edge "OIDCCallbackURI.client"`)}
 	}
 	return nil
 }
 
-func (_c *OIDCCallbackURLCreate) sqlSave(ctx context.Context) (*OIDCCallbackURL, error) {
+func (_c *OIDCCallbackURICreate) sqlSave(ctx context.Context) (*OIDCCallbackURI, error) {
 	if err := _c.check(); err != nil {
 		return nil, err
 	}
@@ -184,33 +184,33 @@ func (_c *OIDCCallbackURLCreate) sqlSave(ctx context.Context) (*OIDCCallbackURL,
 	return _node, nil
 }
 
-func (_c *OIDCCallbackURLCreate) createSpec() (*OIDCCallbackURL, *sqlgraph.CreateSpec) {
+func (_c *OIDCCallbackURICreate) createSpec() (*OIDCCallbackURI, *sqlgraph.CreateSpec) {
 	var (
-		_node = &OIDCCallbackURL{config: _c.config}
-		_spec = sqlgraph.NewCreateSpec(oidccallbackurl.Table, sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID))
+		_node = &OIDCCallbackURI{config: _c.config}
+		_spec = sqlgraph.NewCreateSpec(oidccallbackuri.Table, sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID))
 	)
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.URL(); ok {
-		_spec.SetField(oidccallbackurl.FieldURL, field.TypeString, value)
-		_node.URL = value
+	if value, ok := _c.mutation.URI(); ok {
+		_spec.SetField(oidccallbackuri.FieldURI, field.TypeString, value)
+		_node.URI = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
-		_spec.SetField(oidccallbackurl.FieldCreatedAt, field.TypeTime, value)
+		_spec.SetField(oidccallbackuri.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := _c.mutation.UpdatedAt(); ok {
-		_spec.SetField(oidccallbackurl.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(oidccallbackuri.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
 	if nodes := _c.mutation.ClientIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: true,
-			Table:   oidccallbackurl.ClientTable,
-			Columns: []string{oidccallbackurl.ClientColumn},
+			Table:   oidccallbackuri.ClientTable,
+			Columns: []string{oidccallbackuri.ClientColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcclient.FieldID, field.TypeUUID),
@@ -225,27 +225,27 @@ func (_c *OIDCCallbackURLCreate) createSpec() (*OIDCCallbackURL, *sqlgraph.Creat
 	return _node, _spec
 }
 
-// OIDCCallbackURLCreateBulk is the builder for creating many OIDCCallbackURL entities in bulk.
-type OIDCCallbackURLCreateBulk struct {
+// OIDCCallbackURICreateBulk is the builder for creating many OIDCCallbackURI entities in bulk.
+type OIDCCallbackURICreateBulk struct {
 	config
 	err      error
-	builders []*OIDCCallbackURLCreate
+	builders []*OIDCCallbackURICreate
 }
 
-// Save creates the OIDCCallbackURL entities in the database.
-func (_c *OIDCCallbackURLCreateBulk) Save(ctx context.Context) ([]*OIDCCallbackURL, error) {
+// Save creates the OIDCCallbackURI entities in the database.
+func (_c *OIDCCallbackURICreateBulk) Save(ctx context.Context) ([]*OIDCCallbackURI, error) {
 	if _c.err != nil {
 		return nil, _c.err
 	}
 	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
-	nodes := make([]*OIDCCallbackURL, len(_c.builders))
+	nodes := make([]*OIDCCallbackURI, len(_c.builders))
 	mutators := make([]Mutator, len(_c.builders))
 	for i := range _c.builders {
 		func(i int, root context.Context) {
 			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
-				mutation, ok := m.(*OIDCCallbackURLMutation)
+				mutation, ok := m.(*OIDCCallbackURIMutation)
 				if !ok {
 					return nil, fmt.Errorf("unexpected mutation type %T", m)
 				}
@@ -288,7 +288,7 @@ func (_c *OIDCCallbackURLCreateBulk) Save(ctx context.Context) ([]*OIDCCallbackU
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_c *OIDCCallbackURLCreateBulk) SaveX(ctx context.Context) []*OIDCCallbackURL {
+func (_c *OIDCCallbackURICreateBulk) SaveX(ctx context.Context) []*OIDCCallbackURI {
 	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -297,13 +297,13 @@ func (_c *OIDCCallbackURLCreateBulk) SaveX(ctx context.Context) []*OIDCCallbackU
 }
 
 // Exec executes the query.
-func (_c *OIDCCallbackURLCreateBulk) Exec(ctx context.Context) error {
+func (_c *OIDCCallbackURICreateBulk) Exec(ctx context.Context) error {
 	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_c *OIDCCallbackURLCreateBulk) ExecX(ctx context.Context) {
+func (_c *OIDCCallbackURICreateBulk) ExecX(ctx context.Context) {
 	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}

@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqljson"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
@@ -114,14 +114,14 @@ func (_u *OIDCClientUpdate) SetNillableEnabled(v *bool) *OIDCClientUpdate {
 	return _u
 }
 
-// AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURL entity by IDs.
+// AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURI entity by IDs.
 func (_u *OIDCClientUpdate) AddCallbackURLIDs(ids ...uuid.UUID) *OIDCClientUpdate {
 	_u.mutation.AddCallbackURLIDs(ids...)
 	return _u
 }
 
-// AddCallbackUrls adds the "callback_urls" edges to the OIDCCallbackURL entity.
-func (_u *OIDCClientUpdate) AddCallbackUrls(v ...*OIDCCallbackURL) *OIDCClientUpdate {
+// AddCallbackUrls adds the "callback_urls" edges to the OIDCCallbackURI entity.
+func (_u *OIDCClientUpdate) AddCallbackUrls(v ...*OIDCCallbackURI) *OIDCClientUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -179,20 +179,20 @@ func (_u *OIDCClientUpdate) Mutation() *OIDCClientMutation {
 	return _u.mutation
 }
 
-// ClearCallbackUrls clears all "callback_urls" edges to the OIDCCallbackURL entity.
+// ClearCallbackUrls clears all "callback_urls" edges to the OIDCCallbackURI entity.
 func (_u *OIDCClientUpdate) ClearCallbackUrls() *OIDCClientUpdate {
 	_u.mutation.ClearCallbackUrls()
 	return _u
 }
 
-// RemoveCallbackURLIDs removes the "callback_urls" edge to OIDCCallbackURL entities by IDs.
+// RemoveCallbackURLIDs removes the "callback_urls" edge to OIDCCallbackURI entities by IDs.
 func (_u *OIDCClientUpdate) RemoveCallbackURLIDs(ids ...uuid.UUID) *OIDCClientUpdate {
 	_u.mutation.RemoveCallbackURLIDs(ids...)
 	return _u
 }
 
-// RemoveCallbackUrls removes "callback_urls" edges to OIDCCallbackURL entities.
-func (_u *OIDCClientUpdate) RemoveCallbackUrls(v ...*OIDCCallbackURL) *OIDCClientUpdate {
+// RemoveCallbackUrls removes "callback_urls" edges to OIDCCallbackURI entities.
+func (_u *OIDCClientUpdate) RemoveCallbackUrls(v ...*OIDCCallbackURI) *OIDCClientUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -360,7 +360,7 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -373,7 +373,7 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -389,7 +389,7 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -632,14 +632,14 @@ func (_u *OIDCClientUpdateOne) SetNillableEnabled(v *bool) *OIDCClientUpdateOne 
 	return _u
 }
 
-// AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURL entity by IDs.
+// AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURI entity by IDs.
 func (_u *OIDCClientUpdateOne) AddCallbackURLIDs(ids ...uuid.UUID) *OIDCClientUpdateOne {
 	_u.mutation.AddCallbackURLIDs(ids...)
 	return _u
 }
 
-// AddCallbackUrls adds the "callback_urls" edges to the OIDCCallbackURL entity.
-func (_u *OIDCClientUpdateOne) AddCallbackUrls(v ...*OIDCCallbackURL) *OIDCClientUpdateOne {
+// AddCallbackUrls adds the "callback_urls" edges to the OIDCCallbackURI entity.
+func (_u *OIDCClientUpdateOne) AddCallbackUrls(v ...*OIDCCallbackURI) *OIDCClientUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -697,20 +697,20 @@ func (_u *OIDCClientUpdateOne) Mutation() *OIDCClientMutation {
 	return _u.mutation
 }
 
-// ClearCallbackUrls clears all "callback_urls" edges to the OIDCCallbackURL entity.
+// ClearCallbackUrls clears all "callback_urls" edges to the OIDCCallbackURI entity.
 func (_u *OIDCClientUpdateOne) ClearCallbackUrls() *OIDCClientUpdateOne {
 	_u.mutation.ClearCallbackUrls()
 	return _u
 }
 
-// RemoveCallbackURLIDs removes the "callback_urls" edge to OIDCCallbackURL entities by IDs.
+// RemoveCallbackURLIDs removes the "callback_urls" edge to OIDCCallbackURI entities by IDs.
 func (_u *OIDCClientUpdateOne) RemoveCallbackURLIDs(ids ...uuid.UUID) *OIDCClientUpdateOne {
 	_u.mutation.RemoveCallbackURLIDs(ids...)
 	return _u
 }
 
-// RemoveCallbackUrls removes "callback_urls" edges to OIDCCallbackURL entities.
-func (_u *OIDCClientUpdateOne) RemoveCallbackUrls(v ...*OIDCCallbackURL) *OIDCClientUpdateOne {
+// RemoveCallbackUrls removes "callback_urls" edges to OIDCCallbackURI entities.
+func (_u *OIDCClientUpdateOne) RemoveCallbackUrls(v ...*OIDCCallbackURI) *OIDCClientUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
@@ -908,7 +908,7 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
@@ -921,7 +921,7 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -937,7 +937,7 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 			Columns: []string{oidcclient.CallbackUrlsColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

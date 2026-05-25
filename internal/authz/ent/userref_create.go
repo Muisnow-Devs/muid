@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -85,6 +86,21 @@ func (_c *UserRefCreate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefCr
 		ids[i] = v[i].ID
 	}
 	return _c.AddOidcRefreshTokenIDs(ids...)
+}
+
+// AddOrganizationMembershipIDs adds the "organization_memberships" edge to the OrganizationMember entity by IDs.
+func (_c *UserRefCreate) AddOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefCreate {
+	_c.mutation.AddOrganizationMembershipIDs(ids...)
+	return _c
+}
+
+// AddOrganizationMemberships adds the "organization_memberships" edges to the OrganizationMember entity.
+func (_c *UserRefCreate) AddOrganizationMemberships(v ...*OrganizationMember) *UserRefCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOrganizationMembershipIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -208,6 +224,22 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OrganizationMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

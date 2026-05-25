@@ -6,11 +6,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authz/ent/organization"
+	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/schema"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
@@ -19,40 +21,40 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	oidccallbackurlFields := schema.OIDCCallbackURL{}.Fields()
-	_ = oidccallbackurlFields
-	// oidccallbackurlDescURL is the schema descriptor for url field.
-	oidccallbackurlDescURL := oidccallbackurlFields[2].Descriptor()
-	// oidccallbackurl.URLValidator is a validator for the "url" field. It is called by the builders before save.
-	oidccallbackurl.URLValidator = func() func(string) error {
-		validators := oidccallbackurlDescURL.Validators
+	oidccallbackuriFields := schema.OIDCCallbackURI{}.Fields()
+	_ = oidccallbackuriFields
+	// oidccallbackuriDescURI is the schema descriptor for uri field.
+	oidccallbackuriDescURI := oidccallbackuriFields[2].Descriptor()
+	// oidccallbackuri.URIValidator is a validator for the "uri" field. It is called by the builders before save.
+	oidccallbackuri.URIValidator = func() func(string) error {
+		validators := oidccallbackuriDescURI.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
 		}
-		return func(url string) error {
+		return func(uri string) error {
 			for _, fn := range fns {
-				if err := fn(url); err != nil {
+				if err := fn(uri); err != nil {
 					return err
 				}
 			}
 			return nil
 		}
 	}()
-	// oidccallbackurlDescCreatedAt is the schema descriptor for created_at field.
-	oidccallbackurlDescCreatedAt := oidccallbackurlFields[3].Descriptor()
-	// oidccallbackurl.DefaultCreatedAt holds the default value on creation for the created_at field.
-	oidccallbackurl.DefaultCreatedAt = oidccallbackurlDescCreatedAt.Default.(func() time.Time)
-	// oidccallbackurlDescUpdatedAt is the schema descriptor for updated_at field.
-	oidccallbackurlDescUpdatedAt := oidccallbackurlFields[4].Descriptor()
-	// oidccallbackurl.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	oidccallbackurl.DefaultUpdatedAt = oidccallbackurlDescUpdatedAt.Default.(func() time.Time)
-	// oidccallbackurl.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	oidccallbackurl.UpdateDefaultUpdatedAt = oidccallbackurlDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// oidccallbackurlDescID is the schema descriptor for id field.
-	oidccallbackurlDescID := oidccallbackurlFields[0].Descriptor()
-	// oidccallbackurl.DefaultID holds the default value on creation for the id field.
-	oidccallbackurl.DefaultID = oidccallbackurlDescID.Default.(func() uuid.UUID)
+	// oidccallbackuriDescCreatedAt is the schema descriptor for created_at field.
+	oidccallbackuriDescCreatedAt := oidccallbackuriFields[3].Descriptor()
+	// oidccallbackuri.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidccallbackuri.DefaultCreatedAt = oidccallbackuriDescCreatedAt.Default.(func() time.Time)
+	// oidccallbackuriDescUpdatedAt is the schema descriptor for updated_at field.
+	oidccallbackuriDescUpdatedAt := oidccallbackuriFields[4].Descriptor()
+	// oidccallbackuri.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	oidccallbackuri.DefaultUpdatedAt = oidccallbackuriDescUpdatedAt.Default.(func() time.Time)
+	// oidccallbackuri.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	oidccallbackuri.UpdateDefaultUpdatedAt = oidccallbackuriDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// oidccallbackuriDescID is the schema descriptor for id field.
+	oidccallbackuriDescID := oidccallbackuriFields[0].Descriptor()
+	// oidccallbackuri.DefaultID holds the default value on creation for the id field.
+	oidccallbackuri.DefaultID = oidccallbackuriDescID.Default.(func() uuid.UUID)
 	oidcclientFields := schema.OIDCClient{}.Fields()
 	_ = oidcclientFields
 	// oidcclientDescClientID is the schema descriptor for client_id field.
@@ -207,6 +209,68 @@ func init() {
 	oidcrefreshtokenDescID := oidcrefreshtokenFields[0].Descriptor()
 	// oidcrefreshtoken.DefaultID holds the default value on creation for the id field.
 	oidcrefreshtoken.DefaultID = oidcrefreshtokenDescID.Default.(func() uuid.UUID)
+	organizationFields := schema.Organization{}.Fields()
+	_ = organizationFields
+	// organizationDescName is the schema descriptor for name field.
+	organizationDescName := organizationFields[1].Descriptor()
+	// organization.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	organization.NameValidator = organizationDescName.Validators[0].(func(string) error)
+	// organizationDescDescription is the schema descriptor for description field.
+	organizationDescDescription := organizationFields[2].Descriptor()
+	// organization.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	organization.DescriptionValidator = organizationDescDescription.Validators[0].(func(string) error)
+	// organizationDescDomain is the schema descriptor for domain field.
+	organizationDescDomain := organizationFields[3].Descriptor()
+	// organization.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
+	organization.DomainValidator = func() func(string) error {
+		validators := organizationDescDomain.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(domain string) error {
+			for _, fn := range fns {
+				if err := fn(domain); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// organizationDescCreatedAt is the schema descriptor for created_at field.
+	organizationDescCreatedAt := organizationFields[4].Descriptor()
+	// organization.DefaultCreatedAt holds the default value on creation for the created_at field.
+	organization.DefaultCreatedAt = organizationDescCreatedAt.Default.(func() time.Time)
+	// organizationDescUpdatedAt is the schema descriptor for updated_at field.
+	organizationDescUpdatedAt := organizationFields[5].Descriptor()
+	// organization.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	organization.DefaultUpdatedAt = organizationDescUpdatedAt.Default.(func() time.Time)
+	// organization.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	organization.UpdateDefaultUpdatedAt = organizationDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// organizationDescID is the schema descriptor for id field.
+	organizationDescID := organizationFields[0].Descriptor()
+	// organization.DefaultID holds the default value on creation for the id field.
+	organization.DefaultID = organizationDescID.Default.(func() uuid.UUID)
+	organizationmemberFields := schema.OrganizationMember{}.Fields()
+	_ = organizationmemberFields
+	// organizationmemberDescRole is the schema descriptor for role field.
+	organizationmemberDescRole := organizationmemberFields[3].Descriptor()
+	// organizationmember.RoleValidator is a validator for the "role" field. It is called by the builders before save.
+	organizationmember.RoleValidator = organizationmemberDescRole.Validators[0].(func(string) error)
+	// organizationmemberDescCreatedAt is the schema descriptor for created_at field.
+	organizationmemberDescCreatedAt := organizationmemberFields[4].Descriptor()
+	// organizationmember.DefaultCreatedAt holds the default value on creation for the created_at field.
+	organizationmember.DefaultCreatedAt = organizationmemberDescCreatedAt.Default.(func() time.Time)
+	// organizationmemberDescUpdatedAt is the schema descriptor for updated_at field.
+	organizationmemberDescUpdatedAt := organizationmemberFields[5].Descriptor()
+	// organizationmember.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	organizationmember.DefaultUpdatedAt = organizationmemberDescUpdatedAt.Default.(func() time.Time)
+	// organizationmember.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	organizationmember.UpdateDefaultUpdatedAt = organizationmemberDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// organizationmemberDescID is the schema descriptor for id field.
+	organizationmemberDescID := organizationmemberFields[0].Descriptor()
+	// organizationmember.DefaultID holds the default value on creation for the id field.
+	organizationmember.DefaultID = organizationmemberDescID.Default.(func() uuid.UUID)
 	userrefFields := schema.UserRef{}.Fields()
 	_ = userrefFields
 	// userrefDescCreatedAt is the schema descriptor for created_at field.

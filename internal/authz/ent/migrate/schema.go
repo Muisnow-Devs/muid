@@ -8,32 +8,32 @@ import (
 )
 
 var (
-	// OidcCallbackUrLsColumns holds the columns for the "oidc_callback_ur_ls" table.
-	OidcCallbackUrLsColumns = []*schema.Column{
+	// OidcCallbackUrIsColumns holds the columns for the "oidc_callback_ur_is" table.
+	OidcCallbackUrIsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "url", Type: field.TypeString, Size: 2048},
+		{Name: "uri", Type: field.TypeString, Size: 2048},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "client_ref_id", Type: field.TypeUUID},
 	}
-	// OidcCallbackUrLsTable holds the schema information for the "oidc_callback_ur_ls" table.
-	OidcCallbackUrLsTable = &schema.Table{
-		Name:       "oidc_callback_ur_ls",
-		Columns:    OidcCallbackUrLsColumns,
-		PrimaryKey: []*schema.Column{OidcCallbackUrLsColumns[0]},
+	// OidcCallbackUrIsTable holds the schema information for the "oidc_callback_ur_is" table.
+	OidcCallbackUrIsTable = &schema.Table{
+		Name:       "oidc_callback_ur_is",
+		Columns:    OidcCallbackUrIsColumns,
+		PrimaryKey: []*schema.Column{OidcCallbackUrIsColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "oidc_callback_ur_ls_oidc_clients_callback_urls",
-				Columns:    []*schema.Column{OidcCallbackUrLsColumns[4]},
+				Symbol:     "oidc_callback_ur_is_oidc_clients_callback_urls",
+				Columns:    []*schema.Column{OidcCallbackUrIsColumns[4]},
 				RefColumns: []*schema.Column{OidcClientsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "oidccallbackurl_client_ref_id_url",
+				Name:    "oidccallbackuri_client_ref_id_uri",
 				Unique:  true,
-				Columns: []*schema.Column{OidcCallbackUrLsColumns[4], OidcCallbackUrLsColumns[1]},
+				Columns: []*schema.Column{OidcCallbackUrIsColumns[4], OidcCallbackUrIsColumns[1]},
 			},
 		},
 	}
@@ -200,6 +200,50 @@ var (
 			},
 		},
 	}
+	// OrganizationsColumns holds the columns for the "organizations" table.
+	OrganizationsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "name", Type: field.TypeString, Unique: true},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 255},
+		{Name: "domain", Type: field.TypeString, Unique: true, Size: 255},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// OrganizationsTable holds the schema information for the "organizations" table.
+	OrganizationsTable = &schema.Table{
+		Name:       "organizations",
+		Columns:    OrganizationsColumns,
+		PrimaryKey: []*schema.Column{OrganizationsColumns[0]},
+	}
+	// OrganizationMembersColumns holds the columns for the "organization_members" table.
+	OrganizationMembersColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "role", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "organization_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// OrganizationMembersTable holds the schema information for the "organization_members" table.
+	OrganizationMembersTable = &schema.Table{
+		Name:       "organization_members",
+		Columns:    OrganizationMembersColumns,
+		PrimaryKey: []*schema.Column{OrganizationMembersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "organization_members_organizations_members",
+				Columns:    []*schema.Column{OrganizationMembersColumns[4]},
+				RefColumns: []*schema.Column{OrganizationsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "organization_members_user_refs_organization_memberships",
+				Columns:    []*schema.Column{OrganizationMembersColumns[5]},
+				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
+	}
 	// UserRefsColumns holds the columns for the "user_refs" table.
 	UserRefsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -214,21 +258,25 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		OidcCallbackUrLsTable,
+		OidcCallbackUrIsTable,
 		OidcClientsTable,
 		OidcClientSecretsTable,
 		OidcGrantsTable,
 		OidcRefreshTokensTable,
+		OrganizationsTable,
+		OrganizationMembersTable,
 		UserRefsTable,
 	}
 )
 
 func init() {
-	OidcCallbackUrLsTable.ForeignKeys[0].RefTable = OidcClientsTable
+	OidcCallbackUrIsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcClientSecretsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[1].RefTable = UserRefsTable
 	OidcRefreshTokensTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcRefreshTokensTable.ForeignKeys[1].RefTable = OidcRefreshTokensTable
 	OidcRefreshTokensTable.ForeignKeys[2].RefTable = UserRefsTable
+	OrganizationMembersTable.ForeignKeys[0].RefTable = OrganizationsTable
+	OrganizationMembersTable.ForeignKeys[1].RefTable = UserRefsTable
 }

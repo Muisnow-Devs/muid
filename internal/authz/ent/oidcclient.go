@@ -44,7 +44,7 @@ type OIDCClient struct {
 // OIDCClientEdges holds the relations/edges for other nodes in the graph.
 type OIDCClientEdges struct {
 	// CallbackUrls holds the value of the callback_urls edge.
-	CallbackUrls []*OIDCCallbackURL `json:"callback_urls,omitempty"`
+	CallbackUrls []*OIDCCallbackURI `json:"callback_urls,omitempty"`
 	// Secrets holds the value of the secrets edge.
 	Secrets []*OIDCClientSecret `json:"secrets,omitempty"`
 	// Grants holds the value of the grants edge.
@@ -58,7 +58,7 @@ type OIDCClientEdges struct {
 
 // CallbackUrlsOrErr returns the CallbackUrls value or an error if the edge
 // was not loaded in eager-loading.
-func (e OIDCClientEdges) CallbackUrlsOrErr() ([]*OIDCCallbackURL, error) {
+func (e OIDCClientEdges) CallbackUrlsOrErr() ([]*OIDCCallbackURI, error) {
 	if e.loadedTypes[0] {
 		return e.CallbackUrls, nil
 	}
@@ -193,7 +193,7 @@ func (_m *OIDCClient) Value(name string) (ent.Value, error) {
 }
 
 // QueryCallbackUrls queries the "callback_urls" edge of the OIDCClient entity.
-func (_m *OIDCClient) QueryCallbackUrls() *OIDCCallbackURLQuery {
+func (_m *OIDCClient) QueryCallbackUrls() *OIDCCallbackURIQuery {
 	return NewOIDCClientClient(_m.config).QueryCallbackUrls(_m)
 }
 

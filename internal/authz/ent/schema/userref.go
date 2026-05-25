@@ -29,5 +29,6 @@ func (UserRef) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("oidc_grants", OIDCGrant.Type),
 		edge.To("oidc_refresh_tokens", OIDCRefreshToken.Type),
+		edge.To("organization_memberships", OrganizationMember.Type),
 	}
 }

@@ -388,7 +388,7 @@ func HasCallbackUrls() predicate.OIDCClient {
 }
 
 // HasCallbackUrlsWith applies the HasEdge predicate on the "callback_urls" edge with a given conditions (other predicates).
-func HasCallbackUrlsWith(preds ...predicate.OIDCCallbackURL) predicate.OIDCClient {
+func HasCallbackUrlsWith(preds ...predicate.OIDCCallbackURI) predicate.OIDCClient {
 	return predicate.OIDCClient(func(s *sql.Selector) {
 		step := newCallbackUrlsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {

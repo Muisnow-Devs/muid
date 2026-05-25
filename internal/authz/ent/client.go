@@ -16,11 +16,13 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authz/ent/organization"
+	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -29,8 +31,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// OIDCCallbackURL is the client for interacting with the OIDCCallbackURL builders.
-	OIDCCallbackURL *OIDCCallbackURLClient
+	// OIDCCallbackURI is the client for interacting with the OIDCCallbackURI builders.
+	OIDCCallbackURI *OIDCCallbackURIClient
 	// OIDCClient is the client for interacting with the OIDCClient builders.
 	OIDCClient *OIDCClientClient
 	// OIDCClientSecret is the client for interacting with the OIDCClientSecret builders.
@@ -39,6 +41,10 @@ type Client struct {
 	OIDCGrant *OIDCGrantClient
 	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
 	OIDCRefreshToken *OIDCRefreshTokenClient
+	// Organization is the client for interacting with the Organization builders.
+	Organization *OrganizationClient
+	// OrganizationMember is the client for interacting with the OrganizationMember builders.
+	OrganizationMember *OrganizationMemberClient
 	// UserRef is the client for interacting with the UserRef builders.
 	UserRef *UserRefClient
 }
@@ -52,11 +58,13 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.OIDCCallbackURL = NewOIDCCallbackURLClient(c.config)
+	c.OIDCCallbackURI = NewOIDCCallbackURIClient(c.config)
 	c.OIDCClient = NewOIDCClientClient(c.config)
 	c.OIDCClientSecret = NewOIDCClientSecretClient(c.config)
 	c.OIDCGrant = NewOIDCGrantClient(c.config)
 	c.OIDCRefreshToken = NewOIDCRefreshTokenClient(c.config)
+	c.Organization = NewOrganizationClient(c.config)
+	c.OrganizationMember = NewOrganizationMemberClient(c.config)
 	c.UserRef = NewUserRefClient(c.config)
 }
 
@@ -148,14 +156,16 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		OIDCCallbackURL:  NewOIDCCallbackURLClient(cfg),
-		OIDCClient:       NewOIDCClientClient(cfg),
-		OIDCClientSecret: NewOIDCClientSecretClient(cfg),
-		OIDCGrant:        NewOIDCGrantClient(cfg),
-		OIDCRefreshToken: NewOIDCRefreshTokenClient(cfg),
-		UserRef:          NewUserRefClient(cfg),
+		ctx:                ctx,
+		config:             cfg,
+		OIDCCallbackURI:    NewOIDCCallbackURIClient(cfg),
+		OIDCClient:         NewOIDCClientClient(cfg),
+		OIDCClientSecret:   NewOIDCClientSecretClient(cfg),
+		OIDCGrant:          NewOIDCGrantClient(cfg),
+		OIDCRefreshToken:   NewOIDCRefreshTokenClient(cfg),
+		Organization:       NewOrganizationClient(cfg),
+		OrganizationMember: NewOrganizationMemberClient(cfg),
+		UserRef:            NewUserRefClient(cfg),
 	}, nil
 }
 
@@ -173,21 +183,23 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:              ctx,
-		config:           cfg,
-		OIDCCallbackURL:  NewOIDCCallbackURLClient(cfg),
-		OIDCClient:       NewOIDCClientClient(cfg),
-		OIDCClientSecret: NewOIDCClientSecretClient(cfg),
-		OIDCGrant:        NewOIDCGrantClient(cfg),
-		OIDCRefreshToken: NewOIDCRefreshTokenClient(cfg),
-		UserRef:          NewUserRefClient(cfg),
+		ctx:                ctx,
+		config:             cfg,
+		OIDCCallbackURI:    NewOIDCCallbackURIClient(cfg),
+		OIDCClient:         NewOIDCClientClient(cfg),
+		OIDCClientSecret:   NewOIDCClientSecretClient(cfg),
+		OIDCGrant:          NewOIDCGrantClient(cfg),
+		OIDCRefreshToken:   NewOIDCRefreshTokenClient(cfg),
+		Organization:       NewOrganizationClient(cfg),
+		OrganizationMember: NewOrganizationMemberClient(cfg),
+		UserRef:            NewUserRefClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		OIDCCallbackURL.
+//		OIDCCallbackURI.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -210,8 +222,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.OIDCCallbackURL, c.OIDCClient, c.OIDCClientSecret, c.OIDCGrant,
-		c.OIDCRefreshToken, c.UserRef,
+		c.OIDCCallbackURI, c.OIDCClient, c.OIDCClientSecret, c.OIDCGrant,
+		c.OIDCRefreshToken, c.Organization, c.OrganizationMember, c.UserRef,
 	} {
 		n.Use(hooks...)
 	}
@@ -221,8 +233,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.OIDCCallbackURL, c.OIDCClient, c.OIDCClientSecret, c.OIDCGrant,
-		c.OIDCRefreshToken, c.UserRef,
+		c.OIDCCallbackURI, c.OIDCClient, c.OIDCClientSecret, c.OIDCGrant,
+		c.OIDCRefreshToken, c.Organization, c.OrganizationMember, c.UserRef,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -231,8 +243,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *OIDCCallbackURLMutation:
-		return c.OIDCCallbackURL.mutate(ctx, m)
+	case *OIDCCallbackURIMutation:
+		return c.OIDCCallbackURI.mutate(ctx, m)
 	case *OIDCClientMutation:
 		return c.OIDCClient.mutate(ctx, m)
 	case *OIDCClientSecretMutation:
@@ -241,6 +253,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OIDCGrant.mutate(ctx, m)
 	case *OIDCRefreshTokenMutation:
 		return c.OIDCRefreshToken.mutate(ctx, m)
+	case *OrganizationMutation:
+		return c.Organization.mutate(ctx, m)
+	case *OrganizationMemberMutation:
+		return c.OrganizationMember.mutate(ctx, m)
 	case *UserRefMutation:
 		return c.UserRef.mutate(ctx, m)
 	default:
@@ -248,107 +264,107 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	}
 }
 
-// OIDCCallbackURLClient is a client for the OIDCCallbackURL schema.
-type OIDCCallbackURLClient struct {
+// OIDCCallbackURIClient is a client for the OIDCCallbackURI schema.
+type OIDCCallbackURIClient struct {
 	config
 }
 
-// NewOIDCCallbackURLClient returns a client for the OIDCCallbackURL from the given config.
-func NewOIDCCallbackURLClient(c config) *OIDCCallbackURLClient {
-	return &OIDCCallbackURLClient{config: c}
+// NewOIDCCallbackURIClient returns a client for the OIDCCallbackURI from the given config.
+func NewOIDCCallbackURIClient(c config) *OIDCCallbackURIClient {
+	return &OIDCCallbackURIClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `oidccallbackurl.Hooks(f(g(h())))`.
-func (c *OIDCCallbackURLClient) Use(hooks ...Hook) {
-	c.hooks.OIDCCallbackURL = append(c.hooks.OIDCCallbackURL, hooks...)
+// A call to `Use(f, g, h)` equals to `oidccallbackuri.Hooks(f(g(h())))`.
+func (c *OIDCCallbackURIClient) Use(hooks ...Hook) {
+	c.hooks.OIDCCallbackURI = append(c.hooks.OIDCCallbackURI, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `oidccallbackurl.Intercept(f(g(h())))`.
-func (c *OIDCCallbackURLClient) Intercept(interceptors ...Interceptor) {
-	c.inters.OIDCCallbackURL = append(c.inters.OIDCCallbackURL, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `oidccallbackuri.Intercept(f(g(h())))`.
+func (c *OIDCCallbackURIClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OIDCCallbackURI = append(c.inters.OIDCCallbackURI, interceptors...)
 }
 
-// Create returns a builder for creating a OIDCCallbackURL entity.
-func (c *OIDCCallbackURLClient) Create() *OIDCCallbackURLCreate {
-	mutation := newOIDCCallbackURLMutation(c.config, OpCreate)
-	return &OIDCCallbackURLCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a OIDCCallbackURI entity.
+func (c *OIDCCallbackURIClient) Create() *OIDCCallbackURICreate {
+	mutation := newOIDCCallbackURIMutation(c.config, OpCreate)
+	return &OIDCCallbackURICreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of OIDCCallbackURL entities.
-func (c *OIDCCallbackURLClient) CreateBulk(builders ...*OIDCCallbackURLCreate) *OIDCCallbackURLCreateBulk {
-	return &OIDCCallbackURLCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of OIDCCallbackURI entities.
+func (c *OIDCCallbackURIClient) CreateBulk(builders ...*OIDCCallbackURICreate) *OIDCCallbackURICreateBulk {
+	return &OIDCCallbackURICreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *OIDCCallbackURLClient) MapCreateBulk(slice any, setFunc func(*OIDCCallbackURLCreate, int)) *OIDCCallbackURLCreateBulk {
+func (c *OIDCCallbackURIClient) MapCreateBulk(slice any, setFunc func(*OIDCCallbackURICreate, int)) *OIDCCallbackURICreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &OIDCCallbackURLCreateBulk{err: fmt.Errorf("calling to OIDCCallbackURLClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &OIDCCallbackURICreateBulk{err: fmt.Errorf("calling to OIDCCallbackURIClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*OIDCCallbackURLCreate, rv.Len())
+	builders := make([]*OIDCCallbackURICreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &OIDCCallbackURLCreateBulk{config: c.config, builders: builders}
+	return &OIDCCallbackURICreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for OIDCCallbackURL.
-func (c *OIDCCallbackURLClient) Update() *OIDCCallbackURLUpdate {
-	mutation := newOIDCCallbackURLMutation(c.config, OpUpdate)
-	return &OIDCCallbackURLUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for OIDCCallbackURI.
+func (c *OIDCCallbackURIClient) Update() *OIDCCallbackURIUpdate {
+	mutation := newOIDCCallbackURIMutation(c.config, OpUpdate)
+	return &OIDCCallbackURIUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *OIDCCallbackURLClient) UpdateOne(_m *OIDCCallbackURL) *OIDCCallbackURLUpdateOne {
-	mutation := newOIDCCallbackURLMutation(c.config, OpUpdateOne, withOIDCCallbackURL(_m))
-	return &OIDCCallbackURLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *OIDCCallbackURIClient) UpdateOne(_m *OIDCCallbackURI) *OIDCCallbackURIUpdateOne {
+	mutation := newOIDCCallbackURIMutation(c.config, OpUpdateOne, withOIDCCallbackURI(_m))
+	return &OIDCCallbackURIUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *OIDCCallbackURLClient) UpdateOneID(id uuid.UUID) *OIDCCallbackURLUpdateOne {
-	mutation := newOIDCCallbackURLMutation(c.config, OpUpdateOne, withOIDCCallbackURLID(id))
-	return &OIDCCallbackURLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *OIDCCallbackURIClient) UpdateOneID(id uuid.UUID) *OIDCCallbackURIUpdateOne {
+	mutation := newOIDCCallbackURIMutation(c.config, OpUpdateOne, withOIDCCallbackURIID(id))
+	return &OIDCCallbackURIUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for OIDCCallbackURL.
-func (c *OIDCCallbackURLClient) Delete() *OIDCCallbackURLDelete {
-	mutation := newOIDCCallbackURLMutation(c.config, OpDelete)
-	return &OIDCCallbackURLDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for OIDCCallbackURI.
+func (c *OIDCCallbackURIClient) Delete() *OIDCCallbackURIDelete {
+	mutation := newOIDCCallbackURIMutation(c.config, OpDelete)
+	return &OIDCCallbackURIDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *OIDCCallbackURLClient) DeleteOne(_m *OIDCCallbackURL) *OIDCCallbackURLDeleteOne {
+func (c *OIDCCallbackURIClient) DeleteOne(_m *OIDCCallbackURI) *OIDCCallbackURIDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *OIDCCallbackURLClient) DeleteOneID(id uuid.UUID) *OIDCCallbackURLDeleteOne {
-	builder := c.Delete().Where(oidccallbackurl.ID(id))
+func (c *OIDCCallbackURIClient) DeleteOneID(id uuid.UUID) *OIDCCallbackURIDeleteOne {
+	builder := c.Delete().Where(oidccallbackuri.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &OIDCCallbackURLDeleteOne{builder}
+	return &OIDCCallbackURIDeleteOne{builder}
 }
 
-// Query returns a query builder for OIDCCallbackURL.
-func (c *OIDCCallbackURLClient) Query() *OIDCCallbackURLQuery {
-	return &OIDCCallbackURLQuery{
+// Query returns a query builder for OIDCCallbackURI.
+func (c *OIDCCallbackURIClient) Query() *OIDCCallbackURIQuery {
+	return &OIDCCallbackURIQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeOIDCCallbackURL},
+		ctx:    &QueryContext{Type: TypeOIDCCallbackURI},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a OIDCCallbackURL entity by its id.
-func (c *OIDCCallbackURLClient) Get(ctx context.Context, id uuid.UUID) (*OIDCCallbackURL, error) {
-	return c.Query().Where(oidccallbackurl.ID(id)).Only(ctx)
+// Get returns a OIDCCallbackURI entity by its id.
+func (c *OIDCCallbackURIClient) Get(ctx context.Context, id uuid.UUID) (*OIDCCallbackURI, error) {
+	return c.Query().Where(oidccallbackuri.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *OIDCCallbackURLClient) GetX(ctx context.Context, id uuid.UUID) *OIDCCallbackURL {
+func (c *OIDCCallbackURIClient) GetX(ctx context.Context, id uuid.UUID) *OIDCCallbackURI {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -356,15 +372,15 @@ func (c *OIDCCallbackURLClient) GetX(ctx context.Context, id uuid.UUID) *OIDCCal
 	return obj
 }
 
-// QueryClient queries the client edge of a OIDCCallbackURL.
-func (c *OIDCCallbackURLClient) QueryClient(_m *OIDCCallbackURL) *OIDCClientQuery {
+// QueryClient queries the client edge of a OIDCCallbackURI.
+func (c *OIDCCallbackURIClient) QueryClient(_m *OIDCCallbackURI) *OIDCClientQuery {
 	query := (&OIDCClientClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(oidccallbackurl.Table, oidccallbackurl.FieldID, id),
+			sqlgraph.From(oidccallbackuri.Table, oidccallbackuri.FieldID, id),
 			sqlgraph.To(oidcclient.Table, oidcclient.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, oidccallbackurl.ClientTable, oidccallbackurl.ClientColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, oidccallbackuri.ClientTable, oidccallbackuri.ClientColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -373,27 +389,27 @@ func (c *OIDCCallbackURLClient) QueryClient(_m *OIDCCallbackURL) *OIDCClientQuer
 }
 
 // Hooks returns the client hooks.
-func (c *OIDCCallbackURLClient) Hooks() []Hook {
-	return c.hooks.OIDCCallbackURL
+func (c *OIDCCallbackURIClient) Hooks() []Hook {
+	return c.hooks.OIDCCallbackURI
 }
 
 // Interceptors returns the client interceptors.
-func (c *OIDCCallbackURLClient) Interceptors() []Interceptor {
-	return c.inters.OIDCCallbackURL
+func (c *OIDCCallbackURIClient) Interceptors() []Interceptor {
+	return c.inters.OIDCCallbackURI
 }
 
-func (c *OIDCCallbackURLClient) mutate(ctx context.Context, m *OIDCCallbackURLMutation) (Value, error) {
+func (c *OIDCCallbackURIClient) mutate(ctx context.Context, m *OIDCCallbackURIMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&OIDCCallbackURLCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&OIDCCallbackURICreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&OIDCCallbackURLUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&OIDCCallbackURIUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&OIDCCallbackURLUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&OIDCCallbackURIUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&OIDCCallbackURLDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&OIDCCallbackURIDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown OIDCCallbackURL mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown OIDCCallbackURI mutation op: %q", m.Op())
 	}
 }
 
@@ -506,13 +522,13 @@ func (c *OIDCClientClient) GetX(ctx context.Context, id uuid.UUID) *OIDCClient {
 }
 
 // QueryCallbackUrls queries the callback_urls edge of a OIDCClient.
-func (c *OIDCClientClient) QueryCallbackUrls(_m *OIDCClient) *OIDCCallbackURLQuery {
-	query := (&OIDCCallbackURLClient{config: c.config}).Query()
+func (c *OIDCClientClient) QueryCallbackUrls(_m *OIDCClient) *OIDCCallbackURIQuery {
+	query := (&OIDCCallbackURIClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, id),
-			sqlgraph.To(oidccallbackurl.Table, oidccallbackurl.FieldID),
+			sqlgraph.To(oidccallbackuri.Table, oidccallbackuri.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.CallbackUrlsTable, oidcclient.CallbackUrlsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
@@ -1105,6 +1121,320 @@ func (c *OIDCRefreshTokenClient) mutate(ctx context.Context, m *OIDCRefreshToken
 	}
 }
 
+// OrganizationClient is a client for the Organization schema.
+type OrganizationClient struct {
+	config
+}
+
+// NewOrganizationClient returns a client for the Organization from the given config.
+func NewOrganizationClient(c config) *OrganizationClient {
+	return &OrganizationClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `organization.Hooks(f(g(h())))`.
+func (c *OrganizationClient) Use(hooks ...Hook) {
+	c.hooks.Organization = append(c.hooks.Organization, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `organization.Intercept(f(g(h())))`.
+func (c *OrganizationClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Organization = append(c.inters.Organization, interceptors...)
+}
+
+// Create returns a builder for creating a Organization entity.
+func (c *OrganizationClient) Create() *OrganizationCreate {
+	mutation := newOrganizationMutation(c.config, OpCreate)
+	return &OrganizationCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Organization entities.
+func (c *OrganizationClient) CreateBulk(builders ...*OrganizationCreate) *OrganizationCreateBulk {
+	return &OrganizationCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OrganizationClient) MapCreateBulk(slice any, setFunc func(*OrganizationCreate, int)) *OrganizationCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OrganizationCreateBulk{err: fmt.Errorf("calling to OrganizationClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OrganizationCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OrganizationCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Organization.
+func (c *OrganizationClient) Update() *OrganizationUpdate {
+	mutation := newOrganizationMutation(c.config, OpUpdate)
+	return &OrganizationUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrganizationClient) UpdateOne(_m *Organization) *OrganizationUpdateOne {
+	mutation := newOrganizationMutation(c.config, OpUpdateOne, withOrganization(_m))
+	return &OrganizationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrganizationClient) UpdateOneID(id uuid.UUID) *OrganizationUpdateOne {
+	mutation := newOrganizationMutation(c.config, OpUpdateOne, withOrganizationID(id))
+	return &OrganizationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Organization.
+func (c *OrganizationClient) Delete() *OrganizationDelete {
+	mutation := newOrganizationMutation(c.config, OpDelete)
+	return &OrganizationDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OrganizationClient) DeleteOne(_m *Organization) *OrganizationDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OrganizationClient) DeleteOneID(id uuid.UUID) *OrganizationDeleteOne {
+	builder := c.Delete().Where(organization.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrganizationDeleteOne{builder}
+}
+
+// Query returns a query builder for Organization.
+func (c *OrganizationClient) Query() *OrganizationQuery {
+	return &OrganizationQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOrganization},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Organization entity by its id.
+func (c *OrganizationClient) Get(ctx context.Context, id uuid.UUID) (*Organization, error) {
+	return c.Query().Where(organization.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrganizationClient) GetX(ctx context.Context, id uuid.UUID) *Organization {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryMembers queries the members edge of a Organization.
+func (c *OrganizationClient) QueryMembers(_m *Organization) *OrganizationMemberQuery {
+	query := (&OrganizationMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(organization.Table, organization.FieldID, id),
+			sqlgraph.To(organizationmember.Table, organizationmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, organization.MembersTable, organization.MembersColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrganizationClient) Hooks() []Hook {
+	return c.hooks.Organization
+}
+
+// Interceptors returns the client interceptors.
+func (c *OrganizationClient) Interceptors() []Interceptor {
+	return c.inters.Organization
+}
+
+func (c *OrganizationClient) mutate(ctx context.Context, m *OrganizationMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OrganizationCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OrganizationUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OrganizationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OrganizationDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown Organization mutation op: %q", m.Op())
+	}
+}
+
+// OrganizationMemberClient is a client for the OrganizationMember schema.
+type OrganizationMemberClient struct {
+	config
+}
+
+// NewOrganizationMemberClient returns a client for the OrganizationMember from the given config.
+func NewOrganizationMemberClient(c config) *OrganizationMemberClient {
+	return &OrganizationMemberClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `organizationmember.Hooks(f(g(h())))`.
+func (c *OrganizationMemberClient) Use(hooks ...Hook) {
+	c.hooks.OrganizationMember = append(c.hooks.OrganizationMember, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `organizationmember.Intercept(f(g(h())))`.
+func (c *OrganizationMemberClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OrganizationMember = append(c.inters.OrganizationMember, interceptors...)
+}
+
+// Create returns a builder for creating a OrganizationMember entity.
+func (c *OrganizationMemberClient) Create() *OrganizationMemberCreate {
+	mutation := newOrganizationMemberMutation(c.config, OpCreate)
+	return &OrganizationMemberCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OrganizationMember entities.
+func (c *OrganizationMemberClient) CreateBulk(builders ...*OrganizationMemberCreate) *OrganizationMemberCreateBulk {
+	return &OrganizationMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OrganizationMemberClient) MapCreateBulk(slice any, setFunc func(*OrganizationMemberCreate, int)) *OrganizationMemberCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OrganizationMemberCreateBulk{err: fmt.Errorf("calling to OrganizationMemberClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OrganizationMemberCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OrganizationMemberCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OrganizationMember.
+func (c *OrganizationMemberClient) Update() *OrganizationMemberUpdate {
+	mutation := newOrganizationMemberMutation(c.config, OpUpdate)
+	return &OrganizationMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrganizationMemberClient) UpdateOne(_m *OrganizationMember) *OrganizationMemberUpdateOne {
+	mutation := newOrganizationMemberMutation(c.config, OpUpdateOne, withOrganizationMember(_m))
+	return &OrganizationMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrganizationMemberClient) UpdateOneID(id uuid.UUID) *OrganizationMemberUpdateOne {
+	mutation := newOrganizationMemberMutation(c.config, OpUpdateOne, withOrganizationMemberID(id))
+	return &OrganizationMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OrganizationMember.
+func (c *OrganizationMemberClient) Delete() *OrganizationMemberDelete {
+	mutation := newOrganizationMemberMutation(c.config, OpDelete)
+	return &OrganizationMemberDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OrganizationMemberClient) DeleteOne(_m *OrganizationMember) *OrganizationMemberDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OrganizationMemberClient) DeleteOneID(id uuid.UUID) *OrganizationMemberDeleteOne {
+	builder := c.Delete().Where(organizationmember.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrganizationMemberDeleteOne{builder}
+}
+
+// Query returns a query builder for OrganizationMember.
+func (c *OrganizationMemberClient) Query() *OrganizationMemberQuery {
+	return &OrganizationMemberQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOrganizationMember},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OrganizationMember entity by its id.
+func (c *OrganizationMemberClient) Get(ctx context.Context, id uuid.UUID) (*OrganizationMember, error) {
+	return c.Query().Where(organizationmember.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrganizationMemberClient) GetX(ctx context.Context, id uuid.UUID) *OrganizationMember {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOrganization queries the organization edge of a OrganizationMember.
+func (c *OrganizationMemberClient) QueryOrganization(_m *OrganizationMember) *OrganizationQuery {
+	query := (&OrganizationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(organizationmember.Table, organizationmember.FieldID, id),
+			sqlgraph.To(organization.Table, organization.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, organizationmember.OrganizationTable, organizationmember.OrganizationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a OrganizationMember.
+func (c *OrganizationMemberClient) QueryUser(_m *OrganizationMember) *UserRefQuery {
+	query := (&UserRefClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(organizationmember.Table, organizationmember.FieldID, id),
+			sqlgraph.To(userref.Table, userref.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, organizationmember.UserTable, organizationmember.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrganizationMemberClient) Hooks() []Hook {
+	return c.hooks.OrganizationMember
+}
+
+// Interceptors returns the client interceptors.
+func (c *OrganizationMemberClient) Interceptors() []Interceptor {
+	return c.inters.OrganizationMember
+}
+
+func (c *OrganizationMemberClient) mutate(ctx context.Context, m *OrganizationMemberMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OrganizationMemberCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OrganizationMemberUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OrganizationMemberUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OrganizationMemberDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OrganizationMember mutation op: %q", m.Op())
+	}
+}
+
 // UserRefClient is a client for the UserRef schema.
 type UserRefClient struct {
 	config
@@ -1245,6 +1575,22 @@ func (c *UserRefClient) QueryOidcRefreshTokens(_m *UserRef) *OIDCRefreshTokenQue
 	return query
 }
 
+// QueryOrganizationMemberships queries the organization_memberships edge of a UserRef.
+func (c *UserRefClient) QueryOrganizationMemberships(_m *UserRef) *OrganizationMemberQuery {
+	query := (&OrganizationMemberClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, id),
+			sqlgraph.To(organizationmember.Table, organizationmember.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.OrganizationMembershipsTable, userref.OrganizationMembershipsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserRefClient) Hooks() []Hook {
 	return c.hooks.UserRef
@@ -1273,11 +1619,11 @@ func (c *UserRefClient) mutate(ctx context.Context, m *UserRefMutation) (Value, 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		OIDCCallbackURL, OIDCClient, OIDCClientSecret, OIDCGrant, OIDCRefreshToken,
-		UserRef []ent.Hook
+		OIDCCallbackURI, OIDCClient, OIDCClientSecret, OIDCGrant, OIDCRefreshToken,
+		Organization, OrganizationMember, UserRef []ent.Hook
 	}
 	inters struct {
-		OIDCCallbackURL, OIDCClient, OIDCClientSecret, OIDCGrant, OIDCRefreshToken,
-		UserRef []ent.Interceptor
+		OIDCCallbackURI, OIDCClient, OIDCClientSecret, OIDCGrant, OIDCRefreshToken,
+		Organization, OrganizationMember, UserRef []ent.Interceptor
 	}
 )

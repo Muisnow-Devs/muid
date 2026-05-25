@@ -9,16 +9,16 @@ import (
 	"sanzi.io/muid/internal/authz/ent"
 )
 
-// The OIDCCallbackURLFunc type is an adapter to allow the use of ordinary
-// function as OIDCCallbackURL mutator.
-type OIDCCallbackURLFunc func(context.Context, *ent.OIDCCallbackURLMutation) (ent.Value, error)
+// The OIDCCallbackURIFunc type is an adapter to allow the use of ordinary
+// function as OIDCCallbackURI mutator.
+type OIDCCallbackURIFunc func(context.Context, *ent.OIDCCallbackURIMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f OIDCCallbackURLFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCCallbackURLMutation); ok {
+func (f OIDCCallbackURIFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCCallbackURIMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCCallbackURLMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCCallbackURIMutation", m)
 }
 
 // The OIDCClientFunc type is an adapter to allow the use of ordinary
@@ -67,6 +67,30 @@ func (f OIDCRefreshTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCRefreshTokenMutation", m)
+}
+
+// The OrganizationFunc type is an adapter to allow the use of ordinary
+// function as Organization mutator.
+type OrganizationFunc func(context.Context, *ent.OrganizationMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrganizationFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OrganizationMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrganizationMutation", m)
+}
+
+// The OrganizationMemberFunc type is an adapter to allow the use of ordinary
+// function as OrganizationMember mutator.
+type OrganizationMemberFunc func(context.Context, *ent.OrganizationMemberMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrganizationMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OrganizationMemberMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrganizationMemberMutation", m)
 }
 
 // The UserRefFunc type is an adapter to allow the use of ordinary

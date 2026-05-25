@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
@@ -67,6 +68,21 @@ func (_u *UserRefUpdate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUp
 	return _u.AddOidcRefreshTokenIDs(ids...)
 }
 
+// AddOrganizationMembershipIDs adds the "organization_memberships" edge to the OrganizationMember entity by IDs.
+func (_u *UserRefUpdate) AddOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.AddOrganizationMembershipIDs(ids...)
+	return _u
+}
+
+// AddOrganizationMemberships adds the "organization_memberships" edges to the OrganizationMember entity.
+func (_u *UserRefUpdate) AddOrganizationMemberships(v ...*OrganizationMember) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrganizationMembershipIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdate) Mutation() *UserRefMutation {
 	return _u.mutation
@@ -112,6 +128,27 @@ func (_u *UserRefUpdate) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRe
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOidcRefreshTokenIDs(ids...)
+}
+
+// ClearOrganizationMemberships clears all "organization_memberships" edges to the OrganizationMember entity.
+func (_u *UserRefUpdate) ClearOrganizationMemberships() *UserRefUpdate {
+	_u.mutation.ClearOrganizationMemberships()
+	return _u
+}
+
+// RemoveOrganizationMembershipIDs removes the "organization_memberships" edge to OrganizationMember entities by IDs.
+func (_u *UserRefUpdate) RemoveOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.RemoveOrganizationMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveOrganizationMemberships removes "organization_memberships" edges to OrganizationMember entities.
+func (_u *UserRefUpdate) RemoveOrganizationMemberships(v ...*OrganizationMember) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrganizationMembershipIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -252,6 +289,51 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OrganizationMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrganizationMembershipsIDs(); len(nodes) > 0 && !_u.mutation.OrganizationMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrganizationMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userref.Label}
@@ -308,6 +390,21 @@ func (_u *UserRefUpdateOne) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRe
 	return _u.AddOidcRefreshTokenIDs(ids...)
 }
 
+// AddOrganizationMembershipIDs adds the "organization_memberships" edge to the OrganizationMember entity by IDs.
+func (_u *UserRefUpdateOne) AddOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.AddOrganizationMembershipIDs(ids...)
+	return _u
+}
+
+// AddOrganizationMemberships adds the "organization_memberships" edges to the OrganizationMember entity.
+func (_u *UserRefUpdateOne) AddOrganizationMemberships(v ...*OrganizationMember) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOrganizationMembershipIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdateOne) Mutation() *UserRefMutation {
 	return _u.mutation
@@ -353,6 +450,27 @@ func (_u *UserRefUpdateOne) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *Use
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOidcRefreshTokenIDs(ids...)
+}
+
+// ClearOrganizationMemberships clears all "organization_memberships" edges to the OrganizationMember entity.
+func (_u *UserRefUpdateOne) ClearOrganizationMemberships() *UserRefUpdateOne {
+	_u.mutation.ClearOrganizationMemberships()
+	return _u
+}
+
+// RemoveOrganizationMembershipIDs removes the "organization_memberships" edge to OrganizationMember entities by IDs.
+func (_u *UserRefUpdateOne) RemoveOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.RemoveOrganizationMembershipIDs(ids...)
+	return _u
+}
+
+// RemoveOrganizationMemberships removes "organization_memberships" edges to OrganizationMember entities.
+func (_u *UserRefUpdateOne) RemoveOrganizationMemberships(v ...*OrganizationMember) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOrganizationMembershipIDs(ids...)
 }
 
 // Where appends a list predicates to the UserRefUpdate builder.
@@ -516,6 +634,51 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrganizationMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOrganizationMembershipsIDs(); len(nodes) > 0 && !_u.mutation.OrganizationMembershipsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrganizationMembershipsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OrganizationMembershipsTable,
+			Columns: []string{userref.OrganizationMembershipsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

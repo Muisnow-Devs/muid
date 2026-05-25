@@ -192,6 +192,29 @@ func HasOidcRefreshTokensWith(preds ...predicate.OIDCRefreshToken) predicate.Use
 	})
 }
 
+// HasOrganizationMemberships applies the HasEdge predicate on the "organization_memberships" edge.
+func HasOrganizationMemberships() predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrganizationMembershipsTable, OrganizationMembershipsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrganizationMembershipsWith applies the HasEdge predicate on the "organization_memberships" edge with a given conditions (other predicates).
+func HasOrganizationMembershipsWith(preds ...predicate.OrganizationMember) predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := newOrganizationMembershipsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserRef) predicate.UserRef {
 	return predicate.UserRef(sql.AndPredicates(predicates...))

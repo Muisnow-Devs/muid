@@ -13,7 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
@@ -28,7 +28,7 @@ type OIDCClientQuery struct {
 	order             []oidcclient.OrderOption
 	inters            []Interceptor
 	predicates        []predicate.OIDCClient
-	withCallbackUrls  *OIDCCallbackURLQuery
+	withCallbackUrls  *OIDCCallbackURIQuery
 	withSecrets       *OIDCClientSecretQuery
 	withGrants        *OIDCGrantQuery
 	withRefreshTokens *OIDCRefreshTokenQuery
@@ -69,8 +69,8 @@ func (_q *OIDCClientQuery) Order(o ...oidcclient.OrderOption) *OIDCClientQuery {
 }
 
 // QueryCallbackUrls chains the current query on the "callback_urls" edge.
-func (_q *OIDCClientQuery) QueryCallbackUrls() *OIDCCallbackURLQuery {
-	query := (&OIDCCallbackURLClient{config: _q.config}).Query()
+func (_q *OIDCClientQuery) QueryCallbackUrls() *OIDCCallbackURIQuery {
+	query := (&OIDCCallbackURIClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -81,7 +81,7 @@ func (_q *OIDCClientQuery) QueryCallbackUrls() *OIDCCallbackURLQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, selector),
-			sqlgraph.To(oidccallbackurl.Table, oidccallbackurl.FieldID),
+			sqlgraph.To(oidccallbackuri.Table, oidccallbackuri.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.CallbackUrlsTable, oidcclient.CallbackUrlsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
@@ -360,8 +360,8 @@ func (_q *OIDCClientQuery) Clone() *OIDCClientQuery {
 
 // WithCallbackUrls tells the query-builder to eager-load the nodes that are connected to
 // the "callback_urls" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OIDCClientQuery) WithCallbackUrls(opts ...func(*OIDCCallbackURLQuery)) *OIDCClientQuery {
-	query := (&OIDCCallbackURLClient{config: _q.config}).Query()
+func (_q *OIDCClientQuery) WithCallbackUrls(opts ...func(*OIDCCallbackURIQuery)) *OIDCClientQuery {
+	query := (&OIDCCallbackURIClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
@@ -507,8 +507,8 @@ func (_q *OIDCClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 	}
 	if query := _q.withCallbackUrls; query != nil {
 		if err := _q.loadCallbackUrls(ctx, query, nodes,
-			func(n *OIDCClient) { n.Edges.CallbackUrls = []*OIDCCallbackURL{} },
-			func(n *OIDCClient, e *OIDCCallbackURL) { n.Edges.CallbackUrls = append(n.Edges.CallbackUrls, e) }); err != nil {
+			func(n *OIDCClient) { n.Edges.CallbackUrls = []*OIDCCallbackURI{} },
+			func(n *OIDCClient, e *OIDCCallbackURI) { n.Edges.CallbackUrls = append(n.Edges.CallbackUrls, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -536,7 +536,7 @@ func (_q *OIDCClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 	return nodes, nil
 }
 
-func (_q *OIDCClientQuery) loadCallbackUrls(ctx context.Context, query *OIDCCallbackURLQuery, nodes []*OIDCClient, init func(*OIDCClient), assign func(*OIDCClient, *OIDCCallbackURL)) error {
+func (_q *OIDCClientQuery) loadCallbackUrls(ctx context.Context, query *OIDCCallbackURIQuery, nodes []*OIDCClient, init func(*OIDCClient), assign func(*OIDCClient, *OIDCCallbackURI)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*OIDCClient)
 	for i := range nodes {
@@ -547,9 +547,9 @@ func (_q *OIDCClientQuery) loadCallbackUrls(ctx context.Context, query *OIDCCall
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(oidccallbackurl.FieldClientRefID)
+		query.ctx.AppendFieldOnce(oidccallbackuri.FieldClientRefID)
 	}
-	query.Where(predicate.OIDCCallbackURL(func(s *sql.Selector) {
+	query.Where(predicate.OIDCCallbackURI(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(oidcclient.CallbackUrlsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)

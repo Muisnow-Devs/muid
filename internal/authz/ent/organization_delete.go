@@ -8,30 +8,30 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
-// OIDCCallbackURLDelete is the builder for deleting a OIDCCallbackURL entity.
-type OIDCCallbackURLDelete struct {
+// OrganizationDelete is the builder for deleting a Organization entity.
+type OrganizationDelete struct {
 	config
 	hooks    []Hook
-	mutation *OIDCCallbackURLMutation
+	mutation *OrganizationMutation
 }
 
-// Where appends a list predicates to the OIDCCallbackURLDelete builder.
-func (_d *OIDCCallbackURLDelete) Where(ps ...predicate.OIDCCallbackURL) *OIDCCallbackURLDelete {
+// Where appends a list predicates to the OrganizationDelete builder.
+func (_d *OrganizationDelete) Where(ps ...predicate.Organization) *OrganizationDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *OIDCCallbackURLDelete) Exec(ctx context.Context) (int, error) {
+func (_d *OrganizationDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *OIDCCallbackURLDelete) ExecX(ctx context.Context) int {
+func (_d *OrganizationDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *OIDCCallbackURLDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *OIDCCallbackURLDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(oidccallbackurl.Table, sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID))
+func (_d *OrganizationDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(organization.Table, sqlgraph.NewFieldSpec(organization.FieldID, field.TypeUUID))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *OIDCCallbackURLDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// OIDCCallbackURLDeleteOne is the builder for deleting a single OIDCCallbackURL entity.
-type OIDCCallbackURLDeleteOne struct {
-	_d *OIDCCallbackURLDelete
+// OrganizationDeleteOne is the builder for deleting a single Organization entity.
+type OrganizationDeleteOne struct {
+	_d *OrganizationDelete
 }
 
-// Where appends a list predicates to the OIDCCallbackURLDelete builder.
-func (_d *OIDCCallbackURLDeleteOne) Where(ps ...predicate.OIDCCallbackURL) *OIDCCallbackURLDeleteOne {
+// Where appends a list predicates to the OrganizationDelete builder.
+func (_d *OrganizationDeleteOne) Where(ps ...predicate.Organization) *OrganizationDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *OIDCCallbackURLDeleteOne) Exec(ctx context.Context) error {
+func (_d *OrganizationDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{oidccallbackurl.Label}
+		return &NotFoundError{organization.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *OIDCCallbackURLDeleteOne) ExecX(ctx context.Context) {
+func (_d *OrganizationDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

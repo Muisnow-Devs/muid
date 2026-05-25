@@ -11,42 +11,42 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackurl"
+	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
-// OIDCCallbackURLUpdate is the builder for updating OIDCCallbackURL entities.
-type OIDCCallbackURLUpdate struct {
+// OIDCCallbackURIUpdate is the builder for updating OIDCCallbackURI entities.
+type OIDCCallbackURIUpdate struct {
 	config
 	hooks    []Hook
-	mutation *OIDCCallbackURLMutation
+	mutation *OIDCCallbackURIMutation
 }
 
-// Where appends a list predicates to the OIDCCallbackURLUpdate builder.
-func (_u *OIDCCallbackURLUpdate) Where(ps ...predicate.OIDCCallbackURL) *OIDCCallbackURLUpdate {
+// Where appends a list predicates to the OIDCCallbackURIUpdate builder.
+func (_u *OIDCCallbackURIUpdate) Where(ps ...predicate.OIDCCallbackURI) *OIDCCallbackURIUpdate {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *OIDCCallbackURLUpdate) SetUpdatedAt(v time.Time) *OIDCCallbackURLUpdate {
+func (_u *OIDCCallbackURIUpdate) SetUpdatedAt(v time.Time) *OIDCCallbackURIUpdate {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
-// Mutation returns the OIDCCallbackURLMutation object of the builder.
-func (_u *OIDCCallbackURLUpdate) Mutation() *OIDCCallbackURLMutation {
+// Mutation returns the OIDCCallbackURIMutation object of the builder.
+func (_u *OIDCCallbackURIUpdate) Mutation() *OIDCCallbackURIMutation {
 	return _u.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (_u *OIDCCallbackURLUpdate) Save(ctx context.Context) (int, error) {
+func (_u *OIDCCallbackURIUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *OIDCCallbackURLUpdate) SaveX(ctx context.Context) int {
+func (_u *OIDCCallbackURIUpdate) SaveX(ctx context.Context) int {
 	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -55,39 +55,39 @@ func (_u *OIDCCallbackURLUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (_u *OIDCCallbackURLUpdate) Exec(ctx context.Context) error {
+func (_u *OIDCCallbackURIUpdate) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *OIDCCallbackURLUpdate) ExecX(ctx context.Context) {
+func (_u *OIDCCallbackURIUpdate) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *OIDCCallbackURLUpdate) defaults() {
+func (_u *OIDCCallbackURIUpdate) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := oidccallbackurl.UpdateDefaultUpdatedAt()
+		v := oidccallbackuri.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *OIDCCallbackURLUpdate) check() error {
+func (_u *OIDCCallbackURIUpdate) check() error {
 	if _u.mutation.ClientCleared() && len(_u.mutation.ClientIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "OIDCCallbackURL.client"`)
+		return errors.New(`ent: clearing a required unique edge "OIDCCallbackURI.client"`)
 	}
 	return nil
 }
 
-func (_u *OIDCCallbackURLUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+func (_u *OIDCCallbackURIUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(oidccallbackurl.Table, oidccallbackurl.Columns, sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(oidccallbackuri.Table, oidccallbackuri.Columns, sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -96,11 +96,11 @@ func (_u *OIDCCallbackURLUpdate) sqlSave(ctx context.Context) (_node int, err er
 		}
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(oidccallbackurl.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(oidccallbackuri.FieldUpdatedAt, field.TypeTime, value)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{oidccallbackurl.Label}
+			err = &NotFoundError{oidccallbackuri.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -110,46 +110,46 @@ func (_u *OIDCCallbackURLUpdate) sqlSave(ctx context.Context) (_node int, err er
 	return _node, nil
 }
 
-// OIDCCallbackURLUpdateOne is the builder for updating a single OIDCCallbackURL entity.
-type OIDCCallbackURLUpdateOne struct {
+// OIDCCallbackURIUpdateOne is the builder for updating a single OIDCCallbackURI entity.
+type OIDCCallbackURIUpdateOne struct {
 	config
 	fields   []string
 	hooks    []Hook
-	mutation *OIDCCallbackURLMutation
+	mutation *OIDCCallbackURIMutation
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (_u *OIDCCallbackURLUpdateOne) SetUpdatedAt(v time.Time) *OIDCCallbackURLUpdateOne {
+func (_u *OIDCCallbackURIUpdateOne) SetUpdatedAt(v time.Time) *OIDCCallbackURIUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
 	return _u
 }
 
-// Mutation returns the OIDCCallbackURLMutation object of the builder.
-func (_u *OIDCCallbackURLUpdateOne) Mutation() *OIDCCallbackURLMutation {
+// Mutation returns the OIDCCallbackURIMutation object of the builder.
+func (_u *OIDCCallbackURIUpdateOne) Mutation() *OIDCCallbackURIMutation {
 	return _u.mutation
 }
 
-// Where appends a list predicates to the OIDCCallbackURLUpdate builder.
-func (_u *OIDCCallbackURLUpdateOne) Where(ps ...predicate.OIDCCallbackURL) *OIDCCallbackURLUpdateOne {
+// Where appends a list predicates to the OIDCCallbackURIUpdate builder.
+func (_u *OIDCCallbackURIUpdateOne) Where(ps ...predicate.OIDCCallbackURI) *OIDCCallbackURIUpdateOne {
 	_u.mutation.Where(ps...)
 	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (_u *OIDCCallbackURLUpdateOne) Select(field string, fields ...string) *OIDCCallbackURLUpdateOne {
+func (_u *OIDCCallbackURIUpdateOne) Select(field string, fields ...string) *OIDCCallbackURIUpdateOne {
 	_u.fields = append([]string{field}, fields...)
 	return _u
 }
 
-// Save executes the query and returns the updated OIDCCallbackURL entity.
-func (_u *OIDCCallbackURLUpdateOne) Save(ctx context.Context) (*OIDCCallbackURL, error) {
+// Save executes the query and returns the updated OIDCCallbackURI entity.
+func (_u *OIDCCallbackURIUpdateOne) Save(ctx context.Context) (*OIDCCallbackURI, error) {
 	_u.defaults()
 	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (_u *OIDCCallbackURLUpdateOne) SaveX(ctx context.Context) *OIDCCallbackURL {
+func (_u *OIDCCallbackURIUpdateOne) SaveX(ctx context.Context) *OIDCCallbackURI {
 	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
@@ -158,52 +158,52 @@ func (_u *OIDCCallbackURLUpdateOne) SaveX(ctx context.Context) *OIDCCallbackURL 
 }
 
 // Exec executes the query on the entity.
-func (_u *OIDCCallbackURLUpdateOne) Exec(ctx context.Context) error {
+func (_u *OIDCCallbackURIUpdateOne) Exec(ctx context.Context) error {
 	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_u *OIDCCallbackURLUpdateOne) ExecX(ctx context.Context) {
+func (_u *OIDCCallbackURIUpdateOne) ExecX(ctx context.Context) {
 	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (_u *OIDCCallbackURLUpdateOne) defaults() {
+func (_u *OIDCCallbackURIUpdateOne) defaults() {
 	if _, ok := _u.mutation.UpdatedAt(); !ok {
-		v := oidccallbackurl.UpdateDefaultUpdatedAt()
+		v := oidccallbackuri.UpdateDefaultUpdatedAt()
 		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (_u *OIDCCallbackURLUpdateOne) check() error {
+func (_u *OIDCCallbackURIUpdateOne) check() error {
 	if _u.mutation.ClientCleared() && len(_u.mutation.ClientIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "OIDCCallbackURL.client"`)
+		return errors.New(`ent: clearing a required unique edge "OIDCCallbackURI.client"`)
 	}
 	return nil
 }
 
-func (_u *OIDCCallbackURLUpdateOne) sqlSave(ctx context.Context) (_node *OIDCCallbackURL, err error) {
+func (_u *OIDCCallbackURIUpdateOne) sqlSave(ctx context.Context) (_node *OIDCCallbackURI, err error) {
 	if err := _u.check(); err != nil {
 		return _node, err
 	}
-	_spec := sqlgraph.NewUpdateSpec(oidccallbackurl.Table, oidccallbackurl.Columns, sqlgraph.NewFieldSpec(oidccallbackurl.FieldID, field.TypeUUID))
+	_spec := sqlgraph.NewUpdateSpec(oidccallbackuri.Table, oidccallbackuri.Columns, sqlgraph.NewFieldSpec(oidccallbackuri.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
-		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "OIDCCallbackURL.id" for update`)}
+		return nil, &ValidationError{Name: "id", err: errors.New(`ent: missing "OIDCCallbackURI.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
 	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, oidccallbackurl.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, oidccallbackuri.FieldID)
 		for _, f := range fields {
-			if !oidccallbackurl.ValidColumn(f) {
+			if !oidccallbackuri.ValidColumn(f) {
 				return nil, &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 			}
-			if f != oidccallbackurl.FieldID {
+			if f != oidccallbackuri.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, f)
 			}
 		}
@@ -216,14 +216,14 @@ func (_u *OIDCCallbackURLUpdateOne) sqlSave(ctx context.Context) (_node *OIDCCal
 		}
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
-		_spec.SetField(oidccallbackurl.FieldUpdatedAt, field.TypeTime, value)
+		_spec.SetField(oidccallbackuri.FieldUpdatedAt, field.TypeTime, value)
 	}
-	_node = &OIDCCallbackURL{config: _u.config}
+	_node = &OIDCCallbackURI{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
 	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
-			err = &NotFoundError{oidccallbackurl.Label}
+			err = &NotFoundError{oidccallbackuri.Label}
 		} else if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}

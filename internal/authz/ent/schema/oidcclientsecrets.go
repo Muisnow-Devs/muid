@@ -21,7 +21,9 @@ func (OIDCClientSecret) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 		field.UUID("client_ref_id", uuid.UUID{}).Immutable(),
+
 		field.Bytes("secret_hash").Sensitive().NotEmpty().MaxLen(32).Immutable(),
+
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("expires_at").Optional(),
 		field.Time("revoked_at").Optional(),

@@ -35,7 +35,7 @@ var (
 				Symbol:     "user_federated_identities_user_refs_federated_identities",
 				Columns:    []*schema.Column{UserFederatedIdentitiesColumns[13]},
 				RefColumns: []*schema.Column{UserRefsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -90,7 +90,7 @@ var (
 				Symbol:     "user_passkeys_user_refs_passkeys",
 				Columns:    []*schema.Column{UserPasskeysColumns[15]},
 				RefColumns: []*schema.Column{UserRefsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -147,7 +147,7 @@ var (
 				Symbol:     "user_sessions_user_refs_sessions",
 				Columns:    []*schema.Column{UserSessionsColumns[11]},
 				RefColumns: []*schema.Column{UserRefsColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{

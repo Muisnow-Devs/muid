@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
@@ -37,8 +38,8 @@ func (UserRef) Indexes() []ent.Index {
 // Edges of the UserRef.
 func (UserRef) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("sessions", UserSession.Type),
-		edge.To("passkeys", UserPasskey.Type),
-		edge.To("federated_identities", UserFederatedIdentity.Type),
+		edge.To("sessions", UserSession.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("passkeys", UserPasskey.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("federated_identities", UserFederatedIdentity.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

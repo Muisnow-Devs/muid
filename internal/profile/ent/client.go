@@ -10,9 +10,9 @@ import (
 	"reflect"
 
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/profile/ent/migrate"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"

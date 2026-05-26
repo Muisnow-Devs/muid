@@ -29,7 +29,7 @@ var (
 				Symbol:     "user_avatars_user_profiles_avatars",
 				Columns:    []*schema.Column{UserAvatarsColumns[7]},
 				RefColumns: []*schema.Column{UserProfilesColumns[0]},
-				OnDelete:   schema.NoAction,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
@@ -83,7 +83,7 @@ var (
 				Symbol:     "user_profiles_user_original_identities_original_identity",
 				Columns:    []*schema.Column{UserProfilesColumns[9]},
 				RefColumns: []*schema.Column{UserOriginalIdentitiesColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{

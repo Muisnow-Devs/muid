@@ -82,10 +82,10 @@ type SessionStore struct {
 	Flow FlowState `json:"flow"`
 
 	// Locale, timezone, and device context come from client gRPC metadata at session start (pkg/clientmeta).
-	Locale     string `json:"locale,omitempty"`
-	Timezone   string `json:"timezone,omitempty"`
-	Device     string `json:"device,omitempty"`
-	Location   string `json:"location,omitempty"`
+	Locale    string `json:"locale,omitempty"`
+	Timezone  string `json:"timezone,omitempty"`
+	Device    string `json:"device,omitempty"`
+	Location  string `json:"location,omitempty"`
 	UserAgent string `json:"user_agent,omitempty"`
 	IPAddress string `json:"ip_address,omitempty"`
 

@@ -36,7 +36,7 @@ alwaysApply: true
 
 ## Account service and Profile gRPC
 
-- **`internal/authn/account`**: user refs, federated identity, **`CreateProfile`** via Profile gRPC when configured (`AUTHN_PROFILE_GRPC_ADDR`, timeout `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`).
+- **`internal/authn/account`**: focused interfaces (`Provisioning`, `Email`, `OIDC`, `Federated`, `Passkey`, `Session`, `LoginNotifier`) wired with **`account.Wire`**; user refs, federated identity, **`CreateProfile`** via Profile gRPC when configured (`AUTHN_PROFILE_GRPC_ADDR`, timeout `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`).
 - Profile client dial uses **`log.UnaryClientInterceptor()`** so **`x-trace-id`** is forwarded downstream.
 
 ## gRPC interceptors (unary server)

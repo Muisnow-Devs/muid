@@ -37,7 +37,7 @@ func finishRegisterAfterLink(
 // ensureFederatedLink creates or reactivates a UserFederatedIdentity for register finish.
 func ensureFederatedLink(
 	ctx context.Context,
-	accounts *account.Accounts,
+	federated account.Federated,
 	provider, subject string,
 	provisioned uuid.UUID,
 	claims session.RegisterPendingClaims,
@@ -55,7 +55,7 @@ func ensureFederatedLink(
 		params.AvatarURL = &pic
 	}
 
-	err := accounts.Federated.LinkFederatedIdentity(ctx, params)
+	err := federated.LinkFederatedIdentity(ctx, params)
 	if errors.Is(err, account.ErrFederatedSubjectLinkedToOtherUser) {
 		return uuid.Nil, errors.Join(
 			idn.ErrInvalidSessionState,

@@ -11,7 +11,6 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/account"
-	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
@@ -31,7 +30,8 @@ type PasskeyConfig struct {
 
 type PasskeyProvider struct {
 	transitionStore session.AuthTransitionStore
-	accounts        *account.Accounts
+	passkeys        account.Passkey
+	sessions        account.Session
 	pubSub          pubsub.PubSub
 	webAuthn        *webauthn.WebAuthn
 }
@@ -39,12 +39,14 @@ type PasskeyProvider struct {
 // pubSub is optional; pass nil when mail notifications are not required in tests.
 func NewPasskeyIdentityProvider(
 	transitionStore session.AuthTransitionStore,
-	accounts *account.Accounts,
+	passkeys account.Passkey,
+	sessions account.Session,
 	pubSub pubsub.PubSub,
 ) idn.IdentityProvider {
 	provider, err := NewPasskeyIdentityProviderWithConfig(
 		transitionStore,
-		accounts,
+		passkeys,
+		sessions,
 		pubSub,
 		DefaultPasskeyConfig(),
 	)
@@ -56,7 +58,8 @@ func NewPasskeyIdentityProvider(
 
 func NewPasskeyIdentityProviderWithConfig(
 	transitionStore session.AuthTransitionStore,
-	accounts *account.Accounts,
+	passkeys account.Passkey,
+	sessions account.Session,
 	pubSub pubsub.PubSub,
 	config PasskeyConfig,
 ) (idn.IdentityProvider, error) {
@@ -79,7 +82,8 @@ func NewPasskeyIdentityProviderWithConfig(
 	}
 	return &PasskeyProvider{
 		transitionStore: transitionStore,
-		accounts:        accounts,
+		passkeys:        passkeys,
+		sessions:        sessions,
 		pubSub:          pubSub,
 		webAuthn:        wa,
 	}, nil
@@ -151,7 +155,7 @@ func (p *PasskeyProvider) startRegister(
 ) (idn.StepResult, error) {
 	linkRes, err := resolveLinkSession(
 		ctx,
-		p.accounts,
+		p.sessions,
 		idn.IntentLinkAccount,
 		input.LinkSessionToken,
 	)
@@ -257,7 +261,7 @@ func (p *PasskeyProvider) continueLogin(
 		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
 
-	err = p.accounts.Passkey.UpdatePasskeyUsage(ctx, account.UpdatePasskeyUsageConfig{
+	err = p.passkeys.UpdatePasskeyUsage(ctx, account.UpdatePasskeyUsageConfig{
 		CredentialID: verifiedCredential.ID,
 		BackupState:  verifiedCredential.Flags.BackupState,
 		SignCount:    verifiedCredential.Authenticator.SignCount,
@@ -306,7 +310,7 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
 	}
 
-	err = p.accounts.Passkey.LinkPasskey(ctx, account.LinkPasskeyConfig{
+	err = p.passkeys.LinkPasskey(ctx, account.LinkPasskeyConfig{
 		UserId:         uid,
 		CredentialID:   credential.ID,
 		PublicKey:      credential.PublicKey,
@@ -323,7 +327,7 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, err
 	}
 
-	err = p.accounts.Passkey.NotifyPasskeyAdded(
+	err = p.passkeys.NotifyPasskeyAdded(
 		ctx,
 		uid,
 		"Passkey",
@@ -340,7 +344,7 @@ func (p *PasskeyProvider) continueRegister(
 
 	wire := strings.TrimSpace(input.LinkSessionToken)
 	if wire != "" {
-		res, err := p.accounts.Session.ResolveSessionToken(ctx, wire)
+		res, err := p.sessions.ResolveSessionToken(ctx, wire)
 		if err != nil {
 			return idn.StepResult{}, err
 		}
@@ -394,83 +398,34 @@ func (p *PasskeyProvider) passkeyUserByID(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (*passkeyUser, error) {
-	ref, err := p.accounts.Store.DB.UserRef.Get(ctx, userID)
+	ceremonyUser, err := p.passkeys.LoadCeremonyUser(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := p.accounts.Store.DB.UserPasskey.Query().
-		Where(userpasskey.UserIDEQ(userID), userpasskey.RevokedEQ(false)).
-		All(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return &passkeyUser{
-		id:          ref.ID,
-		name:        ref.Email,
-		displayName: ref.Email,
-		credentials: passkeyCredentialsFromRows(rows),
-	}, nil
+	return passkeyUserFromCeremony(ceremonyUser), nil
 }
 
 func (p *PasskeyProvider) discoverableUserHandler(
 	ctx context.Context,
 ) webauthn.DiscoverableUserHandler {
 	return func(rawID, userHandle []byte) (webauthn.User, error) {
-		row, err := p.accounts.Store.DB.UserPasskey.Query().
-			Where(userpasskey.CredentialIDEQ(rawID), userpasskey.RevokedEQ(false)).
-			Only(ctx)
-		if ent.IsNotFound(err) {
-			return nil, idn.ErrPasskeyNotLinked
-		}
+		ceremonyUser, err := p.passkeys.LoadCeremonyUserDiscoverable(ctx, rawID, userHandle)
 		if err != nil {
 			return nil, err
 		}
-
-		userID, err := uuid.FromBytes(userHandle)
-		if err != nil {
-			return nil, errors.Join(idn.ErrInvalidInput, err)
-		}
-		if userID != row.UserID {
-			return nil, idn.ErrInvalidSessionState
-		}
-
-		return p.passkeyUserByID(ctx, row.UserID)
+		return passkeyUserFromCeremony(ceremonyUser), nil
 	}
 }
 
-func passkeyCredentialsFromRows(rows []*ent.UserPasskey) []webauthn.Credential {
-	credentials := make([]webauthn.Credential, 0, len(rows))
-	for _, row := range rows {
-		credentials = append(credentials, passkeyCredentialFromRow(row))
+func passkeyUserFromCeremony(u *account.PasskeyCeremonyUser) *passkeyUser {
+	if u == nil {
+		return nil
 	}
-	return credentials
-}
-
-func passkeyCredentialFromRow(row *ent.UserPasskey) webauthn.Credential {
-	var flags protocol.AuthenticatorFlags
-	if row.BackupEligible {
-		flags |= protocol.FlagBackupEligible
-	}
-	if row.BackupState {
-		flags |= protocol.FlagBackupState
-	}
-
-	transports := make([]protocol.AuthenticatorTransport, 0, len(row.Transports))
-	for _, transport := range row.Transports {
-		if transport != "" {
-			transports = append(transports, protocol.AuthenticatorTransport(transport))
-		}
-	}
-
-	return webauthn.Credential{
-		ID:        row.CredentialID,
-		PublicKey: row.PublicKey,
-		Transport: transports,
-		Flags:     webauthn.NewCredentialFlags(flags),
-		Authenticator: webauthn.Authenticator{
-			AAGUID:    row.Aaguid,
-			SignCount: row.SignCount,
-		},
+	return &passkeyUser{
+		id:          u.UserID,
+		name:        u.Name,
+		displayName: u.DisplayName,
+		credentials: u.Credentials,
 	}
 }
 

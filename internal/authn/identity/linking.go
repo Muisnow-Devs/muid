@@ -12,7 +12,7 @@ import (
 
 func resolveLinkSession(
 	ctx context.Context,
-	accounts *account.Accounts,
+	sessions account.Session,
 	intent idn.AuthIntent,
 	linkToken string,
 ) (account.ResolvedSession, error) {
@@ -25,7 +25,7 @@ func resolveLinkSession(
 		return account.ResolvedSession{}, idn.ErrLinkUnauthorized
 	}
 
-	res, err := accounts.Session.ResolveSessionToken(ctx, linkToken)
+	res, err := sessions.ResolveSessionToken(ctx, linkToken)
 	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
 		return account.ResolvedSession{}, idn.ErrLinkUnauthorized
 	}

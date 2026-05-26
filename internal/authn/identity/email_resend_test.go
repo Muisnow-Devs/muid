@@ -55,7 +55,6 @@ func TestEmailIdentityProvider_Continue_Resend_ReusesTransition(t *testing.T) {
 		otpStore:        otpSt,
 		transitionStore: trans,
 		pubSub:          pub,
-		accounts:        nil,
 	}
 
 	sess, err := trans.Create(
@@ -117,7 +116,6 @@ func TestEmailIdentityProvider_Continue_ResendWrongStep(t *testing.T) {
 		otpStore:        otpSt,
 		transitionStore: trans,
 		pubSub:          pub,
-		accounts:        nil,
 	}
 
 	sess, err := trans.Create(
@@ -159,7 +157,6 @@ func TestEmailIdentityProvider_Continue_Resend_RateLimited(t *testing.T) {
 		otpStore:        otpSt,
 		transitionStore: trans,
 		pubSub:          pub,
-		accounts:        nil,
 	}
 
 	sess, err := trans.Create(

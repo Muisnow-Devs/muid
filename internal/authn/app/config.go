@@ -24,12 +24,12 @@ type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 
 	Port          int    `envconfig:"PORT"           default:"5314"`
-	DatabaseURL   string `envconfig:"DATABASE_URL"                required:"true"`
-	RedisAddr     string `envconfig:"REDIS_ADDR"                  required:"true"`
+	DatabaseURL   string `envconfig:"DATABASE_URL"                  required:"true"`
+	RedisAddr     string `envconfig:"REDIS_ADDR"                    required:"true"`
 	RedisDatabase int    `envconfig:"REDIS_DATABASE" default:"0"`
-	NATSURL       string `envconfig:"NATS_URL"                    required:"true"`
+	NATSURL       string `envconfig:"NATS_URL"                      required:"true"`
 
-	OTPSecretKey string `envconfig:"OTP_SECRET_KEY"               required:"true"`
+	OTPSecretKey string `envconfig:"OTP_SECRET_KEY"            required:"true"`
 	// OTPSendCooldownSeconds enforces a minimum delay between OTP sends for the same
 	// auth transition (same transition id) and for the same normalized email recipient
 	// across transitions. Zero disables send cooldown checks.
@@ -79,7 +79,13 @@ type InfraDependencies struct {
 	PubSub          pubsub.PubSub
 	IdentityManager *identity.IdentityManager
 
-	Accounts *account.Accounts
+	Provision  account.Provisioning
+	Email      account.Email
+	OIDC       account.OIDC
+	Federated  account.Federated
+	Passkey    account.Passkey
+	Sessions   account.Session
+	LoginAlert account.LoginNotifier
 
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn

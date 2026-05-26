@@ -37,9 +37,9 @@ func TestPasskeyUsageUpdate_setsLastUsedAndCounter(t *testing.T) {
 		t.Fatalf("seed user ref: %v", err)
 	}
 
-	accounts := New(&Store{DB: db}, nil, "")
+	_, _, _, _, passkeys, _, _ := Wire(&Store{DB: db}, nil, "")
 	credentialID := []byte("credential-id")
-	err = accounts.Passkey.LinkPasskey(ctx, LinkPasskeyConfig{
+	err = passkeys.LinkPasskey(ctx, LinkPasskeyConfig{
 		UserId:         userID,
 		CredentialID:   credentialID,
 		PublicKey:      []byte("public-key"),
@@ -55,7 +55,7 @@ func TestPasskeyUsageUpdate_setsLastUsedAndCounter(t *testing.T) {
 	}
 
 	lastUsed := time.Date(2026, 5, 21, 12, 0, 0, 0, time.UTC)
-	err = accounts.Passkey.UpdatePasskeyUsage(ctx, UpdatePasskeyUsageConfig{
+	err = passkeys.UpdatePasskeyUsage(ctx, UpdatePasskeyUsageConfig{
 		CredentialID: credentialID,
 		BackupState:  true,
 		SignCount:    7,

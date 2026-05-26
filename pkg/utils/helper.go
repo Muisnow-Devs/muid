@@ -15,6 +15,9 @@ func DefaultIfEmptyFunc(value *string, fallbackFunc func() string) {
 }
 
 func FuncIfExists(value *string, funcIfExists func(string)) {
+	if value == nil {
+		return
+	}
 	if strings.TrimSpace(*value) != "" {
 		funcIfExists(*value)
 	}

@@ -189,7 +189,7 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 
 - **Transition state:** **`internal/session`** (`AuthFlowKind`, `EmailOTPFlow`, `OIDCFlow`, `PasskeyFlow` pointers on `SessionStore`) with Redis backing **`internal/authn/kv`** implementing **`internal/session.AuthTransitionStore`**.
 - **Identity providers:** **`internal/authn/identity`** implement **`internal/identity.IdentityProvider`**; **`internal/authn/app/handler.go`** routes **`ContinueAuthSession`** using transition `Provider` and maps `proof` into **`ContinueInput.Payload`**.
-- **Accounts:** **`internal/authn/account`** persists users, calls Profile **`CreateProfile`** when configured, issues sessions (`SessionToken` shape per proto). Profile gRPC dial attaches **`log.UnaryClientInterceptor()`** for **`x-trace-id`**.
+- **Account domain:** **`internal/authn/account`** exposes small interfaces (`Provisioning`, `Email`, `OIDC`, `Federated`, `Passkey`, `Session`, `LoginNotifier`) wired via **`account.Wire`** in bootstrap; callers inject only what they need. Profile **`CreateProfile`** when configured; session token shape per proto. Profile gRPC dial attaches **`log.UnaryClientInterceptor()`** for **`x-trace-id`**.
 
 ---
 

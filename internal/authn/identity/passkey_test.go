@@ -19,7 +19,7 @@ func TestPasskeyStartLogin_usesWebAuthnRequestOptionsAndSession(t *testing.T) {
 
 	ctx := context.Background()
 	transitions := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
-	provider := NewPasskeyIdentityProvider(transitions, nil, nil)
+	provider := NewPasskeyIdentityProvider(transitions, nil, nil, nil)
 
 	step, err := provider.Start(ctx, idn.StartInput{Intent: idn.IntentLogin})
 	if err != nil {
@@ -102,10 +102,12 @@ func TestPasskeyDiscoverableUserHandler_rejectsUserHandleMismatch(t *testing.T) 
 		t.Fatalf("seed passkey: %v", err)
 	}
 
-	accounts := account.New(&account.Store{DB: db}, nil, "")
+	store := &account.Store{DB: db}
+	_, _, _, _, passkeys, sessions, _ := account.Wire(store, nil, "")
 	provider := NewPasskeyIdentityProvider(
 		authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore()),
-		accounts,
+		passkeys,
+		sessions,
 		nil,
 	).(*PasskeyProvider)
 

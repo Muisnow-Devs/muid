@@ -197,10 +197,8 @@ func TestFinishAuthStep_RegisterRequired_preservesPendingClaims(t *testing.T) {
 	svc := NewService(Dependencies{
 		IdentityManager: idm,
 		TransitionStore: transitionStore,
-		Accounts: &account.Accounts{
-			Provision: &stubProvisioner{uid: provisioned},
-			Session:   &stubSessionIssuer{},
-		},
+		Provision:       &stubProvisioner{uid: provisioned},
+		Sessions:        &stubSessionIssuer{},
 	})
 
 	req := &pb.ContinueAuthSessionRequest{}
@@ -260,10 +258,8 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 	svc := NewService(Dependencies{
 		IdentityManager: idm,
 		TransitionStore: transitionStore,
-		Accounts: &account.Accounts{
-			Provision: &stubProvisioner{uid: provisioned},
-			Session:   &stubSessionIssuer{},
-		},
+		Provision:       &stubProvisioner{uid: provisioned},
+		Sessions:        &stubSessionIssuer{},
 	})
 
 	req := &pb.ContinueAuthSessionRequest{}

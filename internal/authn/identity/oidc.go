@@ -27,7 +27,8 @@ const (
 
 type OIDCIdentityProvider struct {
 	transitionStore session.AuthTransitionStore
-	accounts        *account.Accounts
+	oidcLogin       account.OIDC
+	federated       account.Federated
 
 	providerName string
 	provider     *oidc.Provider
@@ -73,7 +74,8 @@ func NewOIDCProvider(
 	ctx context.Context,
 	config OIDCProviderConfig,
 	transitionStore session.AuthTransitionStore,
-	accounts *account.Accounts,
+	oidcLogin account.OIDC,
+	federated account.Federated,
 ) (idn.IdentityProvider, error) {
 	provider, err := oidc.NewProvider(ctx, config.Endpoint)
 	if err != nil {
@@ -97,7 +99,8 @@ func NewOIDCProvider(
 		verifier:        verifier,
 		claimFields:     oidcClaimFieldsWithDefaults(config.ClaimFields),
 		transitionStore: transitionStore,
-		accounts:        accounts,
+		oidcLogin:       oidcLogin,
+		federated:       federated,
 	}, nil
 }
 
@@ -168,7 +171,7 @@ func (p *OIDCIdentityProvider) Continue(
 		return idn.StepResult{}, err
 	}
 
-	userID, reg, err := p.accounts.OIDC.LookupOIDCLogin(
+	userID, reg, err := p.oidcLogin.LookupOIDCLogin(
 		ctx,
 		p.providerName,
 		claims.Subject,
@@ -236,7 +239,7 @@ func (p *OIDCIdentityProvider) continueFinishOIDCRegister(
 
 	linked, err := ensureFederatedLink(
 		ctx,
-		p.accounts,
+		p.federated,
 		provider,
 		subject,
 		provisioned,

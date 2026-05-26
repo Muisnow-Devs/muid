@@ -23,6 +23,36 @@ type emailService struct {
 	store *Store
 }
 
+// UserEmail returns the stored email for an existing user.
+func (e *emailService) UserEmail(ctx context.Context, userID uuid.UUID) (string, error) {
+	ref, err := e.store.DB.UserRef.Get(ctx, userID)
+	if err != nil {
+		return "", err
+	}
+	return ref.Email, nil
+}
+
+// EmailUsedByOther reports whether another user already owns the normalized email.
+func (e *emailService) EmailUsedByOther(
+	ctx context.Context,
+	email string,
+	excludeUserID uuid.UUID,
+) (bool, error) {
+	email = strings.TrimSpace(strings.ToLower(email))
+	if email == "" {
+		return false, idn.ErrInvalidInput
+	}
+
+	other, err := e.store.DB.UserRef.Query().Where(userref.EmailEQ(email)).Only(ctx)
+	if ent.IsNotFound(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return other.ID != excludeUserID, nil
+}
+
 // LookupUserByEmail returns the authn user id when a UserRef exists for the email.
 func (e *emailService) LookupUserByEmail(
 	ctx context.Context,

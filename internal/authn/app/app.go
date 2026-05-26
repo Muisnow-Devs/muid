@@ -5,6 +5,7 @@ import (
 
 	"sanzi.io/muid/internal/authn/account"
 	authnconfig "sanzi.io/muid/internal/authn/config"
+	authnflow "sanzi.io/muid/internal/authn/flow"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	implIdentity "sanzi.io/muid/internal/authn/identity"
 	"sanzi.io/muid/internal/identity"
@@ -19,10 +20,18 @@ type AuthnApp struct {
 }
 
 func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, error) {
+	flowDeps := authnflow.Dependencies{
+		IdentityManager:        infra.IdentityManager,
+		TransitionStore:        infra.TransitionStore,
+		Provision:              infra.Provision,
+		Sessions:               infra.Sessions,
+		LoginAlert:             infra.LoginAlert,
+		OTPSendCooldownSeconds: infra.GlobalConfig.OTPSendCooldownSeconds,
+	}
 	handler := authngrpc.NewGRPCHandler(
-		infra.IdentityManager,
-		infra.TransitionStore,
-		infra.Accounts,
+		flowDeps,
+		infra.Sessions,
+		infra.Federated,
 		authngrpc.HandlerConfig{
 			OTPSendCooldownSeconds: infra.GlobalConfig.OTPSendCooldownSeconds,
 		},
@@ -47,13 +56,22 @@ func (app *AuthnApp) Stop() {
 	app.dependencyInjector.Close()
 }
 
+// IdentityServices groups account interfaces required by identity providers.
+type IdentityServices struct {
+	Email     account.Email
+	OIDC      account.OIDC
+	Federated account.Federated
+	Passkey   account.Passkey
+	Sessions  account.Session
+}
+
 func InitializeIdentityManager(
 	ctx context.Context,
 	config Config,
 	transitionStore session.AuthTransitionStore,
 	otpStore otp.OTPStore,
 	pubSub pubsub.PubSub,
-	accounts *account.Accounts,
+	svc IdentityServices,
 ) (*identity.IdentityManager, error) {
 	passkeyConfig := authnconfig.ParsePasskeyConfig(
 		config.PasskeyRPID,
@@ -62,7 +80,8 @@ func InitializeIdentityManager(
 	)
 	passkeyProvider, err := implIdentity.NewPasskeyIdentityProviderWithConfig(
 		transitionStore,
-		accounts,
+		svc.Passkey,
+		svc.Sessions,
 		pubSub,
 		passkeyConfig,
 	)
@@ -71,12 +90,24 @@ func InitializeIdentityManager(
 	}
 
 	providers := []identity.IdentityProvider{
-		implIdentity.NewEmailIdentityProvider(otpStore, transitionStore, pubSub, accounts),
+		implIdentity.NewEmailIdentityProvider(
+			otpStore,
+			transitionStore,
+			pubSub,
+			svc.Email,
+			svc.Sessions,
+		),
 		passkeyProvider,
 	}
 
 	for _, cfg := range config.OIDCClients {
-		p, err := implIdentity.NewOIDCProvider(ctx, cfg, transitionStore, accounts)
+		p, err := implIdentity.NewOIDCProvider(
+			ctx,
+			cfg,
+			transitionStore,
+			svc.OIDC,
+			svc.Federated,
+		)
 		if err != nil {
 			return nil, &OIDCProviderInitError{Name: cfg.Name, Err: err}
 		}

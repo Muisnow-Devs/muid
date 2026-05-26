@@ -37,7 +37,7 @@ type StartInput struct {
 	// LinkSessionToken is the wire session token (selector.validator) required for linking flows.
 	LinkSessionToken string
 	// Client carries locale, timezone, and device context from pkg/clientmeta at session start.
-	Client clientmeta.ClientMeta
+	Client   clientmeta.ClientMeta
 	Metadata map[string]any
 }
 
@@ -79,10 +79,10 @@ type AuthenticatedIdentity struct {
 
 // LoginCompletionContext holds supplementary data for post-login actions (e.g. outbound mail).
 type LoginCompletionContext struct {
-	Locale     string
-	Timezone   string
-	Device     string
-	Location   string
+	Locale    string
+	Timezone  string
+	Device    string
+	Location  string
 	UserAgent string
 	IPAddress string
 }

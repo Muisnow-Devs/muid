@@ -14,8 +14,6 @@ import (
 	"sanzi.io/muid/api/proto/event/v1/mail"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/account"
-	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/ent/userref"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
@@ -77,20 +75,23 @@ type EmailIdentityProvider struct {
 	otpStore        otp.OTPStore
 	transitionStore session.AuthTransitionStore
 	pubSub          pubsub.PubSub
-	accounts        *account.Accounts
+	email           account.Email
+	sessions        account.Session
 }
 
 func NewEmailIdentityProvider(
 	otpStore otp.OTPStore,
 	transitionStore session.AuthTransitionStore,
 	pubSub pubsub.PubSub,
-	accounts *account.Accounts,
+	email account.Email,
+	sessions account.Session,
 ) idn.IdentityProvider {
 	return &EmailIdentityProvider{
 		otpStore:        otpStore,
 		transitionStore: transitionStore,
 		pubSub:          pubSub,
-		accounts:        accounts,
+		email:           email,
+		sessions:        sessions,
 	}
 }
 
@@ -148,7 +149,7 @@ func (p *EmailIdentityProvider) startChangeEmail(
 ) (idn.StepResult, error) {
 	linkRes, err := resolveLinkSession(
 		ctx,
-		p.accounts,
+		p.sessions,
 		idn.IntentLinkAccount,
 		input.LinkSessionToken,
 	)
@@ -156,22 +157,22 @@ func (p *EmailIdentityProvider) startChangeEmail(
 		return idn.StepResult{}, err
 	}
 
-	ref, err := p.accounts.Store.DB.UserRef.Get(ctx, linkRes.UserID)
+	currentEmail, err := p.email.UserEmail(ctx, linkRes.UserID)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
-	if strings.EqualFold(ref.Email, newEmail) {
+	if strings.EqualFold(currentEmail, newEmail) {
 		return idn.StepResult{}, errors.Join(
 			idn.ErrInvalidInput,
 			errors.New("new email matches current email"),
 		)
 	}
 
-	other, err := p.accounts.Store.DB.UserRef.Query().Where(userref.EmailEQ(newEmail)).Only(ctx)
-	if err != nil && !ent.IsNotFound(err) {
+	inUse, err := p.email.EmailUsedByOther(ctx, newEmail, linkRes.UserID)
+	if err != nil {
 		return idn.StepResult{}, err
 	}
-	if other != nil {
+	if inUse {
 		return idn.StepResult{}, idn.ErrEmailAlreadyInUse
 	}
 
@@ -180,7 +181,7 @@ func (p *EmailIdentityProvider) startChangeEmail(
 		newEmail,
 		emailIntentChangeEmail,
 		linkRes.UserID.String(),
-		ref.Email,
+		currentEmail,
 		input.Client,
 	)
 	if err != nil {
@@ -254,7 +255,7 @@ func (p *EmailIdentityProvider) continueChangeEmail(
 	}
 
 	newEmail := emailFlow.Email
-	_, err = p.accounts.Email.ChangeUserEmail(
+	_, err = p.email.ChangeUserEmail(
 		ctx,
 		p.pubSub,
 		uid,
@@ -272,7 +273,7 @@ func (p *EmailIdentityProvider) continueChangeEmail(
 
 	wire := strings.TrimSpace(input.LinkSessionToken)
 	if wire != "" {
-		res, err := p.accounts.Session.ResolveSessionToken(ctx, wire)
+		res, err := p.sessions.ResolveSessionToken(ctx, wire)
 		if err != nil {
 			return idn.StepResult{}, err
 		}
@@ -326,7 +327,7 @@ func (p *EmailIdentityProvider) continueLogin(
 	}
 	email := emailFlow.Email
 
-	userID, found, err := p.accounts.Email.LookupUserByEmail(ctx, email)
+	userID, found, err := p.email.LookupUserByEmail(ctx, email)
 	if err != nil {
 		return idn.StepResult{}, err
 	}
@@ -379,7 +380,7 @@ func (p *EmailIdentityProvider) continueFinishEmailRegister(
 		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
 
-	linked, found, err := p.accounts.Email.LookupUserByEmail(ctx, email)
+	linked, found, err := p.email.LookupUserByEmail(ctx, email)
 	if err != nil {
 		return idn.StepResult{}, err
 	}

@@ -81,7 +81,11 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		ProfileCallTimeout: time.Duration(cfg.ProfileGRPCTimeoutSeconds) * time.Second,
 		SessionCache:       sessionCache,
 	}
-	accounts := account.New(store, pubSub, cfg.LoginAlertSecureLink)
+	provision, email, oidc, federated, passkey, sessions, loginAlert := account.Wire(
+		store,
+		pubSub,
+		cfg.LoginAlertSecureLink,
+	)
 
 	ipm, err := InitializeIdentityManager(
 		ctx,
@@ -89,7 +93,13 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		transitionStore,
 		otpStore,
 		pubSub,
-		accounts,
+		IdentityServices{
+			Email:     email,
+			OIDC:      oidc,
+			Federated: federated,
+			Passkey:   passkey,
+			Sessions:  sessions,
+		},
 	)
 	if err != nil {
 		errutil.Close(profileConn)
@@ -107,7 +117,13 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		SessionCache:    sessionCache,
 		PubSub:          pubSub,
 		IdentityManager: ipm,
-		Accounts:        accounts,
+		Provision:       provision,
+		Email:           email,
+		OIDC:            oidc,
+		Federated:       federated,
+		Passkey:         passkey,
+		Sessions:        sessions,
+		LoginAlert:      loginAlert,
 		entClient:       entClient,
 		profileConn:     profileConn,
 	}, nil

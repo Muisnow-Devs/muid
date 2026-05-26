@@ -13,7 +13,6 @@ import (
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/internal/authn/account"
 	authnflow "sanzi.io/muid/internal/authn/flow"
-	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
@@ -22,8 +21,9 @@ import (
 type GRPCHandler struct {
 	pb.UnimplementedAuthnServiceServer
 
-	flow     *authnflow.Service
-	accounts *account.Accounts
+	flow      *authnflow.Service
+	sessions  account.Session
+	federated account.Federated
 }
 
 type HandlerConfig struct {
@@ -31,19 +31,16 @@ type HandlerConfig struct {
 }
 
 func NewGRPCHandler(
-	idm *identity.IdentityManager,
-	transitionStore session.AuthTransitionStore,
-	accounts *account.Accounts,
+	flowDeps authnflow.Dependencies,
+	sessions account.Session,
+	federated account.Federated,
 	config HandlerConfig,
 ) pb.AuthnServiceServer {
+	flowDeps.OTPSendCooldownSeconds = config.OTPSendCooldownSeconds
 	return &GRPCHandler{
-		flow: authnflow.NewService(authnflow.Dependencies{
-			IdentityManager:        idm,
-			TransitionStore:        transitionStore,
-			Accounts:               accounts,
-			OTPSendCooldownSeconds: config.OTPSendCooldownSeconds,
-		}),
-		accounts: accounts,
+		flow:      authnflow.NewService(flowDeps),
+		sessions:  sessions,
+		federated: federated,
 	}
 }
 
@@ -75,7 +72,7 @@ func (g *GRPCHandler) GetAuthorizedSession(
 		return nil, err
 	}
 
-	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
+	res, err := g.sessions.ResolveSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
 		out := &pb.GetAuthorizedSessionResponse{}
 		out.SetValid(false)
@@ -88,7 +85,7 @@ func (g *GRPCHandler) GetAuthorizedSession(
 
 	out := &pb.GetAuthorizedSessionResponse{}
 	out.SetValid(true)
-	out.SetSession(g.accounts.Session.AuthenticatedResultFromResolved(wire, res))
+	out.SetSession(g.sessions.AuthenticatedResultFromResolved(wire, res))
 
 	return out, nil
 }
@@ -102,7 +99,7 @@ func (g *GRPCHandler) GetAuthenticatedPrincipal(
 		return nil, err
 	}
 
-	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
+	res, err := g.sessions.ResolveSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
 		out := &pb.GetAuthenticatedPrincipalResponse{}
 		out.SetValid(false)
@@ -115,7 +112,7 @@ func (g *GRPCHandler) GetAuthenticatedPrincipal(
 
 	out := &pb.GetAuthenticatedPrincipalResponse{}
 	out.SetValid(true)
-	out.SetPrincipal(g.accounts.Session.AuthenticatedPrincipalFromResolved(res))
+	out.SetPrincipal(g.sessions.AuthenticatedPrincipalFromResolved(res))
 
 	return out, nil
 }
@@ -139,7 +136,7 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 		return nil, status.Error(codes.InvalidArgument, "provider is required")
 	}
 
-	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
+	res, err := g.sessions.ResolveSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) {
 		return nil, status.Error(codes.NotFound, "session not found")
 	}
@@ -151,7 +148,7 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	issuedAt, err := g.accounts.Session.SessionCreatedAt(ctx, res.SessionID)
+	issuedAt, err := g.sessions.SessionCreatedAt(ctx, res.SessionID)
 	if errors.Is(err, session.ErrSessionNotFound) {
 		return nil, status.Error(codes.NotFound, "session not found")
 	}
@@ -167,7 +164,7 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 		)
 	}
 
-	err = g.accounts.Federated.RevokeFederatedIdentity(ctx, res.UserID, provider)
+	err = g.federated.RevokeFederatedIdentity(ctx, res.UserID, provider)
 	if errors.Is(err, account.ErrFederatedIdentityNotFound) {
 		return nil, status.Error(codes.NotFound, "federated identity not found")
 	}
@@ -190,7 +187,7 @@ func (g *GRPCHandler) RevokeSession(
 		return nil, err
 	}
 
-	err = g.accounts.Session.RevokeSessionToken(ctx, wire)
+	err = g.sessions.RevokeSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) {
 		return nil, status.Error(codes.NotFound, "session not found")
 	}

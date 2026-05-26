@@ -98,7 +98,7 @@ func (s *Service) provisionRegisterRequired(
 		return uuid.Nil, grpcutils.GRPCInternalError()
 	}
 
-	uid, err := s.accounts.Provision.ProvisionUser(ctx, reg)
+	uid, err := s.provision.ProvisionUser(ctx, reg)
 	if err != nil {
 		log.LogUnexpected(ctx, "authn provision user", err.Error())
 		return uuid.Nil, grpcutils.GRPCInternalError()
@@ -124,7 +124,7 @@ func (s *Service) authenticatedLoginResponse(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	authResult, err := s.accounts.Session.IssueAuthenticatedSession(ctx, uid)
+	authResult, err := s.sessions.IssueAuthenticatedSession(ctx, uid)
 	if err != nil {
 		log.LogUnexpected(ctx, "authn issue session", err.Error())
 		return nil, grpcutils.GRPCInternalError()
@@ -148,11 +148,11 @@ func (s *Service) notifyLoginCompleted(
 	uid uuid.UUID,
 	completion *identity.LoginCompletionContext,
 ) {
-	if s.accounts == nil || s.accounts.LoginAlert == nil {
+	if s.loginAlert == nil {
 		return
 	}
 
-	err := s.accounts.LoginAlert.NotifyLoginCompleted(
+	err := s.loginAlert.NotifyLoginCompleted(
 		ctx,
 		uid,
 		mailDeliveryPrefs(completion),
@@ -197,7 +197,7 @@ func (s *Service) linkCompletedResponse(
 		return resp, nil
 	}
 
-	res, err := s.accounts.Session.ResolveSessionToken(ctx, wire)
+	res, err := s.sessions.ResolveSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
 		return nil, status.Error(codes.PermissionDenied, "valid session required")
 	}
@@ -207,7 +207,7 @@ func (s *Service) linkCompletedResponse(
 	}
 
 	authOK := &sessionpb.AuthSuccess{}
-	authOK.SetResult(s.accounts.Session.AuthenticatedResultFromResolved(wire, res))
+	authOK.SetResult(s.sessions.AuthenticatedResultFromResolved(wire, res))
 	resp.SetAuthSuccess(authOK)
 
 	return resp, nil

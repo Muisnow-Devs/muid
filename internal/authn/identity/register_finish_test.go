@@ -128,9 +128,10 @@ func TestFinishRegisterAfterLink_deletesTransition(t *testing.T) {
 	}
 }
 
-func registerFinishAccounts(t *testing.T, db *ent.Client) *account.Accounts {
+func registerFinishFederated(t *testing.T, db *ent.Client) account.Federated {
 	t.Helper()
-	return account.New(&account.Store{DB: db}, nil, "")
+	_, _, _, federated, _, _, _ := account.Wire(&account.Store{DB: db}, nil, "")
+	return federated
 }
 
 func TestEnsureFederatedLink_createsRow(t *testing.T) {
@@ -138,7 +139,7 @@ func TestEnsureFederatedLink_createsRow(t *testing.T) {
 
 	ctx := context.Background()
 	db := openRegisterFinishTestDB(t)
-	accounts := registerFinishAccounts(t, db)
+	federated := registerFinishFederated(t, db)
 	uid := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 	seedRegisterFinishUserRef(t, db, uid, "oidc@example.com")
 
@@ -150,7 +151,7 @@ func TestEnsureFederatedLink_createsRow(t *testing.T) {
 		Name:              "Ada",
 	}
 
-	linked, err := ensureFederatedLink(ctx, accounts, "google", "sub-1", uid, claims)
+	linked, err := ensureFederatedLink(ctx, federated, "google", "sub-1", uid, claims)
 	if err != nil {
 		t.Fatalf("link: %v", err)
 	}
@@ -172,7 +173,7 @@ func TestEnsureFederatedLink_idempotentWhenExists(t *testing.T) {
 
 	ctx := context.Background()
 	db := openRegisterFinishTestDB(t)
-	accounts := registerFinishAccounts(t, db)
+	federated := registerFinishFederated(t, db)
 	uid := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 	seedRegisterFinishUserRef(t, db, uid, "oidc@example.com")
 
@@ -193,7 +194,7 @@ func TestEnsureFederatedLink_idempotentWhenExists(t *testing.T) {
 		FederatedSubject:  "sub-1",
 	}
 
-	linked, err := ensureFederatedLink(ctx, accounts, "google", "sub-1", uid, claims)
+	linked, err := ensureFederatedLink(ctx, federated, "google", "sub-1", uid, claims)
 	if err != nil {
 		t.Fatalf("link: %v", err)
 	}
@@ -207,7 +208,7 @@ func TestEnsureFederatedLink_rejectsUserMismatch(t *testing.T) {
 
 	ctx := context.Background()
 	db := openRegisterFinishTestDB(t)
-	accounts := registerFinishAccounts(t, db)
+	federated := registerFinishFederated(t, db)
 	existing := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
 	other := uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
 	seedRegisterFinishUserRef(t, db, existing, "a@b.com")
@@ -225,7 +226,7 @@ func TestEnsureFederatedLink_rejectsUserMismatch(t *testing.T) {
 
 	_, err = ensureFederatedLink(
 		ctx,
-		accounts,
+		federated,
 		"google",
 		"sub-1",
 		other,

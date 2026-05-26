@@ -15,9 +15,11 @@ type Provisioning interface {
 	ProvisionUser(ctx context.Context, reg *identity.RegisterRequired) (uuid.UUID, error)
 }
 
-// Email covers email lookup and email change.
+// Email covers email lookup, user email reads, and email change.
 type Email interface {
 	LookupUserByEmail(ctx context.Context, email string) (uuid.UUID, bool, error)
+	UserEmail(ctx context.Context, userID uuid.UUID) (string, error)
+	EmailUsedByOther(ctx context.Context, email string, excludeUserID uuid.UUID) (bool, error)
 	ChangeUserEmail(
 		ctx context.Context,
 		pub pubsub.PubSub,
@@ -80,6 +82,11 @@ type Passkey interface {
 		ctx context.Context,
 		config UpdatePasskeyUsageConfig,
 	) error
+	LoadCeremonyUser(ctx context.Context, userID uuid.UUID) (*PasskeyCeremonyUser, error)
+	LoadCeremonyUserDiscoverable(
+		ctx context.Context,
+		credentialID, userHandle []byte,
+	) (*PasskeyCeremonyUser, error)
 }
 
 // Session issues, resolves, and revokes authenticated sessions.

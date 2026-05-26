@@ -29,14 +29,18 @@ import (
 type Service struct {
 	idm                     *identity.IdentityManager
 	transitionStore         session.AuthTransitionStore
-	accounts                *account.Accounts
+	provision               account.Provisioning
+	sessions                account.Session
+	loginAlert              account.LoginNotifier
 	otpResendCooldownMillis int64
 }
 
 type Dependencies struct {
 	IdentityManager        *identity.IdentityManager
 	TransitionStore        session.AuthTransitionStore
-	Accounts               *account.Accounts
+	Provision              account.Provisioning
+	Sessions               account.Session
+	LoginAlert             account.LoginNotifier
 	OTPSendCooldownSeconds int
 }
 
@@ -48,7 +52,9 @@ func NewService(deps Dependencies) *Service {
 	return &Service{
 		idm:                     deps.IdentityManager,
 		transitionStore:         deps.TransitionStore,
-		accounts:                deps.Accounts,
+		provision:               deps.Provision,
+		sessions:                deps.Sessions,
+		loginAlert:              deps.LoginAlert,
 		otpResendCooldownMillis: int64(cooldownSec) * 1000,
 	}
 }

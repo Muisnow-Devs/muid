@@ -37,7 +37,7 @@ func TestPasskeyUsageUpdate_setsLastUsedAndCounter(t *testing.T) {
 		t.Fatalf("seed user ref: %v", err)
 	}
 
-	accounts := New(&Store{DB: db}, nil)
+	accounts := New(&Store{DB: db}, nil, "")
 	credentialID := []byte("credential-id")
 	err = accounts.Passkey.LinkPasskey(ctx, LinkPasskeyConfig{
 		UserId:         userID,

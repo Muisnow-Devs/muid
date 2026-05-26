@@ -124,8 +124,7 @@ func (p *PasskeyProvider) startLogin(
 		Ceremony: PasskeyCeremonyAuthentication,
 		Session:  *webAuthnSession,
 	})
-	store.Locale = input.Locale
-	store.Timezone = input.Timezone
+	session.ApplyClientMeta(&store, input.Client)
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
@@ -179,8 +178,7 @@ func (p *PasskeyProvider) startRegister(
 		Session:       *webAuthnSession,
 		SubjectUserID: linkRes.UserID.String(),
 	})
-	store.Locale = input.Locale
-	store.Timezone = input.Timezone
+	session.ApplyClientMeta(&store, input.Client)
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {
 		return idn.StepResult{}, err

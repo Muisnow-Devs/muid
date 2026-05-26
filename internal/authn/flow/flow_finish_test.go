@@ -16,6 +16,20 @@ import (
 	"sanzi.io/muid/internal/session"
 )
 
+func TestLoginAlertDetails_fromCompletion(t *testing.T) {
+	t.Parallel()
+
+	got := loginAlertDetails(&idpkg.LoginCompletionContext{
+		Device:    "Chrome",
+		Location:  "TW",
+		IPAddress: "203.0.113.1",
+		UserAgent: "Mozilla/5.0",
+	})
+	if got.Device != "Chrome" || got.IPAddress != "203.0.113.1" {
+		t.Fatalf("details: %+v", got)
+	}
+}
+
 type stubRegisterProvider struct {
 	name         string
 	finishUserID string

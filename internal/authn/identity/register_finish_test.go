@@ -130,7 +130,7 @@ func TestFinishRegisterAfterLink_deletesTransition(t *testing.T) {
 
 func registerFinishAccounts(t *testing.T, db *ent.Client) *account.Accounts {
 	t.Helper()
-	return account.New(&account.Store{DB: db}, nil)
+	return account.New(&account.Store{DB: db}, nil, "")
 }
 
 func TestEnsureFederatedLink_createsRow(t *testing.T) {

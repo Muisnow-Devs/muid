@@ -37,6 +37,9 @@ type Config struct {
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
 
+	// LoginAlertSecureLink is the HTTPS URL embedded in login-alert mail (account security page).
+	LoginAlertSecureLink string `envconfig:"LOGIN_ALERT_SECURE_LINK"`
+
 	// OIDCClients configures enabled OIDC identity providers as a JSON array.
 	OIDCClients authnconfig.OIDCClients `envconfig:"OIDC_CLIENTS_JSON" default:"[]"`
 

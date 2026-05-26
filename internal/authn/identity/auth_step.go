@@ -7,11 +7,19 @@ import (
 
 func authenticatedStep(userID string, store session.SessionStore) idn.StepResult {
 	return idn.StepResult{
-		Type:          idn.StepAuthenticated,
-		Authenticated: &idn.AuthenticatedIdentity{UserID: userID},
-		LoginCompletion: &idn.LoginCompletionContext{
-			Locale:   store.Locale,
-			Timezone: store.Timezone,
-		},
+		Type:            idn.StepAuthenticated,
+		Authenticated:   &idn.AuthenticatedIdentity{UserID: userID},
+		LoginCompletion: loginCompletionFromStore(store),
+	}
+}
+
+func loginCompletionFromStore(store session.SessionStore) *idn.LoginCompletionContext {
+	return &idn.LoginCompletionContext{
+		Locale:     store.Locale,
+		Timezone:   store.Timezone,
+		Device:     store.Device,
+		Location:   store.Location,
+		UserAgent:  store.UserAgent,
+		IPAddress:  store.IPAddress,
 	}
 }

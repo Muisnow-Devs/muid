@@ -31,8 +31,6 @@ type StartAuthSessionRequest struct {
 	xxx_hidden_Identifier   string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
 	xxx_hidden_Intent       basic.AuthIntent       `protobuf:"varint,3,opt,name=intent,proto3,enum=muid.authn.v1.basic.AuthIntent"`
 	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,4,opt,name=session_token,json=sessionToken,proto3"`
-	xxx_hidden_Locale       string                 `protobuf:"bytes,5,opt,name=locale,proto3"`
-	xxx_hidden_Timezone     string                 `protobuf:"bytes,6,opt,name=timezone,proto3"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -90,20 +88,6 @@ func (x *StartAuthSessionRequest) GetSessionToken() *session.SessionToken {
 	return nil
 }
 
-func (x *StartAuthSessionRequest) GetLocale() string {
-	if x != nil {
-		return x.xxx_hidden_Locale
-	}
-	return ""
-}
-
-func (x *StartAuthSessionRequest) GetTimezone() string {
-	if x != nil {
-		return x.xxx_hidden_Timezone
-	}
-	return ""
-}
-
 func (x *StartAuthSessionRequest) SetMethod(v basic.AuthMethod) {
 	x.xxx_hidden_Method = v
 }
@@ -118,14 +102,6 @@ func (x *StartAuthSessionRequest) SetIntent(v basic.AuthIntent) {
 
 func (x *StartAuthSessionRequest) SetSessionToken(v *session.SessionToken) {
 	x.xxx_hidden_SessionToken = v
-}
-
-func (x *StartAuthSessionRequest) SetLocale(v string) {
-	x.xxx_hidden_Locale = v
-}
-
-func (x *StartAuthSessionRequest) SetTimezone(v string) {
-	x.xxx_hidden_Timezone = v
 }
 
 func (x *StartAuthSessionRequest) HasSessionToken() bool {
@@ -148,10 +124,6 @@ type StartAuthSessionRequest_builder struct {
 	Intent basic.AuthIntent
 	// Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
 	SessionToken *session.SessionToken
-	// Client locale for mail templates (BCP-47); empty defaults to "en".
-	Locale string
-	// IANA time zone for mail timestamps (e.g. "Asia/Taipei"); empty means UTC.
-	Timezone string
 }
 
 func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
@@ -162,8 +134,6 @@ func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
 	x.xxx_hidden_Identifier = b.Identifier
 	x.xxx_hidden_Intent = b.Intent
 	x.xxx_hidden_SessionToken = b.SessionToken
-	x.xxx_hidden_Locale = b.Locale
-	x.xxx_hidden_Timezone = b.Timezone
 	return m0
 }
 
@@ -1168,16 +1138,14 @@ var File_authn_v1_authn_proto protoreflect.FileDescriptor
 
 const file_authn_v1_authn_proto_rawDesc = "" +
 	"\n" +
-	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xc5\x02\n" +
+	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xff\x01\n" +
 	"\x17StartAuthSessionRequest\x127\n" +
 	"\x06method\x18\x01 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthMethodR\x06method\x12(\n" +
 	"\n" +
 	"identifier\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\x80\x02R\n" +
 	"identifier\x127\n" +
 	"\x06intent\x18\x03 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthIntentR\x06intent\x12H\n" +
-	"\rsession_token\x18\x04 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12\x1f\n" +
-	"\x06locale\x18\x05 \x01(\tB\a\xbaH\x04r\x02\x18 R\x06locale\x12#\n" +
-	"\btimezone\x18\x06 \x01(\tB\a\xbaH\x04r\x02\x18@R\btimezone\"\x8f\x01\n" +
+	"\rsession_token\x18\x04 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\x8f\x01\n" +
 	"\x18StartAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x12D\n" +
 	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\xcb\x01\n" +

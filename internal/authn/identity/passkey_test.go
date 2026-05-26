@@ -102,7 +102,7 @@ func TestPasskeyDiscoverableUserHandler_rejectsUserHandleMismatch(t *testing.T) 
 		t.Fatalf("seed passkey: %v", err)
 	}
 
-	accounts := account.New(&account.Store{DB: db}, nil)
+	accounts := account.New(&account.Store{DB: db}, nil, "")
 	provider := NewPasskeyIdentityProvider(
 		authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore()),
 		accounts,

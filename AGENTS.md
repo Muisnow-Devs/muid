@@ -31,7 +31,7 @@ Config is loaded with `pkg/shared.LoadConfig[T](prefix)` and `github.com/kelseyh
 
 | Prefix | Service | Examples |
 |--------|---------|----------|
-| `AUTHN_` | Authn | `AUTHN_DATABASE_URL`, `AUTHN_REDIS_URL`, `AUTHN_NATS_URL`, `AUTHN_OTP_SECRET_KEY`, `AUTHN_OTP_SEND_COOLDOWN_SECONDS` (min delay between OTP sends for the same transition **and** the same normalized email recipient; default `60`, `0` disables both), `AUTHN_OIDC_CLIENTS_JSON`, `AUTHN_PROFILE_GRPC_ADDR`, `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`, `AUTHN_REQUEST_TIMEOUT_SECONDS` |
+| `AUTHN_` | Authn | `AUTHN_DATABASE_URL`, `AUTHN_REDIS_URL`, `AUTHN_NATS_URL`, `AUTHN_OTP_SECRET_KEY`, `AUTHN_OTP_SEND_COOLDOWN_SECONDS` (min delay between OTP sends for the same transition **and** the same normalized email recipient; default `60`, `0` disables both), `AUTHN_OIDC_CLIENTS_JSON`, `AUTHN_PROFILE_GRPC_ADDR`, `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`, `AUTHN_REQUEST_TIMEOUT_SECONDS`, `AUTHN_LOGIN_ALERT_SECURE_LINK` (HTTPS URL in login-alert mail; client context uses `pkg/clientmeta` metadata including `x-client-ip` set by the gateway) |
 | `PROFILE_` | Profile | `PROFILE_DATABASE_URL`, `PROFILE_NATS_URL`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, `PROFILE_R2_*`, `PROFILE_PUBLIC_ASSETS_URL` |
 | `MAILER_` | Mailer | `MAILER_NATS_URL`, `MAILER_SMTP_HOST`, `MAILER_SMTP_PORT`, `MAILER_SMTP_FROM`, optional `MAILER_SMTP_USERNAME`, `MAILER_SMTP_PASSWORD`, `MAILER_SMTP_SSL` |
 

@@ -2,6 +2,7 @@ package authngrpc
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/google/uuid"
@@ -12,6 +13,7 @@ import (
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/clientmeta"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
@@ -61,7 +63,22 @@ func enrichStartAuthSession(ctx context.Context, _ string, req any) (context.Con
 	if !ok {
 		return ctx, status.Errorf(codes.Internal, "unsupported request type")
 	}
+	ctx, err := enrichClientMeta(ctx)
+	if err != nil {
+		return ctx, err
+	}
 	return enrichOptionalWireSession(ctx, r.GetSessionToken())
+}
+
+func enrichClientMeta(ctx context.Context) (context.Context, error) {
+	ctx, err := clientmeta.EnrichFromIncomingMetadata(ctx)
+	if err == nil {
+		return ctx, nil
+	}
+	if errors.Is(err, clientmeta.ErrInvalidTimezone) {
+		return ctx, status.Error(codes.InvalidArgument, err.Error())
+	}
+	return ctx, err
 }
 
 func enrichContinueAuthSession(ctx context.Context, _ string, req any) (context.Context, error) {

@@ -81,9 +81,13 @@ type SessionStore struct {
 
 	Flow FlowState `json:"flow"`
 
-	// Locale and Timezone come from StartAuthSession for mail formatting.
-	Locale   string `json:"locale,omitempty"`
-	Timezone string `json:"timezone,omitempty"`
+	// Locale, timezone, and device context come from client gRPC metadata at session start (pkg/clientmeta).
+	Locale     string `json:"locale,omitempty"`
+	Timezone   string `json:"timezone,omitempty"`
+	Device     string `json:"device,omitempty"`
+	Location   string `json:"location,omitempty"`
+	UserAgent string `json:"user_agent,omitempty"`
+	IPAddress string `json:"ip_address,omitempty"`
 
 	// PendingRegister is set when a provider needs login-flow provision before finish linking.
 	PendingRegister *RegisterPending `json:"pending_register,omitempty"`

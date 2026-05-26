@@ -19,6 +19,7 @@ import (
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/clientmeta"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 	"sanzi.io/muid/pkg/shared/tracing"
@@ -123,8 +124,7 @@ func (p *EmailIdentityProvider) Start(
 		emailIntentLogin,
 		"",
 		"",
-		input.Locale,
-		input.Timezone,
+		input.Client,
 	)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -181,8 +181,7 @@ func (p *EmailIdentityProvider) startChangeEmail(
 		emailIntentChangeEmail,
 		linkRes.UserID.String(),
 		ref.Email,
-		input.Locale,
-		input.Timezone,
+		input.Client,
 	)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -406,7 +405,8 @@ func validateEmailStartInput(input idn.StartInput) error {
 
 func (p *EmailIdentityProvider) createTransitionSession(
 	ctx context.Context,
-	email, intent, subjectUserID, oldEmail, locale, timezone string,
+	email, intent, subjectUserID, oldEmail string,
+	client clientmeta.ClientMeta,
 ) (session.AuthSession, error) {
 	store := session.EmailOTPStore(session.StepStart, &session.EmailOTPFlow{
 		Email:         email,
@@ -414,8 +414,7 @@ func (p *EmailIdentityProvider) createTransitionSession(
 		SubjectUserID: subjectUserID,
 		OldEmail:      oldEmail,
 	})
-	store.Locale = locale
-	store.Timezone = timezone
+	session.ApplyClientMeta(&store, client)
 
 	sess, err := p.transitionStore.Create(ctx, p.Name(), store)
 	if err != nil {

@@ -81,7 +81,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		ProfileCallTimeout: time.Duration(cfg.ProfileGRPCTimeoutSeconds) * time.Second,
 		SessionCache:       sessionCache,
 	}
-	accounts := account.New(store, pubSub)
+	accounts := account.New(store, pubSub, cfg.LoginAlertSecureLink)
 
 	ipm, err := InitializeIdentityManager(
 		ctx,

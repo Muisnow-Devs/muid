@@ -21,8 +21,8 @@ import (
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/clientmeta"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
-	"sanzi.io/muid/pkg/localetime"
 	"sanzi.io/muid/pkg/log"
 )
 
@@ -66,11 +66,7 @@ func (s *Service) StartAuthSession(
 		return nil, status.Error(codes.InvalidArgument, err.Error())
 	}
 
-	locale := strings.TrimSpace(req.GetLocale())
-	timezone := strings.TrimSpace(req.GetTimezone())
-	if timezone != "" && !localetime.ValidTimezone(timezone) {
-		return nil, status.Error(codes.InvalidArgument, "timezone must be a valid IANA time zone")
-	}
+	meta, _ := clientmeta.FromContext(ctx)
 
 	prov, err := s.idm.GetProvider(providerName)
 	if err != nil {
@@ -82,8 +78,7 @@ func (s *Service) StartAuthSession(
 		Identifier:       strings.TrimSpace(req.GetIdentifier()),
 		Intent:           protoIntent(req.GetIntent()),
 		LinkSessionToken: linkSessionToken,
-		Locale:           locale,
-		Timezone:         timezone,
+		Client:           meta,
 	})
 	if err != nil {
 		return nil, mapStartError(ctx, err)

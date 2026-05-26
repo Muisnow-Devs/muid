@@ -116,8 +116,7 @@ func (p *OIDCIdentityProvider) Start(
 		OAuthState:       state,
 		PKCECodeVerifier: verifier,
 	})
-	store.Locale = input.Locale
-	store.Timezone = input.Timezone
+	session.ApplyClientMeta(&store, input.Client)
 
 	sess, err := p.transitionStore.Create(ctx, p.providerName, store)
 	if err != nil {

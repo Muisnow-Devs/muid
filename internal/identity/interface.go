@@ -4,6 +4,7 @@ import (
 	"context"
 
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
+	"sanzi.io/muid/pkg/clientmeta"
 )
 
 type StepType string
@@ -35,10 +36,8 @@ type StartInput struct {
 	Intent     AuthIntent
 	// LinkSessionToken is the wire session token (selector.validator) required for linking flows.
 	LinkSessionToken string
-	// Locale is the client BCP-47 locale for outbound mail; empty defaults to "en".
-	Locale string
-	// Timezone is an IANA time zone for outbound mail; empty means UTC.
-	Timezone string
+	// Client carries locale, timezone, and device context from pkg/clientmeta at session start.
+	Client clientmeta.ClientMeta
 	Metadata map[string]any
 }
 
@@ -80,8 +79,12 @@ type AuthenticatedIdentity struct {
 
 // LoginCompletionContext holds supplementary data for post-login actions (e.g. outbound mail).
 type LoginCompletionContext struct {
-	Locale   string
-	Timezone string
+	Locale     string
+	Timezone   string
+	Device     string
+	Location   string
+	UserAgent string
+	IPAddress string
 }
 
 // RegisterRequired carries identity claims for the login flow to provision an account.

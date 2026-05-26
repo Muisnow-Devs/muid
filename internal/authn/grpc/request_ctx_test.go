@@ -8,11 +8,13 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/clientmeta"
 )
 
 func validWireToken(t *testing.T) string {
@@ -177,6 +179,71 @@ func TestAuthnRequestContextInterceptor_revokeFederatedWireSession(t *testing.T)
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAuthnRequestContextInterceptor_startClientMeta(t *testing.T) {
+	t.Parallel()
+
+	interceptor := AuthnRequestContextInterceptor()
+	req := &pb.StartAuthSessionRequest{}
+
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(
+			clientmeta.LocaleMetadataKey, "zh-TW",
+			clientmeta.TimezoneMetadataKey, "Asia/Taipei",
+			clientmeta.DeviceMetadataKey, "Chrome on macOS",
+			clientmeta.LocationMetadataKey, "Taipei, TW",
+			clientmeta.ClientIPMetadataKey, "203.0.113.9",
+		),
+	)
+
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
+	_, err := interceptor(
+		ctx,
+		req,
+		info,
+		func(ctx context.Context, _ any) (any, error) {
+			meta, ok := clientmeta.FromContext(ctx)
+			if !ok {
+				t.Fatal("missing client meta on context")
+			}
+			if meta.Locale != "zh-TW" || meta.Timezone != "Asia/Taipei" {
+				t.Fatalf("locale/timezone: %+v", meta)
+			}
+			if meta.Device != "Chrome on macOS" || meta.Location != "Taipei, TW" {
+				t.Fatalf("device: %+v", meta)
+			}
+			if meta.IPAddress != "203.0.113.9" {
+				t.Fatalf("ip: %q", meta.IPAddress)
+			}
+			return nil, nil
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAuthnRequestContextInterceptor_startInvalidTimezone(t *testing.T) {
+	t.Parallel()
+
+	interceptor := AuthnRequestContextInterceptor()
+	req := &pb.StartAuthSessionRequest{}
+
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(clientmeta.TimezoneMetadataKey, "Invalid/Zone"),
+	)
+
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
+	_, err := interceptor(ctx, req, info, func(context.Context, any) (any, error) {
+		t.Fatal("handler should not run")
+		return nil, nil
+	})
+	if status.Code(err) != codes.InvalidArgument {
+		t.Fatalf("code: got %v", status.Code(err))
 	}
 }
 

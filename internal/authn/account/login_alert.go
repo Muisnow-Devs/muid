@@ -16,11 +16,10 @@ import (
 
 // LoginAlertDetails carries optional client context for login-alert mail templates.
 type LoginAlertDetails struct {
-	IPAddress  string
-	Location   string
-	Device     string
-	UserAgent  string
-	SecureLink string
+	IPAddress string
+	Location  string
+	Device    string
+	UserAgent string
 }
 
 // LoginNotifier publishes login-alert mail events after successful authentication.
@@ -34,8 +33,9 @@ type LoginNotifier interface {
 }
 
 type loginAlertService struct {
-	store  *Store
-	pubSub pubsub.PubSub
+	store      *Store
+	pubSub     pubsub.PubSub
+	secureLink string
 }
 
 // NotifyLoginCompleted publishes mail.send.login_alert for the user's email.
@@ -62,13 +62,14 @@ func (l *loginAlertService) NotifyLoginCompleted(
 		return nil
 	}
 
-	return publishLoginAlert(l.pubSub, email, mailPrefs, details)
+	return publishLoginAlert(l.pubSub, email, mailPrefs, l.secureLink, details)
 }
 
 func publishLoginAlert(
 	pub pubsub.PubSub,
 	email string,
 	mailPrefs MailDeliveryPrefs,
+	secureLink string,
 	details LoginAlertDetails,
 ) error {
 	now := time.Now().UTC()
@@ -82,7 +83,7 @@ func publishLoginAlert(
 	ev.SetLocation(details.Location)
 	ev.SetDevice(details.Device)
 	ev.SetUserAgent(details.UserAgent)
-	ev.SetSecureLink(details.SecureLink)
+	ev.SetSecureLink(secureLink)
 	ev.SetOccurredAt(timestamppb.New(now))
 	ev.SetCreatedAt(timestamppb.New(now))
 

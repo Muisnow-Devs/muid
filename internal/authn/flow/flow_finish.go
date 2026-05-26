@@ -156,7 +156,7 @@ func (s *Service) notifyLoginCompleted(
 		ctx,
 		uid,
 		mailDeliveryPrefs(completion),
-		account.LoginAlertDetails{},
+		loginAlertDetails(completion),
 	)
 	if err != nil {
 		log.LogUnexpected(ctx, "authn publish login alert", err.Error())
@@ -170,6 +170,18 @@ func mailDeliveryPrefs(completion *identity.LoginCompletionContext) account.Mail
 	return account.MailDeliveryPrefs{
 		Locale:   completion.Locale,
 		Timezone: completion.Timezone,
+	}
+}
+
+func loginAlertDetails(completion *identity.LoginCompletionContext) account.LoginAlertDetails {
+	if completion == nil {
+		return account.LoginAlertDetails{}
+	}
+	return account.LoginAlertDetails{
+		IPAddress: completion.IPAddress,
+		Location:  completion.Location,
+		Device:    completion.Device,
+		UserAgent: completion.UserAgent,
 	}
 }
 

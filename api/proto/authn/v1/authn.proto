@@ -32,10 +32,10 @@ message StartAuthSessionRequest {
   muid.authn.v1.basic.AuthIntent intent = 3;
   // Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
   muid.authn.v1.session.SessionToken session_token = 4;
-  // Client locale for mail templates (BCP-47); empty defaults to "en".
-  string locale = 5 [(buf.validate.field).string.max_len = 32];
-  // IANA time zone for mail timestamps (e.g. "Asia/Taipei"); empty means UTC.
-  string timezone = 6 [(buf.validate.field).string.max_len = 64];
+  // Client locale, timezone, device context, and IP are gRPC metadata only (see pkg/clientmeta):
+  // x-client-locale, x-client-timezone, x-client-device, x-client-location,
+  // x-client-user-agent, x-client-ip (set by the gateway). Login-alert secure_link is
+  // AUTHN_LOGIN_ALERT_SECURE_LINK, not client metadata.
 }
 
 message StartAuthSessionResponse {

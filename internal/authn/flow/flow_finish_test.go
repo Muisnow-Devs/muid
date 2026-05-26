@@ -3,6 +3,7 @@ package flow
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	pb "sanzi.io/muid/api/proto/authn/v1"
@@ -77,6 +78,10 @@ func (stubSessionIssuer) ResolveSessionToken(
 }
 
 func (stubSessionIssuer) RevokeSessionToken(context.Context, string) error {
+	panic("not used")
+}
+
+func (stubSessionIssuer) SessionCreatedAt(context.Context, uuid.UUID) (time.Time, error) {
 	panic("not used")
 }
 

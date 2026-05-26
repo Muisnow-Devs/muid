@@ -182,6 +182,7 @@ func (p *OIDCIdentityProvider) Continue(
 	)
 	if err != nil {
 		if errors.Is(err, idn.ErrOIDCManualAccountLinkingRequired) {
+			p.transitionStore.Delete(ctx, sess.Id) // clean up transition since we won't be able to continue with it
 			return idn.StepResult{}, err
 		}
 		return idn.StepResult{}, errors.Join(

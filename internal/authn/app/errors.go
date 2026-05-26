@@ -7,7 +7,7 @@ type OIDCProviderInitError struct {
 }
 
 func (e *OIDCProviderInitError) Error() string {
-	return "authn app: create OIDC provider " + e.Name
+	return "authn app: create OIDC provider " + e.Name + ": " + e.Err.Error()
 }
 
 func (e *OIDCProviderInitError) Unwrap() error { return e.Err }

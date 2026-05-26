@@ -15,8 +15,6 @@ var ErrOIDCClientConfigRequired = errors.New(
 
 type oidcClientJSON struct {
 	Provider     string              `json:"provider"`
-	Key          string              `json:"key"`
-	Name         string              `json:"name"`
 	Endpoint     string              `json:"endpoint"`
 	ClientID     string              `json:"client_id"`
 	ClientSecret string              `json:"client_secret"`
@@ -69,7 +67,7 @@ func parseOIDCClientsJSON(raw string) (OIDCClients, error) {
 
 func (c oidcClientJSON) toOIDCProviderConfig() (identity.OIDCProviderConfig, error) {
 	cfg := identity.OIDCProviderConfig{
-		Name:         utils.FirstNonEmpty(c.Provider, c.Key, c.Name),
+		Name:         c.Provider,
 		Endpoint:     strings.TrimSpace(c.Endpoint),
 		ClientID:     strings.TrimSpace(c.ClientID),
 		ClientSecret: strings.TrimSpace(c.ClientSecret),

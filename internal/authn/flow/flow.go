@@ -64,6 +64,10 @@ func (s *Service) StartAuthSession(
 	req *pb.StartAuthSessionRequest,
 	linkSessionToken string,
 ) (*pb.StartAuthSessionResponse, error) {
+	if err := s.validateStartAuthenticatedIntent(ctx, req.GetIntent(), linkSessionToken); err != nil {
+		return nil, err
+	}
+
 	providerName, err := providerNameForMethod(
 		req.GetMethod(),
 		strings.TrimSpace(req.GetIdentifier()),
@@ -145,6 +149,32 @@ func (s *Service) ContinueAuthSession(
 	}
 
 	return s.finishAuthStep(ctx, req, sess, step, tid, linkSessionToken)
+}
+
+func (s *Service) validateStartAuthenticatedIntent(
+	ctx context.Context,
+	intent basic.AuthIntent,
+	linkSessionToken string,
+) error {
+	if intent == basic.AuthIntent_AUTH_INTENT_LOGIN {
+		return nil
+	}
+
+	wire := strings.TrimSpace(linkSessionToken)
+	if wire == "" {
+		return mapStartError(ctx, identity.ErrLinkUnauthorized)
+	}
+
+	_, err := s.sessions.ResolveSessionToken(ctx, wire)
+	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
+		return mapStartError(ctx, identity.ErrLinkUnauthorized)
+	}
+	if err != nil {
+		log.LogUnexpected(ctx, "authn start resolve session", err.Error())
+		return grpcutils.GRPCInternalError()
+	}
+
+	return nil
 }
 
 func providerNameForMethod(m basic.AuthMethod, identifier string) (string, error) {

@@ -1,5 +1,7 @@
 package flow
 
+// TODO: Move to shared package if we need to share these error codes across multiple services.
+
 // Stable machine-oriented error_code values for ContinueAuthSessionResponse failures.
 const (
 	ErrCodeOIDCManualLinkRequired   = "muid.authn.oidc_manual_account_linking_required"

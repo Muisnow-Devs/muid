@@ -17,7 +17,10 @@ import (
 
 // UpdateProfileRequest mask paths use proto snake_case with prefix:
 //
-//	identity.<field>  e.g. identity.email, identity.locale, identity.name, identity.username
+//	identity.<field>  e.g. identity.email, identity.locale, identity.name, identity.username, identity.bio
+//
+// Patchable identity paths must be registered in profilegrpc.profilePatchRegistry; each path
+// that publishes profile.change events also needs a GetProfileResponse segment below.
 //
 // Paths are relative to muid.profile.v1.UpdateProfileRequest (the identity field is optional;
 // mutators still require a non-nil identity message when a masked path needs payload values).
@@ -159,6 +162,8 @@ func updateMaskPathToGetProfileSegment(canon string) (string, error) {
 			return "display_name", nil
 		case "picture":
 			return "avatar_url", nil
+		case "bio":
+			return "bio", nil
 		default:
 			return "", fmt.Errorf(
 				"%w: identity path %q has no GetProfileResponse mapping",

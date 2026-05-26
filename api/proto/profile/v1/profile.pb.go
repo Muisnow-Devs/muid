@@ -231,6 +231,7 @@ type GetProfileResponse struct {
 	xxx_hidden_Locale           string                 `protobuf:"bytes,6,opt,name=locale,proto3"`
 	xxx_hidden_AvatarObjectKey  string                 `protobuf:"bytes,7,opt,name=avatar_object_key,json=avatarObjectKey,proto3"`
 	xxx_hidden_Timezone         string                 `protobuf:"bytes,9,opt,name=timezone,proto3"`
+	xxx_hidden_Bio              string                 `protobuf:"bytes,10,opt,name=bio,proto3"`
 	xxx_hidden_OriginalIdentity *string                `protobuf:"bytes,8,opt,name=original_identity,json=originalIdentity,proto3,oneof"`
 	XXX_raceDetectHookData      protoimpl.RaceDetectHookData
 	XXX_presence                [1]uint32
@@ -319,6 +320,13 @@ func (x *GetProfileResponse) GetTimezone() string {
 	return ""
 }
 
+func (x *GetProfileResponse) GetBio() string {
+	if x != nil {
+		return x.xxx_hidden_Bio
+	}
+	return ""
+}
+
 func (x *GetProfileResponse) GetOriginalIdentity() string {
 	if x != nil {
 		if x.xxx_hidden_OriginalIdentity != nil {
@@ -361,20 +369,24 @@ func (x *GetProfileResponse) SetTimezone(v string) {
 	x.xxx_hidden_Timezone = v
 }
 
+func (x *GetProfileResponse) SetBio(v string) {
+	x.xxx_hidden_Bio = v
+}
+
 func (x *GetProfileResponse) SetOriginalIdentity(v string) {
 	x.xxx_hidden_OriginalIdentity = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 8, 9)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 9, 10)
 }
 
 func (x *GetProfileResponse) HasOriginalIdentity() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 8)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 9)
 }
 
 func (x *GetProfileResponse) ClearOriginalIdentity() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 8)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 9)
 	x.xxx_hidden_OriginalIdentity = nil
 }
 
@@ -390,6 +402,8 @@ type GetProfileResponse_builder struct {
 	AvatarObjectKey string
 	// IANA time zone (e.g. "Asia/Taipei"); empty means UTC for mail display.
 	Timezone string
+	// User biography; mirrors IdentityInformation.bio / update_mask path identity.bio.
+	Bio string
 	// This is for backwards compatibility with the event schema.
 	// Newer account shouldn't have this field populated.
 	OriginalIdentity *string
@@ -407,8 +421,9 @@ func (b0 GetProfileResponse_builder) Build() *GetProfileResponse {
 	x.xxx_hidden_Locale = b.Locale
 	x.xxx_hidden_AvatarObjectKey = b.AvatarObjectKey
 	x.xxx_hidden_Timezone = b.Timezone
+	x.xxx_hidden_Bio = b.Bio
 	if b.OriginalIdentity != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 8, 9)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 9, 10)
 		x.xxx_hidden_OriginalIdentity = b.OriginalIdentity
 	}
 	return m0
@@ -496,7 +511,7 @@ type UpdateProfileRequest_builder struct {
 
 	// Authenticated principal is carried via gRPC metadata (x-authn-user-id).
 	// Mask paths are relative to this message: proto snake_case prefix `identity.` for
-	// IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username").
+	// IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username", "identity.bio").
 	// JSON clients may send camelCase in the second segment (e.g. "identity.emailVerified");
 	// the server normalizes to canonical snake_case paths.
 	UpdateMask *fieldmaskpb.FieldMask
@@ -865,7 +880,7 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"\x15CreateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"-\n" +
 	"\x11GetProfileRequest\x12\x18\n" +
-	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\xe7\x02\n" +
+	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"\x83\x03\n" +
 	"\x12GetProfileResponse\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05email\x18\x02 \x01(\tR\x05email\x12!\n" +
@@ -875,7 +890,9 @@ const file_profile_v1_profile_proto_rawDesc = "" +
 	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12\x16\n" +
 	"\x06locale\x18\x06 \x01(\tR\x06locale\x12*\n" +
 	"\x11avatar_object_key\x18\a \x01(\tR\x0favatarObjectKey\x12\x1a\n" +
-	"\btimezone\x18\t \x01(\tR\btimezone\x120\n" +
+	"\btimezone\x18\t \x01(\tR\btimezone\x12\x1a\n" +
+	"\x03bio\x18\n" +
+	" \x01(\tB\b\xbaH\x05r\x03\x18\x80\bR\x03bio\x120\n" +
 	"\x11original_identity\x18\b \x01(\tH\x00R\x10originalIdentity\x88\x01\x01B\x14\n" +
 	"\x12_original_identity\"\xb3\x01\n" +
 	"\x14UpdateProfileRequest\x12;\n" +

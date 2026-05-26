@@ -154,6 +154,7 @@ func (g *GRPCHandler) GetProfile(
 	resp.SetAvatarUrl(avatarURL)
 	resp.SetLocale(locale)
 	resp.SetTimezone(strings.TrimSpace(p.Timezone))
+	resp.SetBio(strings.TrimSpace(p.Biography))
 	resp.SetAvatarObjectKey(objectKey)
 
 	if p.Edges.OriginalIdentity != nil {
@@ -335,6 +336,9 @@ func (g *GRPCHandler) buildProfileChangedClaims(
 				ch.SetPicture(avatarURL)
 				setAny = true
 			}
+		case "bio":
+			ch.SetBio(strings.TrimSpace(p.Biography))
+			setAny = true
 		}
 	}
 

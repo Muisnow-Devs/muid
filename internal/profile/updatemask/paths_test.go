@@ -18,6 +18,8 @@ func TestCanonicalProfilePath(t *testing.T) {
 		{" identity.givenName ", "identity.given_name", nil},
 		{"IDENTITY.USERNAME", "identity.username", nil},
 		{"identity.locale", "identity.locale", nil},
+		{"identity.bio", "identity.bio", nil},
+		{"identity.Bio", "identity.bio", nil},
 		{"identity.email", "identity.email", nil},
 		{"Identity.EmailVerified", "identity.email_verified", nil},
 		{"identity.name.extra", "", ErrUnknownPath},
@@ -97,6 +99,7 @@ func TestCanonicalGetProfileResponsePath(t *testing.T) {
 		{"displayName", "display_name", nil},
 		{"avatar_url", "avatar_url", nil},
 		{"avatarUrl", "avatar_url", nil},
+		{"bio", "bio", nil},
 		{"identity.display_name", "", ErrUnknownPath},
 		{"", "", ErrUnknownPath},
 	}
@@ -146,6 +149,16 @@ func TestGetProfileResponsePathsFromUpdateRequestPaths(t *testing.T) {
 			if got[i] != want[i] {
 				t.Fatalf("got %v want %v", got, want)
 			}
+		}
+	})
+	t.Run("identity bio maps to bio", func(t *testing.T) {
+		t.Parallel()
+		got, err := GetProfileResponsePathsFromUpdateRequestPaths([]string{"identity.bio"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != 1 || got[0] != "bio" {
+			t.Fatalf("got %v", got)
 		}
 	})
 	t.Run("identity name maps to display_name", func(t *testing.T) {

@@ -98,6 +98,114 @@ func (stubSessionIssuer) AuthenticatedPrincipalFromResolved(
 	panic("not used")
 }
 
+// pendingClaimsRegisterProvider simulates a login Continue that persists register claims
+// before the flow layer provisions the user.
+type pendingClaimsRegisterProvider struct {
+	name            string
+	finishUserID    string
+	transitionStore session.AuthTransitionStore
+}
+
+func (s *pendingClaimsRegisterProvider) Name() string { return s.name }
+
+func (s *pendingClaimsRegisterProvider) Start(
+	context.Context,
+	idpkg.StartInput,
+) (idpkg.StepResult, error) {
+	return idpkg.StepResult{}, nil
+}
+
+func (s *pendingClaimsRegisterProvider) Continue(
+	ctx context.Context,
+	input idpkg.ContinueInput,
+) (idpkg.StepResult, error) {
+	if idpkg.FinishRegisterRequested(input.Payload) {
+		sess, err := s.transitionStore.Get(ctx, input.TransitionId)
+		if err != nil {
+			return idpkg.StepResult{}, err
+		}
+		pending, ok := sess.Store.PendingRegisterState()
+		if !ok || pending.Claims.Email == "" {
+			return idpkg.StepResult{}, idpkg.ErrInvalidSessionState
+		}
+		return idpkg.StepResult{
+			Type: idpkg.StepAuthenticated,
+			Authenticated: &idpkg.AuthenticatedIdentity{
+				UserID: s.finishUserID,
+			},
+		}, nil
+	}
+	return idpkg.StepResult{}, nil
+}
+
+func TestFinishAuthStep_RegisterRequired_preservesPendingClaims(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	provisioned := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+	prov := &pendingClaimsRegisterProvider{
+		name:            "email",
+		finishUserID:    provisioned.String(),
+		transitionStore: transitionStore,
+	}
+	idm := idpkg.NewIdentityManager(transitionStore, prov)
+
+	staleSess, err := transitionStore.Create(
+		ctx,
+		"email",
+		session.EmailOTPStore(session.StepStart, &session.EmailOTPFlow{
+			Email: "new@example.com",
+		}),
+	)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	claims := session.RegisterPendingClaims{
+		Email:         "new@example.com",
+		EmailVerified: true,
+	}
+	err = transitionStore.Update(
+		ctx,
+		staleSess.Id,
+		staleSess.Store.WithRegisterPending(claims),
+	)
+	if err != nil {
+		t.Fatalf("persist register pending: %v", err)
+	}
+
+	protoClaims := &claimspb.IdentityInformation{}
+	protoClaims.SetEmail("new@example.com")
+	protoClaims.SetEmailVerified(true)
+
+	svc := NewService(Dependencies{
+		IdentityManager: idm,
+		TransitionStore: transitionStore,
+		Accounts: &account.Accounts{
+			Provision: &stubProvisioner{uid: provisioned},
+			Session:   &stubSessionIssuer{},
+		},
+	})
+
+	req := &pb.ContinueAuthSessionRequest{}
+	req.SetTransitionId(staleSess.Id)
+
+	resp, err := svc.finishAuthStep(ctx, req, staleSess, idpkg.StepResult{
+		Type: idpkg.StepRegisterRequired,
+		RegisterRequired: &idpkg.RegisterRequired{
+			Identity: protoClaims,
+		},
+	}, staleSess.Id, "")
+	if err != nil {
+		t.Fatalf("finishAuthStep: %v", err)
+	}
+	if resp == nil || !resp.HasAuthSuccess() {
+		t.Fatal("expected auth success response")
+	}
+}
+
 func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.T) {
 	t.Parallel()
 
@@ -108,15 +216,27 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 	prov := &stubRegisterProvider{name: "email", finishUserID: provisioned.String()}
 	idm := idpkg.NewIdentityManager(transitionStore, prov)
 
-	sess, err := transitionStore.Create(
+	staleSess, err := transitionStore.Create(
 		ctx,
 		"email",
-		session.EmailOTPStore(session.StepRegister, &session.EmailOTPFlow{
+		session.EmailOTPStore(session.StepStart, &session.EmailOTPFlow{
 			Email: "new@example.com",
 		}),
 	)
 	if err != nil {
 		t.Fatalf("create transition: %v", err)
+	}
+
+	err = transitionStore.Update(
+		ctx,
+		staleSess.Id,
+		staleSess.Store.WithRegisterPending(session.RegisterPendingClaims{
+			Email:         "new@example.com",
+			EmailVerified: true,
+		}),
+	)
+	if err != nil {
+		t.Fatalf("persist register pending: %v", err)
 	}
 
 	claims := &claimspb.IdentityInformation{}
@@ -133,14 +253,14 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 	})
 
 	req := &pb.ContinueAuthSessionRequest{}
-	req.SetTransitionId(sess.Id)
+	req.SetTransitionId(staleSess.Id)
 
-	resp, err := svc.finishAuthStep(ctx, req, sess, idpkg.StepResult{
+	resp, err := svc.finishAuthStep(ctx, req, staleSess, idpkg.StepResult{
 		Type: idpkg.StepRegisterRequired,
 		RegisterRequired: &idpkg.RegisterRequired{
 			Identity: claims,
 		},
-	}, sess.Id, "")
+	}, staleSess.Id, "")
 	if err != nil {
 		t.Fatalf("finishAuthStep: %v", err)
 	}
@@ -151,12 +271,13 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 		t.Fatal("expected auth success response")
 	}
 
-	updated, err := transitionStore.Get(ctx, sess.Id)
+	updated, err := transitionStore.Get(ctx, staleSess.Id)
 	if err != nil {
 		t.Fatalf("get transition after provision: %v", err)
 	}
 	pending, ok := updated.Store.PendingRegisterState()
 	if !ok || pending.ProvisionedUserID != provisioned.String() ||
+		pending.Claims.Email != "new@example.com" ||
 		updated.Store.Step != session.StepFinish {
 		t.Fatalf("after provision: step=%s ok=%v pending=%+v", updated.Store.Step, ok, pending)
 	}

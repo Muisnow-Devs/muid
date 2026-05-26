@@ -52,7 +52,12 @@ func (s *Service) completeRegisterRequired(
 		return nil, err
 	}
 
-	store := sess.Store.WithProvisionedUserID(uid.String())
+	current, err := s.transitionStore.Get(ctx, tid)
+	if err != nil {
+		return nil, mapTransitionLoadError(ctx, err)
+	}
+
+	store := current.Store.WithProvisionedUserID(uid.String())
 	err = s.transitionStore.Update(ctx, tid, store)
 	if err != nil {
 		log.LogUnexpected(ctx, "authn update transition after provision", err.Error())

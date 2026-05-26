@@ -50,6 +50,8 @@ message GetProfileResponse {
   string avatar_object_key = 7;
   // IANA time zone (e.g. "Asia/Taipei"); empty means UTC for mail display.
   string timezone = 9;
+  // User biography; mirrors IdentityInformation.bio / update_mask path identity.bio.
+  string bio = 10 [(buf.validate.field).string.max_len = 1024];
 
   // This is for backwards compatibility with the event schema.
   // Newer account shouldn't have this field populated.
@@ -60,7 +62,7 @@ message UpdateProfileRequest {
   reserved 1;
   // Authenticated principal is carried via gRPC metadata (x-authn-user-id).
   // Mask paths are relative to this message: proto snake_case prefix `identity.` for
-  // IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username").
+  // IdentityInformation fields (e.g. "identity.email", "identity.name", "identity.username", "identity.bio").
   // JSON clients may send camelCase in the second segment (e.g. "identity.emailVerified");
   // the server normalizes to canonical snake_case paths.
   google.protobuf.FieldMask update_mask = 2;

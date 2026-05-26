@@ -23,12 +23,13 @@ const (
 type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 
-	Port        int    `envconfig:"PORT"         default:"5314"`
-	DatabaseURL string `envconfig:"DATABASE_URL"                required:"true"`
-	RedisURL    string `envconfig:"REDIS_URL"                   required:"true"`
-	NATSURL     string `envconfig:"NATS_URL"                    required:"true"`
+	Port          int    `envconfig:"PORT"           default:"5314"`
+	DatabaseURL   string `envconfig:"DATABASE_URL"                required:"true"`
+	RedisAddr     string `envconfig:"REDIS_ADDR"                  required:"true"`
+	RedisDatabase int    `envconfig:"REDIS_DATABASE" default:"0"`
+	NATSURL       string `envconfig:"NATS_URL"                    required:"true"`
 
-	OTPSecretKey string `envconfig:"OTP_SECRET_KEY"            required:"true"`
+	OTPSecretKey string `envconfig:"OTP_SECRET_KEY"               required:"true"`
 	// OTPSendCooldownSeconds enforces a minimum delay between OTP sends for the same
 	// auth transition (same transition id) and for the same normalized email recipient
 	// across transitions. Zero disables send cooldown checks.
@@ -50,7 +51,7 @@ type Config struct {
 
 	// ProfileGRPCAddr is the Profile gRPC authority (host:port). Leave empty to skip dialing (signup flows will fail
 	// until set).
-	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"            default:""`
+	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"            default:"localhost:5324"`
 	// ProfileGRPCTimeoutSeconds bounds each outbound Profile RPC from authn.
 	ProfileGRPCTimeoutSeconds int `envconfig:"PROFILE_GRPC_TIMEOUT_SECONDS" default:"10"`
 

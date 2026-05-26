@@ -15,10 +15,11 @@ type RedisKVStore struct {
 	client *goredis.Client
 }
 
-// NewRedisKVStore opens a Redis client at redisURL (host:port).
-func NewRedisKVStore(redisURL string) KVStore {
+// NewRedisKVStore opens a Redis client at redisAddr (host:port).
+func NewRedisKVStore(redisAddr string, database int) KVStore {
 	client := goredis.NewClient(&goredis.Options{
-		Addr: redisURL,
+		Addr: redisAddr,
+		DB:   database,
 	})
 	return &RedisKVStore{client: client}
 }

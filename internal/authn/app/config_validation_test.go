@@ -44,7 +44,7 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 			cfg: func() Config {
 				cfg := validProductionConfig()
 				cfg.DatabaseURL = "postgres://user:pass@localhost:5432/authn"
-				cfg.RedisURL = "redis://localhost:6379/0"
+				cfg.RedisAddr = "redis://localhost:6379/0"
 				cfg.NATSURL = "nats://localhost:4222"
 				cfg.ProfileGRPCAddr = "localhost:5324"
 				cfg.PasskeyRPID = "localhost"
@@ -111,7 +111,7 @@ func TestLoadConfigDecodesStructuredAuthnConfig(t *testing.T) {
 func validProductionConfig() Config {
 	return Config{
 		DatabaseURL:           "postgres://user:pass@db.example.com:5432/authn",
-		RedisURL:              "redis://redis.example.com:6379/0",
+		RedisAddr:             "redis://redis.example.com:6379/0",
 		NATSURL:               "nats://nats.example.com:4222",
 		PasskeyRPID:           "app.example.com",
 		PasskeyRPOrigins:      authnconfig.PasskeyOrigins{"https://app.example.com"},

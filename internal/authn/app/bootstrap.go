@@ -23,7 +23,7 @@ import (
 
 // NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and the identity manager.
 func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
-	redisKV := redis.NewRedisKVStore(cfg.RedisURL)
+	redisKV := redis.NewRedisKVStore(cfg.RedisAddr, cfg.RedisDatabase)
 
 	otpSecret, err := hex.DecodeString(cfg.OTPSecretKey)
 	if err != nil {

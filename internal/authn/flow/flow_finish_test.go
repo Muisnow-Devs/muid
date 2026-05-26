@@ -31,6 +31,98 @@ func TestLoginAlertDetails_fromCompletion(t *testing.T) {
 	}
 }
 
+func TestLoginCompletionForAlert_prefersTransitionStore(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+
+	store := session.EmailOTPStore(
+		session.StepContinue,
+		&session.EmailOTPFlow{Email: "user@example.com"},
+	)
+	store.Device = "Chrome on macOS"
+	store.Location = "Taipei, TW"
+	store.IPAddress = "203.0.113.1"
+	store.Locale = "zh-TW"
+	store.Timezone = "Asia/Taipei"
+
+	sess, err := transitionStore.Create(ctx, "email", store)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	svc := NewService(Dependencies{TransitionStore: transitionStore})
+
+	got := svc.loginCompletionForAlert(ctx, sess.Id, &idpkg.LoginCompletionContext{
+		Device: "stale device",
+	})
+	if got == nil {
+		t.Fatal("expected completion")
+	}
+	if got.Device != "Chrome on macOS" || got.Location != "Taipei, TW" {
+		t.Fatalf("completion: %+v", got)
+	}
+	if got.IPAddress != "203.0.113.1" || got.Locale != "zh-TW" {
+		t.Fatalf("completion: %+v", got)
+	}
+}
+
+func TestAuthenticatedLoginResponse_loginAlertFromTransition(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	uid := uuid.MustParse("550e8400-e29b-41d4-a716-446655440010")
+
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+	store := session.EmailOTPStore(
+		session.StepContinue,
+		&session.EmailOTPFlow{Email: "user@example.com"},
+	)
+	store.Device = "Safari on iPhone"
+	store.Location = "Taipei, TW"
+	store.IPAddress = "198.51.100.2"
+	store.Locale = "en"
+	store.Timezone = "UTC"
+
+	sess, err := transitionStore.Create(ctx, "email", store)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	loginNotifier := &stubNotifier{}
+	svc := NewService(Dependencies{
+		TransitionStore: transitionStore,
+		Sessions:        &stubSessionIssuer{},
+		Notifier:        loginNotifier,
+	})
+
+	_, err = svc.authenticatedLoginResponse(ctx, sess.Id, &idpkg.AuthenticatedIdentity{
+		UserID: uid.String(),
+	}, nil)
+	if err != nil {
+		t.Fatalf("authenticatedLoginResponse: %v", err)
+	}
+	if loginNotifier.loginCalls != 1 {
+		t.Fatalf("notify calls: %d", loginNotifier.loginCalls)
+	}
+	if loginNotifier.loginUserID != uid {
+		t.Fatalf("notify user: %s", loginNotifier.loginUserID)
+	}
+	if loginNotifier.loginDetails.Device != "Safari on iPhone" ||
+		loginNotifier.loginDetails.IPAddress != "198.51.100.2" {
+		t.Fatalf("notify details: %+v", loginNotifier.loginDetails)
+	}
+	if loginNotifier.loginPrefs.Locale != "en" || loginNotifier.loginPrefs.Timezone != "UTC" {
+		t.Fatalf("notify prefs: %+v", loginNotifier.loginPrefs)
+	}
+
+	_, err = transitionStore.Get(ctx, sess.Id)
+	if err != session.ErrSessionNotFound {
+		t.Fatalf("expected transition deleted, got %v", err)
+	}
+}
+
 type stubRegisterProvider struct {
 	name         string
 	finishUserID string
@@ -377,7 +469,11 @@ func TestFinishAuthStep_OIDCLinkRegister_withoutContinueSessionTokenRejected(t *
 		t.Fatalf("expected link unauthorized failure, got %+v", resp)
 	}
 	if resp.GetAuthFailure().GetErrorCode() != ErrCodeLinkUnauthorized {
-		t.Fatalf("error_code: got %q want %q", resp.GetAuthFailure().GetErrorCode(), ErrCodeLinkUnauthorized)
+		t.Fatalf(
+			"error_code: got %q want %q",
+			resp.GetAuthFailure().GetErrorCode(),
+			ErrCodeLinkUnauthorized,
+		)
 	}
 }
 
@@ -395,6 +491,8 @@ func TestFinishAuthStep_OIDCLinkRegister_withMatchingSessionToken(t *testing.T) 
 	store := session.OIDCStore(session.StepRegister, &session.OIDCFlow{
 		OAuthState: "oauth-state",
 	}).WithAuthContext(string(idpkg.IntentLinkAccount), linkUser.String())
+	store.Locale = "zh-TW"
+	store.Timezone = "Asia/Taipei"
 
 	store = store.WithRegisterPending(session.RegisterPendingClaims{
 		Email:             "link@example.com",
@@ -415,10 +513,12 @@ func TestFinishAuthStep_OIDCLinkRegister_withMatchingSessionToken(t *testing.T) 
 	protoClaims.SetFederatedSubject("sub-link")
 
 	sessions := &stubLinkSessionResolver{userID: linkUser}
+	linkNotifier := &stubNotifier{}
 	svc := NewService(Dependencies{
 		IdentityManager: idm,
 		TransitionStore: transitionStore,
 		Sessions:        sessions,
+		Notifier:        linkNotifier,
 	})
 
 	req := &pb.ContinueAuthSessionRequest{}
@@ -448,6 +548,19 @@ func TestFinishAuthStep_OIDCLinkRegister_withMatchingSessionToken(t *testing.T) 
 	}
 	if gotWire != "issued.new.session.token" {
 		t.Fatalf("session_token: got %q want newly issued stub token", gotWire)
+	}
+	if linkNotifier.accountLinkedCalls != 1 {
+		t.Fatalf("account link notify calls: %d", linkNotifier.accountLinkedCalls)
+	}
+	if linkNotifier.accountLinkedUser != linkUser {
+		t.Fatalf("notify user_id: %s", linkNotifier.accountLinkedUser)
+	}
+	if linkNotifier.accountLinkedProv != "google" {
+		t.Fatalf("notify provider: %q", linkNotifier.accountLinkedProv)
+	}
+	if linkNotifier.accountLinkedPrefs.Locale != "zh-TW" ||
+		linkNotifier.accountLinkedPrefs.Timezone != "Asia/Taipei" {
+		t.Fatalf("notify mail prefs: %+v", linkNotifier.accountLinkedPrefs)
 	}
 
 	_, err = transitionStore.Get(ctx, sess.Id)
@@ -485,7 +598,11 @@ func TestLinkCompletedResponse_linkIntent_withoutWireRejected(t *testing.T) {
 		t.Fatalf("expected link unauthorized failure, got %+v", resp)
 	}
 	if resp.GetAuthFailure().GetErrorCode() != ErrCodeLinkUnauthorized {
-		t.Fatalf("error_code: got %q want %q", resp.GetAuthFailure().GetErrorCode(), ErrCodeLinkUnauthorized)
+		t.Fatalf(
+			"error_code: got %q want %q",
+			resp.GetAuthFailure().GetErrorCode(),
+			ErrCodeLinkUnauthorized,
+		)
 	}
 }
 
@@ -500,6 +617,8 @@ func TestLinkCompletedResponse_linkIntent_withRequestWire(t *testing.T) {
 	store := session.OIDCStore(session.StepContinue, &session.OIDCFlow{
 		OAuthState: "oauth-state",
 	}).WithAuthContext(string(idpkg.IntentLinkAccount), linkUser.String())
+	store.Locale = "en"
+	store.Timezone = "UTC"
 
 	sess, err := transitionStore.Create(ctx, "google", store)
 	if err != nil {
@@ -507,9 +626,11 @@ func TestLinkCompletedResponse_linkIntent_withRequestWire(t *testing.T) {
 	}
 
 	sessions := &stubLinkSessionResolver{userID: linkUser}
+	linkNotifier := &stubNotifier{}
 	svc := NewService(Dependencies{
 		TransitionStore: transitionStore,
 		Sessions:        sessions,
+		Notifier:        linkNotifier,
 	})
 
 	resp, err := svc.linkCompletedResponse(ctx, sess.Id, continueWire)
@@ -528,5 +649,15 @@ func TestLinkCompletedResponse_linkIntent_withRequestWire(t *testing.T) {
 	}
 	if gotWire != "issued.new.session.token" {
 		t.Fatalf("session_token: got %q want newly issued stub token", gotWire)
+	}
+	if linkNotifier.accountLinkedCalls != 1 {
+		t.Fatalf("account link notify calls: %d", linkNotifier.accountLinkedCalls)
+	}
+	if linkNotifier.accountLinkedUser != linkUser || linkNotifier.accountLinkedProv != "google" {
+		t.Fatalf(
+			"notify user/provider: %s / %q",
+			linkNotifier.accountLinkedUser,
+			linkNotifier.accountLinkedProv,
+		)
 	}
 }

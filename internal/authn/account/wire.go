@@ -15,7 +15,7 @@ func Wire(
 	Federated,
 	Passkey,
 	Session,
-	LoginNotifier,
+	Notifier,
 ) {
 	if store == nil {
 		store = &Store{}
@@ -24,9 +24,9 @@ func Wire(
 		NewEmailService(store),
 		NewOIDCService(store),
 		NewFederatedService(store),
-		NewPasskeyService(store, pubSub),
+		NewPasskeyService(store),
 		NewSessionService(store),
-		NewLoginAlertService(store, pubSub, loginAlertSecureLink)
+		NewNotifier(store, pubSub, loginAlertSecureLink)
 }
 
 func NewEmailService(store *Store) Email {
@@ -41,20 +41,20 @@ func NewFederatedService(store *Store) Federated {
 	return &federatedService{store: store}
 }
 
-func NewPasskeyService(store *Store, pubSub pubsub.PubSub) Passkey {
-	return &passkeyService{store: store, pubSub: pubSub}
+func NewPasskeyService(store *Store) Passkey {
+	return &passkeyService{store: store}
 }
 
 func NewSessionService(store *Store) Session {
 	return &sessionService{store: store}
 }
 
-func NewLoginAlertService(
+func NewNotifier(
 	store *Store,
 	pubSub pubsub.PubSub,
 	secureLink string,
-) LoginNotifier {
-	return &loginAlertService{
+) Notifier {
+	return &notifier{
 		store:      store,
 		pubSub:     pubSub,
 		secureLink: secureLink,

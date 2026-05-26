@@ -40,6 +40,10 @@ func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
 	original := EmailOTPStore(StepStart, &EmailOTPFlow{Email: "user@example.com"})
 	original.Locale = "zh-TW"
 	original.Timezone = "Asia/Taipei"
+	original.Device = "Chrome on macOS"
+	original.Location = "Taipei, TW"
+	original.UserAgent = "Mozilla/5.0"
+	original.IPAddress = "203.0.113.1"
 
 	data, err := json.Marshal(original)
 	if err != nil {
@@ -54,6 +58,12 @@ func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
 
 	if decoded.Locale != "zh-TW" || decoded.Timezone != "Asia/Taipei" {
 		t.Fatalf("mail delivery mismatch: locale=%q timezone=%q", decoded.Locale, decoded.Timezone)
+	}
+	if decoded.Device != "Chrome on macOS" || decoded.Location != "Taipei, TW" {
+		t.Fatalf("login alert context: device=%q location=%q", decoded.Device, decoded.Location)
+	}
+	if decoded.UserAgent != "Mozilla/5.0" || decoded.IPAddress != "203.0.113.1" {
+		t.Fatalf("login alert context: ua=%q ip=%q", decoded.UserAgent, decoded.IPAddress)
 	}
 	email, ok := decoded.EmailFlow()
 	if !ok || email.Email != "user@example.com" {

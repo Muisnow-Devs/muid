@@ -116,6 +116,8 @@ func (s *Service) authenticatedLoginResponse(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
+	completion = s.loginCompletionForAlert(ctx, tid, completion)
+
 	s.cleanTransition(ctx, tid)
 
 	resp := &pb.ContinueAuthSessionResponse{}
@@ -136,11 +138,11 @@ func (s *Service) notifyLoginCompleted(
 	uid uuid.UUID,
 	completion *identity.LoginCompletionContext,
 ) {
-	if s.loginAlert == nil {
+	if s.notifier == nil {
 		return
 	}
 
-	err := s.loginAlert.NotifyLoginCompleted(
+	err := s.notifier.NotifyLoginCompleted(
 		ctx,
 		uid,
 		mailDeliveryPrefs(completion),
@@ -158,6 +160,45 @@ func mailDeliveryPrefs(completion *identity.LoginCompletionContext) account.Mail
 	return account.MailDeliveryPrefs{
 		Locale:   completion.Locale,
 		Timezone: completion.Timezone,
+	}
+}
+
+func (s *Service) loginCompletionForAlert(
+	ctx context.Context,
+	tid string,
+	completion *identity.LoginCompletionContext,
+) *identity.LoginCompletionContext {
+	var fromStep session.MailClientContext
+	if completion != nil {
+		fromStep = session.MailClientContext{
+			Locale:    completion.Locale,
+			Timezone:  completion.Timezone,
+			Device:    completion.Device,
+			Location:  completion.Location,
+			UserAgent: completion.UserAgent,
+			IPAddress: completion.IPAddress,
+		}
+	}
+
+	sess, err := s.transitionStore.Get(ctx, tid)
+	if err != nil {
+		if !errors.Is(err, session.ErrSessionNotFound) {
+			log.LogUnexpected(ctx, "authn login alert load transition", err.Error())
+		}
+		if completion == nil {
+			return nil
+		}
+		return completion
+	}
+
+	merged := session.MergeMailClientContext(sess.Store.MailClientContext(), fromStep)
+	return &identity.LoginCompletionContext{
+		Locale:    merged.Locale,
+		Timezone:  merged.Timezone,
+		Device:    merged.Device,
+		Location:  merged.Location,
+		UserAgent: merged.UserAgent,
+		IPAddress: merged.IPAddress,
 	}
 }
 
@@ -183,8 +224,15 @@ func (s *Service) linkCompletedResponse(
 		return nil, grpcutils.GRPCInternalError()
 	}
 	linkUserID := ""
+	linkProvider := ""
+	linkMailPrefs := account.MailDeliveryPrefs{}
 	if err == nil {
 		_, linkUserID, _ = sess.Store.AuthContext()
+		linkProvider = strings.TrimSpace(sess.Provider)
+		linkMailPrefs = account.MailDeliveryPrefs{
+			Locale:   sess.Store.Locale,
+			Timezone: sess.Store.Timezone,
+		}
 		valErr := s.validateLinkContinueSession(ctx, sess, wire)
 		if valErr != nil {
 			return s.mapContinueError(ctx, tid, valErr)
@@ -239,5 +287,23 @@ func (s *Service) linkCompletedResponse(
 	authOK.SetResult(authResult)
 	resp.SetAuthSuccess(authOK)
 
+	s.notifyAccountLinked(ctx, res.UserID, linkProvider, linkMailPrefs)
+
 	return resp, nil
+}
+
+func (s *Service) notifyAccountLinked(
+	ctx context.Context,
+	userID uuid.UUID,
+	provider string,
+	mailPrefs account.MailDeliveryPrefs,
+) {
+	if s.notifier == nil {
+		return
+	}
+
+	err := s.notifier.NotifyAccountLinked(ctx, userID, provider, mailPrefs)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn publish account linked", err.Error())
+	}
 }

@@ -80,8 +80,12 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 
 		Flow json.RawMessage `json:"flow"`
 
-		Locale   string `json:"locale,omitempty"`
-		Timezone string `json:"timezone,omitempty"`
+		Locale    string `json:"locale,omitempty"`
+		Timezone  string `json:"timezone,omitempty"`
+		Device    string `json:"device,omitempty"`
+		Location  string `json:"location,omitempty"`
+		UserAgent string `json:"user_agent,omitempty"`
+		IPAddress string `json:"ip_address,omitempty"`
 
 		AuthIntent      string `json:"auth_intent,omitempty"`
 		LinkUserID      string `json:"link_user_id,omitempty"`
@@ -102,6 +106,10 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 	s.Step = raw.Step
 	s.Locale = raw.Locale
 	s.Timezone = raw.Timezone
+	s.Device = raw.Device
+	s.Location = raw.Location
+	s.UserAgent = raw.UserAgent
+	s.IPAddress = raw.IPAddress
 	s.AuthIntent = raw.AuthIntent
 	s.LinkUserID = raw.LinkUserID
 	s.LinkSessionWire = raw.LinkSessionWire

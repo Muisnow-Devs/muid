@@ -79,13 +79,13 @@ type InfraDependencies struct {
 	PubSub          pubsub.PubSub
 	IdentityManager *identity.IdentityManager
 
-	Provision  account.Provisioning
-	Email      account.Email
-	OIDC       account.OIDC
-	Federated  account.Federated
-	Passkey    account.Passkey
-	Sessions   account.Session
-	LoginAlert account.LoginNotifier
+	Provision account.Provisioning
+	Email     account.Email
+	OIDC      account.OIDC
+	Federated account.Federated
+	Passkey   account.Passkey
+	Sessions  account.Session
+	Notifier  account.Notifier
 
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn

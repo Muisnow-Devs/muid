@@ -81,7 +81,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		ProfileCallTimeout: time.Duration(cfg.ProfileGRPCTimeoutSeconds) * time.Second,
 		SessionCache:       sessionCache,
 	}
-	provision, email, oidc, federated, passkey, sessions, loginAlert := account.Wire(
+	provision, email, oidc, federated, passkey, sessions, notifier := account.Wire(
 		store,
 		pubSub,
 		cfg.LoginAlertSecureLink,
@@ -99,6 +99,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 			Federated: federated,
 			Passkey:   passkey,
 			Sessions:  sessions,
+			Notifier:  notifier,
 		},
 	)
 	if err != nil {
@@ -123,7 +124,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		Federated:       federated,
 		Passkey:         passkey,
 		Sessions:        sessions,
-		LoginAlert:      loginAlert,
+		Notifier:        notifier,
 		entClient:       entClient,
 		profileConn:     profileConn,
 	}, nil

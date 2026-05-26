@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
+	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/infra/mocked"
 	"sanzi.io/muid/internal/authn/account"
 	authnkv "sanzi.io/muid/internal/authn/kv"
@@ -100,6 +100,52 @@ func (stubLinkSessionResolver) AuthenticatedPrincipalFromResolved(
 	account.ResolvedSession,
 ) *sessionpb.AuthenticatedPrincipal {
 	panic("not used")
+}
+
+type stubNotifier struct {
+	loginCalls         int
+	loginUserID        uuid.UUID
+	loginPrefs         account.MailDeliveryPrefs
+	loginDetails       account.LoginAlertDetails
+	accountLinkedCalls int
+	accountLinkedUser  uuid.UUID
+	accountLinkedProv  string
+	accountLinkedPrefs account.MailDeliveryPrefs
+}
+
+func (s *stubNotifier) NotifyLoginCompleted(
+	_ context.Context,
+	userID uuid.UUID,
+	mailPrefs account.MailDeliveryPrefs,
+	details account.LoginAlertDetails,
+) error {
+	s.loginCalls++
+	s.loginUserID = userID
+	s.loginPrefs = mailPrefs
+	s.loginDetails = details
+	return nil
+}
+
+func (s *stubNotifier) NotifyAccountLinked(
+	_ context.Context,
+	userID uuid.UUID,
+	provider string,
+	mailPrefs account.MailDeliveryPrefs,
+) error {
+	s.accountLinkedCalls++
+	s.accountLinkedUser = userID
+	s.accountLinkedProv = provider
+	s.accountLinkedPrefs = mailPrefs
+	return nil
+}
+
+func (s *stubNotifier) NotifyPasskeyAdded(
+	context.Context,
+	uuid.UUID,
+	string,
+	account.MailDeliveryPrefs,
+) error {
+	return nil
 }
 
 func oidcRegisterRequired(provider, subject, email string) *identity.RegisterRequired {

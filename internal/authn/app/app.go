@@ -27,7 +27,7 @@ func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, erro
 		Email:                  infra.Email,
 		Federated:              infra.Federated,
 		Sessions:               infra.Sessions,
-		LoginAlert:             infra.LoginAlert,
+		Notifier:               infra.Notifier,
 		OTPSendCooldownSeconds: infra.GlobalConfig.OTPSendCooldownSeconds,
 	}
 	handler := authngrpc.NewGRPCHandler(
@@ -65,6 +65,7 @@ type IdentityServices struct {
 	Federated account.Federated
 	Passkey   account.Passkey
 	Sessions  account.Session
+	Notifier  account.Notifier
 }
 
 func InitializeIdentityManager(
@@ -84,7 +85,7 @@ func InitializeIdentityManager(
 		transitionStore,
 		svc.Passkey,
 		svc.Sessions,
-		pubSub,
+		svc.Notifier,
 		passkeyConfig,
 	)
 	if err != nil {

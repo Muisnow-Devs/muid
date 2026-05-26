@@ -33,7 +33,7 @@ type Service struct {
 	email                   account.Email
 	federated               account.Federated
 	sessions                account.Session
-	loginAlert              account.LoginNotifier
+	notifier                account.Notifier
 	otpResendCooldownMillis int64
 }
 
@@ -44,7 +44,7 @@ type Dependencies struct {
 	Email                  account.Email
 	Federated              account.Federated
 	Sessions               account.Session
-	LoginAlert             account.LoginNotifier
+	Notifier               account.Notifier
 	OTPSendCooldownSeconds int
 }
 
@@ -60,7 +60,7 @@ func NewService(deps Dependencies) *Service {
 		email:                   deps.Email,
 		federated:               deps.Federated,
 		sessions:                deps.Sessions,
-		loginAlert:              deps.LoginAlert,
+		notifier:                deps.Notifier,
 		otpResendCooldownMillis: int64(cooldownSec) * 1000,
 	}
 }
@@ -106,7 +106,12 @@ func (s *Service) StartAuthSession(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	err = s.persistAuthContext(ctx, step.TransitionId, protoIntent(req.GetIntent()), linkSessionToken)
+	err = s.persistAuthContext(
+		ctx,
+		step.TransitionId,
+		protoIntent(req.GetIntent()),
+		linkSessionToken,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -141,6 +146,12 @@ func (s *Service) ContinueAuthSession(
 		return nil, mapTransitionLoadError(ctx, err)
 	}
 
+	sess, err = s.refreshTransitionClientMeta(ctx, tid, sess)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn continue refresh client meta", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
 	err = s.validateLinkContinueSession(ctx, sess, linkSessionToken)
 	if err != nil {
 		return s.mapContinueError(ctx, tid, err)
@@ -173,7 +184,11 @@ func (s *Service) ContinueAuthSession(
 	case identity.StepRegisterRequired, identity.StepAuthenticated, identity.StepLinked:
 		return s.finishAuthStep(ctx, req, sess, step, tid, linkSessionToken)
 	default:
-		log.LogUnexpected(ctx, "authn continue invalid step type", fmt.Sprintf("invalid step type %v", step.Type))
+		log.LogUnexpected(
+			ctx,
+			"authn continue invalid step type",
+			fmt.Sprintf("invalid step type %v", step.Type),
+		)
 		return nil, grpcutils.GRPCInternalError()
 	}
 }
@@ -378,7 +393,10 @@ func proofToContinue(proof *proofpb.AuthProof) (identity.ContinueState, map[stri
 			out["credential_creation_response_json"] = s
 		}
 		if len(out) == 0 {
-			return "", nil, status.Error(codes.InvalidArgument, "passkey proof missing credential json")
+			return "", nil, status.Error(
+				codes.InvalidArgument,
+				"passkey proof missing credential json",
+			)
 		}
 		return identity.ContinueStateChallenge, out, nil
 	}
@@ -541,4 +559,24 @@ func protoIntent(i basic.AuthIntent) identity.AuthIntent {
 	default:
 		return identity.IntentLogin
 	}
+}
+
+func (s *Service) refreshTransitionClientMeta(
+	ctx context.Context,
+	tid string,
+	sess session.AuthSession,
+) (session.AuthSession, error) {
+	meta, ok := clientmeta.FromContext(ctx)
+	if !ok || meta == (clientmeta.ClientMeta{}) {
+		return sess, nil
+	}
+
+	store := sess.Store
+	session.ApplyClientMeta(&store, meta)
+	err := s.transitionStore.Update(ctx, tid, store)
+	if err != nil {
+		return sess, err
+	}
+	sess.Store = store
+	return sess, nil
 }

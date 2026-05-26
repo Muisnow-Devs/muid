@@ -11,14 +11,14 @@ import (
 	"sanzi.io/muid/pkg/shared/topics"
 )
 
-type loginAlertPubSub struct {
+type notifierPubSub struct {
 	topic   topics.Topic
 	payload []byte
 }
 
-func (s *loginAlertPubSub) Publish(topics.Topic, []byte) error { return nil }
+func (s *notifierPubSub) Publish(topics.Topic, []byte) error { return nil }
 
-func (s *loginAlertPubSub) PublishWithOptions(
+func (s *notifierPubSub) PublishWithOptions(
 	topic topics.Topic,
 	payload []byte,
 	_ pubsub.PublishOptions,
@@ -28,7 +28,7 @@ func (s *loginAlertPubSub) PublishWithOptions(
 	return nil
 }
 
-func (*loginAlertPubSub) Subscribe(
+func (*notifierPubSub) Subscribe(
 	context.Context,
 	topics.Topic,
 	pubsub.SubscribeOptions,
@@ -53,8 +53,8 @@ func TestNotifyLoginCompleted_publishesLoginAlert(t *testing.T) {
 		t.Fatalf("create user ref: %v", err)
 	}
 
-	pub := &loginAlertPubSub{}
-	svc := &loginAlertService{
+	pub := &notifierPubSub{}
+	svc := &notifier{
 		store:      &Store{DB: db},
 		pubSub:     pub,
 		secureLink: "https://example.com/security",
@@ -107,10 +107,76 @@ func TestNotifyLoginCompleted_nilPubSub_noOp(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	svc := &loginAlertService{store: &Store{}, pubSub: nil}
+	svc := &notifier{store: &Store{}, pubSub: nil}
 
 	err := svc.NotifyLoginCompleted(ctx, uuid.Nil, MailDeliveryPrefs{}, LoginAlertDetails{})
 	if err != nil {
 		t.Fatalf("NotifyLoginCompleted: %v", err)
+	}
+}
+
+func TestNotifyAccountLinked_publishesEvent(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db := openPasskeyTestDB(t)
+	defer db.Close()
+
+	userID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440088")
+	err := db.UserRef.Create().
+		SetID(userID).
+		SetEmail("linked@example.com").
+		Exec(ctx)
+	if err != nil {
+		t.Fatalf("create user ref: %v", err)
+	}
+
+	pub := &notifierPubSub{}
+	svc := &notifier{
+		store:  &Store{DB: db},
+		pubSub: pub,
+	}
+
+	err = svc.NotifyAccountLinked(
+		ctx,
+		userID,
+		"google",
+		MailDeliveryPrefs{Locale: "zh-TW", Timezone: "Asia/Taipei"},
+	)
+	if err != nil {
+		t.Fatalf("NotifyAccountLinked: %v", err)
+	}
+	if pub.topic != topics.TopicAccountLinked {
+		t.Fatalf("topic: got %q want %q", pub.topic, topics.TopicAccountLinked)
+	}
+
+	var ev mailpb.SendAccountLinkedEmailEvent
+	err = proto.Unmarshal(pub.payload, &ev)
+	if err != nil {
+		t.Fatalf("unmarshal: %v", err)
+	}
+	if ev.GetEmail() != "linked@example.com" {
+		t.Fatalf("email: %q", ev.GetEmail())
+	}
+	if ev.GetProvider() != "google" {
+		t.Fatalf("provider: %q", ev.GetProvider())
+	}
+	if ev.GetLocale() != "zh-TW" || ev.GetTimezone() != "Asia/Taipei" {
+		t.Fatalf("locale/timezone: %q / %q", ev.GetLocale(), ev.GetTimezone())
+	}
+	if ev.GetId() == "" {
+		t.Fatal("expected event id")
+	}
+}
+
+func TestNotifyAccountLinked_nilPubSub_noOp(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	svc := &notifier{store: &Store{}, pubSub: nil}
+
+	err := svc.NotifyAccountLinked(ctx, uuid.Nil, "google", MailDeliveryPrefs{})
+	if err != nil {
+		t.Fatalf("NotifyAccountLinked: %v", err)
 	}
 }

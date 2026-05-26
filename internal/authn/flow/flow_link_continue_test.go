@@ -78,7 +78,11 @@ func TestContinueAuthSession_linkIntentWithoutSessionTokenRejected(t *testing.T)
 		t.Fatalf("expected link unauthorized failure, got %+v", resp)
 	}
 	if resp.GetAuthFailure().GetErrorCode() != ErrCodeLinkUnauthorized {
-		t.Fatalf("error_code: got %q want %q", resp.GetAuthFailure().GetErrorCode(), ErrCodeLinkUnauthorized)
+		t.Fatalf(
+			"error_code: got %q want %q",
+			resp.GetAuthFailure().GetErrorCode(),
+			ErrCodeLinkUnauthorized,
+		)
 	}
 }
 
@@ -125,7 +129,11 @@ func TestContinueAuthSession_linkIntentWithWrongSessionTokenRejected(t *testing.
 		t.Fatalf("expected link unauthorized failure, got %+v", resp)
 	}
 	if resp.GetAuthFailure().GetErrorCode() != ErrCodeLinkUnauthorized {
-		t.Fatalf("error_code: got %q want %q", resp.GetAuthFailure().GetErrorCode(), ErrCodeLinkUnauthorized)
+		t.Fatalf(
+			"error_code: got %q want %q",
+			resp.GetAuthFailure().GetErrorCode(),
+			ErrCodeLinkUnauthorized,
+		)
 	}
 }
 

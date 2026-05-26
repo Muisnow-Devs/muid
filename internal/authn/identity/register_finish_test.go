@@ -40,7 +40,6 @@ func seedRegisterFinishUserRef(t *testing.T, client *ent.Client, userID uuid.UUI
 	}
 }
 
-
 func TestRegisterPendingClaimsFromProto_roundTrip(t *testing.T) {
 	t.Parallel()
 

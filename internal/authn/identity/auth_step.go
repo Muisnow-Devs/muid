@@ -14,12 +14,13 @@ func authenticatedStep(userID string, store session.SessionStore) idn.StepResult
 }
 
 func loginCompletionFromStore(store session.SessionStore) *idn.LoginCompletionContext {
+	m := store.MailClientContext()
 	return &idn.LoginCompletionContext{
-		Locale:    store.Locale,
-		Timezone:  store.Timezone,
-		Device:    store.Device,
-		Location:  store.Location,
-		UserAgent: store.UserAgent,
-		IPAddress: store.IPAddress,
+		Locale:    m.Locale,
+		Timezone:  m.Timezone,
+		Device:    m.Device,
+		Location:  m.Location,
+		UserAgent: m.UserAgent,
+		IPAddress: m.IPAddress,
 	}
 }

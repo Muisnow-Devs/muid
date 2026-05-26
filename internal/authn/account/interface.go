@@ -80,12 +80,6 @@ type Passkey interface {
 		ctx context.Context,
 		config LinkPasskeyConfig,
 	) error
-	NotifyPasskeyAdded(
-		ctx context.Context,
-		userID uuid.UUID,
-		passkeyName string,
-		mailPrefs MailDeliveryPrefs,
-	) error
 	UpdatePasskeyUsage(
 		ctx context.Context,
 		config UpdatePasskeyUsageConfig,

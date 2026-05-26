@@ -63,7 +63,10 @@ func TestLookupOIDCFederatedUser_alreadyLinked(t *testing.T) {
 	userID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440031")
 	seedUserRefEmail(t, client, userID, "linked@example.com")
 
-	err := fed.LinkFederatedIdentity(ctx, linkParams(userID, "google", "sub-linked", "linked@example.com"))
+	err := fed.LinkFederatedIdentity(
+		ctx,
+		linkParams(userID, "google", "sub-linked", "linked@example.com"),
+	)
 	if err != nil {
 		t.Fatalf("link: %v", err)
 	}
@@ -83,7 +86,10 @@ func TestLookupOIDCFederatedUser_subjectLinkedToOtherUser(t *testing.T) {
 	owner := uuid.MustParse("550e8400-e29b-41d4-a716-446655440032")
 	seedUserRefEmail(t, client, owner, "owner@example.com")
 
-	err := fed.LinkFederatedIdentity(ctx, linkParams(owner, "google", "sub-taken", "owner@example.com"))
+	err := fed.LinkFederatedIdentity(
+		ctx,
+		linkParams(owner, "google", "sub-taken", "owner@example.com"),
+	)
 	if err != nil {
 		t.Fatalf("owner link: %v", err)
 	}

@@ -13,7 +13,6 @@ import (
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
 const (
@@ -31,22 +30,22 @@ type PasskeyProvider struct {
 	transitionStore session.AuthTransitionStore
 	passkeys        account.Passkey
 	sessions        account.Session
-	pubSub          pubsub.PubSub
+	notifier        account.Notifier
 	webAuthn        *webauthn.WebAuthn
 }
 
-// pubSub is optional; pass nil when mail notifications are not required in tests.
+// notifier is optional; pass nil when mail notifications are not required in tests.
 func NewPasskeyIdentityProvider(
 	transitionStore session.AuthTransitionStore,
 	passkeys account.Passkey,
 	sessions account.Session,
-	pubSub pubsub.PubSub,
+	notifier account.Notifier,
 ) idn.IdentityProvider {
 	provider, err := NewPasskeyIdentityProviderWithConfig(
 		transitionStore,
 		passkeys,
 		sessions,
-		pubSub,
+		notifier,
 		DefaultPasskeyConfig(),
 	)
 	if err != nil {
@@ -59,7 +58,7 @@ func NewPasskeyIdentityProviderWithConfig(
 	transitionStore session.AuthTransitionStore,
 	passkeys account.Passkey,
 	sessions account.Session,
-	pubSub pubsub.PubSub,
+	notifier account.Notifier,
 	config PasskeyConfig,
 ) (idn.IdentityProvider, error) {
 	wa, err := webauthn.New(&webauthn.Config{
@@ -83,7 +82,7 @@ func NewPasskeyIdentityProviderWithConfig(
 		transitionStore: transitionStore,
 		passkeys:        passkeys,
 		sessions:        sessions,
-		pubSub:          pubSub,
+		notifier:        notifier,
 		webAuthn:        wa,
 	}, nil
 }
@@ -341,17 +340,19 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, err
 	}
 
-	err = p.passkeys.NotifyPasskeyAdded(
-		ctx,
-		uid,
-		"Passkey",
-		account.MailDeliveryPrefs{
-			Locale:   sess.Store.Locale,
-			Timezone: sess.Store.Timezone,
-		},
-	)
-	if err != nil {
-		return idn.StepResult{}, err
+	if p.notifier != nil {
+		err = p.notifier.NotifyPasskeyAdded(
+			ctx,
+			uid,
+			"Passkey",
+			account.MailDeliveryPrefs{
+				Locale:   sess.Store.Locale,
+				Timezone: sess.Store.Timezone,
+			},
+		)
+		if err != nil {
+			return idn.StepResult{}, err
+		}
 	}
 
 	linkRes, err := resolveLinkSession(

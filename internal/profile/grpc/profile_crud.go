@@ -26,6 +26,7 @@ import (
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 	"sanzi.io/muid/pkg/shared/tracing"
+	"sanzi.io/muid/pkg/utils"
 )
 
 func (g *GRPCHandler) CreateProfile(
@@ -39,18 +40,21 @@ func (g *GRPCHandler) CreateProfile(
 
 	identity := req.GetIdentity()
 	var (
-		displayName string
+		displayName = displayNameFromIdentity(identity, emailLocalPart(email))
 		pictureURL  string
-		locale      = "en"
+		locale      string
 		timezone    string
 	)
 
 	if identity != nil {
-		displayName = displayNameFromIdentity(identity, emailLocalPart(email))
 		pictureURL = avatarFromIdentity(identity)
+
 		locale = strings.TrimSpace(identity.GetLocale())
 		timezone = strings.TrimSpace(identity.GetTimezone())
 	}
+
+	utils.DefaultIfEmpty(&locale, "en")
+	utils.DefaultIfEmpty(&timezone, "UTC")
 
 	usernameCandidate := generateUsernameCandidates(randomUsernameBase())
 	ctx = tracing.WithSpanName(ctx, "profile.create_profile.tx")

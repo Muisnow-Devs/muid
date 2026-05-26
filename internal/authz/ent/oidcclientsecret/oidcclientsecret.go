@@ -19,6 +19,10 @@ const (
 	FieldClientRefID = "client_ref_id"
 	// FieldSecretHash holds the string denoting the secret_hash field in the database.
 	FieldSecretHash = "secret_hash"
+	// FieldHint holds the string denoting the hint field in the database.
+	FieldHint = "hint"
+	// FieldLastUsedAt holds the string denoting the last_used_at field in the database.
+	FieldLastUsedAt = "last_used_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
@@ -43,6 +47,8 @@ var Columns = []string{
 	FieldID,
 	FieldClientRefID,
 	FieldSecretHash,
+	FieldHint,
+	FieldLastUsedAt,
 	FieldCreatedAt,
 	FieldExpiresAt,
 	FieldRevokedAt,
@@ -61,6 +67,8 @@ func ValidColumn(column string) bool {
 var (
 	// SecretHashValidator is a validator for the "secret_hash" field. It is called by the builders before save.
 	SecretHashValidator func([]byte) error
+	// HintValidator is a validator for the "hint" field. It is called by the builders before save.
+	HintValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
@@ -78,6 +86,16 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByClientRefID orders the results by the client_ref_id field.
 func ByClientRefID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClientRefID, opts...).ToFunc()
+}
+
+// ByHint orders the results by the hint field.
+func ByHint(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldHint, opts...).ToFunc()
+}
+
+// ByLastUsedAt orders the results by the last_used_at field.
+func ByLastUsedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastUsedAt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

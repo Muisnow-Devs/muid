@@ -26,6 +26,7 @@ func (o *oidcService) LookupOIDCLogin(
 		Where(
 			userfederatedidentity.ProviderEQ(providerName),
 			userfederatedidentity.SubjectEQ(subject),
+			userfederatedidentity.RevokedAtIsNil(),
 		).
 		Only(ctx)
 	if err == nil {

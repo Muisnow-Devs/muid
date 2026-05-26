@@ -25,10 +25,19 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
+	// EdgeClients holds the string denoting the clients edge name in mutations.
+	EdgeClients = "clients"
 	// EdgeMembers holds the string denoting the members edge name in mutations.
 	EdgeMembers = "members"
 	// Table holds the table name of the organization in the database.
 	Table = "organizations"
+	// ClientsTable is the table that holds the clients relation/edge.
+	ClientsTable = "oidc_clients"
+	// ClientsInverseTable is the table name for the OIDCClient entity.
+	// It exists in this package in order to avoid circular dependency with the "oidcclient" package.
+	ClientsInverseTable = "oidc_clients"
+	// ClientsColumn is the table column denoting the clients relation/edge.
+	ClientsColumn = "owner_organization_id"
 	// MembersTable is the table that holds the members relation/edge.
 	MembersTable = "organization_members"
 	// MembersInverseTable is the table name for the OrganizationMember entity.
@@ -108,6 +117,20 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
+// ByClientsCount orders the results by clients count.
+func ByClientsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newClientsStep(), opts...)
+	}
+}
+
+// ByClients orders the results by clients terms.
+func ByClients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newClientsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByMembersCount orders the results by members count.
 func ByMembersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -120,6 +143,13 @@ func ByMembers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newMembersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
+}
+func newClientsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(ClientsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, ClientsTable, ClientsColumn),
+	)
 }
 func newMembersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

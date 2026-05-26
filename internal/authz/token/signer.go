@@ -3,11 +3,11 @@ package token
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -28,6 +28,12 @@ type AccessTokenClaims struct {
 	Audience  []string
 	IssuedAt  time.Time
 	ExpiresAt time.Time
+}
+
+type accessTokenJWTClaims struct {
+	ClientID string `json:"client_id"`
+	Scope    string `json:"scope"`
+	jwt.RegisteredClaims
 }
 
 func NewSigner(signing signature.SignatureManager, issuer string) *Signer {
@@ -57,19 +63,23 @@ func (s *Signer) CreateAccessToken(ctx context.Context, claims AccessTokenClaims
 		return "", errors.Join(signature.ErrSignFailed, err)
 	}
 
-	signingInput := encodedJWTPart(
-		jwtHeader(signature.AlgorithmRS256),
-	) + "." + encodedJWTPart(
-		payload,
-	)
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, payload)
+	token.Header["typ"] = tokenTypeJWT
+
+	signingInput, err := token.SigningString()
+	if err != nil {
+		return "", errors.Join(signature.ErrSignFailed, err)
+	}
 	sig, err := s.signing.Sign(ctx, []byte(signingInput))
 	if err != nil {
 		return "", err
 	}
 
-	header := jwtHeader(sig.Alg)
-	header["kid"] = sig.KeyID
-	signingInput = encodedJWTPart(header) + "." + encodedJWTPart(payload)
+	token.Header["kid"] = sig.KeyID
+	signingInput, err = token.SigningString()
+	if err != nil {
+		return "", errors.Join(signature.ErrSignFailed, err)
+	}
 
 	sig, err = s.signing.Sign(ctx, []byte(signingInput))
 	if err != nil {
@@ -79,48 +89,31 @@ func (s *Signer) CreateAccessToken(ctx context.Context, claims AccessTokenClaims
 	return signingInput + "." + base64.RawURLEncoding.EncodeToString(sig.Signature), nil
 }
 
-func jwtHeader(alg string) map[string]string {
-	return map[string]string{
-		"alg": alg,
-		"typ": tokenTypeJWT,
-	}
-}
-
-func jwtPayload(issuer string, claims AccessTokenClaims) (map[string]any, error) {
+func jwtPayload(issuer string, claims AccessTokenClaims) (accessTokenJWTClaims, error) {
 	issued := timestamppb.New(claims.IssuedAt)
 	expires := timestamppb.New(claims.ExpiresAt)
 	if err := issued.CheckValid(); err != nil {
-		return nil, err
+		return accessTokenJWTClaims{}, err
 	}
 	if err := expires.CheckValid(); err != nil {
-		return nil, err
+		return accessTokenJWTClaims{}, err
 	}
 
-	payload := map[string]any{
-		"sub":       claims.UserID.String(),
-		"client_id": strings.TrimSpace(claims.ClientID),
-		"scope":     strings.Join(trimScopes(claims.Scopes), " "),
-		"iat":       claims.IssuedAt.Unix(),
-		"exp":       claims.ExpiresAt.Unix(),
+	payload := accessTokenJWTClaims{
+		ClientID: strings.TrimSpace(claims.ClientID),
+		Scope:    strings.Join(trimScopes(claims.Scopes), " "),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   claims.UserID.String(),
+			Issuer:    issuer,
+			IssuedAt:  jwt.NewNumericDate(claims.IssuedAt),
+			ExpiresAt: jwt.NewNumericDate(claims.ExpiresAt),
+		},
 	}
-	if issuer != "" {
-		payload["iss"] = issuer
-	}
-	if len(claims.Audience) == 1 {
-		payload["aud"] = claims.Audience[0]
-	}
-	if len(claims.Audience) > 1 {
-		payload["aud"] = trimScopes(claims.Audience)
+	audience := trimScopes(claims.Audience)
+	if len(audience) > 0 {
+		payload.Audience = jwt.ClaimStrings(audience)
 	}
 	return payload, nil
-}
-
-func encodedJWTPart(value any) string {
-	payload, err := json.Marshal(value)
-	if err != nil {
-		return ""
-	}
-	return base64.RawURLEncoding.EncodeToString(payload)
 }
 
 func trimScopes(in []string) []string {

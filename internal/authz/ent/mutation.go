@@ -606,34 +606,39 @@ func (m *OIDCCallbackURIMutation) ResetEdge(name string) error {
 // OIDCClientMutation represents an operation that mutates the OIDCClient nodes in the graph.
 type OIDCClientMutation struct {
 	config
-	op                    Op
-	typ                   string
-	id                    *uuid.UUID
-	client_id             *string
-	client_name           *string
-	client_type           *oidcclient.ClientType
-	scopes                *[]string
-	appendscopes          []string
-	created_at            *time.Time
-	updated_at            *time.Time
-	deleted_at            *time.Time
-	enabled               *bool
-	clearedFields         map[string]struct{}
-	callback_urls         map[uuid.UUID]struct{}
-	removedcallback_urls  map[uuid.UUID]struct{}
-	clearedcallback_urls  bool
-	secrets               map[uuid.UUID]struct{}
-	removedsecrets        map[uuid.UUID]struct{}
-	clearedsecrets        bool
-	grants                map[uuid.UUID]struct{}
-	removedgrants         map[uuid.UUID]struct{}
-	clearedgrants         bool
-	refresh_tokens        map[uuid.UUID]struct{}
-	removedrefresh_tokens map[uuid.UUID]struct{}
-	clearedrefresh_tokens bool
-	done                  bool
-	oldValue              func(context.Context) (*OIDCClient, error)
-	predicates            []predicate.OIDCClient
+	op                         Op
+	typ                        string
+	id                         *uuid.UUID
+	client_id                  *string
+	client_name                *string
+	scopes                     *[]string
+	appendscopes               []string
+	token_endpoint_auth_method *oidcclient.TokenEndpointAuthMethod
+	application_type           *oidcclient.ApplicationType
+	access_policy              *oidcclient.AccessPolicy
+	verification_status        *oidcclient.VerificationStatus
+	publish_status             *oidcclient.PublishStatus
+	created_at                 *time.Time
+	updated_at                 *time.Time
+	deleted_at                 *time.Time
+	clearedFields              map[string]struct{}
+	callback_urls              map[uuid.UUID]struct{}
+	removedcallback_urls       map[uuid.UUID]struct{}
+	clearedcallback_urls       bool
+	secrets                    map[uuid.UUID]struct{}
+	removedsecrets             map[uuid.UUID]struct{}
+	clearedsecrets             bool
+	grants                     map[uuid.UUID]struct{}
+	removedgrants              map[uuid.UUID]struct{}
+	clearedgrants              bool
+	refresh_tokens             map[uuid.UUID]struct{}
+	removedrefresh_tokens      map[uuid.UUID]struct{}
+	clearedrefresh_tokens      bool
+	organization               *uuid.UUID
+	clearedorganization        bool
+	done                       bool
+	oldValue                   func(context.Context) (*OIDCClient, error)
+	predicates                 []predicate.OIDCClient
 }
 
 var _ ent.Mutation = (*OIDCClientMutation)(nil)
@@ -812,40 +817,40 @@ func (m *OIDCClientMutation) ResetClientName() {
 	m.client_name = nil
 }
 
-// SetClientType sets the "client_type" field.
-func (m *OIDCClientMutation) SetClientType(ot oidcclient.ClientType) {
-	m.client_type = &ot
+// SetOwnerOrganizationID sets the "owner_organization_id" field.
+func (m *OIDCClientMutation) SetOwnerOrganizationID(u uuid.UUID) {
+	m.organization = &u
 }
 
-// ClientType returns the value of the "client_type" field in the mutation.
-func (m *OIDCClientMutation) ClientType() (r oidcclient.ClientType, exists bool) {
-	v := m.client_type
+// OwnerOrganizationID returns the value of the "owner_organization_id" field in the mutation.
+func (m *OIDCClientMutation) OwnerOrganizationID() (r uuid.UUID, exists bool) {
+	v := m.organization
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldClientType returns the old "client_type" field's value of the OIDCClient entity.
+// OldOwnerOrganizationID returns the old "owner_organization_id" field's value of the OIDCClient entity.
 // If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OIDCClientMutation) OldClientType(ctx context.Context) (v oidcclient.ClientType, err error) {
+func (m *OIDCClientMutation) OldOwnerOrganizationID(ctx context.Context) (v uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldClientType is only allowed on UpdateOne operations")
+		return v, errors.New("OldOwnerOrganizationID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldClientType requires an ID field in the mutation")
+		return v, errors.New("OldOwnerOrganizationID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldClientType: %w", err)
+		return v, fmt.Errorf("querying old value for OldOwnerOrganizationID: %w", err)
 	}
-	return oldValue.ClientType, nil
+	return oldValue.OwnerOrganizationID, nil
 }
 
-// ResetClientType resets all changes to the "client_type" field.
-func (m *OIDCClientMutation) ResetClientType() {
-	m.client_type = nil
+// ResetOwnerOrganizationID resets all changes to the "owner_organization_id" field.
+func (m *OIDCClientMutation) ResetOwnerOrganizationID() {
+	m.organization = nil
 }
 
 // SetScopes sets the "scopes" field.
@@ -897,6 +902,186 @@ func (m *OIDCClientMutation) AppendedScopes() ([]string, bool) {
 func (m *OIDCClientMutation) ResetScopes() {
 	m.scopes = nil
 	m.appendscopes = nil
+}
+
+// SetTokenEndpointAuthMethod sets the "token_endpoint_auth_method" field.
+func (m *OIDCClientMutation) SetTokenEndpointAuthMethod(oeam oidcclient.TokenEndpointAuthMethod) {
+	m.token_endpoint_auth_method = &oeam
+}
+
+// TokenEndpointAuthMethod returns the value of the "token_endpoint_auth_method" field in the mutation.
+func (m *OIDCClientMutation) TokenEndpointAuthMethod() (r oidcclient.TokenEndpointAuthMethod, exists bool) {
+	v := m.token_endpoint_auth_method
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTokenEndpointAuthMethod returns the old "token_endpoint_auth_method" field's value of the OIDCClient entity.
+// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientMutation) OldTokenEndpointAuthMethod(ctx context.Context) (v oidcclient.TokenEndpointAuthMethod, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTokenEndpointAuthMethod is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTokenEndpointAuthMethod requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTokenEndpointAuthMethod: %w", err)
+	}
+	return oldValue.TokenEndpointAuthMethod, nil
+}
+
+// ResetTokenEndpointAuthMethod resets all changes to the "token_endpoint_auth_method" field.
+func (m *OIDCClientMutation) ResetTokenEndpointAuthMethod() {
+	m.token_endpoint_auth_method = nil
+}
+
+// SetApplicationType sets the "application_type" field.
+func (m *OIDCClientMutation) SetApplicationType(ot oidcclient.ApplicationType) {
+	m.application_type = &ot
+}
+
+// ApplicationType returns the value of the "application_type" field in the mutation.
+func (m *OIDCClientMutation) ApplicationType() (r oidcclient.ApplicationType, exists bool) {
+	v := m.application_type
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldApplicationType returns the old "application_type" field's value of the OIDCClient entity.
+// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientMutation) OldApplicationType(ctx context.Context) (v oidcclient.ApplicationType, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldApplicationType is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldApplicationType requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldApplicationType: %w", err)
+	}
+	return oldValue.ApplicationType, nil
+}
+
+// ResetApplicationType resets all changes to the "application_type" field.
+func (m *OIDCClientMutation) ResetApplicationType() {
+	m.application_type = nil
+}
+
+// SetAccessPolicy sets the "access_policy" field.
+func (m *OIDCClientMutation) SetAccessPolicy(op oidcclient.AccessPolicy) {
+	m.access_policy = &op
+}
+
+// AccessPolicy returns the value of the "access_policy" field in the mutation.
+func (m *OIDCClientMutation) AccessPolicy() (r oidcclient.AccessPolicy, exists bool) {
+	v := m.access_policy
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAccessPolicy returns the old "access_policy" field's value of the OIDCClient entity.
+// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientMutation) OldAccessPolicy(ctx context.Context) (v oidcclient.AccessPolicy, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAccessPolicy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAccessPolicy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAccessPolicy: %w", err)
+	}
+	return oldValue.AccessPolicy, nil
+}
+
+// ResetAccessPolicy resets all changes to the "access_policy" field.
+func (m *OIDCClientMutation) ResetAccessPolicy() {
+	m.access_policy = nil
+}
+
+// SetVerificationStatus sets the "verification_status" field.
+func (m *OIDCClientMutation) SetVerificationStatus(os oidcclient.VerificationStatus) {
+	m.verification_status = &os
+}
+
+// VerificationStatus returns the value of the "verification_status" field in the mutation.
+func (m *OIDCClientMutation) VerificationStatus() (r oidcclient.VerificationStatus, exists bool) {
+	v := m.verification_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldVerificationStatus returns the old "verification_status" field's value of the OIDCClient entity.
+// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientMutation) OldVerificationStatus(ctx context.Context) (v oidcclient.VerificationStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldVerificationStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldVerificationStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldVerificationStatus: %w", err)
+	}
+	return oldValue.VerificationStatus, nil
+}
+
+// ResetVerificationStatus resets all changes to the "verification_status" field.
+func (m *OIDCClientMutation) ResetVerificationStatus() {
+	m.verification_status = nil
+}
+
+// SetPublishStatus sets the "publish_status" field.
+func (m *OIDCClientMutation) SetPublishStatus(os oidcclient.PublishStatus) {
+	m.publish_status = &os
+}
+
+// PublishStatus returns the value of the "publish_status" field in the mutation.
+func (m *OIDCClientMutation) PublishStatus() (r oidcclient.PublishStatus, exists bool) {
+	v := m.publish_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPublishStatus returns the old "publish_status" field's value of the OIDCClient entity.
+// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientMutation) OldPublishStatus(ctx context.Context) (v oidcclient.PublishStatus, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPublishStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPublishStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPublishStatus: %w", err)
+	}
+	return oldValue.PublishStatus, nil
+}
+
+// ResetPublishStatus resets all changes to the "publish_status" field.
+func (m *OIDCClientMutation) ResetPublishStatus() {
+	m.publish_status = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -1018,42 +1203,6 @@ func (m *OIDCClientMutation) DeletedAtCleared() bool {
 func (m *OIDCClientMutation) ResetDeletedAt() {
 	m.deleted_at = nil
 	delete(m.clearedFields, oidcclient.FieldDeletedAt)
-}
-
-// SetEnabled sets the "enabled" field.
-func (m *OIDCClientMutation) SetEnabled(b bool) {
-	m.enabled = &b
-}
-
-// Enabled returns the value of the "enabled" field in the mutation.
-func (m *OIDCClientMutation) Enabled() (r bool, exists bool) {
-	v := m.enabled
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEnabled returns the old "enabled" field's value of the OIDCClient entity.
-// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OIDCClientMutation) OldEnabled(ctx context.Context) (v bool, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEnabled is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEnabled requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEnabled: %w", err)
-	}
-	return oldValue.Enabled, nil
-}
-
-// ResetEnabled resets all changes to the "enabled" field.
-func (m *OIDCClientMutation) ResetEnabled() {
-	m.enabled = nil
 }
 
 // AddCallbackURLIDs adds the "callback_urls" edge to the OIDCCallbackURI entity by ids.
@@ -1272,6 +1421,46 @@ func (m *OIDCClientMutation) ResetRefreshTokens() {
 	m.removedrefresh_tokens = nil
 }
 
+// SetOrganizationID sets the "organization" edge to the Organization entity by id.
+func (m *OIDCClientMutation) SetOrganizationID(id uuid.UUID) {
+	m.organization = &id
+}
+
+// ClearOrganization clears the "organization" edge to the Organization entity.
+func (m *OIDCClientMutation) ClearOrganization() {
+	m.clearedorganization = true
+	m.clearedFields[oidcclient.FieldOwnerOrganizationID] = struct{}{}
+}
+
+// OrganizationCleared reports if the "organization" edge to the Organization entity was cleared.
+func (m *OIDCClientMutation) OrganizationCleared() bool {
+	return m.clearedorganization
+}
+
+// OrganizationID returns the "organization" edge ID in the mutation.
+func (m *OIDCClientMutation) OrganizationID() (id uuid.UUID, exists bool) {
+	if m.organization != nil {
+		return *m.organization, true
+	}
+	return
+}
+
+// OrganizationIDs returns the "organization" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// OrganizationID instead. It exists only for internal usage by the builders.
+func (m *OIDCClientMutation) OrganizationIDs() (ids []uuid.UUID) {
+	if id := m.organization; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetOrganization resets all changes to the "organization" edge.
+func (m *OIDCClientMutation) ResetOrganization() {
+	m.organization = nil
+	m.clearedorganization = false
+}
+
 // Where appends a list predicates to the OIDCClientMutation builder.
 func (m *OIDCClientMutation) Where(ps ...predicate.OIDCClient) {
 	m.predicates = append(m.predicates, ps...)
@@ -1306,18 +1495,33 @@ func (m *OIDCClientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OIDCClientMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 12)
 	if m.client_id != nil {
 		fields = append(fields, oidcclient.FieldClientID)
 	}
 	if m.client_name != nil {
 		fields = append(fields, oidcclient.FieldClientName)
 	}
-	if m.client_type != nil {
-		fields = append(fields, oidcclient.FieldClientType)
+	if m.organization != nil {
+		fields = append(fields, oidcclient.FieldOwnerOrganizationID)
 	}
 	if m.scopes != nil {
 		fields = append(fields, oidcclient.FieldScopes)
+	}
+	if m.token_endpoint_auth_method != nil {
+		fields = append(fields, oidcclient.FieldTokenEndpointAuthMethod)
+	}
+	if m.application_type != nil {
+		fields = append(fields, oidcclient.FieldApplicationType)
+	}
+	if m.access_policy != nil {
+		fields = append(fields, oidcclient.FieldAccessPolicy)
+	}
+	if m.verification_status != nil {
+		fields = append(fields, oidcclient.FieldVerificationStatus)
+	}
+	if m.publish_status != nil {
+		fields = append(fields, oidcclient.FieldPublishStatus)
 	}
 	if m.created_at != nil {
 		fields = append(fields, oidcclient.FieldCreatedAt)
@@ -1327,9 +1531,6 @@ func (m *OIDCClientMutation) Fields() []string {
 	}
 	if m.deleted_at != nil {
 		fields = append(fields, oidcclient.FieldDeletedAt)
-	}
-	if m.enabled != nil {
-		fields = append(fields, oidcclient.FieldEnabled)
 	}
 	return fields
 }
@@ -1343,18 +1544,26 @@ func (m *OIDCClientMutation) Field(name string) (ent.Value, bool) {
 		return m.ClientID()
 	case oidcclient.FieldClientName:
 		return m.ClientName()
-	case oidcclient.FieldClientType:
-		return m.ClientType()
+	case oidcclient.FieldOwnerOrganizationID:
+		return m.OwnerOrganizationID()
 	case oidcclient.FieldScopes:
 		return m.Scopes()
+	case oidcclient.FieldTokenEndpointAuthMethod:
+		return m.TokenEndpointAuthMethod()
+	case oidcclient.FieldApplicationType:
+		return m.ApplicationType()
+	case oidcclient.FieldAccessPolicy:
+		return m.AccessPolicy()
+	case oidcclient.FieldVerificationStatus:
+		return m.VerificationStatus()
+	case oidcclient.FieldPublishStatus:
+		return m.PublishStatus()
 	case oidcclient.FieldCreatedAt:
 		return m.CreatedAt()
 	case oidcclient.FieldUpdatedAt:
 		return m.UpdatedAt()
 	case oidcclient.FieldDeletedAt:
 		return m.DeletedAt()
-	case oidcclient.FieldEnabled:
-		return m.Enabled()
 	}
 	return nil, false
 }
@@ -1368,18 +1577,26 @@ func (m *OIDCClientMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldClientID(ctx)
 	case oidcclient.FieldClientName:
 		return m.OldClientName(ctx)
-	case oidcclient.FieldClientType:
-		return m.OldClientType(ctx)
+	case oidcclient.FieldOwnerOrganizationID:
+		return m.OldOwnerOrganizationID(ctx)
 	case oidcclient.FieldScopes:
 		return m.OldScopes(ctx)
+	case oidcclient.FieldTokenEndpointAuthMethod:
+		return m.OldTokenEndpointAuthMethod(ctx)
+	case oidcclient.FieldApplicationType:
+		return m.OldApplicationType(ctx)
+	case oidcclient.FieldAccessPolicy:
+		return m.OldAccessPolicy(ctx)
+	case oidcclient.FieldVerificationStatus:
+		return m.OldVerificationStatus(ctx)
+	case oidcclient.FieldPublishStatus:
+		return m.OldPublishStatus(ctx)
 	case oidcclient.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case oidcclient.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
 	case oidcclient.FieldDeletedAt:
 		return m.OldDeletedAt(ctx)
-	case oidcclient.FieldEnabled:
-		return m.OldEnabled(ctx)
 	}
 	return nil, fmt.Errorf("unknown OIDCClient field %s", name)
 }
@@ -1403,12 +1620,12 @@ func (m *OIDCClientMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetClientName(v)
 		return nil
-	case oidcclient.FieldClientType:
-		v, ok := value.(oidcclient.ClientType)
+	case oidcclient.FieldOwnerOrganizationID:
+		v, ok := value.(uuid.UUID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetClientType(v)
+		m.SetOwnerOrganizationID(v)
 		return nil
 	case oidcclient.FieldScopes:
 		v, ok := value.([]string)
@@ -1416,6 +1633,41 @@ func (m *OIDCClientMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetScopes(v)
+		return nil
+	case oidcclient.FieldTokenEndpointAuthMethod:
+		v, ok := value.(oidcclient.TokenEndpointAuthMethod)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTokenEndpointAuthMethod(v)
+		return nil
+	case oidcclient.FieldApplicationType:
+		v, ok := value.(oidcclient.ApplicationType)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetApplicationType(v)
+		return nil
+	case oidcclient.FieldAccessPolicy:
+		v, ok := value.(oidcclient.AccessPolicy)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAccessPolicy(v)
+		return nil
+	case oidcclient.FieldVerificationStatus:
+		v, ok := value.(oidcclient.VerificationStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetVerificationStatus(v)
+		return nil
+	case oidcclient.FieldPublishStatus:
+		v, ok := value.(oidcclient.PublishStatus)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPublishStatus(v)
 		return nil
 	case oidcclient.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1437,13 +1689,6 @@ func (m *OIDCClientMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetDeletedAt(v)
-		return nil
-	case oidcclient.FieldEnabled:
-		v, ok := value.(bool)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEnabled(v)
 		return nil
 	}
 	return fmt.Errorf("unknown OIDCClient field %s", name)
@@ -1509,11 +1754,26 @@ func (m *OIDCClientMutation) ResetField(name string) error {
 	case oidcclient.FieldClientName:
 		m.ResetClientName()
 		return nil
-	case oidcclient.FieldClientType:
-		m.ResetClientType()
+	case oidcclient.FieldOwnerOrganizationID:
+		m.ResetOwnerOrganizationID()
 		return nil
 	case oidcclient.FieldScopes:
 		m.ResetScopes()
+		return nil
+	case oidcclient.FieldTokenEndpointAuthMethod:
+		m.ResetTokenEndpointAuthMethod()
+		return nil
+	case oidcclient.FieldApplicationType:
+		m.ResetApplicationType()
+		return nil
+	case oidcclient.FieldAccessPolicy:
+		m.ResetAccessPolicy()
+		return nil
+	case oidcclient.FieldVerificationStatus:
+		m.ResetVerificationStatus()
+		return nil
+	case oidcclient.FieldPublishStatus:
+		m.ResetPublishStatus()
 		return nil
 	case oidcclient.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -1524,16 +1784,13 @@ func (m *OIDCClientMutation) ResetField(name string) error {
 	case oidcclient.FieldDeletedAt:
 		m.ResetDeletedAt()
 		return nil
-	case oidcclient.FieldEnabled:
-		m.ResetEnabled()
-		return nil
 	}
 	return fmt.Errorf("unknown OIDCClient field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OIDCClientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.callback_urls != nil {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1545,6 +1802,9 @@ func (m *OIDCClientMutation) AddedEdges() []string {
 	}
 	if m.refresh_tokens != nil {
 		edges = append(edges, oidcclient.EdgeRefreshTokens)
+	}
+	if m.organization != nil {
+		edges = append(edges, oidcclient.EdgeOrganization)
 	}
 	return edges
 }
@@ -1577,13 +1837,17 @@ func (m *OIDCClientMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oidcclient.EdgeOrganization:
+		if id := m.organization; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OIDCClientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedcallback_urls != nil {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1633,7 +1897,7 @@ func (m *OIDCClientMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OIDCClientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedcallback_urls {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1645,6 +1909,9 @@ func (m *OIDCClientMutation) ClearedEdges() []string {
 	}
 	if m.clearedrefresh_tokens {
 		edges = append(edges, oidcclient.EdgeRefreshTokens)
+	}
+	if m.clearedorganization {
+		edges = append(edges, oidcclient.EdgeOrganization)
 	}
 	return edges
 }
@@ -1661,6 +1928,8 @@ func (m *OIDCClientMutation) EdgeCleared(name string) bool {
 		return m.clearedgrants
 	case oidcclient.EdgeRefreshTokens:
 		return m.clearedrefresh_tokens
+	case oidcclient.EdgeOrganization:
+		return m.clearedorganization
 	}
 	return false
 }
@@ -1669,6 +1938,9 @@ func (m *OIDCClientMutation) EdgeCleared(name string) bool {
 // if that edge is not defined in the schema.
 func (m *OIDCClientMutation) ClearEdge(name string) error {
 	switch name {
+	case oidcclient.EdgeOrganization:
+		m.ClearOrganization()
+		return nil
 	}
 	return fmt.Errorf("unknown OIDCClient unique edge %s", name)
 }
@@ -1689,6 +1961,9 @@ func (m *OIDCClientMutation) ResetEdge(name string) error {
 	case oidcclient.EdgeRefreshTokens:
 		m.ResetRefreshTokens()
 		return nil
+	case oidcclient.EdgeOrganization:
+		m.ResetOrganization()
+		return nil
 	}
 	return fmt.Errorf("unknown OIDCClient edge %s", name)
 }
@@ -1700,6 +1975,8 @@ type OIDCClientSecretMutation struct {
 	typ           string
 	id            *uuid.UUID
 	secret_hash   *[]byte
+	hint          *string
+	last_used_at  *time.Time
 	created_at    *time.Time
 	expires_at    *time.Time
 	revoked_at    *time.Time
@@ -1887,6 +2164,91 @@ func (m *OIDCClientSecretMutation) ResetSecretHash() {
 	m.secret_hash = nil
 }
 
+// SetHint sets the "hint" field.
+func (m *OIDCClientSecretMutation) SetHint(s string) {
+	m.hint = &s
+}
+
+// Hint returns the value of the "hint" field in the mutation.
+func (m *OIDCClientSecretMutation) Hint() (r string, exists bool) {
+	v := m.hint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldHint returns the old "hint" field's value of the OIDCClientSecret entity.
+// If the OIDCClientSecret object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientSecretMutation) OldHint(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldHint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldHint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldHint: %w", err)
+	}
+	return oldValue.Hint, nil
+}
+
+// ResetHint resets all changes to the "hint" field.
+func (m *OIDCClientSecretMutation) ResetHint() {
+	m.hint = nil
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (m *OIDCClientSecretMutation) SetLastUsedAt(t time.Time) {
+	m.last_used_at = &t
+}
+
+// LastUsedAt returns the value of the "last_used_at" field in the mutation.
+func (m *OIDCClientSecretMutation) LastUsedAt() (r time.Time, exists bool) {
+	v := m.last_used_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastUsedAt returns the old "last_used_at" field's value of the OIDCClientSecret entity.
+// If the OIDCClientSecret object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientSecretMutation) OldLastUsedAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastUsedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastUsedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastUsedAt: %w", err)
+	}
+	return oldValue.LastUsedAt, nil
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (m *OIDCClientSecretMutation) ClearLastUsedAt() {
+	m.last_used_at = nil
+	m.clearedFields[oidcclientsecret.FieldLastUsedAt] = struct{}{}
+}
+
+// LastUsedAtCleared returns if the "last_used_at" field was cleared in this mutation.
+func (m *OIDCClientSecretMutation) LastUsedAtCleared() bool {
+	_, ok := m.clearedFields[oidcclientsecret.FieldLastUsedAt]
+	return ok
+}
+
+// ResetLastUsedAt resets all changes to the "last_used_at" field.
+func (m *OIDCClientSecretMutation) ResetLastUsedAt() {
+	m.last_used_at = nil
+	delete(m.clearedFields, oidcclientsecret.FieldLastUsedAt)
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (m *OIDCClientSecretMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
@@ -1940,7 +2302,7 @@ func (m *OIDCClientSecretMutation) ExpiresAt() (r time.Time, exists bool) {
 // OldExpiresAt returns the old "expires_at" field's value of the OIDCClientSecret entity.
 // If the OIDCClientSecret object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OIDCClientSecretMutation) OldExpiresAt(ctx context.Context) (v time.Time, err error) {
+func (m *OIDCClientSecretMutation) OldExpiresAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
 	}
@@ -1989,7 +2351,7 @@ func (m *OIDCClientSecretMutation) RevokedAt() (r time.Time, exists bool) {
 // OldRevokedAt returns the old "revoked_at" field's value of the OIDCClientSecret entity.
 // If the OIDCClientSecret object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *OIDCClientSecretMutation) OldRevokedAt(ctx context.Context) (v time.Time, err error) {
+func (m *OIDCClientSecretMutation) OldRevokedAt(ctx context.Context) (v *time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRevokedAt is only allowed on UpdateOne operations")
 	}
@@ -2095,12 +2457,18 @@ func (m *OIDCClientSecretMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OIDCClientSecretMutation) Fields() []string {
-	fields := make([]string, 0, 5)
+	fields := make([]string, 0, 7)
 	if m.client != nil {
 		fields = append(fields, oidcclientsecret.FieldClientRefID)
 	}
 	if m.secret_hash != nil {
 		fields = append(fields, oidcclientsecret.FieldSecretHash)
+	}
+	if m.hint != nil {
+		fields = append(fields, oidcclientsecret.FieldHint)
+	}
+	if m.last_used_at != nil {
+		fields = append(fields, oidcclientsecret.FieldLastUsedAt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, oidcclientsecret.FieldCreatedAt)
@@ -2123,6 +2491,10 @@ func (m *OIDCClientSecretMutation) Field(name string) (ent.Value, bool) {
 		return m.ClientRefID()
 	case oidcclientsecret.FieldSecretHash:
 		return m.SecretHash()
+	case oidcclientsecret.FieldHint:
+		return m.Hint()
+	case oidcclientsecret.FieldLastUsedAt:
+		return m.LastUsedAt()
 	case oidcclientsecret.FieldCreatedAt:
 		return m.CreatedAt()
 	case oidcclientsecret.FieldExpiresAt:
@@ -2142,6 +2514,10 @@ func (m *OIDCClientSecretMutation) OldField(ctx context.Context, name string) (e
 		return m.OldClientRefID(ctx)
 	case oidcclientsecret.FieldSecretHash:
 		return m.OldSecretHash(ctx)
+	case oidcclientsecret.FieldHint:
+		return m.OldHint(ctx)
+	case oidcclientsecret.FieldLastUsedAt:
+		return m.OldLastUsedAt(ctx)
 	case oidcclientsecret.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case oidcclientsecret.FieldExpiresAt:
@@ -2170,6 +2546,20 @@ func (m *OIDCClientSecretMutation) SetField(name string, value ent.Value) error 
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetSecretHash(v)
+		return nil
+	case oidcclientsecret.FieldHint:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetHint(v)
+		return nil
+	case oidcclientsecret.FieldLastUsedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastUsedAt(v)
 		return nil
 	case oidcclientsecret.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -2222,6 +2612,9 @@ func (m *OIDCClientSecretMutation) AddField(name string, value ent.Value) error 
 // mutation.
 func (m *OIDCClientSecretMutation) ClearedFields() []string {
 	var fields []string
+	if m.FieldCleared(oidcclientsecret.FieldLastUsedAt) {
+		fields = append(fields, oidcclientsecret.FieldLastUsedAt)
+	}
 	if m.FieldCleared(oidcclientsecret.FieldExpiresAt) {
 		fields = append(fields, oidcclientsecret.FieldExpiresAt)
 	}
@@ -2242,6 +2635,9 @@ func (m *OIDCClientSecretMutation) FieldCleared(name string) bool {
 // error if the field is not defined in the schema.
 func (m *OIDCClientSecretMutation) ClearField(name string) error {
 	switch name {
+	case oidcclientsecret.FieldLastUsedAt:
+		m.ClearLastUsedAt()
+		return nil
 	case oidcclientsecret.FieldExpiresAt:
 		m.ClearExpiresAt()
 		return nil
@@ -2261,6 +2657,12 @@ func (m *OIDCClientSecretMutation) ResetField(name string) error {
 		return nil
 	case oidcclientsecret.FieldSecretHash:
 		m.ResetSecretHash()
+		return nil
+	case oidcclientsecret.FieldHint:
+		m.ResetHint()
+		return nil
+	case oidcclientsecret.FieldLastUsedAt:
+		m.ResetLastUsedAt()
 		return nil
 	case oidcclientsecret.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -4507,6 +4909,9 @@ type OrganizationMutation struct {
 	created_at     *time.Time
 	updated_at     *time.Time
 	clearedFields  map[string]struct{}
+	clients        map[uuid.UUID]struct{}
+	removedclients map[uuid.UUID]struct{}
+	clearedclients bool
 	members        map[uuid.UUID]struct{}
 	removedmembers map[uuid.UUID]struct{}
 	clearedmembers bool
@@ -4812,6 +5217,60 @@ func (m *OrganizationMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
+// AddClientIDs adds the "clients" edge to the OIDCClient entity by ids.
+func (m *OrganizationMutation) AddClientIDs(ids ...uuid.UUID) {
+	if m.clients == nil {
+		m.clients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.clients[ids[i]] = struct{}{}
+	}
+}
+
+// ClearClients clears the "clients" edge to the OIDCClient entity.
+func (m *OrganizationMutation) ClearClients() {
+	m.clearedclients = true
+}
+
+// ClientsCleared reports if the "clients" edge to the OIDCClient entity was cleared.
+func (m *OrganizationMutation) ClientsCleared() bool {
+	return m.clearedclients
+}
+
+// RemoveClientIDs removes the "clients" edge to the OIDCClient entity by IDs.
+func (m *OrganizationMutation) RemoveClientIDs(ids ...uuid.UUID) {
+	if m.removedclients == nil {
+		m.removedclients = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.clients, ids[i])
+		m.removedclients[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedClients returns the removed IDs of the "clients" edge to the OIDCClient entity.
+func (m *OrganizationMutation) RemovedClientsIDs() (ids []uuid.UUID) {
+	for id := range m.removedclients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ClientsIDs returns the "clients" edge IDs in the mutation.
+func (m *OrganizationMutation) ClientsIDs() (ids []uuid.UUID) {
+	for id := range m.clients {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetClients resets all changes to the "clients" edge.
+func (m *OrganizationMutation) ResetClients() {
+	m.clients = nil
+	m.clearedclients = false
+	m.removedclients = nil
+}
+
 // AddMemberIDs adds the "members" edge to the OrganizationMember entity by ids.
 func (m *OrganizationMutation) AddMemberIDs(ids ...uuid.UUID) {
 	if m.members == nil {
@@ -5076,7 +5535,10 @@ func (m *OrganizationMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrganizationMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clients != nil {
+		edges = append(edges, organization.EdgeClients)
+	}
 	if m.members != nil {
 		edges = append(edges, organization.EdgeMembers)
 	}
@@ -5087,6 +5549,12 @@ func (m *OrganizationMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *OrganizationMutation) AddedIDs(name string) []ent.Value {
 	switch name {
+	case organization.EdgeClients:
+		ids := make([]ent.Value, 0, len(m.clients))
+		for id := range m.clients {
+			ids = append(ids, id)
+		}
+		return ids
 	case organization.EdgeMembers:
 		ids := make([]ent.Value, 0, len(m.members))
 		for id := range m.members {
@@ -5099,7 +5567,10 @@ func (m *OrganizationMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrganizationMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.removedclients != nil {
+		edges = append(edges, organization.EdgeClients)
+	}
 	if m.removedmembers != nil {
 		edges = append(edges, organization.EdgeMembers)
 	}
@@ -5110,6 +5581,12 @@ func (m *OrganizationMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *OrganizationMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
+	case organization.EdgeClients:
+		ids := make([]ent.Value, 0, len(m.removedclients))
+		for id := range m.removedclients {
+			ids = append(ids, id)
+		}
+		return ids
 	case organization.EdgeMembers:
 		ids := make([]ent.Value, 0, len(m.removedmembers))
 		for id := range m.removedmembers {
@@ -5122,7 +5599,10 @@ func (m *OrganizationMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrganizationMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
+	edges := make([]string, 0, 2)
+	if m.clearedclients {
+		edges = append(edges, organization.EdgeClients)
+	}
 	if m.clearedmembers {
 		edges = append(edges, organization.EdgeMembers)
 	}
@@ -5133,6 +5613,8 @@ func (m *OrganizationMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *OrganizationMutation) EdgeCleared(name string) bool {
 	switch name {
+	case organization.EdgeClients:
+		return m.clearedclients
 	case organization.EdgeMembers:
 		return m.clearedmembers
 	}
@@ -5151,6 +5633,9 @@ func (m *OrganizationMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *OrganizationMutation) ResetEdge(name string) error {
 	switch name {
+	case organization.EdgeClients:
+		m.ResetClients()
+		return nil
 	case organization.EdgeMembers:
 		m.ResetMembers()
 		return nil

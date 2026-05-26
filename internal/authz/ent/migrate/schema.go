@@ -42,28 +42,40 @@ var (
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "client_id", Type: field.TypeString, Unique: true},
 		{Name: "client_name", Type: field.TypeString, Size: 64},
-		{Name: "client_type", Type: field.TypeEnum, Enums: []string{"internal", "official", "public"}, Default: "public"},
 		{Name: "scopes", Type: field.TypeJSON},
+		{Name: "token_endpoint_auth_method", Type: field.TypeEnum, Enums: []string{"none", "client_secret_basic", "client_secret_post", "private_key_jwt"}, Default: "none"},
+		{Name: "application_type", Type: field.TypeEnum, Enums: []string{"web", "native"}, Default: "web"},
+		{Name: "access_policy", Type: field.TypeEnum, Enums: []string{"public", "organization", "private"}, Default: "private"},
+		{Name: "verification_status", Type: field.TypeEnum, Enums: []string{"unverified", "pending", "verified", "official", "rejected"}, Default: "unverified"},
+		{Name: "publish_status", Type: field.TypeEnum, Enums: []string{"draft", "testing", "published", "disabled"}, Default: "draft"},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "deleted_at", Type: field.TypeTime, Nullable: true},
-		{Name: "enabled", Type: field.TypeBool, Default: false},
+		{Name: "owner_organization_id", Type: field.TypeUUID},
 	}
 	// OidcClientsTable holds the schema information for the "oidc_clients" table.
 	OidcClientsTable = &schema.Table{
 		Name:       "oidc_clients",
 		Columns:    OidcClientsColumns,
 		PrimaryKey: []*schema.Column{OidcClientsColumns[0]},
-		Indexes: []*schema.Index{
+		ForeignKeys: []*schema.ForeignKey{
 			{
-				Name:    "oidcclient_enabled_deleted_at",
-				Unique:  false,
-				Columns: []*schema.Column{OidcClientsColumns[8], OidcClientsColumns[7]},
+				Symbol:     "oidc_clients_organizations_clients",
+				Columns:    []*schema.Column{OidcClientsColumns[12]},
+				RefColumns: []*schema.Column{OrganizationsColumns[0]},
+				OnDelete:   schema.NoAction,
 			},
+		},
+		Indexes: []*schema.Index{
 			{
 				Name:    "oidcclient_client_id",
 				Unique:  false,
 				Columns: []*schema.Column{OidcClientsColumns[1]},
+			},
+			{
+				Name:    "oidcclient_owner_organization_id",
+				Unique:  false,
+				Columns: []*schema.Column{OidcClientsColumns[12]},
 			},
 		},
 	}
@@ -71,6 +83,8 @@ var (
 	OidcClientSecretsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
 		{Name: "secret_hash", Type: field.TypeBytes, Size: 32},
+		{Name: "hint", Type: field.TypeString, Size: 64},
+		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
@@ -84,7 +98,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "oidc_client_secrets_oidc_clients_secrets",
-				Columns:    []*schema.Column{OidcClientSecretsColumns[5]},
+				Columns:    []*schema.Column{OidcClientSecretsColumns[7]},
 				RefColumns: []*schema.Column{OidcClientsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -93,7 +107,12 @@ var (
 			{
 				Name:    "oidcclientsecret_client_ref_id_revoked_at",
 				Unique:  false,
-				Columns: []*schema.Column{OidcClientSecretsColumns[5], OidcClientSecretsColumns[4]},
+				Columns: []*schema.Column{OidcClientSecretsColumns[7], OidcClientSecretsColumns[6]},
+			},
+			{
+				Name:    "oidcclientsecret_client_ref_id_secret_hash",
+				Unique:  true,
+				Columns: []*schema.Column{OidcClientSecretsColumns[7], OidcClientSecretsColumns[1]},
 			},
 		},
 	}
@@ -189,6 +208,11 @@ var (
 				Columns: []*schema.Column{OidcRefreshTokensColumns[12], OidcRefreshTokensColumns[10]},
 			},
 			{
+				Name:    "oidcrefreshtoken_client_ref_id_revoked_at",
+				Unique:  false,
+				Columns: []*schema.Column{OidcRefreshTokensColumns[10], OidcRefreshTokensColumns[9]},
+			},
+			{
 				Name:    "oidcrefreshtoken_family_id",
 				Unique:  false,
 				Columns: []*schema.Column{OidcRefreshTokensColumns[4]},
@@ -243,6 +267,18 @@ var (
 				OnDelete:   schema.NoAction,
 			},
 		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "organizationmember_organization_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{OrganizationMembersColumns[4], OrganizationMembersColumns[5]},
+			},
+			{
+				Name:    "organizationmember_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{OrganizationMembersColumns[5]},
+			},
+		},
 	}
 	// UserRefsColumns holds the columns for the "user_refs" table.
 	UserRefsColumns = []*schema.Column{
@@ -271,6 +307,7 @@ var (
 
 func init() {
 	OidcCallbackUrIsTable.ForeignKeys[0].RefTable = OidcClientsTable
+	OidcClientsTable.ForeignKeys[0].RefTable = OrganizationsTable
 	OidcClientSecretsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[1].RefTable = UserRefsTable

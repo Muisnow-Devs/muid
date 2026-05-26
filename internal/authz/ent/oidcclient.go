@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authz/ent/oidcclient"
+	"sanzi.io/muid/internal/authz/ent/organization"
 )
 
 // OIDCClient is the model entity for the OIDCClient schema.
@@ -23,18 +24,26 @@ type OIDCClient struct {
 	ClientID string `json:"client_id,omitempty"`
 	// ClientName holds the value of the "client_name" field.
 	ClientName string `json:"client_name,omitempty"`
-	// ClientType holds the value of the "client_type" field.
-	ClientType oidcclient.ClientType `json:"client_type,omitempty"`
+	// OwnerOrganizationID holds the value of the "owner_organization_id" field.
+	OwnerOrganizationID uuid.UUID `json:"owner_organization_id,omitempty"`
 	// Allowed scopes for the client.
 	Scopes []string `json:"scopes,omitempty"`
+	// TokenEndpointAuthMethod holds the value of the "token_endpoint_auth_method" field.
+	TokenEndpointAuthMethod oidcclient.TokenEndpointAuthMethod `json:"token_endpoint_auth_method,omitempty"`
+	// ApplicationType holds the value of the "application_type" field.
+	ApplicationType oidcclient.ApplicationType `json:"application_type,omitempty"`
+	// public is public accessible, organization is accessible to members of the owning organization, private is only accessible to specific users or groups.
+	AccessPolicy oidcclient.AccessPolicy `json:"access_policy,omitempty"`
+	// VerificationStatus holds the value of the "verification_status" field.
+	VerificationStatus oidcclient.VerificationStatus `json:"verification_status,omitempty"`
+	// PublishStatus holds the value of the "publish_status" field.
+	PublishStatus oidcclient.PublishStatus `json:"publish_status,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// DeletedAt holds the value of the "deleted_at" field.
 	DeletedAt *time.Time `json:"deleted_at,omitempty"`
-	// Enabled holds the value of the "enabled" field.
-	Enabled bool `json:"enabled,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OIDCClientQuery when eager-loading is set.
 	Edges        OIDCClientEdges `json:"edges"`
@@ -51,9 +60,11 @@ type OIDCClientEdges struct {
 	Grants []*OIDCGrant `json:"grants,omitempty"`
 	// RefreshTokens holds the value of the refresh_tokens edge.
 	RefreshTokens []*OIDCRefreshToken `json:"refresh_tokens,omitempty"`
+	// Organization holds the value of the organization edge.
+	Organization *Organization `json:"organization,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // CallbackUrlsOrErr returns the CallbackUrls value or an error if the edge
@@ -92,6 +103,17 @@ func (e OIDCClientEdges) RefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
 	return nil, &NotLoadedError{edge: "refresh_tokens"}
 }
 
+// OrganizationOrErr returns the Organization value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OIDCClientEdges) OrganizationOrErr() (*Organization, error) {
+	if e.Organization != nil {
+		return e.Organization, nil
+	} else if e.loadedTypes[4] {
+		return nil, &NotFoundError{label: organization.Label}
+	}
+	return nil, &NotLoadedError{edge: "organization"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*OIDCClient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
@@ -99,13 +121,11 @@ func (*OIDCClient) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case oidcclient.FieldScopes:
 			values[i] = new([]byte)
-		case oidcclient.FieldEnabled:
-			values[i] = new(sql.NullBool)
-		case oidcclient.FieldClientID, oidcclient.FieldClientName, oidcclient.FieldClientType:
+		case oidcclient.FieldClientID, oidcclient.FieldClientName, oidcclient.FieldTokenEndpointAuthMethod, oidcclient.FieldApplicationType, oidcclient.FieldAccessPolicy, oidcclient.FieldVerificationStatus, oidcclient.FieldPublishStatus:
 			values[i] = new(sql.NullString)
 		case oidcclient.FieldCreatedAt, oidcclient.FieldUpdatedAt, oidcclient.FieldDeletedAt:
 			values[i] = new(sql.NullTime)
-		case oidcclient.FieldID:
+		case oidcclient.FieldID, oidcclient.FieldOwnerOrganizationID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -140,11 +160,11 @@ func (_m *OIDCClient) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ClientName = value.String
 			}
-		case oidcclient.FieldClientType:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field client_type", values[i])
-			} else if value.Valid {
-				_m.ClientType = oidcclient.ClientType(value.String)
+		case oidcclient.FieldOwnerOrganizationID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field owner_organization_id", values[i])
+			} else if value != nil {
+				_m.OwnerOrganizationID = *value
 			}
 		case oidcclient.FieldScopes:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -153,6 +173,36 @@ func (_m *OIDCClient) assignValues(columns []string, values []any) error {
 				if err := json.Unmarshal(*value, &_m.Scopes); err != nil {
 					return fmt.Errorf("unmarshal field scopes: %w", err)
 				}
+			}
+		case oidcclient.FieldTokenEndpointAuthMethod:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field token_endpoint_auth_method", values[i])
+			} else if value.Valid {
+				_m.TokenEndpointAuthMethod = oidcclient.TokenEndpointAuthMethod(value.String)
+			}
+		case oidcclient.FieldApplicationType:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field application_type", values[i])
+			} else if value.Valid {
+				_m.ApplicationType = oidcclient.ApplicationType(value.String)
+			}
+		case oidcclient.FieldAccessPolicy:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field access_policy", values[i])
+			} else if value.Valid {
+				_m.AccessPolicy = oidcclient.AccessPolicy(value.String)
+			}
+		case oidcclient.FieldVerificationStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field verification_status", values[i])
+			} else if value.Valid {
+				_m.VerificationStatus = oidcclient.VerificationStatus(value.String)
+			}
+		case oidcclient.FieldPublishStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field publish_status", values[i])
+			} else if value.Valid {
+				_m.PublishStatus = oidcclient.PublishStatus(value.String)
 			}
 		case oidcclient.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -172,12 +222,6 @@ func (_m *OIDCClient) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.DeletedAt = new(time.Time)
 				*_m.DeletedAt = value.Time
-			}
-		case oidcclient.FieldEnabled:
-			if value, ok := values[i].(*sql.NullBool); !ok {
-				return fmt.Errorf("unexpected type %T for field enabled", values[i])
-			} else if value.Valid {
-				_m.Enabled = value.Bool
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -212,6 +256,11 @@ func (_m *OIDCClient) QueryRefreshTokens() *OIDCRefreshTokenQuery {
 	return NewOIDCClientClient(_m.config).QueryRefreshTokens(_m)
 }
 
+// QueryOrganization queries the "organization" edge of the OIDCClient entity.
+func (_m *OIDCClient) QueryOrganization() *OrganizationQuery {
+	return NewOIDCClientClient(_m.config).QueryOrganization(_m)
+}
+
 // Update returns a builder for updating this OIDCClient.
 // Note that you need to call OIDCClient.Unwrap() before calling this method if this OIDCClient
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -241,11 +290,26 @@ func (_m *OIDCClient) String() string {
 	builder.WriteString("client_name=")
 	builder.WriteString(_m.ClientName)
 	builder.WriteString(", ")
-	builder.WriteString("client_type=")
-	builder.WriteString(fmt.Sprintf("%v", _m.ClientType))
+	builder.WriteString("owner_organization_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.OwnerOrganizationID))
 	builder.WriteString(", ")
 	builder.WriteString("scopes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Scopes))
+	builder.WriteString(", ")
+	builder.WriteString("token_endpoint_auth_method=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TokenEndpointAuthMethod))
+	builder.WriteString(", ")
+	builder.WriteString("application_type=")
+	builder.WriteString(fmt.Sprintf("%v", _m.ApplicationType))
+	builder.WriteString(", ")
+	builder.WriteString("access_policy=")
+	builder.WriteString(fmt.Sprintf("%v", _m.AccessPolicy))
+	builder.WriteString(", ")
+	builder.WriteString("verification_status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.VerificationStatus))
+	builder.WriteString(", ")
+	builder.WriteString("publish_status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.PublishStatus))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
@@ -257,9 +321,6 @@ func (_m *OIDCClient) String() string {
 		builder.WriteString("deleted_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
-	builder.WriteString(", ")
-	builder.WriteString("enabled=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Enabled))
 	builder.WriteByte(')')
 	return builder.String()
 }

@@ -23,12 +23,16 @@ type OIDCClientSecret struct {
 	ClientRefID uuid.UUID `json:"client_ref_id,omitempty"`
 	// SecretHash holds the value of the "secret_hash" field.
 	SecretHash []byte `json:"-"`
+	// Hint holds the value of the "hint" field.
+	Hint string `json:"hint,omitempty"`
+	// LastUsedAt holds the value of the "last_used_at" field.
+	LastUsedAt *time.Time `json:"last_used_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
-	ExpiresAt time.Time `json:"expires_at,omitempty"`
+	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
-	RevokedAt time.Time `json:"revoked_at,omitempty"`
+	RevokedAt *time.Time `json:"revoked_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the OIDCClientSecretQuery when eager-loading is set.
 	Edges        OIDCClientSecretEdges `json:"edges"`
@@ -62,7 +66,9 @@ func (*OIDCClientSecret) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case oidcclientsecret.FieldSecretHash:
 			values[i] = new([]byte)
-		case oidcclientsecret.FieldCreatedAt, oidcclientsecret.FieldExpiresAt, oidcclientsecret.FieldRevokedAt:
+		case oidcclientsecret.FieldHint:
+			values[i] = new(sql.NullString)
+		case oidcclientsecret.FieldLastUsedAt, oidcclientsecret.FieldCreatedAt, oidcclientsecret.FieldExpiresAt, oidcclientsecret.FieldRevokedAt:
 			values[i] = new(sql.NullTime)
 		case oidcclientsecret.FieldID, oidcclientsecret.FieldClientRefID:
 			values[i] = new(uuid.UUID)
@@ -99,6 +105,19 @@ func (_m *OIDCClientSecret) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.SecretHash = *value
 			}
+		case oidcclientsecret.FieldHint:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field hint", values[i])
+			} else if value.Valid {
+				_m.Hint = value.String
+			}
+		case oidcclientsecret.FieldLastUsedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_used_at", values[i])
+			} else if value.Valid {
+				_m.LastUsedAt = new(time.Time)
+				*_m.LastUsedAt = value.Time
+			}
 		case oidcclientsecret.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -109,13 +128,15 @@ func (_m *OIDCClientSecret) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field expires_at", values[i])
 			} else if value.Valid {
-				_m.ExpiresAt = value.Time
+				_m.ExpiresAt = new(time.Time)
+				*_m.ExpiresAt = value.Time
 			}
 		case oidcclientsecret.FieldRevokedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field revoked_at", values[i])
 			} else if value.Valid {
-				_m.RevokedAt = value.Time
+				_m.RevokedAt = new(time.Time)
+				*_m.RevokedAt = value.Time
 			}
 		default:
 			_m.selectValues.Set(columns[i], values[i])
@@ -163,14 +184,26 @@ func (_m *OIDCClientSecret) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("secret_hash=<sensitive>")
 	builder.WriteString(", ")
+	builder.WriteString("hint=")
+	builder.WriteString(_m.Hint)
+	builder.WriteString(", ")
+	if v := _m.LastUsedAt; v != nil {
+		builder.WriteString("last_used_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
+	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
-	builder.WriteString("expires_at=")
-	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))
+	if v := _m.ExpiresAt; v != nil {
+		builder.WriteString("expires_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteString(", ")
-	builder.WriteString("revoked_at=")
-	builder.WriteString(_m.RevokedAt.Format(time.ANSIC))
+	if v := _m.RevokedAt; v != nil {
+		builder.WriteString("revoked_at=")
+		builder.WriteString(v.Format(time.ANSIC))
+	}
 	builder.WriteByte(')')
 	return builder.String()
 }

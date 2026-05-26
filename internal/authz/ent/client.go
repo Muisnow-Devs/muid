@@ -585,6 +585,22 @@ func (c *OIDCClientClient) QueryRefreshTokens(_m *OIDCClient) *OIDCRefreshTokenQ
 	return query
 }
 
+// QueryOrganization queries the organization edge of a OIDCClient.
+func (c *OIDCClientClient) QueryOrganization(_m *OIDCClient) *OrganizationQuery {
+	query := (&OrganizationClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, id),
+			sqlgraph.To(organization.Table, organization.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oidcclient.OrganizationTable, oidcclient.OrganizationColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OIDCClientClient) Hooks() []Hook {
 	return c.hooks.OIDCClient
@@ -1227,6 +1243,22 @@ func (c *OrganizationClient) GetX(ctx context.Context, id uuid.UUID) *Organizati
 		panic(err)
 	}
 	return obj
+}
+
+// QueryClients queries the clients edge of a Organization.
+func (c *OrganizationClient) QueryClients(_m *Organization) *OIDCClientQuery {
+	query := (&OIDCClientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(organization.Table, organization.FieldID, id),
+			sqlgraph.To(oidcclient.Table, oidcclient.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, organization.ClientsTable, organization.ClientsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
 }
 
 // QueryMembers queries the members edge of a Organization.

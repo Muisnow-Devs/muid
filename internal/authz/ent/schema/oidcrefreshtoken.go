@@ -44,6 +44,7 @@ func (OIDCRefreshToken) Fields() []ent.Field {
 func (OIDCRefreshToken) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("user_id", "client_ref_id"),
+		index.Fields("client_ref_id", "revoked_at"),
 		index.Fields("family_id"),
 		index.Fields("selector", "revoked_at", "expires_at"),
 	}

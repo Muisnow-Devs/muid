@@ -240,7 +240,7 @@ func (p *OIDCIdentityProvider) continueFinishOIDCRegister(
 
 	linked, err := ensureFederatedLink(
 		ctx,
-		p.accounts.Store.DB,
+		p.accounts,
 		provider,
 		subject,
 		provisioned,

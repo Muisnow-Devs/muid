@@ -21,8 +21,10 @@ type (
 	transitionIDKey struct{}
 )
 
-const msgInvalidSessionToken = "invalid session token"
-const msgMissingSessionToken = "missing session token"
+const (
+	msgInvalidSessionToken = "invalid session token"
+	msgMissingSessionToken = "missing session token"
+)
 
 // WireSessionFromContext returns a validated wire session token stored by [AuthnRequestContextInterceptor].
 func WireSessionFromContext(ctx context.Context) (string, bool) {
@@ -50,6 +52,7 @@ func AuthnRequestContextInterceptor() grpc.UnaryServerInterceptor {
 		pb.AuthnService_GetAuthorizedSession_FullMethodName:      enrichRequiredWireSession,
 		pb.AuthnService_GetAuthenticatedPrincipal_FullMethodName: enrichRequiredWireSession,
 		pb.AuthnService_RevokeSession_FullMethodName:             enrichRequiredWireSession,
+		pb.AuthnService_RevokeFederatedIdentity_FullMethodName:   enrichRequiredWireSession,
 	})
 }
 
@@ -84,6 +87,8 @@ func enrichRequiredWireSession(ctx context.Context, _ string, req any) (context.
 	case *pb.GetAuthenticatedPrincipalRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	case *pb.RevokeSessionRequest:
+		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
+	case *pb.RevokeFederatedIdentityRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	default:
 		return ctx, status.Errorf(codes.Internal, "unsupported request type")

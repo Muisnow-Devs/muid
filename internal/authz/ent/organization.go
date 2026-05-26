@@ -36,17 +36,28 @@ type Organization struct {
 
 // OrganizationEdges holds the relations/edges for other nodes in the graph.
 type OrganizationEdges struct {
+	// Clients holds the value of the clients edge.
+	Clients []*OIDCClient `json:"clients,omitempty"`
 	// Members holds the value of the members edge.
 	Members []*OrganizationMember `json:"members,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [1]bool
+	loadedTypes [2]bool
+}
+
+// ClientsOrErr returns the Clients value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrganizationEdges) ClientsOrErr() ([]*OIDCClient, error) {
+	if e.loadedTypes[0] {
+		return e.Clients, nil
+	}
+	return nil, &NotLoadedError{edge: "clients"}
 }
 
 // MembersOrErr returns the Members value or an error if the edge
 // was not loaded in eager-loading.
 func (e OrganizationEdges) MembersOrErr() ([]*OrganizationMember, error) {
-	if e.loadedTypes[0] {
+	if e.loadedTypes[1] {
 		return e.Members, nil
 	}
 	return nil, &NotLoadedError{edge: "members"}
@@ -125,6 +136,11 @@ func (_m *Organization) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *Organization) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
+}
+
+// QueryClients queries the "clients" edge of the Organization entity.
+func (_m *Organization) QueryClients() *OIDCClientQuery {
+	return NewOrganizationClient(_m.config).QueryClients(_m)
 }
 
 // QueryMembers queries the "members" edge of the Organization entity.

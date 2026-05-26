@@ -190,6 +190,21 @@ func (s *sessionService) ResolveSessionToken(
 	return res, nil
 }
 
+// SessionCreatedAt returns the database created_at for a session (authoritative issuance time).
+func (s *sessionService) SessionCreatedAt(
+	ctx context.Context,
+	sessionID uuid.UUID,
+) (time.Time, error) {
+	row, err := s.store.DB.UserSession.Get(ctx, sessionID)
+	if ent.IsNotFound(err) {
+		return time.Time{}, session.ErrSessionNotFound
+	}
+	if err != nil {
+		return time.Time{}, err
+	}
+	return row.CreatedAt, nil
+}
+
 // RevokeSessionToken revokes the session and drops any cache entry.
 func (s *sessionService) RevokeSessionToken(ctx context.Context, wireToken string) error {
 	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)

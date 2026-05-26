@@ -3,14 +3,11 @@ package identity
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
+	"sanzi.io/muid/internal/authn/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/pkg/utils"
 )
 
 func finishRegisterAfterLink(
@@ -37,45 +34,34 @@ func finishRegisterAfterLink(
 	}, nil
 }
 
-// ensureFederatedLink creates or verifies a UserFederatedIdentity for register finish.
+// ensureFederatedLink creates or reactivates a UserFederatedIdentity for register finish.
 func ensureFederatedLink(
 	ctx context.Context,
-	db *ent.Client,
+	accounts *account.Accounts,
 	provider, subject string,
 	provisioned uuid.UUID,
 	claims session.RegisterPendingClaims,
 ) (uuid.UUID, error) {
-	fed, err := db.UserFederatedIdentity.Query().
-		Where(
-			userfederatedidentity.ProviderEQ(provider),
-			userfederatedidentity.SubjectEQ(subject),
-		).
-		Only(ctx)
-	if err == nil {
-		if fed.UserID != provisioned {
-			return uuid.Nil, errors.Join(
-				idn.ErrInvalidSessionState,
-				errors.New("federated user mismatch"),
-			)
-		}
-		return fed.UserID, nil
+	params := account.FederatedLinkParams{
+		UserID:        provisioned,
+		Provider:      provider,
+		Subject:       subject,
+		Email:         claims.Email,
+		EmailVerified: claims.EmailVerified,
+		DisplayName:   claims.Name,
 	}
-	if !ent.IsNotFound(err) {
-		return uuid.Nil, err
+	if claims.Picture != "" {
+		pic := claims.Picture
+		params.AvatarURL = &pic
 	}
 
-	email := strings.TrimSpace(strings.ToLower(claims.Email))
-	b := db.UserFederatedIdentity.Create().
-		SetUserID(provisioned).
-		SetProvider(provider).
-		SetSubject(subject).
-		SetEmail(email).
-		SetEmailVerified(claims.EmailVerified)
-
-	utils.FuncIfExists(&claims.Name, func(name string) { b = b.SetDisplayName(name) })
-	utils.FuncIfExists(&claims.Picture, func(pic string) { b = b.SetNillableAvatarURL(&pic) })
-
-	err = b.Exec(ctx)
+	err := accounts.Federated.LinkFederatedIdentity(ctx, params)
+	if errors.Is(err, account.ErrFederatedSubjectLinkedToOtherUser) {
+		return uuid.Nil, errors.Join(
+			idn.ErrInvalidSessionState,
+			errors.New("federated user mismatch"),
+		)
+	}
 	if err != nil {
 		return uuid.Nil, err
 	}

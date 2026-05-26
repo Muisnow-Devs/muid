@@ -66,6 +66,11 @@ func ClientName(v string) predicate.OIDCClient {
 	return predicate.OIDCClient(sql.FieldEQ(FieldClientName, v))
 }
 
+// OwnerOrganizationID applies equality check predicate on the "owner_organization_id" field. It's identical to OwnerOrganizationIDEQ.
+func OwnerOrganizationID(v uuid.UUID) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldOwnerOrganizationID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.OIDCClient {
 	return predicate.OIDCClient(sql.FieldEQ(FieldCreatedAt, v))
@@ -79,11 +84,6 @@ func UpdatedAt(v time.Time) predicate.OIDCClient {
 // DeletedAt applies equality check predicate on the "deleted_at" field. It's identical to DeletedAtEQ.
 func DeletedAt(v time.Time) predicate.OIDCClient {
 	return predicate.OIDCClient(sql.FieldEQ(FieldDeletedAt, v))
-}
-
-// Enabled applies equality check predicate on the "enabled" field. It's identical to EnabledEQ.
-func Enabled(v bool) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldEQ(FieldEnabled, v))
 }
 
 // ClientIDEQ applies the EQ predicate on the "client_id" field.
@@ -216,24 +216,124 @@ func ClientNameContainsFold(v string) predicate.OIDCClient {
 	return predicate.OIDCClient(sql.FieldContainsFold(FieldClientName, v))
 }
 
-// ClientTypeEQ applies the EQ predicate on the "client_type" field.
-func ClientTypeEQ(v ClientType) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldEQ(FieldClientType, v))
+// OwnerOrganizationIDEQ applies the EQ predicate on the "owner_organization_id" field.
+func OwnerOrganizationIDEQ(v uuid.UUID) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldOwnerOrganizationID, v))
 }
 
-// ClientTypeNEQ applies the NEQ predicate on the "client_type" field.
-func ClientTypeNEQ(v ClientType) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldNEQ(FieldClientType, v))
+// OwnerOrganizationIDNEQ applies the NEQ predicate on the "owner_organization_id" field.
+func OwnerOrganizationIDNEQ(v uuid.UUID) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNEQ(FieldOwnerOrganizationID, v))
 }
 
-// ClientTypeIn applies the In predicate on the "client_type" field.
-func ClientTypeIn(vs ...ClientType) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldIn(FieldClientType, vs...))
+// OwnerOrganizationIDIn applies the In predicate on the "owner_organization_id" field.
+func OwnerOrganizationIDIn(vs ...uuid.UUID) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldIn(FieldOwnerOrganizationID, vs...))
 }
 
-// ClientTypeNotIn applies the NotIn predicate on the "client_type" field.
-func ClientTypeNotIn(vs ...ClientType) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldNotIn(FieldClientType, vs...))
+// OwnerOrganizationIDNotIn applies the NotIn predicate on the "owner_organization_id" field.
+func OwnerOrganizationIDNotIn(vs ...uuid.UUID) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNotIn(FieldOwnerOrganizationID, vs...))
+}
+
+// TokenEndpointAuthMethodEQ applies the EQ predicate on the "token_endpoint_auth_method" field.
+func TokenEndpointAuthMethodEQ(v TokenEndpointAuthMethod) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldTokenEndpointAuthMethod, v))
+}
+
+// TokenEndpointAuthMethodNEQ applies the NEQ predicate on the "token_endpoint_auth_method" field.
+func TokenEndpointAuthMethodNEQ(v TokenEndpointAuthMethod) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNEQ(FieldTokenEndpointAuthMethod, v))
+}
+
+// TokenEndpointAuthMethodIn applies the In predicate on the "token_endpoint_auth_method" field.
+func TokenEndpointAuthMethodIn(vs ...TokenEndpointAuthMethod) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldIn(FieldTokenEndpointAuthMethod, vs...))
+}
+
+// TokenEndpointAuthMethodNotIn applies the NotIn predicate on the "token_endpoint_auth_method" field.
+func TokenEndpointAuthMethodNotIn(vs ...TokenEndpointAuthMethod) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNotIn(FieldTokenEndpointAuthMethod, vs...))
+}
+
+// ApplicationTypeEQ applies the EQ predicate on the "application_type" field.
+func ApplicationTypeEQ(v ApplicationType) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldApplicationType, v))
+}
+
+// ApplicationTypeNEQ applies the NEQ predicate on the "application_type" field.
+func ApplicationTypeNEQ(v ApplicationType) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNEQ(FieldApplicationType, v))
+}
+
+// ApplicationTypeIn applies the In predicate on the "application_type" field.
+func ApplicationTypeIn(vs ...ApplicationType) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldIn(FieldApplicationType, vs...))
+}
+
+// ApplicationTypeNotIn applies the NotIn predicate on the "application_type" field.
+func ApplicationTypeNotIn(vs ...ApplicationType) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNotIn(FieldApplicationType, vs...))
+}
+
+// AccessPolicyEQ applies the EQ predicate on the "access_policy" field.
+func AccessPolicyEQ(v AccessPolicy) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldAccessPolicy, v))
+}
+
+// AccessPolicyNEQ applies the NEQ predicate on the "access_policy" field.
+func AccessPolicyNEQ(v AccessPolicy) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNEQ(FieldAccessPolicy, v))
+}
+
+// AccessPolicyIn applies the In predicate on the "access_policy" field.
+func AccessPolicyIn(vs ...AccessPolicy) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldIn(FieldAccessPolicy, vs...))
+}
+
+// AccessPolicyNotIn applies the NotIn predicate on the "access_policy" field.
+func AccessPolicyNotIn(vs ...AccessPolicy) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNotIn(FieldAccessPolicy, vs...))
+}
+
+// VerificationStatusEQ applies the EQ predicate on the "verification_status" field.
+func VerificationStatusEQ(v VerificationStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldVerificationStatus, v))
+}
+
+// VerificationStatusNEQ applies the NEQ predicate on the "verification_status" field.
+func VerificationStatusNEQ(v VerificationStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNEQ(FieldVerificationStatus, v))
+}
+
+// VerificationStatusIn applies the In predicate on the "verification_status" field.
+func VerificationStatusIn(vs ...VerificationStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldIn(FieldVerificationStatus, vs...))
+}
+
+// VerificationStatusNotIn applies the NotIn predicate on the "verification_status" field.
+func VerificationStatusNotIn(vs ...VerificationStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNotIn(FieldVerificationStatus, vs...))
+}
+
+// PublishStatusEQ applies the EQ predicate on the "publish_status" field.
+func PublishStatusEQ(v PublishStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldEQ(FieldPublishStatus, v))
+}
+
+// PublishStatusNEQ applies the NEQ predicate on the "publish_status" field.
+func PublishStatusNEQ(v PublishStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNEQ(FieldPublishStatus, v))
+}
+
+// PublishStatusIn applies the In predicate on the "publish_status" field.
+func PublishStatusIn(vs ...PublishStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldIn(FieldPublishStatus, vs...))
+}
+
+// PublishStatusNotIn applies the NotIn predicate on the "publish_status" field.
+func PublishStatusNotIn(vs ...PublishStatus) predicate.OIDCClient {
+	return predicate.OIDCClient(sql.FieldNotIn(FieldPublishStatus, vs...))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
@@ -366,16 +466,6 @@ func DeletedAtNotNil() predicate.OIDCClient {
 	return predicate.OIDCClient(sql.FieldNotNull(FieldDeletedAt))
 }
 
-// EnabledEQ applies the EQ predicate on the "enabled" field.
-func EnabledEQ(v bool) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldEQ(FieldEnabled, v))
-}
-
-// EnabledNEQ applies the NEQ predicate on the "enabled" field.
-func EnabledNEQ(v bool) predicate.OIDCClient {
-	return predicate.OIDCClient(sql.FieldNEQ(FieldEnabled, v))
-}
-
 // HasCallbackUrls applies the HasEdge predicate on the "callback_urls" edge.
 func HasCallbackUrls() predicate.OIDCClient {
 	return predicate.OIDCClient(func(s *sql.Selector) {
@@ -460,6 +550,29 @@ func HasRefreshTokens() predicate.OIDCClient {
 func HasRefreshTokensWith(preds ...predicate.OIDCRefreshToken) predicate.OIDCClient {
 	return predicate.OIDCClient(func(s *sql.Selector) {
 		step := newRefreshTokensStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOrganization applies the HasEdge predicate on the "organization" edge.
+func HasOrganization() predicate.OIDCClient {
+	return predicate.OIDCClient(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, OrganizationTable, OrganizationColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrganizationWith applies the HasEdge predicate on the "organization" edge with a given conditions (other predicates).
+func HasOrganizationWith(preds ...predicate.Organization) predicate.OIDCClient {
+	return predicate.OIDCClient(func(s *sql.Selector) {
+		step := newOrganizationStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

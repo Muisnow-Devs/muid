@@ -28,6 +28,26 @@ func (_u *OIDCClientSecretUpdate) Where(ps ...predicate.OIDCClientSecret) *OIDCC
 	return _u
 }
 
+// SetLastUsedAt sets the "last_used_at" field.
+func (_u *OIDCClientSecretUpdate) SetLastUsedAt(v time.Time) *OIDCClientSecretUpdate {
+	_u.mutation.SetLastUsedAt(v)
+	return _u
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_u *OIDCClientSecretUpdate) SetNillableLastUsedAt(v *time.Time) *OIDCClientSecretUpdate {
+	if v != nil {
+		_u.SetLastUsedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (_u *OIDCClientSecretUpdate) ClearLastUsedAt() *OIDCClientSecretUpdate {
+	_u.mutation.ClearLastUsedAt()
+	return _u
+}
+
 // SetExpiresAt sets the "expires_at" field.
 func (_u *OIDCClientSecretUpdate) SetExpiresAt(v time.Time) *OIDCClientSecretUpdate {
 	_u.mutation.SetExpiresAt(v)
@@ -120,6 +140,12 @@ func (_u *OIDCClientSecretUpdate) sqlSave(ctx context.Context) (_node int, err e
 			}
 		}
 	}
+	if value, ok := _u.mutation.LastUsedAt(); ok {
+		_spec.SetField(oidcclientsecret.FieldLastUsedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastUsedAtCleared() {
+		_spec.ClearField(oidcclientsecret.FieldLastUsedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(oidcclientsecret.FieldExpiresAt, field.TypeTime, value)
 	}
@@ -150,6 +176,26 @@ type OIDCClientSecretUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *OIDCClientSecretMutation
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (_u *OIDCClientSecretUpdateOne) SetLastUsedAt(v time.Time) *OIDCClientSecretUpdateOne {
+	_u.mutation.SetLastUsedAt(v)
+	return _u
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_u *OIDCClientSecretUpdateOne) SetNillableLastUsedAt(v *time.Time) *OIDCClientSecretUpdateOne {
+	if v != nil {
+		_u.SetLastUsedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastUsedAt clears the value of the "last_used_at" field.
+func (_u *OIDCClientSecretUpdateOne) ClearLastUsedAt() *OIDCClientSecretUpdateOne {
+	_u.mutation.ClearLastUsedAt()
+	return _u
 }
 
 // SetExpiresAt sets the "expires_at" field.
@@ -273,6 +319,12 @@ func (_u *OIDCClientSecretUpdateOne) sqlSave(ctx context.Context) (_node *OIDCCl
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.LastUsedAt(); ok {
+		_spec.SetField(oidcclientsecret.FieldLastUsedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastUsedAtCleared() {
+		_spec.ClearField(oidcclientsecret.FieldLastUsedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(oidcclientsecret.FieldExpiresAt, field.TypeTime, value)

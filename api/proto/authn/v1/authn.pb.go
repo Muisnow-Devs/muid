@@ -1201,10 +1201,10 @@ const file_authn_v1_authn_proto_rawDesc = "" +
 	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\x86\x01\n" +
 	"!GetAuthenticatedPrincipalResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12K\n" +
-	"\tprincipal\x18\x02 \x01(\v2-.muid.authn.v1.session.AuthenticatedPrincipalR\tprincipal\"\x86\x01\n" +
+	"\tprincipal\x18\x02 \x01(\v2-.muid.authn.v1.session.AuthenticatedPrincipalR\tprincipal\"\x91\x01\n" +
 	"\x1eRevokeFederatedIdentityRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12\x1a\n" +
-	"\bprovider\x18\x02 \x01(\tR\bprovider\";\n" +
+	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12%\n" +
+	"\bprovider\x18\x02 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x182R\bprovider\";\n" +
 	"\x1fRevokeFederatedIdentityResponse\x12\x18\n" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\"`\n" +
 	"\x14RevokeSessionRequest\x12H\n" +

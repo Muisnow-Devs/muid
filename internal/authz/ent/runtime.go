@@ -84,19 +84,15 @@ func init() {
 	// oidcclient.DefaultScopes holds the default value on creation for the scopes field.
 	oidcclient.DefaultScopes = oidcclientDescScopes.Default.([]string)
 	// oidcclientDescCreatedAt is the schema descriptor for created_at field.
-	oidcclientDescCreatedAt := oidcclientFields[5].Descriptor()
+	oidcclientDescCreatedAt := oidcclientFields[10].Descriptor()
 	// oidcclient.DefaultCreatedAt holds the default value on creation for the created_at field.
 	oidcclient.DefaultCreatedAt = oidcclientDescCreatedAt.Default.(func() time.Time)
 	// oidcclientDescUpdatedAt is the schema descriptor for updated_at field.
-	oidcclientDescUpdatedAt := oidcclientFields[6].Descriptor()
+	oidcclientDescUpdatedAt := oidcclientFields[11].Descriptor()
 	// oidcclient.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	oidcclient.DefaultUpdatedAt = oidcclientDescUpdatedAt.Default.(func() time.Time)
 	// oidcclient.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	oidcclient.UpdateDefaultUpdatedAt = oidcclientDescUpdatedAt.UpdateDefault.(func() time.Time)
-	// oidcclientDescEnabled is the schema descriptor for enabled field.
-	oidcclientDescEnabled := oidcclientFields[8].Descriptor()
-	// oidcclient.DefaultEnabled holds the default value on creation for the enabled field.
-	oidcclient.DefaultEnabled = oidcclientDescEnabled.Default.(bool)
 	// oidcclientDescID is the schema descriptor for id field.
 	oidcclientDescID := oidcclientFields[0].Descriptor()
 	// oidcclient.DefaultID holds the default value on creation for the id field.
@@ -121,8 +117,26 @@ func init() {
 			return nil
 		}
 	}()
+	// oidcclientsecretDescHint is the schema descriptor for hint field.
+	oidcclientsecretDescHint := oidcclientsecretFields[3].Descriptor()
+	// oidcclientsecret.HintValidator is a validator for the "hint" field. It is called by the builders before save.
+	oidcclientsecret.HintValidator = func() func(string) error {
+		validators := oidcclientsecretDescHint.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(hint string) error {
+			for _, fn := range fns {
+				if err := fn(hint); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// oidcclientsecretDescCreatedAt is the schema descriptor for created_at field.
-	oidcclientsecretDescCreatedAt := oidcclientsecretFields[3].Descriptor()
+	oidcclientsecretDescCreatedAt := oidcclientsecretFields[5].Descriptor()
 	// oidcclientsecret.DefaultCreatedAt holds the default value on creation for the created_at field.
 	oidcclientsecret.DefaultCreatedAt = oidcclientsecretDescCreatedAt.Default.(func() time.Time)
 	// oidcclientsecretDescID is the schema descriptor for id field.

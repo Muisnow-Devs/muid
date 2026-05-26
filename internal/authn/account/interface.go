@@ -37,6 +37,12 @@ type OIDC interface {
 	) (uuid.UUID, *identity.RegisterRequired, error)
 }
 
+// Federated manages linked OIDC provider identities for existing users.
+type Federated interface {
+	LinkFederatedIdentity(ctx context.Context, params FederatedLinkParams) error
+	RevokeFederatedIdentity(ctx context.Context, userID uuid.UUID, provider string) error
+}
+
 // Passkey persists WebAuthn credentials and related notifications.
 type LinkPasskeyConfig struct {
 	UserId         uuid.UUID
@@ -83,6 +89,7 @@ type Session interface {
 		userID uuid.UUID,
 	) (*sessionpb.AuthenticatedResult, error)
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
+	SessionCreatedAt(ctx context.Context, sessionID uuid.UUID) (time.Time, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
 	AuthenticatedResultFromResolved(
 		wireToken string,

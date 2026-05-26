@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -119,11 +120,65 @@ func (g *GRPCHandler) GetAuthenticatedPrincipal(
 	return out, nil
 }
 
+// RevokeFederatedIdentity unlinks a federated provider for the authenticated user.
+// When the session was issued more than five minutes ago, clients receive FailedPrecondition
+// with message "reauthentication required" and should complete StartAuthSession with
+// AUTH_INTENT_REAUTHENTICATE (passing the current session_token), then retry with the
+// newly issued session from AuthSuccess.
 func (g *GRPCHandler) RevokeFederatedIdentity(
-	context.Context,
-	*pb.RevokeFederatedIdentityRequest,
+	ctx context.Context,
+	req *pb.RevokeFederatedIdentityRequest,
 ) (*pb.RevokeFederatedIdentityResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RevokeFederatedIdentity not implemented")
+	wire, err := requiredWireSession(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	provider := strings.TrimSpace(req.GetProvider())
+	if provider == "" {
+		return nil, status.Error(codes.InvalidArgument, "provider is required")
+	}
+
+	res, err := g.accounts.Session.ResolveSessionToken(ctx, wire)
+	if errors.Is(err, session.ErrSessionNotFound) {
+		return nil, status.Error(codes.NotFound, "session not found")
+	}
+	if errors.Is(err, session.ErrSessionExpired) {
+		return nil, status.Error(codes.FailedPrecondition, "session expired")
+	}
+	if err != nil {
+		log.LogUnexpected(ctx, "authn revoke federated resolve session", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
+	issuedAt, err := g.accounts.Session.SessionCreatedAt(ctx, res.SessionID)
+	if errors.Is(err, session.ErrSessionNotFound) {
+		return nil, status.Error(codes.NotFound, "session not found")
+	}
+	if err != nil {
+		log.LogUnexpected(ctx, "authn revoke federated session created_at", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
+	if account.SessionRequiresReauthentication(issuedAt, time.Now()) {
+		return nil, status.Error(
+			codes.FailedPrecondition,
+			account.ErrReauthenticationRequired.Error(),
+		)
+	}
+
+	err = g.accounts.Federated.RevokeFederatedIdentity(ctx, res.UserID, provider)
+	if errors.Is(err, account.ErrFederatedIdentityNotFound) {
+		return nil, status.Error(codes.NotFound, "federated identity not found")
+	}
+	if err != nil {
+		log.LogUnexpected(ctx, "authn revoke federated identity", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
+	out := &pb.RevokeFederatedIdentityResponse{}
+	out.SetSuccess(true)
+	return out, nil
 }
 
 func (g *GRPCHandler) RevokeSession(

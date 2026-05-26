@@ -23,16 +23,20 @@ func (OIDCClientSecret) Fields() []ent.Field {
 		field.UUID("client_ref_id", uuid.UUID{}).Immutable(),
 
 		field.Bytes("secret_hash").Sensitive().NotEmpty().MaxLen(32).Immutable(),
+		field.String("hint").NotEmpty().MaxLen(64).Immutable(),
+
+		field.Time("last_used_at").Nillable().Optional(),
 
 		field.Time("created_at").Default(time.Now).Immutable(),
-		field.Time("expires_at").Optional(),
-		field.Time("revoked_at").Optional(),
+		field.Time("expires_at").Nillable().Optional(),
+		field.Time("revoked_at").Nillable().Optional(),
 	}
 }
 
 func (OIDCClientSecret) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("client_ref_id", "revoked_at"),
+		index.Fields("client_ref_id", "secret_hash").Unique(),
 	}
 }
 

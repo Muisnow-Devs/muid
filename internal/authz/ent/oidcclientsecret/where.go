@@ -66,6 +66,16 @@ func SecretHash(v []byte) predicate.OIDCClientSecret {
 	return predicate.OIDCClientSecret(sql.FieldEQ(FieldSecretHash, v))
 }
 
+// Hint applies equality check predicate on the "hint" field. It's identical to HintEQ.
+func Hint(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldEQ(FieldHint, v))
+}
+
+// LastUsedAt applies equality check predicate on the "last_used_at" field. It's identical to LastUsedAtEQ.
+func LastUsedAt(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldEQ(FieldLastUsedAt, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.OIDCClientSecret {
 	return predicate.OIDCClientSecret(sql.FieldEQ(FieldCreatedAt, v))
@@ -139,6 +149,121 @@ func SecretHashLT(v []byte) predicate.OIDCClientSecret {
 // SecretHashLTE applies the LTE predicate on the "secret_hash" field.
 func SecretHashLTE(v []byte) predicate.OIDCClientSecret {
 	return predicate.OIDCClientSecret(sql.FieldLTE(FieldSecretHash, v))
+}
+
+// HintEQ applies the EQ predicate on the "hint" field.
+func HintEQ(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldEQ(FieldHint, v))
+}
+
+// HintNEQ applies the NEQ predicate on the "hint" field.
+func HintNEQ(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldNEQ(FieldHint, v))
+}
+
+// HintIn applies the In predicate on the "hint" field.
+func HintIn(vs ...string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldIn(FieldHint, vs...))
+}
+
+// HintNotIn applies the NotIn predicate on the "hint" field.
+func HintNotIn(vs ...string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldNotIn(FieldHint, vs...))
+}
+
+// HintGT applies the GT predicate on the "hint" field.
+func HintGT(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldGT(FieldHint, v))
+}
+
+// HintGTE applies the GTE predicate on the "hint" field.
+func HintGTE(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldGTE(FieldHint, v))
+}
+
+// HintLT applies the LT predicate on the "hint" field.
+func HintLT(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldLT(FieldHint, v))
+}
+
+// HintLTE applies the LTE predicate on the "hint" field.
+func HintLTE(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldLTE(FieldHint, v))
+}
+
+// HintContains applies the Contains predicate on the "hint" field.
+func HintContains(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldContains(FieldHint, v))
+}
+
+// HintHasPrefix applies the HasPrefix predicate on the "hint" field.
+func HintHasPrefix(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldHasPrefix(FieldHint, v))
+}
+
+// HintHasSuffix applies the HasSuffix predicate on the "hint" field.
+func HintHasSuffix(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldHasSuffix(FieldHint, v))
+}
+
+// HintEqualFold applies the EqualFold predicate on the "hint" field.
+func HintEqualFold(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldEqualFold(FieldHint, v))
+}
+
+// HintContainsFold applies the ContainsFold predicate on the "hint" field.
+func HintContainsFold(v string) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldContainsFold(FieldHint, v))
+}
+
+// LastUsedAtEQ applies the EQ predicate on the "last_used_at" field.
+func LastUsedAtEQ(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldEQ(FieldLastUsedAt, v))
+}
+
+// LastUsedAtNEQ applies the NEQ predicate on the "last_used_at" field.
+func LastUsedAtNEQ(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldNEQ(FieldLastUsedAt, v))
+}
+
+// LastUsedAtIn applies the In predicate on the "last_used_at" field.
+func LastUsedAtIn(vs ...time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldIn(FieldLastUsedAt, vs...))
+}
+
+// LastUsedAtNotIn applies the NotIn predicate on the "last_used_at" field.
+func LastUsedAtNotIn(vs ...time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldNotIn(FieldLastUsedAt, vs...))
+}
+
+// LastUsedAtGT applies the GT predicate on the "last_used_at" field.
+func LastUsedAtGT(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldGT(FieldLastUsedAt, v))
+}
+
+// LastUsedAtGTE applies the GTE predicate on the "last_used_at" field.
+func LastUsedAtGTE(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldGTE(FieldLastUsedAt, v))
+}
+
+// LastUsedAtLT applies the LT predicate on the "last_used_at" field.
+func LastUsedAtLT(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldLT(FieldLastUsedAt, v))
+}
+
+// LastUsedAtLTE applies the LTE predicate on the "last_used_at" field.
+func LastUsedAtLTE(v time.Time) predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldLTE(FieldLastUsedAt, v))
+}
+
+// LastUsedAtIsNil applies the IsNil predicate on the "last_used_at" field.
+func LastUsedAtIsNil() predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldIsNull(FieldLastUsedAt))
+}
+
+// LastUsedAtNotNil applies the NotNil predicate on the "last_used_at" field.
+func LastUsedAtNotNil() predicate.OIDCClientSecret {
+	return predicate.OIDCClientSecret(sql.FieldNotNull(FieldLastUsedAt))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

@@ -20,18 +20,26 @@ const (
 	FieldClientID = "client_id"
 	// FieldClientName holds the string denoting the client_name field in the database.
 	FieldClientName = "client_name"
-	// FieldClientType holds the string denoting the client_type field in the database.
-	FieldClientType = "client_type"
+	// FieldOwnerOrganizationID holds the string denoting the owner_organization_id field in the database.
+	FieldOwnerOrganizationID = "owner_organization_id"
 	// FieldScopes holds the string denoting the scopes field in the database.
 	FieldScopes = "scopes"
+	// FieldTokenEndpointAuthMethod holds the string denoting the token_endpoint_auth_method field in the database.
+	FieldTokenEndpointAuthMethod = "token_endpoint_auth_method"
+	// FieldApplicationType holds the string denoting the application_type field in the database.
+	FieldApplicationType = "application_type"
+	// FieldAccessPolicy holds the string denoting the access_policy field in the database.
+	FieldAccessPolicy = "access_policy"
+	// FieldVerificationStatus holds the string denoting the verification_status field in the database.
+	FieldVerificationStatus = "verification_status"
+	// FieldPublishStatus holds the string denoting the publish_status field in the database.
+	FieldPublishStatus = "publish_status"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
 	// FieldDeletedAt holds the string denoting the deleted_at field in the database.
 	FieldDeletedAt = "deleted_at"
-	// FieldEnabled holds the string denoting the enabled field in the database.
-	FieldEnabled = "enabled"
 	// EdgeCallbackUrls holds the string denoting the callback_urls edge name in mutations.
 	EdgeCallbackUrls = "callback_urls"
 	// EdgeSecrets holds the string denoting the secrets edge name in mutations.
@@ -40,6 +48,8 @@ const (
 	EdgeGrants = "grants"
 	// EdgeRefreshTokens holds the string denoting the refresh_tokens edge name in mutations.
 	EdgeRefreshTokens = "refresh_tokens"
+	// EdgeOrganization holds the string denoting the organization edge name in mutations.
+	EdgeOrganization = "organization"
 	// Table holds the table name of the oidcclient in the database.
 	Table = "oidc_clients"
 	// CallbackUrlsTable is the table that holds the callback_urls relation/edge.
@@ -70,6 +80,13 @@ const (
 	RefreshTokensInverseTable = "oidc_refresh_tokens"
 	// RefreshTokensColumn is the table column denoting the refresh_tokens relation/edge.
 	RefreshTokensColumn = "client_ref_id"
+	// OrganizationTable is the table that holds the organization relation/edge.
+	OrganizationTable = "oidc_clients"
+	// OrganizationInverseTable is the table name for the Organization entity.
+	// It exists in this package in order to avoid circular dependency with the "organization" package.
+	OrganizationInverseTable = "organizations"
+	// OrganizationColumn is the table column denoting the organization relation/edge.
+	OrganizationColumn = "owner_organization_id"
 )
 
 // Columns holds all SQL columns for oidcclient fields.
@@ -77,12 +94,16 @@ var Columns = []string{
 	FieldID,
 	FieldClientID,
 	FieldClientName,
-	FieldClientType,
+	FieldOwnerOrganizationID,
 	FieldScopes,
+	FieldTokenEndpointAuthMethod,
+	FieldApplicationType,
+	FieldAccessPolicy,
+	FieldVerificationStatus,
+	FieldPublishStatus,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldDeletedAt,
-	FieldEnabled,
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -108,36 +129,145 @@ var (
 	DefaultUpdatedAt func() time.Time
 	// UpdateDefaultUpdatedAt holds the default value on update for the "updated_at" field.
 	UpdateDefaultUpdatedAt func() time.Time
-	// DefaultEnabled holds the default value on creation for the "enabled" field.
-	DefaultEnabled bool
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
 
-// ClientType defines the type for the "client_type" enum field.
-type ClientType string
+// TokenEndpointAuthMethod defines the type for the "token_endpoint_auth_method" enum field.
+type TokenEndpointAuthMethod string
 
-// ClientTypePublic is the default value of the ClientType enum.
-const DefaultClientType = ClientTypePublic
+// TokenEndpointAuthMethodNone is the default value of the TokenEndpointAuthMethod enum.
+const DefaultTokenEndpointAuthMethod = TokenEndpointAuthMethodNone
 
-// ClientType values.
+// TokenEndpointAuthMethod values.
 const (
-	ClientTypeInternal ClientType = "internal"
-	ClientTypeOfficial ClientType = "official"
-	ClientTypePublic   ClientType = "public"
+	TokenEndpointAuthMethodNone              TokenEndpointAuthMethod = "none"
+	TokenEndpointAuthMethodClientSecretBasic TokenEndpointAuthMethod = "client_secret_basic"
+	TokenEndpointAuthMethodClientSecretPost  TokenEndpointAuthMethod = "client_secret_post"
+	TokenEndpointAuthMethodPrivateKeyJwt     TokenEndpointAuthMethod = "private_key_jwt"
 )
 
-func (ct ClientType) String() string {
-	return string(ct)
+func (team TokenEndpointAuthMethod) String() string {
+	return string(team)
 }
 
-// ClientTypeValidator is a validator for the "client_type" field enum values. It is called by the builders before save.
-func ClientTypeValidator(ct ClientType) error {
-	switch ct {
-	case ClientTypeInternal, ClientTypeOfficial, ClientTypePublic:
+// TokenEndpointAuthMethodValidator is a validator for the "token_endpoint_auth_method" field enum values. It is called by the builders before save.
+func TokenEndpointAuthMethodValidator(team TokenEndpointAuthMethod) error {
+	switch team {
+	case TokenEndpointAuthMethodNone, TokenEndpointAuthMethodClientSecretBasic, TokenEndpointAuthMethodClientSecretPost, TokenEndpointAuthMethodPrivateKeyJwt:
 		return nil
 	default:
-		return fmt.Errorf("oidcclient: invalid enum value for client_type field: %q", ct)
+		return fmt.Errorf("oidcclient: invalid enum value for token_endpoint_auth_method field: %q", team)
+	}
+}
+
+// ApplicationType defines the type for the "application_type" enum field.
+type ApplicationType string
+
+// ApplicationTypeWeb is the default value of the ApplicationType enum.
+const DefaultApplicationType = ApplicationTypeWeb
+
+// ApplicationType values.
+const (
+	ApplicationTypeWeb    ApplicationType = "web"
+	ApplicationTypeNative ApplicationType = "native"
+)
+
+func (at ApplicationType) String() string {
+	return string(at)
+}
+
+// ApplicationTypeValidator is a validator for the "application_type" field enum values. It is called by the builders before save.
+func ApplicationTypeValidator(at ApplicationType) error {
+	switch at {
+	case ApplicationTypeWeb, ApplicationTypeNative:
+		return nil
+	default:
+		return fmt.Errorf("oidcclient: invalid enum value for application_type field: %q", at)
+	}
+}
+
+// AccessPolicy defines the type for the "access_policy" enum field.
+type AccessPolicy string
+
+// AccessPolicyPrivate is the default value of the AccessPolicy enum.
+const DefaultAccessPolicy = AccessPolicyPrivate
+
+// AccessPolicy values.
+const (
+	AccessPolicyPublic       AccessPolicy = "public"
+	AccessPolicyOrganization AccessPolicy = "organization"
+	AccessPolicyPrivate      AccessPolicy = "private"
+)
+
+func (ap AccessPolicy) String() string {
+	return string(ap)
+}
+
+// AccessPolicyValidator is a validator for the "access_policy" field enum values. It is called by the builders before save.
+func AccessPolicyValidator(ap AccessPolicy) error {
+	switch ap {
+	case AccessPolicyPublic, AccessPolicyOrganization, AccessPolicyPrivate:
+		return nil
+	default:
+		return fmt.Errorf("oidcclient: invalid enum value for access_policy field: %q", ap)
+	}
+}
+
+// VerificationStatus defines the type for the "verification_status" enum field.
+type VerificationStatus string
+
+// VerificationStatusUnverified is the default value of the VerificationStatus enum.
+const DefaultVerificationStatus = VerificationStatusUnverified
+
+// VerificationStatus values.
+const (
+	VerificationStatusUnverified VerificationStatus = "unverified"
+	VerificationStatusPending    VerificationStatus = "pending"
+	VerificationStatusVerified   VerificationStatus = "verified"
+	VerificationStatusOfficial   VerificationStatus = "official"
+	VerificationStatusRejected   VerificationStatus = "rejected"
+)
+
+func (vs VerificationStatus) String() string {
+	return string(vs)
+}
+
+// VerificationStatusValidator is a validator for the "verification_status" field enum values. It is called by the builders before save.
+func VerificationStatusValidator(vs VerificationStatus) error {
+	switch vs {
+	case VerificationStatusUnverified, VerificationStatusPending, VerificationStatusVerified, VerificationStatusOfficial, VerificationStatusRejected:
+		return nil
+	default:
+		return fmt.Errorf("oidcclient: invalid enum value for verification_status field: %q", vs)
+	}
+}
+
+// PublishStatus defines the type for the "publish_status" enum field.
+type PublishStatus string
+
+// PublishStatusDraft is the default value of the PublishStatus enum.
+const DefaultPublishStatus = PublishStatusDraft
+
+// PublishStatus values.
+const (
+	PublishStatusDraft     PublishStatus = "draft"
+	PublishStatusTesting   PublishStatus = "testing"
+	PublishStatusPublished PublishStatus = "published"
+	PublishStatusDisabled  PublishStatus = "disabled"
+)
+
+func (ps PublishStatus) String() string {
+	return string(ps)
+}
+
+// PublishStatusValidator is a validator for the "publish_status" field enum values. It is called by the builders before save.
+func PublishStatusValidator(ps PublishStatus) error {
+	switch ps {
+	case PublishStatusDraft, PublishStatusTesting, PublishStatusPublished, PublishStatusDisabled:
+		return nil
+	default:
+		return fmt.Errorf("oidcclient: invalid enum value for publish_status field: %q", ps)
 	}
 }
 
@@ -159,9 +289,34 @@ func ByClientName(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldClientName, opts...).ToFunc()
 }
 
-// ByClientType orders the results by the client_type field.
-func ByClientType(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldClientType, opts...).ToFunc()
+// ByOwnerOrganizationID orders the results by the owner_organization_id field.
+func ByOwnerOrganizationID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOwnerOrganizationID, opts...).ToFunc()
+}
+
+// ByTokenEndpointAuthMethod orders the results by the token_endpoint_auth_method field.
+func ByTokenEndpointAuthMethod(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldTokenEndpointAuthMethod, opts...).ToFunc()
+}
+
+// ByApplicationType orders the results by the application_type field.
+func ByApplicationType(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldApplicationType, opts...).ToFunc()
+}
+
+// ByAccessPolicy orders the results by the access_policy field.
+func ByAccessPolicy(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAccessPolicy, opts...).ToFunc()
+}
+
+// ByVerificationStatus orders the results by the verification_status field.
+func ByVerificationStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldVerificationStatus, opts...).ToFunc()
+}
+
+// ByPublishStatus orders the results by the publish_status field.
+func ByPublishStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPublishStatus, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.
@@ -177,11 +332,6 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByDeletedAt orders the results by the deleted_at field.
 func ByDeletedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDeletedAt, opts...).ToFunc()
-}
-
-// ByEnabled orders the results by the enabled field.
-func ByEnabled(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEnabled, opts...).ToFunc()
 }
 
 // ByCallbackUrlsCount orders the results by callback_urls count.
@@ -239,6 +389,13 @@ func ByRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOrganizationField orders the results by organization field.
+func ByOrganizationField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrganizationStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newCallbackUrlsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -265,5 +422,12 @@ func newRefreshTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RefreshTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RefreshTokensTable, RefreshTokensColumn),
+	)
+}
+func newOrganizationStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrganizationInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, true, OrganizationTable, OrganizationColumn),
 	)
 }

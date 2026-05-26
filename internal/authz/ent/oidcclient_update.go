@@ -18,6 +18,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
@@ -48,16 +49,16 @@ func (_u *OIDCClientUpdate) SetNillableClientName(v *string) *OIDCClientUpdate {
 	return _u
 }
 
-// SetClientType sets the "client_type" field.
-func (_u *OIDCClientUpdate) SetClientType(v oidcclient.ClientType) *OIDCClientUpdate {
-	_u.mutation.SetClientType(v)
+// SetOwnerOrganizationID sets the "owner_organization_id" field.
+func (_u *OIDCClientUpdate) SetOwnerOrganizationID(v uuid.UUID) *OIDCClientUpdate {
+	_u.mutation.SetOwnerOrganizationID(v)
 	return _u
 }
 
-// SetNillableClientType sets the "client_type" field if the given value is not nil.
-func (_u *OIDCClientUpdate) SetNillableClientType(v *oidcclient.ClientType) *OIDCClientUpdate {
+// SetNillableOwnerOrganizationID sets the "owner_organization_id" field if the given value is not nil.
+func (_u *OIDCClientUpdate) SetNillableOwnerOrganizationID(v *uuid.UUID) *OIDCClientUpdate {
 	if v != nil {
-		_u.SetClientType(*v)
+		_u.SetOwnerOrganizationID(*v)
 	}
 	return _u
 }
@@ -71,6 +72,76 @@ func (_u *OIDCClientUpdate) SetScopes(v []string) *OIDCClientUpdate {
 // AppendScopes appends value to the "scopes" field.
 func (_u *OIDCClientUpdate) AppendScopes(v []string) *OIDCClientUpdate {
 	_u.mutation.AppendScopes(v)
+	return _u
+}
+
+// SetTokenEndpointAuthMethod sets the "token_endpoint_auth_method" field.
+func (_u *OIDCClientUpdate) SetTokenEndpointAuthMethod(v oidcclient.TokenEndpointAuthMethod) *OIDCClientUpdate {
+	_u.mutation.SetTokenEndpointAuthMethod(v)
+	return _u
+}
+
+// SetNillableTokenEndpointAuthMethod sets the "token_endpoint_auth_method" field if the given value is not nil.
+func (_u *OIDCClientUpdate) SetNillableTokenEndpointAuthMethod(v *oidcclient.TokenEndpointAuthMethod) *OIDCClientUpdate {
+	if v != nil {
+		_u.SetTokenEndpointAuthMethod(*v)
+	}
+	return _u
+}
+
+// SetApplicationType sets the "application_type" field.
+func (_u *OIDCClientUpdate) SetApplicationType(v oidcclient.ApplicationType) *OIDCClientUpdate {
+	_u.mutation.SetApplicationType(v)
+	return _u
+}
+
+// SetNillableApplicationType sets the "application_type" field if the given value is not nil.
+func (_u *OIDCClientUpdate) SetNillableApplicationType(v *oidcclient.ApplicationType) *OIDCClientUpdate {
+	if v != nil {
+		_u.SetApplicationType(*v)
+	}
+	return _u
+}
+
+// SetAccessPolicy sets the "access_policy" field.
+func (_u *OIDCClientUpdate) SetAccessPolicy(v oidcclient.AccessPolicy) *OIDCClientUpdate {
+	_u.mutation.SetAccessPolicy(v)
+	return _u
+}
+
+// SetNillableAccessPolicy sets the "access_policy" field if the given value is not nil.
+func (_u *OIDCClientUpdate) SetNillableAccessPolicy(v *oidcclient.AccessPolicy) *OIDCClientUpdate {
+	if v != nil {
+		_u.SetAccessPolicy(*v)
+	}
+	return _u
+}
+
+// SetVerificationStatus sets the "verification_status" field.
+func (_u *OIDCClientUpdate) SetVerificationStatus(v oidcclient.VerificationStatus) *OIDCClientUpdate {
+	_u.mutation.SetVerificationStatus(v)
+	return _u
+}
+
+// SetNillableVerificationStatus sets the "verification_status" field if the given value is not nil.
+func (_u *OIDCClientUpdate) SetNillableVerificationStatus(v *oidcclient.VerificationStatus) *OIDCClientUpdate {
+	if v != nil {
+		_u.SetVerificationStatus(*v)
+	}
+	return _u
+}
+
+// SetPublishStatus sets the "publish_status" field.
+func (_u *OIDCClientUpdate) SetPublishStatus(v oidcclient.PublishStatus) *OIDCClientUpdate {
+	_u.mutation.SetPublishStatus(v)
+	return _u
+}
+
+// SetNillablePublishStatus sets the "publish_status" field if the given value is not nil.
+func (_u *OIDCClientUpdate) SetNillablePublishStatus(v *oidcclient.PublishStatus) *OIDCClientUpdate {
+	if v != nil {
+		_u.SetPublishStatus(*v)
+	}
 	return _u
 }
 
@@ -97,20 +168,6 @@ func (_u *OIDCClientUpdate) SetNillableDeletedAt(v *time.Time) *OIDCClientUpdate
 // ClearDeletedAt clears the value of the "deleted_at" field.
 func (_u *OIDCClientUpdate) ClearDeletedAt() *OIDCClientUpdate {
 	_u.mutation.ClearDeletedAt()
-	return _u
-}
-
-// SetEnabled sets the "enabled" field.
-func (_u *OIDCClientUpdate) SetEnabled(v bool) *OIDCClientUpdate {
-	_u.mutation.SetEnabled(v)
-	return _u
-}
-
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (_u *OIDCClientUpdate) SetNillableEnabled(v *bool) *OIDCClientUpdate {
-	if v != nil {
-		_u.SetEnabled(*v)
-	}
 	return _u
 }
 
@@ -172,6 +229,17 @@ func (_u *OIDCClientUpdate) AddRefreshTokens(v ...*OIDCRefreshToken) *OIDCClient
 		ids[i] = v[i].ID
 	}
 	return _u.AddRefreshTokenIDs(ids...)
+}
+
+// SetOrganizationID sets the "organization" edge to the Organization entity by ID.
+func (_u *OIDCClientUpdate) SetOrganizationID(id uuid.UUID) *OIDCClientUpdate {
+	_u.mutation.SetOrganizationID(id)
+	return _u
+}
+
+// SetOrganization sets the "organization" edge to the Organization entity.
+func (_u *OIDCClientUpdate) SetOrganization(v *Organization) *OIDCClientUpdate {
+	return _u.SetOrganizationID(v.ID)
 }
 
 // Mutation returns the OIDCClientMutation object of the builder.
@@ -263,6 +331,12 @@ func (_u *OIDCClientUpdate) RemoveRefreshTokens(v ...*OIDCRefreshToken) *OIDCCli
 	return _u.RemoveRefreshTokenIDs(ids...)
 }
 
+// ClearOrganization clears the "organization" edge to the Organization entity.
+func (_u *OIDCClientUpdate) ClearOrganization() *OIDCClientUpdate {
+	_u.mutation.ClearOrganization()
+	return _u
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *OIDCClientUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -306,10 +380,33 @@ func (_u *OIDCClientUpdate) check() error {
 			return &ValidationError{Name: "client_name", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.client_name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ClientType(); ok {
-		if err := oidcclient.ClientTypeValidator(v); err != nil {
-			return &ValidationError{Name: "client_type", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.client_type": %w`, err)}
+	if v, ok := _u.mutation.TokenEndpointAuthMethod(); ok {
+		if err := oidcclient.TokenEndpointAuthMethodValidator(v); err != nil {
+			return &ValidationError{Name: "token_endpoint_auth_method", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.token_endpoint_auth_method": %w`, err)}
 		}
+	}
+	if v, ok := _u.mutation.ApplicationType(); ok {
+		if err := oidcclient.ApplicationTypeValidator(v); err != nil {
+			return &ValidationError{Name: "application_type", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.application_type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.AccessPolicy(); ok {
+		if err := oidcclient.AccessPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "access_policy", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.access_policy": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.VerificationStatus(); ok {
+		if err := oidcclient.VerificationStatusValidator(v); err != nil {
+			return &ValidationError{Name: "verification_status", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.verification_status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PublishStatus(); ok {
+		if err := oidcclient.PublishStatusValidator(v); err != nil {
+			return &ValidationError{Name: "publish_status", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.publish_status": %w`, err)}
+		}
+	}
+	if _u.mutation.OrganizationCleared() && len(_u.mutation.OrganizationIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OIDCClient.organization"`)
 	}
 	return nil
 }
@@ -329,9 +426,6 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	if value, ok := _u.mutation.ClientName(); ok {
 		_spec.SetField(oidcclient.FieldClientName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ClientType(); ok {
-		_spec.SetField(oidcclient.FieldClientType, field.TypeEnum, value)
-	}
 	if value, ok := _u.mutation.Scopes(); ok {
 		_spec.SetField(oidcclient.FieldScopes, field.TypeJSON, value)
 	}
@@ -339,6 +433,21 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, oidcclient.FieldScopes, value)
 		})
+	}
+	if value, ok := _u.mutation.TokenEndpointAuthMethod(); ok {
+		_spec.SetField(oidcclient.FieldTokenEndpointAuthMethod, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ApplicationType(); ok {
+		_spec.SetField(oidcclient.FieldApplicationType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.AccessPolicy(); ok {
+		_spec.SetField(oidcclient.FieldAccessPolicy, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.VerificationStatus(); ok {
+		_spec.SetField(oidcclient.FieldVerificationStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.PublishStatus(); ok {
+		_spec.SetField(oidcclient.FieldPublishStatus, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(oidcclient.FieldUpdatedAt, field.TypeTime, value)
@@ -348,9 +457,6 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 	}
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(oidcclient.FieldDeletedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.Enabled(); ok {
-		_spec.SetField(oidcclient.FieldEnabled, field.TypeBool, value)
 	}
 	if _u.mutation.CallbackUrlsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -532,6 +638,35 @@ func (_u *OIDCClientUpdate) sqlSave(ctx context.Context) (_node int, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OrganizationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oidcclient.OrganizationTable,
+			Columns: []string{oidcclient.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrganizationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oidcclient.OrganizationTable,
+			Columns: []string{oidcclient.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{oidcclient.Label}
@@ -566,16 +701,16 @@ func (_u *OIDCClientUpdateOne) SetNillableClientName(v *string) *OIDCClientUpdat
 	return _u
 }
 
-// SetClientType sets the "client_type" field.
-func (_u *OIDCClientUpdateOne) SetClientType(v oidcclient.ClientType) *OIDCClientUpdateOne {
-	_u.mutation.SetClientType(v)
+// SetOwnerOrganizationID sets the "owner_organization_id" field.
+func (_u *OIDCClientUpdateOne) SetOwnerOrganizationID(v uuid.UUID) *OIDCClientUpdateOne {
+	_u.mutation.SetOwnerOrganizationID(v)
 	return _u
 }
 
-// SetNillableClientType sets the "client_type" field if the given value is not nil.
-func (_u *OIDCClientUpdateOne) SetNillableClientType(v *oidcclient.ClientType) *OIDCClientUpdateOne {
+// SetNillableOwnerOrganizationID sets the "owner_organization_id" field if the given value is not nil.
+func (_u *OIDCClientUpdateOne) SetNillableOwnerOrganizationID(v *uuid.UUID) *OIDCClientUpdateOne {
 	if v != nil {
-		_u.SetClientType(*v)
+		_u.SetOwnerOrganizationID(*v)
 	}
 	return _u
 }
@@ -589,6 +724,76 @@ func (_u *OIDCClientUpdateOne) SetScopes(v []string) *OIDCClientUpdateOne {
 // AppendScopes appends value to the "scopes" field.
 func (_u *OIDCClientUpdateOne) AppendScopes(v []string) *OIDCClientUpdateOne {
 	_u.mutation.AppendScopes(v)
+	return _u
+}
+
+// SetTokenEndpointAuthMethod sets the "token_endpoint_auth_method" field.
+func (_u *OIDCClientUpdateOne) SetTokenEndpointAuthMethod(v oidcclient.TokenEndpointAuthMethod) *OIDCClientUpdateOne {
+	_u.mutation.SetTokenEndpointAuthMethod(v)
+	return _u
+}
+
+// SetNillableTokenEndpointAuthMethod sets the "token_endpoint_auth_method" field if the given value is not nil.
+func (_u *OIDCClientUpdateOne) SetNillableTokenEndpointAuthMethod(v *oidcclient.TokenEndpointAuthMethod) *OIDCClientUpdateOne {
+	if v != nil {
+		_u.SetTokenEndpointAuthMethod(*v)
+	}
+	return _u
+}
+
+// SetApplicationType sets the "application_type" field.
+func (_u *OIDCClientUpdateOne) SetApplicationType(v oidcclient.ApplicationType) *OIDCClientUpdateOne {
+	_u.mutation.SetApplicationType(v)
+	return _u
+}
+
+// SetNillableApplicationType sets the "application_type" field if the given value is not nil.
+func (_u *OIDCClientUpdateOne) SetNillableApplicationType(v *oidcclient.ApplicationType) *OIDCClientUpdateOne {
+	if v != nil {
+		_u.SetApplicationType(*v)
+	}
+	return _u
+}
+
+// SetAccessPolicy sets the "access_policy" field.
+func (_u *OIDCClientUpdateOne) SetAccessPolicy(v oidcclient.AccessPolicy) *OIDCClientUpdateOne {
+	_u.mutation.SetAccessPolicy(v)
+	return _u
+}
+
+// SetNillableAccessPolicy sets the "access_policy" field if the given value is not nil.
+func (_u *OIDCClientUpdateOne) SetNillableAccessPolicy(v *oidcclient.AccessPolicy) *OIDCClientUpdateOne {
+	if v != nil {
+		_u.SetAccessPolicy(*v)
+	}
+	return _u
+}
+
+// SetVerificationStatus sets the "verification_status" field.
+func (_u *OIDCClientUpdateOne) SetVerificationStatus(v oidcclient.VerificationStatus) *OIDCClientUpdateOne {
+	_u.mutation.SetVerificationStatus(v)
+	return _u
+}
+
+// SetNillableVerificationStatus sets the "verification_status" field if the given value is not nil.
+func (_u *OIDCClientUpdateOne) SetNillableVerificationStatus(v *oidcclient.VerificationStatus) *OIDCClientUpdateOne {
+	if v != nil {
+		_u.SetVerificationStatus(*v)
+	}
+	return _u
+}
+
+// SetPublishStatus sets the "publish_status" field.
+func (_u *OIDCClientUpdateOne) SetPublishStatus(v oidcclient.PublishStatus) *OIDCClientUpdateOne {
+	_u.mutation.SetPublishStatus(v)
+	return _u
+}
+
+// SetNillablePublishStatus sets the "publish_status" field if the given value is not nil.
+func (_u *OIDCClientUpdateOne) SetNillablePublishStatus(v *oidcclient.PublishStatus) *OIDCClientUpdateOne {
+	if v != nil {
+		_u.SetPublishStatus(*v)
+	}
 	return _u
 }
 
@@ -615,20 +820,6 @@ func (_u *OIDCClientUpdateOne) SetNillableDeletedAt(v *time.Time) *OIDCClientUpd
 // ClearDeletedAt clears the value of the "deleted_at" field.
 func (_u *OIDCClientUpdateOne) ClearDeletedAt() *OIDCClientUpdateOne {
 	_u.mutation.ClearDeletedAt()
-	return _u
-}
-
-// SetEnabled sets the "enabled" field.
-func (_u *OIDCClientUpdateOne) SetEnabled(v bool) *OIDCClientUpdateOne {
-	_u.mutation.SetEnabled(v)
-	return _u
-}
-
-// SetNillableEnabled sets the "enabled" field if the given value is not nil.
-func (_u *OIDCClientUpdateOne) SetNillableEnabled(v *bool) *OIDCClientUpdateOne {
-	if v != nil {
-		_u.SetEnabled(*v)
-	}
 	return _u
 }
 
@@ -690,6 +881,17 @@ func (_u *OIDCClientUpdateOne) AddRefreshTokens(v ...*OIDCRefreshToken) *OIDCCli
 		ids[i] = v[i].ID
 	}
 	return _u.AddRefreshTokenIDs(ids...)
+}
+
+// SetOrganizationID sets the "organization" edge to the Organization entity by ID.
+func (_u *OIDCClientUpdateOne) SetOrganizationID(id uuid.UUID) *OIDCClientUpdateOne {
+	_u.mutation.SetOrganizationID(id)
+	return _u
+}
+
+// SetOrganization sets the "organization" edge to the Organization entity.
+func (_u *OIDCClientUpdateOne) SetOrganization(v *Organization) *OIDCClientUpdateOne {
+	return _u.SetOrganizationID(v.ID)
 }
 
 // Mutation returns the OIDCClientMutation object of the builder.
@@ -781,6 +983,12 @@ func (_u *OIDCClientUpdateOne) RemoveRefreshTokens(v ...*OIDCRefreshToken) *OIDC
 	return _u.RemoveRefreshTokenIDs(ids...)
 }
 
+// ClearOrganization clears the "organization" edge to the Organization entity.
+func (_u *OIDCClientUpdateOne) ClearOrganization() *OIDCClientUpdateOne {
+	_u.mutation.ClearOrganization()
+	return _u
+}
+
 // Where appends a list predicates to the OIDCClientUpdate builder.
 func (_u *OIDCClientUpdateOne) Where(ps ...predicate.OIDCClient) *OIDCClientUpdateOne {
 	_u.mutation.Where(ps...)
@@ -837,10 +1045,33 @@ func (_u *OIDCClientUpdateOne) check() error {
 			return &ValidationError{Name: "client_name", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.client_name": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.ClientType(); ok {
-		if err := oidcclient.ClientTypeValidator(v); err != nil {
-			return &ValidationError{Name: "client_type", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.client_type": %w`, err)}
+	if v, ok := _u.mutation.TokenEndpointAuthMethod(); ok {
+		if err := oidcclient.TokenEndpointAuthMethodValidator(v); err != nil {
+			return &ValidationError{Name: "token_endpoint_auth_method", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.token_endpoint_auth_method": %w`, err)}
 		}
+	}
+	if v, ok := _u.mutation.ApplicationType(); ok {
+		if err := oidcclient.ApplicationTypeValidator(v); err != nil {
+			return &ValidationError{Name: "application_type", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.application_type": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.AccessPolicy(); ok {
+		if err := oidcclient.AccessPolicyValidator(v); err != nil {
+			return &ValidationError{Name: "access_policy", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.access_policy": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.VerificationStatus(); ok {
+		if err := oidcclient.VerificationStatusValidator(v); err != nil {
+			return &ValidationError{Name: "verification_status", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.verification_status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.PublishStatus(); ok {
+		if err := oidcclient.PublishStatusValidator(v); err != nil {
+			return &ValidationError{Name: "publish_status", err: fmt.Errorf(`ent: validator failed for field "OIDCClient.publish_status": %w`, err)}
+		}
+	}
+	if _u.mutation.OrganizationCleared() && len(_u.mutation.OrganizationIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OIDCClient.organization"`)
 	}
 	return nil
 }
@@ -877,9 +1108,6 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 	if value, ok := _u.mutation.ClientName(); ok {
 		_spec.SetField(oidcclient.FieldClientName, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.ClientType(); ok {
-		_spec.SetField(oidcclient.FieldClientType, field.TypeEnum, value)
-	}
 	if value, ok := _u.mutation.Scopes(); ok {
 		_spec.SetField(oidcclient.FieldScopes, field.TypeJSON, value)
 	}
@@ -887,6 +1115,21 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, oidcclient.FieldScopes, value)
 		})
+	}
+	if value, ok := _u.mutation.TokenEndpointAuthMethod(); ok {
+		_spec.SetField(oidcclient.FieldTokenEndpointAuthMethod, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.ApplicationType(); ok {
+		_spec.SetField(oidcclient.FieldApplicationType, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.AccessPolicy(); ok {
+		_spec.SetField(oidcclient.FieldAccessPolicy, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.VerificationStatus(); ok {
+		_spec.SetField(oidcclient.FieldVerificationStatus, field.TypeEnum, value)
+	}
+	if value, ok := _u.mutation.PublishStatus(); ok {
+		_spec.SetField(oidcclient.FieldPublishStatus, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(oidcclient.FieldUpdatedAt, field.TypeTime, value)
@@ -896,9 +1139,6 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 	}
 	if _u.mutation.DeletedAtCleared() {
 		_spec.ClearField(oidcclient.FieldDeletedAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.Enabled(); ok {
-		_spec.SetField(oidcclient.FieldEnabled, field.TypeBool, value)
 	}
 	if _u.mutation.CallbackUrlsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -1073,6 +1313,35 @@ func (_u *OIDCClientUpdateOne) sqlSave(ctx context.Context) (_node *OIDCClient, 
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OrganizationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oidcclient.OrganizationTable,
+			Columns: []string{oidcclient.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OrganizationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   oidcclient.OrganizationTable,
+			Columns: []string{oidcclient.OrganizationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organization.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

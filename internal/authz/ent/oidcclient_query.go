@@ -18,6 +18,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authz/ent/oidcgrant"
 	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
@@ -32,6 +33,7 @@ type OIDCClientQuery struct {
 	withSecrets       *OIDCClientSecretQuery
 	withGrants        *OIDCGrantQuery
 	withRefreshTokens *OIDCRefreshTokenQuery
+	withOrganization  *OrganizationQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -149,6 +151,28 @@ func (_q *OIDCClientQuery) QueryRefreshTokens() *OIDCRefreshTokenQuery {
 			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, selector),
 			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.RefreshTokensTable, oidcclient.RefreshTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOrganization chains the current query on the "organization" edge.
+func (_q *OIDCClientQuery) QueryOrganization() *OrganizationQuery {
+	query := (&OrganizationClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, selector),
+			sqlgraph.To(organization.Table, organization.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oidcclient.OrganizationTable, oidcclient.OrganizationColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -352,6 +376,7 @@ func (_q *OIDCClientQuery) Clone() *OIDCClientQuery {
 		withSecrets:       _q.withSecrets.Clone(),
 		withGrants:        _q.withGrants.Clone(),
 		withRefreshTokens: _q.withRefreshTokens.Clone(),
+		withOrganization:  _q.withOrganization.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -399,6 +424,17 @@ func (_q *OIDCClientQuery) WithRefreshTokens(opts ...func(*OIDCRefreshTokenQuery
 		opt(query)
 	}
 	_q.withRefreshTokens = query
+	return _q
+}
+
+// WithOrganization tells the query-builder to eager-load the nodes that are connected to
+// the "organization" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OIDCClientQuery) WithOrganization(opts ...func(*OrganizationQuery)) *OIDCClientQuery {
+	query := (&OrganizationClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOrganization = query
 	return _q
 }
 
@@ -480,11 +516,12 @@ func (_q *OIDCClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 	var (
 		nodes       = []*OIDCClient{}
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withCallbackUrls != nil,
 			_q.withSecrets != nil,
 			_q.withGrants != nil,
 			_q.withRefreshTokens != nil,
+			_q.withOrganization != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -530,6 +567,12 @@ func (_q *OIDCClientQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*O
 		if err := _q.loadRefreshTokens(ctx, query, nodes,
 			func(n *OIDCClient) { n.Edges.RefreshTokens = []*OIDCRefreshToken{} },
 			func(n *OIDCClient, e *OIDCRefreshToken) { n.Edges.RefreshTokens = append(n.Edges.RefreshTokens, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOrganization; query != nil {
+		if err := _q.loadOrganization(ctx, query, nodes, nil,
+			func(n *OIDCClient, e *Organization) { n.Edges.Organization = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -656,6 +699,35 @@ func (_q *OIDCClientQuery) loadRefreshTokens(ctx context.Context, query *OIDCRef
 	}
 	return nil
 }
+func (_q *OIDCClientQuery) loadOrganization(ctx context.Context, query *OrganizationQuery, nodes []*OIDCClient, init func(*OIDCClient), assign func(*OIDCClient, *Organization)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*OIDCClient)
+	for i := range nodes {
+		fk := nodes[i].OwnerOrganizationID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(organization.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "owner_organization_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *OIDCClientQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -681,6 +753,9 @@ func (_q *OIDCClientQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != oidcclient.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withOrganization != nil {
+			_spec.Node.AddColumnOnce(oidcclient.FieldOwnerOrganizationID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

@@ -81,7 +81,10 @@ message GetAuthenticatedPrincipalResponse {
 
 message RevokeFederatedIdentityRequest {
   muid.authn.v1.session.SessionToken session_token = 1;
-  string provider = 2;
+  string provider = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+  }];
 }
 
 message RevokeFederatedIdentityResponse {

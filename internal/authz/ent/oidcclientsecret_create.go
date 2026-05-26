@@ -34,6 +34,26 @@ func (_c *OIDCClientSecretCreate) SetSecretHash(v []byte) *OIDCClientSecretCreat
 	return _c
 }
 
+// SetHint sets the "hint" field.
+func (_c *OIDCClientSecretCreate) SetHint(v string) *OIDCClientSecretCreate {
+	_c.mutation.SetHint(v)
+	return _c
+}
+
+// SetLastUsedAt sets the "last_used_at" field.
+func (_c *OIDCClientSecretCreate) SetLastUsedAt(v time.Time) *OIDCClientSecretCreate {
+	_c.mutation.SetLastUsedAt(v)
+	return _c
+}
+
+// SetNillableLastUsedAt sets the "last_used_at" field if the given value is not nil.
+func (_c *OIDCClientSecretCreate) SetNillableLastUsedAt(v *time.Time) *OIDCClientSecretCreate {
+	if v != nil {
+		_c.SetLastUsedAt(*v)
+	}
+	return _c
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (_c *OIDCClientSecretCreate) SetCreatedAt(v time.Time) *OIDCClientSecretCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -159,6 +179,14 @@ func (_c *OIDCClientSecretCreate) check() error {
 			return &ValidationError{Name: "secret_hash", err: fmt.Errorf(`ent: validator failed for field "OIDCClientSecret.secret_hash": %w`, err)}
 		}
 	}
+	if _, ok := _c.mutation.Hint(); !ok {
+		return &ValidationError{Name: "hint", err: errors.New(`ent: missing required field "OIDCClientSecret.hint"`)}
+	}
+	if v, ok := _c.mutation.Hint(); ok {
+		if err := oidcclientsecret.HintValidator(v); err != nil {
+			return &ValidationError{Name: "hint", err: fmt.Errorf(`ent: validator failed for field "OIDCClientSecret.hint": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "OIDCClientSecret.created_at"`)}
 	}
@@ -204,17 +232,25 @@ func (_c *OIDCClientSecretCreate) createSpec() (*OIDCClientSecret, *sqlgraph.Cre
 		_spec.SetField(oidcclientsecret.FieldSecretHash, field.TypeBytes, value)
 		_node.SecretHash = value
 	}
+	if value, ok := _c.mutation.Hint(); ok {
+		_spec.SetField(oidcclientsecret.FieldHint, field.TypeString, value)
+		_node.Hint = value
+	}
+	if value, ok := _c.mutation.LastUsedAt(); ok {
+		_spec.SetField(oidcclientsecret.FieldLastUsedAt, field.TypeTime, value)
+		_node.LastUsedAt = &value
+	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(oidcclientsecret.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(oidcclientsecret.FieldExpiresAt, field.TypeTime, value)
-		_node.ExpiresAt = value
+		_node.ExpiresAt = &value
 	}
 	if value, ok := _c.mutation.RevokedAt(); ok {
 		_spec.SetField(oidcclientsecret.FieldRevokedAt, field.TypeTime, value)
-		_node.RevokedAt = value
+		_node.RevokedAt = &value
 	}
 	if nodes := _c.mutation.ClientIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{

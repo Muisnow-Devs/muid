@@ -271,12 +271,7 @@ func (p *PasskeyProvider) continueLogin(
 
 	p.transitionStore.Delete(ctx, sess.Id)
 
-	return idn.StepResult{
-		Type: idn.StepAuthenticated,
-		Authenticated: &idn.AuthenticatedIdentity{
-			UserID: passkeyUser.id.String(),
-		},
-	}, nil
+	return authenticatedStep(passkeyUser.id.String(), sess.Store), nil
 }
 
 func (p *PasskeyProvider) continueRegister(

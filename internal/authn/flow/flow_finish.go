@@ -12,6 +12,7 @@ import (
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	"sanzi.io/muid/api/proto/authn/v1/basic"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
+	"sanzi.io/muid/internal/authn/account"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
@@ -30,7 +31,7 @@ func (s *Service) finishAuthStep(
 	case identity.StepLinked:
 		return s.linkCompletedResponse(ctx, tid, linkSessionToken)
 	case identity.StepAuthenticated:
-		return s.authenticatedLoginResponse(ctx, tid, step.Authenticated)
+		return s.authenticatedLoginResponse(ctx, tid, step.Authenticated, step.LoginCompletion)
 	case identity.StepRegisterRequired:
 		return s.completeRegisterRequired(ctx, req, sess, step, tid, linkSessionToken)
 	default:
@@ -110,6 +111,7 @@ func (s *Service) authenticatedLoginResponse(
 	ctx context.Context,
 	tid string,
 	auth *identity.AuthenticatedIdentity,
+	completion *identity.LoginCompletionContext,
 ) (*pb.ContinueAuthSessionResponse, error) {
 	if auth == nil || strings.TrimSpace(auth.UserID) == "" {
 		log.LogUnexpected(ctx, "authn authenticated response", "missing authenticated identity")
@@ -136,7 +138,39 @@ func (s *Service) authenticatedLoginResponse(
 	authOK.SetResult(authResult)
 	resp.SetAuthSuccess(authOK)
 
+	s.notifyLoginCompleted(ctx, uid, completion)
+
 	return resp, nil
+}
+
+func (s *Service) notifyLoginCompleted(
+	ctx context.Context,
+	uid uuid.UUID,
+	completion *identity.LoginCompletionContext,
+) {
+	if s.accounts == nil || s.accounts.LoginAlert == nil {
+		return
+	}
+
+	err := s.accounts.LoginAlert.NotifyLoginCompleted(
+		ctx,
+		uid,
+		mailDeliveryPrefs(completion),
+		account.LoginAlertDetails{},
+	)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn publish login alert", err.Error())
+	}
+}
+
+func mailDeliveryPrefs(completion *identity.LoginCompletionContext) account.MailDeliveryPrefs {
+	if completion == nil {
+		return account.MailDeliveryPrefs{}
+	}
+	return account.MailDeliveryPrefs{
+		Locale:   completion.Locale,
+		Timezone: completion.Timezone,
+	}
 }
 
 func (s *Service) linkCompletedResponse(

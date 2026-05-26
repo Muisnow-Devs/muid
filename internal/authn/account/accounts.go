@@ -6,12 +6,13 @@ import "sanzi.io/muid/pkg/shared/pubsub"
 type Accounts struct {
 	Store *Store
 
-	Provision Provisioning
-	Email     Email
-	OIDC      OIDC
-	Federated Federated
-	Passkey   Passkey
-	Session   Session
+	Provision  Provisioning
+	Email      Email
+	OIDC       OIDC
+	Federated  Federated
+	Passkey    Passkey
+	Session    Session
+	LoginAlert LoginNotifier
 }
 
 // New returns account services backed by store.
@@ -27,5 +28,9 @@ func New(store *Store, pubSub pubsub.PubSub) *Accounts {
 		Federated: &federatedService{store: store},
 		Passkey:   &passkeyService{store: store, pubSub: pubSub},
 		Session:   &sessionService{store: store},
+		LoginAlert: &loginAlertService{
+			store:  store,
+			pubSub: pubSub,
+		},
 	}
 }

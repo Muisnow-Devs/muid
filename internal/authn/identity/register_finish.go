@@ -24,14 +24,14 @@ func finishRegisterAfterLink(
 		)
 	}
 
+	sess, err := transitionStore.Get(ctx, transitionID)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
 	transitionStore.Delete(ctx, transitionID)
 
-	return idn.StepResult{
-		Type: idn.StepAuthenticated,
-		Authenticated: &idn.AuthenticatedIdentity{
-			UserID: provisioned.String(),
-		},
-	}, nil
+	return authenticatedStep(provisioned.String(), sess.Store), nil
 }
 
 // ensureFederatedLink creates or reactivates a UserFederatedIdentity for register finish.

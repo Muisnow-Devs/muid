@@ -353,12 +353,7 @@ func (p *EmailIdentityProvider) continueLogin(
 
 	p.transitionStore.Delete(ctx, sess.Id)
 
-	return idn.StepResult{
-		Type: idn.StepAuthenticated,
-		Authenticated: &idn.AuthenticatedIdentity{
-			UserID: userID.String(),
-		},
-	}, nil
+	return authenticatedStep(userID.String(), sess.Store), nil
 }
 
 func (p *EmailIdentityProvider) continueFinishEmailRegister(

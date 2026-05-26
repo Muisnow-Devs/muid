@@ -78,6 +78,12 @@ type AuthenticatedIdentity struct {
 	UserID string
 }
 
+// LoginCompletionContext holds supplementary data for post-login actions (e.g. outbound mail).
+type LoginCompletionContext struct {
+	Locale   string
+	Timezone string
+}
+
 // RegisterRequired carries identity claims for the login flow to provision an account.
 type RegisterRequired struct {
 	Identity *claimspb.IdentityInformation
@@ -92,6 +98,7 @@ type StepResult struct {
 	Payload        *StepPayload
 
 	Authenticated    *AuthenticatedIdentity
+	LoginCompletion  *LoginCompletionContext
 	RegisterRequired *RegisterRequired
 }
 

@@ -116,6 +116,8 @@ func (p *OIDCIdentityProvider) Start(
 		OAuthState:       state,
 		PKCECodeVerifier: verifier,
 	})
+	store.Locale = input.Locale
+	store.Timezone = input.Timezone
 
 	sess, err := p.transitionStore.Create(ctx, p.providerName, store)
 	if err != nil {
@@ -204,12 +206,7 @@ func (p *OIDCIdentityProvider) Continue(
 
 	p.transitionStore.Delete(ctx, sess.Id)
 
-	return idn.StepResult{
-		Type: idn.StepAuthenticated,
-		Authenticated: &idn.AuthenticatedIdentity{
-			UserID: userID.String(),
-		},
-	}, nil
+	return authenticatedStep(userID.String(), sess.Store), nil
 }
 
 func (p *OIDCIdentityProvider) continueFinishOIDCRegister(

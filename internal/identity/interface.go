@@ -3,6 +3,7 @@ package identity
 import (
 	"context"
 
+	"github.com/google/uuid"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/pkg/clientmeta"
 )
@@ -41,23 +42,29 @@ type StartInput struct {
 	Metadata map[string]any
 }
 
-// ContinuePayloadFinishRegister is set by login-flow orchestration after ProvisionUser (not from wire clients).
-const ContinuePayloadFinishRegister = "__finish_register"
+// ContinueState selects which provider Continue path runs. Flow sets this explicitly;
+// providers branch on it and validate fields for that state only.
+type ContinueState string
+
+const (
+	ContinueStateUnspecified    ContinueState = ""
+	ContinueStateChallenge      ContinueState = "challenge"
+	ContinueStateResend         ContinueState = "resend"
+	ContinueStateFinishRegister ContinueState = "finish_register"
+)
 
 type ContinueInput struct {
-	TransitionId string
-	Payload      map[string]any
+	TransitionId  string
+	ContinueState ContinueState
+	Payload       map[string]any
 	// LinkSessionToken is the active session for linking flows (same as Start when required).
 	LinkSessionToken string
+	// FinishRegister is set only for ContinueStateFinishRegister (flow orchestration).
+	FinishRegister *FinishRegisterInput
 }
 
-// FinishRegisterRequested reports whether Continue should complete post-provision linking.
-func FinishRegisterRequested(payload map[string]any) bool {
-	if payload == nil {
-		return false
-	}
-	v, ok := payload[ContinuePayloadFinishRegister].(bool)
-	return ok && v
+type FinishRegisterInput struct {
+	RegisteredUserID uuid.UUID
 }
 
 // StepPayload holds provider-specific challenge or ceremony material.

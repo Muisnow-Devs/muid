@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	pb "sanzi.io/muid/api/proto/authn/v1"
+	"sanzi.io/muid/api/proto/authn/v1/basic"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/infra/mocked"
@@ -46,7 +47,7 @@ func (s *stubRegisterProvider) Continue(
 	_ context.Context,
 	input idpkg.ContinueInput,
 ) (idpkg.StepResult, error) {
-	if idpkg.FinishRegisterRequested(input.Payload) {
+	if input.ContinueState == idpkg.ContinueStateFinishRegister {
 		s.finishCalls++
 		return idpkg.StepResult{
 			Type: idpkg.StepAuthenticated,
@@ -133,7 +134,7 @@ func (s *pendingClaimsRegisterProvider) Continue(
 	ctx context.Context,
 	input idpkg.ContinueInput,
 ) (idpkg.StepResult, error) {
-	if idpkg.FinishRegisterRequested(input.Payload) {
+	if input.ContinueState == idpkg.ContinueStateFinishRegister {
 		sess, err := s.transitionStore.Get(ctx, input.TransitionId)
 		if err != nil {
 			return idpkg.StepResult{}, err
@@ -281,14 +282,251 @@ func TestFinishAuthStep_RegisterRequired_ProvisionThenFinishContinue(t *testing.
 		t.Fatal("expected auth success response")
 	}
 
-	updated, err := transitionStore.Get(ctx, staleSess.Id)
-	if err != nil {
-		t.Fatalf("get transition after provision: %v", err)
+	// Transition is deleted by flow after StepAuthenticated — verify it was cleaned up.
+	_, err = transitionStore.Get(ctx, staleSess.Id)
+	if err != session.ErrSessionNotFound {
+		t.Fatalf("expected transition deleted after authenticated, got %v", err)
 	}
-	pending, ok := updated.Store.PendingRegisterState()
-	if !ok || pending.ProvisionedUserID != provisioned.String() ||
-		pending.Claims.Email != "new@example.com" ||
-		updated.Store.Step != session.StepFinish {
-		t.Fatalf("after provision: step=%s ok=%v pending=%+v", updated.Store.Step, ok, pending)
+}
+
+type stubOIDCLinkFinishProvider struct {
+	transitionStore session.AuthTransitionStore
+}
+
+func (s *stubOIDCLinkFinishProvider) Name() string { return "google" }
+
+func (s *stubOIDCLinkFinishProvider) Start(
+	context.Context,
+	idpkg.StartInput,
+) (idpkg.StepResult, error) {
+	return idpkg.StepResult{}, nil
+}
+
+func (s *stubOIDCLinkFinishProvider) Continue(
+	ctx context.Context,
+	input idpkg.ContinueInput,
+) (idpkg.StepResult, error) {
+	if input.ContinueState != idpkg.ContinueStateFinishRegister {
+		return idpkg.StepResult{}, nil
+	}
+	if _, err := idpkg.ProvisionedUserID(input); err != nil {
+		return idpkg.StepResult{}, err
+	}
+	sess, err := s.transitionStore.Get(ctx, input.TransitionId)
+	if err != nil {
+		return idpkg.StepResult{}, err
+	}
+	pending, ok := sess.Store.PendingRegisterState()
+	if !ok || pending.Claims.FederatedProvider == "" {
+		return idpkg.StepResult{}, idpkg.ErrInvalidSessionState
+	}
+	return idpkg.StepResult{Type: idpkg.StepLinked}, nil
+}
+
+func TestFinishAuthStep_OIDCLinkRegister_withoutContinueSessionTokenRejected(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	linkUser := uuid.MustParse("550e8400-e29b-41d4-a716-446655440003")
+
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+	prov := &stubOIDCLinkFinishProvider{transitionStore: transitionStore}
+	idm := idpkg.NewIdentityManager(transitionStore, prov)
+
+	store := session.OIDCStore(session.StepRegister, &session.OIDCFlow{
+		OAuthState: "oauth-state",
+	}).WithAuthContext(string(idpkg.IntentLinkAccount), linkUser.String())
+
+	store = store.WithRegisterPending(session.RegisterPendingClaims{
+		Email:             "link@example.com",
+		EmailVerified:     true,
+		FederatedProvider: "google",
+		FederatedSubject:  "sub-link",
+	})
+
+	sess, err := transitionStore.Create(ctx, "google", store)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	protoClaims := &claimspb.IdentityInformation{}
+	protoClaims.SetEmail("link@example.com")
+	protoClaims.SetEmailVerified(true)
+	protoClaims.SetFederatedProvider("google")
+	protoClaims.SetFederatedSubject("sub-link")
+
+	svc := NewService(Dependencies{
+		IdentityManager: idm,
+		TransitionStore: transitionStore,
+		Sessions:        &stubLinkSessionResolver{userID: linkUser},
+	})
+
+	req := &pb.ContinueAuthSessionRequest{}
+	req.SetTransitionId(sess.Id)
+
+	resp, err := svc.finishAuthStep(ctx, req, sess, idpkg.StepResult{
+		Type: idpkg.StepRegisterRequired,
+		RegisterRequired: &idpkg.RegisterRequired{
+			Identity: protoClaims,
+		},
+	}, sess.Id, "")
+	if err != nil {
+		t.Fatalf("finishAuthStep: %v", err)
+	}
+	if resp == nil || !resp.HasAuthFailure() {
+		t.Fatalf("expected link unauthorized failure, got %+v", resp)
+	}
+	if resp.GetAuthFailure().GetErrorCode() != ErrCodeLinkUnauthorized {
+		t.Fatalf("error_code: got %q want %q", resp.GetAuthFailure().GetErrorCode(), ErrCodeLinkUnauthorized)
+	}
+}
+
+func TestFinishAuthStep_OIDCLinkRegister_withMatchingSessionToken(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	linkUser := uuid.MustParse("550e8400-e29b-41d4-a716-446655440003")
+	const continueWire = "link.selector.validator"
+
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+	prov := &stubOIDCLinkFinishProvider{transitionStore: transitionStore}
+	idm := idpkg.NewIdentityManager(transitionStore, prov)
+
+	store := session.OIDCStore(session.StepRegister, &session.OIDCFlow{
+		OAuthState: "oauth-state",
+	}).WithAuthContext(string(idpkg.IntentLinkAccount), linkUser.String())
+
+	store = store.WithRegisterPending(session.RegisterPendingClaims{
+		Email:             "link@example.com",
+		EmailVerified:     true,
+		FederatedProvider: "google",
+		FederatedSubject:  "sub-link",
+	})
+
+	sess, err := transitionStore.Create(ctx, "google", store)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	protoClaims := &claimspb.IdentityInformation{}
+	protoClaims.SetEmail("link@example.com")
+	protoClaims.SetEmailVerified(true)
+	protoClaims.SetFederatedProvider("google")
+	protoClaims.SetFederatedSubject("sub-link")
+
+	sessions := &stubLinkSessionResolver{userID: linkUser}
+	svc := NewService(Dependencies{
+		IdentityManager: idm,
+		TransitionStore: transitionStore,
+		Sessions:        sessions,
+	})
+
+	req := &pb.ContinueAuthSessionRequest{}
+	req.SetTransitionId(sess.Id)
+
+	resp, err := svc.finishAuthStep(ctx, req, sess, idpkg.StepResult{
+		Type: idpkg.StepRegisterRequired,
+		RegisterRequired: &idpkg.RegisterRequired{
+			Identity: protoClaims,
+		},
+	}, sess.Id, continueWire)
+	if err != nil {
+		t.Fatalf("finishAuthStep: %v", err)
+	}
+	if resp == nil || resp.GetStatus() != basic.AuthStatus_AUTH_STATUS_AUTHENTICATED {
+		t.Fatalf("response: %+v", resp)
+	}
+	if !resp.HasAuthSuccess() {
+		t.Fatal("expected auth success with session token after link")
+	}
+	if sessions.revokedWire != continueWire {
+		t.Fatalf("revoked wire: got %q want %q", sessions.revokedWire, continueWire)
+	}
+	gotWire := resp.GetAuthSuccess().GetResult().GetSessionContext().GetSessionToken().GetValue()
+	if gotWire == continueWire {
+		t.Fatalf("session_token must be newly issued, got request wire %q", gotWire)
+	}
+	if gotWire != "issued.new.session.token" {
+		t.Fatalf("session_token: got %q want newly issued stub token", gotWire)
+	}
+
+	_, err = transitionStore.Get(ctx, sess.Id)
+	if err != session.ErrSessionNotFound {
+		t.Fatalf("expected transition deleted after link, got %v", err)
+	}
+}
+
+func TestLinkCompletedResponse_linkIntent_withoutWireRejected(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	linkUser := uuid.MustParse("550e8400-e29b-41d4-a716-446655440004")
+
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+	store := session.OIDCStore(session.StepContinue, &session.OIDCFlow{
+		OAuthState: "oauth-state",
+	}).WithAuthContext(string(idpkg.IntentLinkAccount), linkUser.String())
+
+	sess, err := transitionStore.Create(ctx, "google", store)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	svc := NewService(Dependencies{
+		TransitionStore: transitionStore,
+		Sessions:        &stubLinkSessionResolver{userID: linkUser},
+	})
+
+	resp, err := svc.linkCompletedResponse(ctx, sess.Id, "")
+	if err != nil {
+		t.Fatalf("linkCompletedResponse: %v", err)
+	}
+	if resp == nil || !resp.HasAuthFailure() {
+		t.Fatalf("expected link unauthorized failure, got %+v", resp)
+	}
+	if resp.GetAuthFailure().GetErrorCode() != ErrCodeLinkUnauthorized {
+		t.Fatalf("error_code: got %q want %q", resp.GetAuthFailure().GetErrorCode(), ErrCodeLinkUnauthorized)
+	}
+}
+
+func TestLinkCompletedResponse_linkIntent_withRequestWire(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	linkUser := uuid.MustParse("550e8400-e29b-41d4-a716-446655440004")
+	const continueWire = "continue.selector.validator"
+
+	transitionStore := authnkv.NewKVAuthTransitionStore(mocked.NewMockKVStore())
+	store := session.OIDCStore(session.StepContinue, &session.OIDCFlow{
+		OAuthState: "oauth-state",
+	}).WithAuthContext(string(idpkg.IntentLinkAccount), linkUser.String())
+
+	sess, err := transitionStore.Create(ctx, "google", store)
+	if err != nil {
+		t.Fatalf("create transition: %v", err)
+	}
+
+	sessions := &stubLinkSessionResolver{userID: linkUser}
+	svc := NewService(Dependencies{
+		TransitionStore: transitionStore,
+		Sessions:        sessions,
+	})
+
+	resp, err := svc.linkCompletedResponse(ctx, sess.Id, continueWire)
+	if err != nil {
+		t.Fatalf("linkCompletedResponse: %v", err)
+	}
+	if resp == nil || !resp.HasAuthSuccess() {
+		t.Fatal("expected auth success")
+	}
+	if sessions.revokedWire != continueWire {
+		t.Fatalf("revoked wire: got %q want %q", sessions.revokedWire, continueWire)
+	}
+	gotWire := resp.GetAuthSuccess().GetResult().GetSessionContext().GetSessionToken().GetValue()
+	if gotWire == continueWire {
+		t.Fatalf("session_token must be newly issued, got request wire %q", gotWire)
+	}
+	if gotWire != "issued.new.session.token" {
+		t.Fatalf("session_token: got %q want newly issued stub token", gotWire)
 	}
 }

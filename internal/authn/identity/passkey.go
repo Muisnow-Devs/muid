@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/protocol"
@@ -206,6 +205,23 @@ func (p *PasskeyProvider) Continue(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
+	switch input.ContinueState {
+	case idn.ContinueStateChallenge:
+		return p.continuePasskeyChallenge(ctx, input)
+	default:
+		return idn.StepResult{}, idn.ErrInvalidInput
+	}
+}
+
+func (p *PasskeyProvider) continuePasskeyChallenge(
+	ctx context.Context,
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
+	err := idn.ValidateContinueChallenge(input)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
 	sess, err := p.transitionStore.Get(ctx, input.TransitionId)
 	if err != nil {
 		return idn.StepResult{}, errors.Join(
@@ -270,8 +286,6 @@ func (p *PasskeyProvider) continueLogin(
 	if err != nil {
 		return idn.StepResult{}, err
 	}
-
-	p.transitionStore.Delete(ctx, sess.Id)
 
 	return authenticatedStep(passkeyUser.id.String(), sess.Store), nil
 }
@@ -340,17 +354,17 @@ func (p *PasskeyProvider) continueRegister(
 		return idn.StepResult{}, err
 	}
 
-	p.transitionStore.Delete(ctx, sess.Id)
-
-	wire := strings.TrimSpace(input.LinkSessionToken)
-	if wire != "" {
-		res, err := p.sessions.ResolveSessionToken(ctx, wire)
-		if err != nil {
-			return idn.StepResult{}, err
-		}
-		if res.UserID != uid {
-			return idn.StepResult{}, idn.ErrLinkUnauthorized
-		}
+	linkRes, err := resolveLinkSession(
+		ctx,
+		p.sessions,
+		idn.IntentLinkAccount,
+		input.LinkSessionToken,
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+	if linkRes.UserID != uid {
+		return idn.StepResult{}, idn.ErrLinkUnauthorized
 	}
 
 	return idn.StepResult{Type: idn.StepLinked}, nil

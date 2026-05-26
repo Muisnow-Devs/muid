@@ -18,7 +18,6 @@ func TestRegisterPending_JSON_roundTrip(t *testing.T) {
 
 	original := EmailOTPStore(StepRegister, &EmailOTPFlow{Email: "user@example.com"}).
 		WithRegisterPending(RegisterPendingClaimsFromProto(claims))
-	original = original.WithProvisionedUserID("550e8400-e29b-41d4-a716-446655440000")
 
 	data, err := json.Marshal(original)
 	if err != nil {
@@ -34,16 +33,13 @@ func TestRegisterPending_JSON_roundTrip(t *testing.T) {
 	if !ok {
 		t.Fatal("expected pending register")
 	}
-	if pending.ProvisionedUserID != "550e8400-e29b-41d4-a716-446655440000" {
-		t.Fatalf("provisioned id: %q", pending.ProvisionedUserID)
-	}
 	if pending.Claims.Email != "user@example.com" {
 		t.Fatalf("email: %q", pending.Claims.Email)
 	}
 	if pending.Claims.FederatedProvider != "google" || pending.Claims.FederatedSubject != "sub-1" {
 		t.Fatalf("federated: %+v", pending.Claims)
 	}
-	if decoded.Step != StepFinish {
+	if decoded.Step != StepRegister {
 		t.Fatalf("step: %s", decoded.Step)
 	}
 }

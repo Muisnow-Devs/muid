@@ -24,6 +24,8 @@ func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, erro
 		IdentityManager:        infra.IdentityManager,
 		TransitionStore:        infra.TransitionStore,
 		Provision:              infra.Provision,
+		Email:                  infra.Email,
+		Federated:              infra.Federated,
 		Sessions:               infra.Sessions,
 		LoginAlert:             infra.LoginAlert,
 		OTPSendCooldownSeconds: infra.GlobalConfig.OTPSendCooldownSeconds,
@@ -107,6 +109,7 @@ func InitializeIdentityManager(
 			transitionStore,
 			svc.OIDC,
 			svc.Federated,
+			svc.Email,
 		)
 		if err != nil {
 			return nil, &OIDCProviderInitError{Name: cfg.Name, Err: err}

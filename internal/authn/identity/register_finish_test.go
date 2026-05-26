@@ -40,21 +40,6 @@ func seedRegisterFinishUserRef(t *testing.T, client *ent.Client, userID uuid.UUI
 	}
 }
 
-func TestFinishRegisterRequested(t *testing.T) {
-	t.Parallel()
-
-	if idn.FinishRegisterRequested(nil) {
-		t.Fatal("nil payload")
-	}
-	if idn.FinishRegisterRequested(map[string]any{}) {
-		t.Fatal("empty payload")
-	}
-	if !idn.FinishRegisterRequested(map[string]any{
-		idn.ContinuePayloadFinishRegister: true,
-	}) {
-		t.Fatal("expected finish register")
-	}
-}
 
 func TestRegisterPendingClaimsFromProto_roundTrip(t *testing.T) {
 	t.Parallel()
@@ -90,14 +75,9 @@ func TestSessionStore_WithRegisterPending_setsStep(t *testing.T) {
 	if !ok || !pending.Claims.EmailVerified {
 		t.Fatalf("pending: ok=%v %+v", ok, pending)
 	}
-
-	finished := updated.WithProvisionedUserID("550e8400-e29b-41d4-a716-446655440000")
-	if finished.Step != session.StepFinish {
-		t.Fatalf("step: %s", finished.Step)
-	}
 }
 
-func TestFinishRegisterAfterLink_deletesTransition(t *testing.T) {
+func TestFinishRegisterAfterLink_returnsAuthenticated(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
@@ -107,7 +87,7 @@ func TestFinishRegisterAfterLink_deletesTransition(t *testing.T) {
 	sess, err := store.Create(
 		ctx,
 		"email",
-		session.EmailOTPStore(session.StepFinish, &session.EmailOTPFlow{
+		session.EmailOTPStore(session.StepRegister, &session.EmailOTPFlow{
 			Email: "a@b.com",
 		}),
 	)
@@ -123,8 +103,9 @@ func TestFinishRegisterAfterLink_deletesTransition(t *testing.T) {
 		t.Fatalf("step: %+v", step)
 	}
 
-	if _, err := store.Get(ctx, sess.Id); err != session.ErrSessionNotFound {
-		t.Fatalf("expected deleted transition, got %v", err)
+	// transition should still exist — deletion is the outer flow's responsibility
+	if _, err := store.Get(ctx, sess.Id); err != nil {
+		t.Fatalf("transition should still exist after provider finish: %v", err)
 	}
 }
 
@@ -203,6 +184,56 @@ func TestEnsureFederatedLink_idempotentWhenExists(t *testing.T) {
 	}
 }
 
+func TestValidateOIDCFinishRegister_manualLinkForExistingUser(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db := openRegisterFinishTestDB(t)
+	uid := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+	seedRegisterFinishUserRef(t, db, uid, "exists@example.com")
+	_, email, _, _, _, _, _ := account.Wire(&account.Store{DB: db}, nil, "")
+
+	err := validateOIDCFinishRegister(
+		ctx,
+		"",
+		"",
+		uid,
+		session.RegisterPending{
+			Claims:               session.RegisterPendingClaims{Email: "exists@example.com"},
+			ResolvedExistingUser: true,
+		},
+		email,
+	)
+	if !errors.Is(err, idn.ErrOIDCManualAccountLinkingRequired) {
+		t.Fatalf("got %v want manual link", err)
+	}
+}
+
+func TestValidateOIDCFinishRegister_linkRejectsEmailOwnedByOther(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	db := openRegisterFinishTestDB(t)
+	linkUID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+	other := uuid.MustParse("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
+	seedRegisterFinishUserRef(t, db, linkUID, "link@example.com")
+	seedRegisterFinishUserRef(t, db, other, "taken@example.com")
+
+	_, email, _, _, _, _, _ := account.Wire(&account.Store{DB: db}, nil, "")
+
+	err := validateOIDCFinishRegister(
+		ctx,
+		string(idn.IntentLinkAccount),
+		linkUID.String(),
+		linkUID,
+		session.RegisterPending{Claims: session.RegisterPendingClaims{Email: "taken@example.com"}},
+		email,
+	)
+	if !errors.Is(err, idn.ErrOIDCManualAccountLinkingRequired) {
+		t.Fatalf("got %v want manual link", err)
+	}
+}
+
 func TestEnsureFederatedLink_rejectsUserMismatch(t *testing.T) {
 	t.Parallel()
 
@@ -234,7 +265,7 @@ func TestEnsureFederatedLink_rejectsUserMismatch(t *testing.T) {
 			Email: "c@d.com",
 		},
 	)
-	if !errors.Is(err, idn.ErrInvalidSessionState) {
-		t.Fatalf("expected invalid session state, got %v", err)
+	if !errors.Is(err, account.ErrFederatedSubjectLinkedToOtherUser) {
+		t.Fatalf("expected federated subject linked to other user, got %v", err)
 	}
 }

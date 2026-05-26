@@ -11,6 +11,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
+	claimspb "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/account"
 	idn "sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
@@ -29,6 +30,7 @@ type OIDCIdentityProvider struct {
 	transitionStore session.AuthTransitionStore
 	oidcLogin       account.OIDC
 	federated       account.Federated
+	email           account.Email
 
 	providerName string
 	provider     *oidc.Provider
@@ -76,6 +78,7 @@ func NewOIDCProvider(
 	transitionStore session.AuthTransitionStore,
 	oidcLogin account.OIDC,
 	federated account.Federated,
+	email account.Email,
 ) (idn.IdentityProvider, error) {
 	provider, err := oidc.NewProvider(ctx, config.Endpoint)
 	if err != nil {
@@ -101,6 +104,7 @@ func NewOIDCProvider(
 		transitionStore: transitionStore,
 		oidcLogin:       oidcLogin,
 		federated:       federated,
+		email:           email,
 	}, nil
 }
 
@@ -143,8 +147,23 @@ func (p *OIDCIdentityProvider) Continue(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
-	if idn.FinishRegisterRequested(input.Payload) {
+	switch input.ContinueState {
+	case idn.ContinueStateFinishRegister:
 		return p.continueFinishOIDCRegister(ctx, input)
+	case idn.ContinueStateChallenge:
+		return p.continueOIDCChallenge(ctx, input)
+	default:
+		return idn.StepResult{}, idn.ErrInvalidInput
+	}
+}
+
+func (p *OIDCIdentityProvider) continueOIDCChallenge(
+	ctx context.Context,
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
+	err := idn.ValidateContinueChallenge(input)
+	if err != nil {
+		return idn.StepResult{}, err
 	}
 
 	req, err := p.parseContinuePayload(input.Payload)
@@ -171,64 +190,104 @@ func (p *OIDCIdentityProvider) Continue(
 		return idn.StepResult{}, err
 	}
 
-	userID, reg, err := p.oidcLogin.LookupOIDCLogin(
+	return p.continueAfterOIDCClaims(ctx, sess, claims)
+}
+
+func (p *OIDCIdentityProvider) continueAfterOIDCClaims(
+	ctx context.Context,
+	sess session.AuthSession,
+	claims OIDCClaims,
+) (idn.StepResult, error) {
+	userID, found, err := p.oidcLogin.LookupOIDCFederatedUser(
 		ctx,
 		p.providerName,
 		claims.Subject,
-		claims.Email,
-		claims.EmailVerified,
-		claims.Name,
-		claims.Picture,
 	)
 	if err != nil {
-		if errors.Is(err, idn.ErrOIDCManualAccountLinkingRequired) {
-			p.transitionStore.Delete(ctx, sess.Id) // clean up transition since we won't be able to continue with it
-			return idn.StepResult{}, err
-		}
+		return idn.StepResult{}, errors.Join(idn.ErrAuthenticationFailed, err)
+	}
+
+	intent, linkUserID, _ := sess.Store.AuthContext()
+
+	if found {
+		return p.terminalStepForLinkedFederated(ctx, sess, userID, intent, linkUserID)
+	}
+
+	if claims.Email == "" {
 		return idn.StepResult{}, errors.Join(
 			idn.ErrAuthenticationFailed,
-			err,
+			errors.New("OIDC identity token has no email"),
 		)
 	}
 
-	if reg != nil {
-		store := sess.Store.WithRegisterPending(
-			session.RegisterPendingClaimsFromProto(reg.Identity),
-		)
-		err = p.transitionStore.Update(ctx, sess.Id, store)
+	reg := registerRequiredFromClaims(p.providerName, claims)
+	store := sess.Store.WithRegisterPending(
+		session.RegisterPendingClaimsFromProto(reg.Identity),
+	)
+	err = p.transitionStore.Update(ctx, sess.Id, store)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	return idn.StepResult{
+		TransitionId:     sess.Id,
+		Type:             idn.StepRegisterRequired,
+		RegisterRequired: reg,
+	}, nil
+}
+
+func (p *OIDCIdentityProvider) terminalStepForLinkedFederated(
+	ctx context.Context,
+	sess session.AuthSession,
+	federatedUserID uuid.UUID,
+	intent, linkUserID string,
+) (idn.StepResult, error) {
+	if intent == string(idn.IntentLinkAccount) {
+		linkUID, err := uuid.Parse(strings.TrimSpace(linkUserID))
 		if err != nil {
-			return idn.StepResult{}, err
+			return idn.StepResult{}, idn.ErrInvalidSessionState
 		}
-
-		return idn.StepResult{
-			TransitionId:     sess.Id,
-			Type:             idn.StepRegisterRequired,
-			RegisterRequired: reg,
-		}, nil
+		if federatedUserID != linkUID {
+			return idn.StepResult{}, idn.ErrEmailAlreadyInUse
+		}
+		return idn.StepResult{Type: idn.StepLinked}, nil
 	}
 
-	p.transitionStore.Delete(ctx, sess.Id)
+	return authenticatedStep(federatedUserID.String(), sess.Store), nil
+}
 
-	return authenticatedStep(userID.String(), sess.Store), nil
+func registerRequiredFromClaims(provider string, claims OIDCClaims) *idn.RegisterRequired {
+	id := &claimspb.IdentityInformation{}
+	id.SetEmail(claims.Email)
+	id.SetEmailVerified(claims.EmailVerified)
+	id.SetFederatedProvider(provider)
+	id.SetFederatedSubject(claims.Subject)
+	if claims.Name != "" {
+		id.SetName(claims.Name)
+	}
+	if claims.Picture != "" {
+		id.SetPicture(claims.Picture)
+	}
+	return &idn.RegisterRequired{Identity: id}
 }
 
 func (p *OIDCIdentityProvider) continueFinishOIDCRegister(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
+	provisioned, err := idn.ProvisionedUserID(input)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
 	sess, err := p.transitionStore.Get(ctx, input.TransitionId)
 	if err != nil {
 		return idn.StepResult{}, errors.Join(idn.ErrSessionNotFound, err)
 	}
 
 	pending, ok := sess.Store.PendingRegisterState()
-	if !ok || pending.ProvisionedUserID == "" {
+	if !ok {
 		return idn.StepResult{}, idn.ErrInvalidSessionState
-	}
-
-	provisioned, err := uuid.Parse(strings.TrimSpace(pending.ProvisionedUserID))
-	if err != nil {
-		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
 	}
 
 	claims := pending.Claims
@@ -238,7 +297,22 @@ func (p *OIDCIdentityProvider) continueFinishOIDCRegister(
 		return idn.StepResult{}, idn.ErrInvalidSessionState
 	}
 
-	linked, err := ensureFederatedLink(
+	intent, linkUserID, _ := sess.Store.AuthContext()
+	linkIntent := intent == string(idn.IntentLinkAccount)
+
+	err = validateOIDCFinishRegister(
+		ctx,
+		intent,
+		linkUserID,
+		provisioned,
+		*pending,
+		p.email,
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
+	_, err = ensureFederatedLink(
 		ctx,
 		p.federated,
 		provider,
@@ -247,10 +321,14 @@ func (p *OIDCIdentityProvider) continueFinishOIDCRegister(
 		claims,
 	)
 	if err != nil {
-		return idn.StepResult{}, err
+		return idn.StepResult{}, mapFederatedLinkError(err, linkIntent)
 	}
 
-	return finishRegisterAfterLink(ctx, p.transitionStore, sess.Id, linked, provisioned)
+	if linkIntent {
+		return idn.StepResult{TransitionId: sess.Id, Type: idn.StepLinked}, nil
+	}
+
+	return authenticatedStep(provisioned.String(), sess.Store), nil
 }
 
 type continueRequest struct {

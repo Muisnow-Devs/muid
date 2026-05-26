@@ -44,7 +44,7 @@ type EmailOTPFlow struct {
 	OldEmail      string `json:"old_email,omitempty"`
 }
 
-// OIDCFlow holds OIDC/PKCE transition state.
+// OIDCFlow holds OIDC/PKCE ceremony state only.
 type OIDCFlow struct {
 	OAuthState       string `json:"oauth_state"`
 	PKCECodeVerifier string `json:"pkce_code_verifier"`
@@ -69,10 +69,11 @@ type RegisterPendingClaims struct {
 	Picture           string `json:"picture,omitempty"`
 }
 
-// RegisterPending holds signup claims and, after login-flow provision, the new user id.
+// RegisterPending holds signup claims set when a provider returns StepRegisterRequired.
 type RegisterPending struct {
-	Claims            RegisterPendingClaims `json:"claims"`
-	ProvisionedUserID string                `json:"provisioned_user_id,omitempty"`
+	Claims RegisterPendingClaims `json:"claims"`
+	// ResolvedExistingUser is set by flow when register resolution reused an existing UserRef.
+	ResolvedExistingUser bool `json:"resolved_existing_user,omitempty"`
 }
 
 type SessionStore struct {
@@ -80,6 +81,13 @@ type SessionStore struct {
 	Step     AuthStep `json:"step"`
 
 	Flow FlowState `json:"flow"`
+
+	// AuthIntent mirrors internal/identity.AuthIntent (login, link_account, reauthenticate).
+	AuthIntent string `json:"auth_intent,omitempty"`
+	// LinkUserID is the authenticated user for link_account / reauthenticate flows.
+	LinkUserID string `json:"link_user_id,omitempty"`
+	// LinkSessionWire is the validated wire session token from Start for link_account flows.
+	LinkSessionWire string `json:"link_session_wire,omitempty"`
 
 	// Locale, timezone, and device context come from client gRPC metadata at session start (pkg/clientmeta).
 	Locale    string `json:"locale,omitempty"`

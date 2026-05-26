@@ -30,6 +30,8 @@ type Service struct {
 	idm                     *identity.IdentityManager
 	transitionStore         session.AuthTransitionStore
 	provision               account.Provisioning
+	email                   account.Email
+	federated               account.Federated
 	sessions                account.Session
 	loginAlert              account.LoginNotifier
 	otpResendCooldownMillis int64
@@ -39,6 +41,8 @@ type Dependencies struct {
 	IdentityManager        *identity.IdentityManager
 	TransitionStore        session.AuthTransitionStore
 	Provision              account.Provisioning
+	Email                  account.Email
+	Federated              account.Federated
 	Sessions               account.Session
 	LoginAlert             account.LoginNotifier
 	OTPSendCooldownSeconds int
@@ -53,6 +57,8 @@ func NewService(deps Dependencies) *Service {
 		idm:                     deps.IdentityManager,
 		transitionStore:         deps.TransitionStore,
 		provision:               deps.Provision,
+		email:                   deps.Email,
+		federated:               deps.Federated,
 		sessions:                deps.Sessions,
 		loginAlert:              deps.LoginAlert,
 		otpResendCooldownMillis: int64(cooldownSec) * 1000,
@@ -100,6 +106,17 @@ func (s *Service) StartAuthSession(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
+	err = s.persistAuthContext(ctx, step.TransitionId, protoIntent(req.GetIntent()), linkSessionToken)
+	if err != nil {
+		return nil, err
+	}
+
+	sess, err = s.transitionStore.Get(ctx, step.TransitionId)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn start reload transition", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
 	ch, err := buildAuthChallenge(req.GetMethod(), sess, step, s.otpResendCooldownMillis)
 	if err != nil {
 		log.LogUnexpected(ctx, "authn start build challenge", err.Error())
@@ -124,31 +141,41 @@ func (s *Service) ContinueAuthSession(
 		return nil, mapTransitionLoadError(ctx, err)
 	}
 
+	err = s.validateLinkContinueSession(ctx, sess, linkSessionToken)
+	if err != nil {
+		return s.mapContinueError(ctx, tid, err)
+	}
+
 	prov, err := s.idm.GetProvider(sess.Provider)
 	if err != nil {
 		log.LogUnexpected(ctx, "authn continue provider lookup", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
 
-	payload, err := proofToPayload(req.GetProof())
+	continueState, payload, err := proofToContinue(req.GetProof())
 	if err != nil {
 		return nil, err
 	}
 
 	step, err := prov.Continue(ctx, identity.ContinueInput{
 		TransitionId:     tid,
+		ContinueState:    continueState,
 		Payload:          payload,
 		LinkSessionToken: linkSessionToken,
 	})
 	if err != nil {
-		return mapContinueError(ctx, tid, err)
+		return s.mapContinueError(ctx, tid, err)
 	}
 
-	if step.Type == identity.StepInput {
+	switch step.Type {
+	case identity.StepInput:
 		return s.continueAwaitingChallenge(ctx, tid, sess, step)
+	case identity.StepRegisterRequired, identity.StepAuthenticated, identity.StepLinked:
+		return s.finishAuthStep(ctx, req, sess, step, tid, linkSessionToken)
+	default:
+		log.LogUnexpected(ctx, "authn continue invalid step type", fmt.Sprintf("invalid step type %v", step.Type))
+		return nil, grpcutils.GRPCInternalError()
 	}
-
-	return s.finishAuthStep(ctx, req, sess, step, tid, linkSessionToken)
 }
 
 func (s *Service) validateStartAuthenticatedIntent(
@@ -156,25 +183,28 @@ func (s *Service) validateStartAuthenticatedIntent(
 	intent basic.AuthIntent,
 	linkSessionToken string,
 ) error {
-	if intent == basic.AuthIntent_AUTH_INTENT_LOGIN {
+	switch intent {
+	case basic.AuthIntent_AUTH_INTENT_LOGIN:
+		return nil
+	case basic.AuthIntent_AUTH_INTENT_UNSPECIFIED:
+		return status.Error(codes.InvalidArgument, "missing auth intent")
+	default:
+		wire := strings.TrimSpace(linkSessionToken)
+		if wire == "" {
+			return mapStartError(ctx, identity.ErrLinkUnauthorized)
+		}
+
+		_, err := s.sessions.ResolveSessionToken(ctx, wire)
+		if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
+			return mapStartError(ctx, identity.ErrLinkUnauthorized)
+		}
+		if err != nil {
+			log.LogUnexpected(ctx, "authn start resolve session", err.Error())
+			return grpcutils.GRPCInternalError()
+		}
+
 		return nil
 	}
-
-	wire := strings.TrimSpace(linkSessionToken)
-	if wire == "" {
-		return mapStartError(ctx, identity.ErrLinkUnauthorized)
-	}
-
-	_, err := s.sessions.ResolveSessionToken(ctx, wire)
-	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
-		return mapStartError(ctx, identity.ErrLinkUnauthorized)
-	}
-	if err != nil {
-		log.LogUnexpected(ctx, "authn start resolve session", err.Error())
-		return grpcutils.GRPCInternalError()
-	}
-
-	return nil
 }
 
 func providerNameForMethod(m basic.AuthMethod, identifier string) (string, error) {
@@ -312,22 +342,29 @@ func maskEmail(email string) string {
 	return local[:1] + "***" + local[len(local)-1:] + "@" + dom
 }
 
-func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
+func proofToContinue(proof *proofpb.AuthProof) (identity.ContinueState, map[string]any, error) {
 	if proof == nil {
-		return nil, status.Error(codes.InvalidArgument, "missing proof")
+		return "", nil, status.Error(codes.InvalidArgument, "missing proof")
 	}
 	if ep := proof.GetEmailProof(); ep != nil {
-		payload, err := implIdentity.EmailProofToPayload(ep)
-		if err == nil {
-			return payload, nil
+		switch ep.WhichStep() {
+		case proofpb.EmailProof_Resend_case:
+			return identity.ContinueStateResend, nil, nil
+		case proofpb.EmailProof_OtpCode_case:
+			payload, err := implIdentity.EmailProofToPayload(ep)
+			if err == nil {
+				return identity.ContinueStateChallenge, payload, nil
+			}
+			if errors.Is(err, identity.ErrInvalidInput) {
+				return "", nil, status.Error(codes.InvalidArgument, err.Error())
+			}
+			return "", nil, status.Error(codes.Internal, err.Error())
+		default:
+			return "", nil, status.Error(codes.InvalidArgument, "email proof step missing")
 		}
-		if errors.Is(err, identity.ErrInvalidInput) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		return nil, status.Error(codes.Internal, err.Error())
 	}
 	if op := proof.GetOauthProof(); op != nil {
-		return map[string]any{
+		return identity.ContinueStateChallenge, map[string]any{
 			implIdentity.OIDCPayloadKeyCode:  op.GetCode(),
 			implIdentity.OIDCPayloadKeyState: op.GetState(),
 		}, nil
@@ -341,11 +378,11 @@ func proofToPayload(proof *proofpb.AuthProof) (map[string]any, error) {
 			out["credential_creation_response_json"] = s
 		}
 		if len(out) == 0 {
-			return nil, status.Error(codes.InvalidArgument, "passkey proof missing credential json")
+			return "", nil, status.Error(codes.InvalidArgument, "passkey proof missing credential json")
 		}
-		return out, nil
+		return identity.ContinueStateChallenge, out, nil
 	}
-	return nil, status.Error(codes.InvalidArgument, "unsupported proof type")
+	return "", nil, status.Error(codes.InvalidArgument, "unsupported proof type")
 }
 
 func mapStartError(ctx context.Context, err error) error {
@@ -364,50 +401,58 @@ func mapStartError(ctx context.Context, err error) error {
 	}
 }
 
-func mapContinueError(
+func (s *Service) mapContinueError(
 	ctx context.Context,
 	tid string,
 	err error,
 ) (*pb.ContinueAuthSessionResponse, error) {
 	switch {
 	case errors.Is(err, identity.ErrOIDCManualAccountLinkingRequired):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(
 			tid,
 			"This email is already registered without this OIDC provider. Manual account linking is required.",
 			ErrCodeOIDCManualLinkRequired,
 		), nil
 	case errors.Is(err, identity.ErrPasskeyNotLinked):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(tid,
 			"No user account is linked to this passkey credential.",
 			ErrCodePasskeyNotLinked,
 		), nil
 	case errors.Is(err, identity.ErrLinkUnauthorized):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(
 			tid,
 			"A valid session is required for this operation.",
 			ErrCodeLinkUnauthorized,
 		), nil
 	case errors.Is(err, identity.ErrEmailAlreadyInUse):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(
 			tid,
 			"That email address is already in use.",
 			ErrCodeEmailAlreadyInUse,
 		), nil
 	case errors.Is(err, identity.ErrPasskeyAlreadyRegistered):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(
 			tid,
 			"This passkey is already registered.",
 			ErrCodePasskeyAlreadyRegistered,
 		), nil
 	case errors.Is(err, identity.ErrAuthenticationFailed):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(tid, err.Error(), ErrCodeAuthenticationFailed), nil
 	case errors.Is(err, identity.ErrInvalidInput):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(tid, err.Error(), ErrCodeInvalidInput), nil
 	case errors.Is(err, otp.ErrOTPSendRateLimited):
 		return nil, status.Error(codes.ResourceExhausted, "OTP send rate limited; try again later")
 	case errors.Is(err, identity.ErrSessionNotFound):
 		return nil, status.Error(codes.NotFound, "transition not found")
 	case errors.Is(err, identity.ErrInvalidSessionState):
+		s.cleanTransition(ctx, tid)
 		return authFailureResponse(tid, err.Error(), ErrCodeInvalidInput), nil
 	case errors.Is(err, session.ErrSessionExpired):
 		return nil, status.Error(codes.FailedPrecondition, "transition expired")
@@ -440,6 +485,49 @@ func authFailureResponse(tid, reason, code string) *pb.ContinueAuthSessionRespon
 	out.SetAuthFailure(fail)
 
 	return out
+}
+
+func (s *Service) persistAuthContext(
+	ctx context.Context,
+	transitionID string,
+	intent identity.AuthIntent,
+	linkSessionToken string,
+) error {
+	if intent == identity.IntentUnspecified {
+		intent = identity.IntentLogin
+	}
+
+	linkUserID := ""
+	linkWire := ""
+	if intent == identity.IntentLinkAccount {
+		linkWire = strings.TrimSpace(linkSessionToken)
+		res, err := s.sessions.ResolveSessionToken(ctx, linkWire)
+		if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
+			return mapStartError(ctx, identity.ErrLinkUnauthorized)
+		}
+		if err != nil {
+			log.LogUnexpected(ctx, "authn start resolve link session", err.Error())
+			return grpcutils.GRPCInternalError()
+		}
+		linkUserID = res.UserID.String()
+	}
+
+	sess, err := s.transitionStore.Get(ctx, transitionID)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn start persist auth context", err.Error())
+		return grpcutils.GRPCInternalError()
+	}
+
+	store := sess.Store.WithAuthContext(string(intent), linkUserID)
+	if linkWire != "" {
+		store = store.WithLinkSessionWire(linkWire)
+	}
+	err = s.transitionStore.Update(ctx, transitionID, store)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn start update auth context", err.Error())
+		return grpcutils.GRPCInternalError()
+	}
+	return nil
 }
 
 func protoIntent(i basic.AuthIntent) identity.AuthIntent {

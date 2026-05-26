@@ -74,10 +74,8 @@ func TestEmailIdentityProvider_Continue_Resend_ReusesTransition(t *testing.T) {
 	}
 
 	step, err := prov.Continue(ctx, idn.ContinueInput{
-		TransitionId: sess.Id,
-		Payload: map[string]any{
-			EmailPayloadKeyResend: true,
-		},
+		TransitionId:  sess.Id,
+		ContinueState: idn.ContinueStateResend,
 	})
 	if err != nil {
 		t.Fatalf("resend continue: %v", err)
@@ -130,10 +128,8 @@ func TestEmailIdentityProvider_Continue_ResendWrongStep(t *testing.T) {
 	}
 
 	_, err = prov.Continue(ctx, idn.ContinueInput{
-		TransitionId: sess.Id,
-		Payload: map[string]any{
-			EmailPayloadKeyResend: true,
-		},
+		TransitionId:  sess.Id,
+		ContinueState: idn.ContinueStateResend,
 	})
 	if err == nil {
 		t.Fatal("expected error for resend when step is not start")
@@ -176,10 +172,8 @@ func TestEmailIdentityProvider_Continue_Resend_RateLimited(t *testing.T) {
 	}
 
 	_, err = prov.Continue(ctx, idn.ContinueInput{
-		TransitionId: sess.Id,
-		Payload: map[string]any{
-			EmailPayloadKeyResend: true,
-		},
+		TransitionId:  sess.Id,
+		ContinueState: idn.ContinueStateResend,
 	})
 	if err == nil {
 		t.Fatal("expected rate limit error on immediate resend")

@@ -29,8 +29,16 @@ type Email interface {
 	) (oldEmail string, err error)
 }
 
-// OIDC covers federated identity lookup and OIDC signup provisioning.
+// OIDC covers federated identity lookup for OIDC providers.
 type OIDC interface {
+	// LookupOIDCFederatedUser returns the user id when provider+subject is actively linked.
+	LookupOIDCFederatedUser(
+		ctx context.Context,
+		providerName, subject string,
+	) (uuid.UUID, bool, error)
+	// LookupOIDCLogin resolves an OIDC subject to an existing user or register-required data.
+	// When the federated subject is not linked, register-required claims are returned even if the
+	// email already exists; login-flow orchestration decides manual linking vs provision.
 	LookupOIDCLogin(
 		ctx context.Context,
 		providerName, subject, email string,

@@ -21,13 +21,12 @@ func (s SessionStore) WithRegisterPending(claims RegisterPendingClaims) SessionS
 	return s
 }
 
-// WithProvisionedUserID records the provisioned user id and moves to [StepFinish].
-func (s SessionStore) WithProvisionedUserID(userID string) SessionStore {
+// WithRegisterResolution records whether flow resolved an existing user before finish-register.
+func (s SessionStore) WithRegisterResolution(existingUser bool) SessionStore {
 	if s.PendingRegister == nil {
-		s.PendingRegister = &RegisterPending{}
+		return s
 	}
-	s.PendingRegister.ProvisionedUserID = strings.TrimSpace(userID)
-	s.Step = StepFinish
+	s.PendingRegister.ResolvedExistingUser = existingUser
 	return s
 }
 

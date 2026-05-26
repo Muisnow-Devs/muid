@@ -203,12 +203,28 @@ func (p *EmailIdentityProvider) Continue(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
-	if idn.FinishRegisterRequested(input.Payload) {
+	switch input.ContinueState {
+	case idn.ContinueStateFinishRegister:
 		return p.continueFinishEmailRegister(ctx, input)
-	}
-
-	if emailResendRequested(input.Payload) {
+	case idn.ContinueStateResend:
 		return p.continueResendOTP(ctx, input)
+	case idn.ContinueStateChallenge:
+		return p.continueEmailChallenge(ctx, input)
+	default:
+		return idn.StepResult{}, idn.ErrInvalidInput
+	}
+}
+
+func (p *EmailIdentityProvider) continueEmailChallenge(
+	ctx context.Context,
+	input idn.ContinueInput,
+) (idn.StepResult, error) {
+	err := idn.ValidateContinueChallenge(input)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+	if emailResendRequested(input.Payload) {
+		return idn.StepResult{}, idn.ErrInvalidInput
 	}
 
 	code, err := p.parseEmailContinuePayload(input.Payload)
@@ -269,17 +285,17 @@ func (p *EmailIdentityProvider) continueChangeEmail(
 		return idn.StepResult{}, err
 	}
 
-	p.transitionStore.Delete(ctx, sess.Id)
-
-	wire := strings.TrimSpace(input.LinkSessionToken)
-	if wire != "" {
-		res, err := p.sessions.ResolveSessionToken(ctx, wire)
-		if err != nil {
-			return idn.StepResult{}, err
-		}
-		if res.UserID != uid {
-			return idn.StepResult{}, idn.ErrLinkUnauthorized
-		}
+	linkRes, err := resolveLinkSession(
+		ctx,
+		p.sessions,
+		idn.IntentLinkAccount,
+		input.LinkSessionToken,
+	)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+	if linkRes.UserID != uid {
+		return idn.StepResult{}, idn.ErrLinkUnauthorized
 	}
 
 	return idn.StepResult{Type: idn.StepLinked}, nil
@@ -289,6 +305,11 @@ func (p *EmailIdentityProvider) continueResendOTP(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
+	err := idn.ValidateContinueResend(input)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
 	sess, err := p.validateSession(ctx, input.TransitionId)
 	if err != nil {
 		return idn.StepResult{}, err
@@ -351,8 +372,6 @@ func (p *EmailIdentityProvider) continueLogin(
 		}, nil
 	}
 
-	p.transitionStore.Delete(ctx, sess.Id)
-
 	return authenticatedStep(userID.String(), sess.Store), nil
 }
 
@@ -360,19 +379,19 @@ func (p *EmailIdentityProvider) continueFinishEmailRegister(
 	ctx context.Context,
 	input idn.ContinueInput,
 ) (idn.StepResult, error) {
+	provisioned, err := idn.ProvisionedUserID(input)
+	if err != nil {
+		return idn.StepResult{}, err
+	}
+
 	sess, err := p.transitionStore.Get(ctx, input.TransitionId)
 	if err != nil {
 		return idn.StepResult{}, errors.Join(idn.ErrSessionNotFound, err)
 	}
 
 	pending, ok := sess.Store.PendingRegisterState()
-	if !ok || pending.ProvisionedUserID == "" {
+	if !ok {
 		return idn.StepResult{}, idn.ErrInvalidSessionState
-	}
-
-	provisioned, err := parseUUID(pending.ProvisionedUserID)
-	if err != nil {
-		return idn.StepResult{}, errors.Join(idn.ErrInvalidSessionState, err)
 	}
 
 	email := strings.TrimSpace(strings.ToLower(pending.Claims.Email))
@@ -390,8 +409,14 @@ func (p *EmailIdentityProvider) continueFinishEmailRegister(
 			errors.New("email not linked after provision"),
 		)
 	}
+	if linked != provisioned {
+		return idn.StepResult{}, errors.Join(
+			idn.ErrInvalidSessionState,
+			errors.New("provisioned user mismatch after email link"),
+		)
+	}
 
-	return finishRegisterAfterLink(ctx, p.transitionStore, sess.Id, linked, provisioned)
+	return authenticatedStep(provisioned.String(), sess.Store), nil
 }
 
 func validateEmailStartInput(input idn.StartInput) error {

@@ -11,9 +11,8 @@ const (
 	StepContinue    AuthStep = "continue"
 	// StepRegister awaits login-flow provision from provider register-required outcome.
 	StepRegister AuthStep = "register"
-	// StepFinish awaits provider linking after provisioned user id is stored.
-	StepFinish    AuthStep = "finish"
-	StepCompleted AuthStep = "completed"
+	// StepFinish is a legacy constant retained for JSON backwards-compatibility.
+	StepFinish AuthStep = "finish"
 )
 
 // FlowState holds flow-specific transition payloads; [Kind] selects the active branch.
@@ -84,6 +83,10 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 		Locale   string `json:"locale,omitempty"`
 		Timezone string `json:"timezone,omitempty"`
 
+		AuthIntent      string `json:"auth_intent,omitempty"`
+		LinkUserID      string `json:"link_user_id,omitempty"`
+		LinkSessionWire string `json:"link_session_wire,omitempty"`
+
 		PendingRegister *RegisterPending `json:"pending_register,omitempty"`
 
 		Email   *EmailOTPFlow `json:"email,omitempty"`
@@ -99,6 +102,9 @@ func (s *SessionStore) UnmarshalJSON(data []byte) error {
 	s.Step = raw.Step
 	s.Locale = raw.Locale
 	s.Timezone = raw.Timezone
+	s.AuthIntent = raw.AuthIntent
+	s.LinkUserID = raw.LinkUserID
+	s.LinkSessionWire = raw.LinkSessionWire
 	s.PendingRegister = raw.PendingRegister
 
 	if len(raw.Flow) == 0 {

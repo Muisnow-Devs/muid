@@ -82,7 +82,7 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 
 func TestLoadConfigDecodesStructuredAuthnConfig(t *testing.T) {
 	t.Setenv("AUTHN_DATABASE_URL", "postgres://user:pass@db.example.com:5432/authn")
-	t.Setenv("AUTHN_REDIS_URL", "redis://redis.example.com:6379/0")
+	t.Setenv("AUTHN_REDIS_ADDR", "redis.example.com:6379")
 	t.Setenv("AUTHN_NATS_URL", "nats://nats.example.com:4222")
 	t.Setenv("AUTHN_OTP_SECRET_KEY", "00112233445566778899aabbccddeeff")
 	t.Setenv("AUTHN_PROFILE_GRPC_ADDR", "profile.example.com:443")

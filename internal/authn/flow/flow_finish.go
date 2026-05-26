@@ -29,7 +29,7 @@ func (s *Service) finishAuthStep(
 ) (*pb.ContinueAuthSessionResponse, error) {
 	switch step.Type {
 	case identity.StepLinked:
-		return s.linkCompletedResponse(ctx, tid, linkSessionToken)
+		return s.linkCompletedResponse(ctx, tid, strings.TrimSpace(linkSessionToken))
 	case identity.StepAuthenticated:
 		return s.authenticatedLoginResponse(ctx, tid, step.Authenticated, step.LoginCompletion)
 	case identity.StepRegisterRequired:
@@ -48,20 +48,29 @@ func (s *Service) completeRegisterRequired(
 	tid string,
 	linkSessionToken string,
 ) (*pb.ContinueAuthSessionResponse, error) {
-	uid, err := s.provisionRegisterRequired(ctx, step.RegisterRequired)
+	uid, existingUser, err := s.resolveRegisterRequired(
+		ctx,
+		tid,
+		sess,
+		step.RegisterRequired,
+		linkSessionToken,
+	)
 	if err != nil {
-		return nil, err
+		resp, mapErr := s.mapContinueError(ctx, tid, err)
+		if mapErr != nil {
+			return nil, mapErr
+		}
+		return resp, nil
 	}
 
-	current, err := s.transitionStore.Get(ctx, tid)
+	sess, err = s.transitionStore.Get(ctx, tid)
 	if err != nil {
-		return nil, mapTransitionLoadError(ctx, err)
+		log.LogUnexpected(ctx, "authn finish reload transition", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
-
-	store := current.Store.WithProvisionedUserID(uid.String())
-	err = s.transitionStore.Update(ctx, tid, store)
+	err = s.transitionStore.Update(ctx, tid, sess.Store.WithRegisterResolution(existingUser))
 	if err != nil {
-		log.LogUnexpected(ctx, "authn update transition after provision", err.Error())
+		log.LogUnexpected(ctx, "authn finish persist register resolution", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
 
@@ -72,39 +81,16 @@ func (s *Service) completeRegisterRequired(
 	}
 
 	finishStep, err := prov.Continue(ctx, identity.ContinueInput{
-		TransitionId: tid,
-		Payload: map[string]any{
-			identity.ContinuePayloadFinishRegister: true,
-		},
+		TransitionId:     tid,
+		ContinueState:    identity.ContinueStateFinishRegister,
+		FinishRegister:   &identity.FinishRegisterInput{RegisteredUserID: uid},
 		LinkSessionToken: linkSessionToken,
 	})
 	if err != nil {
-		return mapContinueError(ctx, tid, err)
+		return s.mapContinueError(ctx, tid, err)
 	}
 
 	return s.finishAuthStep(ctx, req, sess, finishStep, tid, linkSessionToken)
-}
-
-func (s *Service) provisionRegisterRequired(
-	ctx context.Context,
-	reg *identity.RegisterRequired,
-) (uuid.UUID, error) {
-	if reg == nil {
-		log.LogUnexpected(
-			ctx,
-			"authn provision register required",
-			"missing register-required data",
-		)
-		return uuid.Nil, grpcutils.GRPCInternalError()
-	}
-
-	uid, err := s.provision.ProvisionUser(ctx, reg)
-	if err != nil {
-		log.LogUnexpected(ctx, "authn provision user", err.Error())
-		return uuid.Nil, grpcutils.GRPCInternalError()
-	}
-
-	return uid, nil
 }
 
 func (s *Service) authenticatedLoginResponse(
@@ -129,6 +115,8 @@ func (s *Service) authenticatedLoginResponse(
 		log.LogUnexpected(ctx, "authn issue session", err.Error())
 		return nil, grpcutils.GRPCInternalError()
 	}
+
+	s.cleanTransition(ctx, tid)
 
 	resp := &pb.ContinueAuthSessionResponse{}
 	resp.SetTransitionId(tid)
@@ -189,6 +177,24 @@ func (s *Service) linkCompletedResponse(
 	ctx context.Context,
 	tid, wire string,
 ) (*pb.ContinueAuthSessionResponse, error) {
+	sess, err := s.transitionStore.Get(ctx, tid)
+	if err != nil && !errors.Is(err, session.ErrSessionNotFound) {
+		log.LogUnexpected(ctx, "authn link complete load transition", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+	linkUserID := ""
+	if err == nil {
+		_, linkUserID, _ = sess.Store.AuthContext()
+		valErr := s.validateLinkContinueSession(ctx, sess, wire)
+		if valErr != nil {
+			return s.mapContinueError(ctx, tid, valErr)
+		}
+	}
+
+	wire = strings.TrimSpace(wire)
+
+	s.cleanTransition(ctx, tid)
+
 	resp := &pb.ContinueAuthSessionResponse{}
 	resp.SetTransitionId(tid)
 	resp.SetStatus(basic.AuthStatus_AUTH_STATUS_AUTHENTICATED)
@@ -206,8 +212,31 @@ func (s *Service) linkCompletedResponse(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
+	if linkUserID != "" {
+		expected, parseErr := uuid.Parse(strings.TrimSpace(linkUserID))
+		if parseErr != nil {
+			log.LogUnexpected(ctx, "authn link complete user id", parseErr.Error())
+			return nil, grpcutils.GRPCInternalError()
+		}
+		if res.UserID != expected {
+			return nil, status.Error(codes.PermissionDenied, "valid session required")
+		}
+	}
+
+	err = s.sessions.RevokeSessionToken(ctx, wire)
+	if err != nil && !errors.Is(err, session.ErrSessionNotFound) {
+		log.LogUnexpected(ctx, "authn revoke link session", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
+	authResult, err := s.sessions.IssueAuthenticatedSession(ctx, res.UserID)
+	if err != nil {
+		log.LogUnexpected(ctx, "authn issue linked session", err.Error())
+		return nil, grpcutils.GRPCInternalError()
+	}
+
 	authOK := &sessionpb.AuthSuccess{}
-	authOK.SetResult(s.sessions.AuthenticatedResultFromResolved(wire, res))
+	authOK.SetResult(authResult)
 	resp.SetAuthSuccess(authOK)
 
 	return resp, nil

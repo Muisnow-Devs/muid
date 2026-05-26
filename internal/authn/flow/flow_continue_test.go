@@ -9,7 +9,6 @@ import (
 	"sanzi.io/muid/api/proto/authn/v1/basic"
 	proofpb "sanzi.io/muid/api/proto/authn/v1/proof"
 	"sanzi.io/muid/infra/mocked"
-	implIdentity "sanzi.io/muid/internal/authn/identity"
 	authnkv "sanzi.io/muid/internal/authn/kv"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/session"
@@ -30,7 +29,7 @@ func (otpInputStubProvider) Continue(
 	_ context.Context,
 	in identity.ContinueInput,
 ) (identity.StepResult, error) {
-	if v, ok := in.Payload[implIdentity.EmailPayloadKeyResend].(bool); ok && v {
+	if in.ContinueState == identity.ContinueStateResend {
 		return identity.StepResult{TransitionId: in.TransitionId, Type: identity.StepInput}, nil
 	}
 	return identity.StepResult{}, errors.New("unsupported")

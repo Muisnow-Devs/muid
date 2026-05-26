@@ -14,8 +14,10 @@ const MaxSessionCacheTTL = time.Hour
 type CachedSession struct {
 	SessionID     uuid.UUID
 	UserID        uuid.UUID
-	ExpiresAt     time.Time
 	ValidatorHash [32]byte
+
+	IssuedAt  time.Time
+	ExpiresAt time.Time
 }
 
 // SessionCache stores resolved sessions with TTL bounded by session expiry.

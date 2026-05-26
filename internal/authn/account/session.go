@@ -30,7 +30,7 @@ type ResolvedSession struct {
 	IssuedAt  time.Time
 }
 
-const defaultSessionLifetime = 7 * 24 * time.Hour
+const defaultSessionLifetime = 48 * time.Hour
 
 // IssueAuthenticatedSession creates a [ent.UserSession] row and returns wire-safe session material.
 func (s *sessionService) IssueAuthenticatedSession(
@@ -84,8 +84,10 @@ func (s *sessionService) IssueAuthenticatedSession(
 		s.store.SessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     row.ID,
 			UserID:        userID,
-			ExpiresAt:     expires,
 			ValidatorHash: sum,
+
+			IssuedAt:  now,
+			ExpiresAt: expires,
 		})
 	}
 
@@ -133,7 +135,7 @@ func (s *sessionService) ResolveSessionToken(
 				SessionID: cached.SessionID,
 				UserID:    cached.UserID,
 				ExpiresAt: cached.ExpiresAt,
-				IssuedAt:  cached.ExpiresAt.Add(-defaultSessionLifetime),
+				IssuedAt:  cached.IssuedAt,
 			}, nil
 		}
 

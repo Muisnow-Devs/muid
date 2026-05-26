@@ -61,3 +61,8 @@ type TopicLoginAlert struct {
 
 	SecureAccountLink string
 }
+
+type TopicAccountLinked struct {
+	Provider string
+	Time     string
+}

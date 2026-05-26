@@ -1,0 +1,7 @@
+{
+    "subject": "[MuID] A sign-in method was linked",
+    "title": "Sign-in method linked",
+    "description": "A new sign-in method (%s) was linked to your account on %s.",
+    "additional_info": "If this wasn't you, please secure your account."
+}
+

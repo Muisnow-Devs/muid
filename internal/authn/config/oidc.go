@@ -67,7 +67,7 @@ func parseOIDCClientsJSON(raw string) (OIDCClients, error) {
 
 func (c oidcClientJSON) toOIDCProviderConfig() (identity.OIDCProviderConfig, error) {
 	cfg := identity.OIDCProviderConfig{
-		Name:         c.Provider,
+		Name:         strings.TrimSpace(c.Provider),
 		Endpoint:     strings.TrimSpace(c.Endpoint),
 		ClientID:     strings.TrimSpace(c.ClientID),
 		ClientSecret: strings.TrimSpace(c.ClientSecret),

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"sanzi.io/muid/internal/mailer/handlers"
+	"sanzi.io/muid/internal/mailer/handlers/accountlinked"
 	"sanzi.io/muid/internal/mailer/handlers/emailchanged"
 	"sanzi.io/muid/internal/mailer/handlers/loginalert"
 	"sanzi.io/muid/internal/mailer/handlers/otp"
@@ -20,6 +21,7 @@ func RegisterSubscribers(ctx context.Context, infra *InfraDependencies) error {
 		loginalert.Handler{},
 		emailchanged.Handler{},
 		passkeyadded.Handler{},
+		accountlinked.Handler{},
 	); err != nil {
 		return err
 	}

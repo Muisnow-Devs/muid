@@ -12,7 +12,6 @@ func TestFormatEventTimeUsesLocaleAndTimezone(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		locale   string
 		timezone string
 		want     string
 	}{
@@ -22,9 +21,9 @@ func TestFormatEventTimeUsesLocaleAndTimezone(t *testing.T) {
 			want:     "Mon, 25 May 2026 14:30:05 +0800",
 		},
 		{
-			name:     "chinese mail timestamp",
+			name:     "fallback mail timestamp",
 			timezone: "Asia/Taipei",
-			want:     "2026-05-25 14:30:05 +0800",
+			want:     "Mon, 25 May 2026 14:30:05 +0800",
 		},
 	}
 

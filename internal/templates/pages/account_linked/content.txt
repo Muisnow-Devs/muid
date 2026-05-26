@@ -1,0 +1,8 @@
+{{ define "content" }}
+{{ t "title" }}
+
+{{ t "description" .Provider .Time }}
+
+{{ t "additional_info" }}
+{{ end }}
+

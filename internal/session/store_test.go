@@ -8,11 +8,12 @@ import (
 func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	t.Parallel()
 
-	original := EmailOTPStore(StepStart, &EmailOTPFlow{
-		Email:  "user@example.com",
-		Intent: "login",
-	})
-	original.Attempts = 2
+	original := SessionStore{
+		Attempts: 2,
+		Step:     StepStart,
+		Intent:   AuthIntentLogin,
+		Flow:     &EmailOTPFlow{Email: "user@example.com"},
+	}
 
 	data, err := json.Marshal(original)
 	if err != nil {
@@ -28,8 +29,8 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	if decoded.Attempts != 2 || decoded.Step != StepStart {
 		t.Fatalf("metadata mismatch: %+v", decoded)
 	}
-	email, ok := decoded.EmailFlow()
-	if !ok || email.Email != "user@example.com" || email.Intent != "login" {
+	email, ok := decoded.Flow.(*EmailOTPFlow)
+	if !ok || email.Email != "user@example.com" || decoded.Intent != AuthIntentLogin {
 		t.Fatalf("email flow mismatch: ok=%v %+v", ok, email)
 	}
 }
@@ -37,13 +38,21 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
 	t.Parallel()
 
-	original := EmailOTPStore(StepStart, &EmailOTPFlow{Email: "user@example.com"})
-	original.Locale = "zh-TW"
-	original.Timezone = "Asia/Taipei"
-	original.Device = "Chrome on macOS"
-	original.Location = "Taipei, TW"
-	original.UserAgent = "Mozilla/5.0"
-	original.IPAddress = "203.0.113.1"
+	meta := SessionMetadata{
+		Locale:    "zh-TW",
+		Timezone:  "Asia/Taipei",
+		Device:    "Chrome on macOS",
+		Location:  "Taipei, TW",
+		UserAgent: "Mozilla/5.0",
+		IPAddress: "203.0.113.1",
+	}
+
+	original := SessionStore{
+		Attempts: 1,
+		Intent:   AuthIntentLogin,
+		Flow:     &EmailOTPFlow{Email: "user@example.com"},
+		Metadata: meta,
+	}
 
 	data, err := json.Marshal(original)
 	if err != nil {
@@ -56,16 +65,28 @@ func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	if decoded.Locale != "zh-TW" || decoded.Timezone != "Asia/Taipei" {
-		t.Fatalf("mail delivery mismatch: locale=%q timezone=%q", decoded.Locale, decoded.Timezone)
+	if decoded.Metadata.Locale != "zh-TW" || decoded.Metadata.Timezone != "Asia/Taipei" {
+		t.Fatalf(
+			"mail delivery mismatch: locale=%q timezone=%q",
+			decoded.Metadata.Locale,
+			decoded.Metadata.Timezone,
+		)
 	}
-	if decoded.Device != "Chrome on macOS" || decoded.Location != "Taipei, TW" {
-		t.Fatalf("login alert context: device=%q location=%q", decoded.Device, decoded.Location)
+	if decoded.Metadata.Device != "Chrome on macOS" || decoded.Metadata.Location != "Taipei, TW" {
+		t.Fatalf(
+			"login alert context: device=%q location=%q",
+			decoded.Metadata.Device,
+			decoded.Metadata.Location,
+		)
 	}
-	if decoded.UserAgent != "Mozilla/5.0" || decoded.IPAddress != "203.0.113.1" {
-		t.Fatalf("login alert context: ua=%q ip=%q", decoded.UserAgent, decoded.IPAddress)
+	if decoded.Metadata.UserAgent != "Mozilla/5.0" || decoded.Metadata.IPAddress != "203.0.113.1" {
+		t.Fatalf(
+			"login alert context: ua=%q ip=%q",
+			decoded.Metadata.UserAgent,
+			decoded.Metadata.IPAddress,
+		)
 	}
-	email, ok := decoded.EmailFlow()
+	email, ok := decoded.Flow.(*EmailOTPFlow)
 	if !ok || email.Email != "user@example.com" {
 		t.Fatalf("email flow mismatch: ok=%v %+v", ok, email)
 	}
@@ -82,7 +103,7 @@ func TestSessionStore_JSON_legacyFlatFlowKind(t *testing.T) {
 		t.Fatalf("unmarshal legacy: %v", err)
 	}
 
-	email, ok := decoded.EmailFlow()
+	email, ok := decoded.Flow.(*EmailOTPFlow)
 	if !ok || email.Email != "a@b.c" {
 		t.Fatalf("expected legacy email flow, got ok=%v %+v", ok, email)
 	}

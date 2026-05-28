@@ -13,7 +13,7 @@ func (cfg Config) Validate() error {
 func (cfg Config) validate(lookup shared.EnvLookup) error {
 	return shared.ValidateRequiredEnvInProduction(cfg.Debug, "AUTHN_DEBUG", lookup, []string{
 		"AUTHN_DATABASE_URL",
-		"AUTHN_REDIS_Addr",
+		"AUTHN_REDIS_ADDR",
 		"AUTHN_NATS_URL",
 		"AUTHN_PROFILE_GRPC_ADDR",
 		"AUTHN_PASSKEY_RP_ID",

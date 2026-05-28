@@ -66,3 +66,8 @@ type TopicAccountLinked struct {
 	Provider string
 	Time     string
 }
+
+type TopicAccountUnlinked struct {
+	Provider string
+	Time     string
+}

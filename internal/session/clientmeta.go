@@ -1,20 +1,5 @@
 package session
 
-import "sanzi.io/muid/pkg/clientmeta"
-
-// ApplyClientMeta copies locale, timezone, and login-alert device context onto a transition store.
-func ApplyClientMeta(store *SessionStore, m clientmeta.ClientMeta) {
-	if store == nil {
-		return
-	}
-	store.Locale = m.Locale
-	store.Timezone = m.Timezone
-	store.Device = m.Device
-	store.Location = m.Location
-	store.UserAgent = m.UserAgent
-	store.IPAddress = m.IPAddress
-}
-
 // MailClientContext holds client metadata on a transition for outbound login-alert mail.
 type MailClientContext struct {
 	Locale    string
@@ -28,12 +13,12 @@ type MailClientContext struct {
 // MailClientContext returns persisted client metadata for mail events.
 func (s SessionStore) MailClientContext() MailClientContext {
 	return MailClientContext{
-		Locale:    s.Locale,
-		Timezone:  s.Timezone,
-		Device:    s.Device,
-		Location:  s.Location,
-		UserAgent: s.UserAgent,
-		IPAddress: s.IPAddress,
+		Locale:    s.Metadata.Locale,
+		Timezone:  s.Metadata.Timezone,
+		Device:    s.Metadata.Device,
+		Location:  s.Metadata.Location,
+		UserAgent: s.Metadata.UserAgent,
+		IPAddress: s.Metadata.IPAddress,
 	}
 }
 

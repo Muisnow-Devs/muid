@@ -20,7 +20,8 @@ type UserPasskey struct {
 func (UserPasskey) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
-		field.UUID("user_id", uuid.UUID{}).Immutable(),
+
+		field.UUID("identity_id", uuid.UUID{}).Immutable(),
 
 		field.Bytes("credential_id").Immutable().NotEmpty().Unique(),
 		field.Bytes("public_key").Immutable().NotEmpty(),
@@ -47,17 +48,17 @@ func (UserPasskey) Fields() []ent.Field {
 
 func (UserPasskey) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("user_id"),
+		index.Fields("identity_id"),
 	}
 }
 
 // Edges of the UserPasskey.
 func (UserPasskey) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", UserRef.Type).
-			Ref("passkeys").
+		edge.From("identity", UserIdentity.Type).
+			Ref("passkey_identity").
 			Unique().
-			Field("user_id").
+			Field("identity_id").
 			Required().
 			Immutable(),
 	}

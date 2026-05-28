@@ -39,8 +39,6 @@ func (UserRef) Indexes() []ent.Index {
 func (UserRef) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.To("sessions", UserSession.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
-		edge.To("passkeys", UserPasskey.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
-		edge.To("federated_identities", UserFederatedIdentity.Type).
-			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("identities", UserIdentity.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

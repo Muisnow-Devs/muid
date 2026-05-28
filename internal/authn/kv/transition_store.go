@@ -43,7 +43,7 @@ func (k *KVAuthTransitionStore) Create(
 	provider string,
 	store session.SessionStore,
 ) (session.AuthSession, error) {
-	id := uuid.New().String()
+	id := uuid.New()
 	now := time.Now()
 	expiresAt := now.Add(TRANSITION_SESSION_TTL)
 
@@ -56,7 +56,7 @@ func (k *KVAuthTransitionStore) Create(
 		ExpiresAt: expiresAt.Unix(),
 	}
 
-	key := k.key(sess.Id)
+	key := k.key(sess.Id.String())
 	ttl := time.Until(time.Unix(sess.ExpiresAt, 0))
 
 	data, err := encode(sess)
@@ -75,8 +75,8 @@ func (k *KVAuthTransitionStore) Create(
 	return sess, nil
 }
 
-func (k *KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
-	key := k.key(id)
+func (k *KVAuthTransitionStore) Delete(ctx context.Context, id uuid.UUID) error {
+	key := k.key(id.String())
 	err := k.client.Delete(ctx, key)
 	if errors.Is(err, kv.ErrKeyNotFound) {
 		return nil
@@ -85,11 +85,14 @@ func (k *KVAuthTransitionStore) Delete(ctx context.Context, id string) error {
 	return err
 }
 
-func (k *KVAuthTransitionStore) Get(ctx context.Context, id string) (session.AuthSession, error) {
+func (k *KVAuthTransitionStore) Get(
+	ctx context.Context,
+	id uuid.UUID,
+) (session.AuthSession, error) {
 	ctx, span := tracing.StartSpan(ctx, "authn.transition.get")
 	defer span.End()
 
-	key := k.key(id)
+	key := k.key(id.String())
 	data, err := k.client.Get(ctx, key)
 	if errors.Is(err, kv.ErrKeyNotFound) {
 		return session.AuthSession{}, session.ErrSessionNotFound
@@ -113,10 +116,10 @@ func (k *KVAuthTransitionStore) Get(ctx context.Context, id string) (session.Aut
 
 func (k *KVAuthTransitionStore) Update(
 	ctx context.Context,
-	id string,
+	id uuid.UUID,
 	store session.SessionStore,
 ) error {
-	key := k.key(id)
+	key := k.key(id.String())
 
 	// Ensure the session exists and is not expired before updating
 	existing, err := k.Get(ctx, id)

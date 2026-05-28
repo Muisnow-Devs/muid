@@ -12,7 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/authn/ent/userref"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 )
 
 // UserFederatedIdentityCreate is the builder for creating a UserFederatedIdentity entity.
@@ -22,9 +22,9 @@ type UserFederatedIdentityCreate struct {
 	hooks    []Hook
 }
 
-// SetUserID sets the "user_id" field.
-func (_c *UserFederatedIdentityCreate) SetUserID(v uuid.UUID) *UserFederatedIdentityCreate {
-	_c.mutation.SetUserID(v)
+// SetIdentityID sets the "identity_id" field.
+func (_c *UserFederatedIdentityCreate) SetIdentityID(v uuid.UUID) *UserFederatedIdentityCreate {
+	_c.mutation.SetIdentityID(v)
 	return _c
 }
 
@@ -194,9 +194,9 @@ func (_c *UserFederatedIdentityCreate) SetNillableID(v *uuid.UUID) *UserFederate
 	return _c
 }
 
-// SetUser sets the "user" edge to the UserRef entity.
-func (_c *UserFederatedIdentityCreate) SetUser(v *UserRef) *UserFederatedIdentityCreate {
-	return _c.SetUserID(v.ID)
+// SetIdentity sets the "identity" edge to the UserIdentity entity.
+func (_c *UserFederatedIdentityCreate) SetIdentity(v *UserIdentity) *UserFederatedIdentityCreate {
+	return _c.SetIdentityID(v.ID)
 }
 
 // Mutation returns the UserFederatedIdentityMutation object of the builder.
@@ -258,8 +258,8 @@ func (_c *UserFederatedIdentityCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserFederatedIdentityCreate) check() error {
-	if _, ok := _c.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "UserFederatedIdentity.user_id"`)}
+	if _, ok := _c.mutation.IdentityID(); !ok {
+		return &ValidationError{Name: "identity_id", err: errors.New(`ent: missing required field "UserFederatedIdentity.identity_id"`)}
 	}
 	if _, ok := _c.mutation.Provider(); !ok {
 		return &ValidationError{Name: "provider", err: errors.New(`ent: missing required field "UserFederatedIdentity.provider"`)}
@@ -304,8 +304,8 @@ func (_c *UserFederatedIdentityCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "UserFederatedIdentity.updated_at"`)}
 	}
-	if len(_c.mutation.UserIDs()) == 0 {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserFederatedIdentity.user"`)}
+	if len(_c.mutation.IdentityIDs()) == 0 {
+		return &ValidationError{Name: "identity", err: errors.New(`ent: missing required edge "UserFederatedIdentity.identity"`)}
 	}
 	return nil
 }
@@ -390,21 +390,21 @@ func (_c *UserFederatedIdentityCreate) createSpec() (*UserFederatedIdentity, *sq
 		_spec.SetField(userfederatedidentity.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.IdentityIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   userfederatedidentity.UserTable,
-			Columns: []string{userfederatedidentity.UserColumn},
+			Table:   userfederatedidentity.IdentityTable,
+			Columns: []string{userfederatedidentity.IdentityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.UserID = nodes[0]
+		_node.IdentityID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

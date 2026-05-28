@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
 	UserFederatedIdentity *UserFederatedIdentityClient
+	// UserIdentity is the client for interacting with the UserIdentity builders.
+	UserIdentity *UserIdentityClient
 	// UserPasskey is the client for interacting with the UserPasskey builders.
 	UserPasskey *UserPasskeyClient
 	// UserRef is the client for interacting with the UserRef builders.
@@ -152,6 +154,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.UserFederatedIdentity = NewUserFederatedIdentityClient(tx.config)
+	tx.UserIdentity = NewUserIdentityClient(tx.config)
 	tx.UserPasskey = NewUserPasskeyClient(tx.config)
 	tx.UserRef = NewUserRefClient(tx.config)
 	tx.UserSession = NewUserSessionClient(tx.config)

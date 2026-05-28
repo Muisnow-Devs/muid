@@ -14,8 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
-	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/authn/ent/userpasskey"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
 )
@@ -23,13 +22,12 @@ import (
 // UserRefQuery is the builder for querying UserRef entities.
 type UserRefQuery struct {
 	config
-	ctx                     *QueryContext
-	order                   []userref.OrderOption
-	inters                  []Interceptor
-	predicates              []predicate.UserRef
-	withSessions            *UserSessionQuery
-	withPasskeys            *UserPasskeyQuery
-	withFederatedIdentities *UserFederatedIdentityQuery
+	ctx            *QueryContext
+	order          []userref.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.UserRef
+	withSessions   *UserSessionQuery
+	withIdentities *UserIdentityQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -88,9 +86,9 @@ func (_q *UserRefQuery) QuerySessions() *UserSessionQuery {
 	return query
 }
 
-// QueryPasskeys chains the current query on the "passkeys" edge.
-func (_q *UserRefQuery) QueryPasskeys() *UserPasskeyQuery {
-	query := (&UserPasskeyClient{config: _q.config}).Query()
+// QueryIdentities chains the current query on the "identities" edge.
+func (_q *UserRefQuery) QueryIdentities() *UserIdentityQuery {
+	query := (&UserIdentityClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -101,30 +99,8 @@ func (_q *UserRefQuery) QueryPasskeys() *UserPasskeyQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userref.Table, userref.FieldID, selector),
-			sqlgraph.To(userpasskey.Table, userpasskey.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.PasskeysTable, userref.PasskeysColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryFederatedIdentities chains the current query on the "federated_identities" edge.
-func (_q *UserRefQuery) QueryFederatedIdentities() *UserFederatedIdentityQuery {
-	query := (&UserFederatedIdentityClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userref.Table, userref.FieldID, selector),
-			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.FederatedIdentitiesTable, userref.FederatedIdentitiesColumn),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.IdentitiesTable, userref.IdentitiesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -319,14 +295,13 @@ func (_q *UserRefQuery) Clone() *UserRefQuery {
 		return nil
 	}
 	return &UserRefQuery{
-		config:                  _q.config,
-		ctx:                     _q.ctx.Clone(),
-		order:                   append([]userref.OrderOption{}, _q.order...),
-		inters:                  append([]Interceptor{}, _q.inters...),
-		predicates:              append([]predicate.UserRef{}, _q.predicates...),
-		withSessions:            _q.withSessions.Clone(),
-		withPasskeys:            _q.withPasskeys.Clone(),
-		withFederatedIdentities: _q.withFederatedIdentities.Clone(),
+		config:         _q.config,
+		ctx:            _q.ctx.Clone(),
+		order:          append([]userref.OrderOption{}, _q.order...),
+		inters:         append([]Interceptor{}, _q.inters...),
+		predicates:     append([]predicate.UserRef{}, _q.predicates...),
+		withSessions:   _q.withSessions.Clone(),
+		withIdentities: _q.withIdentities.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -344,25 +319,14 @@ func (_q *UserRefQuery) WithSessions(opts ...func(*UserSessionQuery)) *UserRefQu
 	return _q
 }
 
-// WithPasskeys tells the query-builder to eager-load the nodes that are connected to
-// the "passkeys" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserRefQuery) WithPasskeys(opts ...func(*UserPasskeyQuery)) *UserRefQuery {
-	query := (&UserPasskeyClient{config: _q.config}).Query()
+// WithIdentities tells the query-builder to eager-load the nodes that are connected to
+// the "identities" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserRefQuery) WithIdentities(opts ...func(*UserIdentityQuery)) *UserRefQuery {
+	query := (&UserIdentityClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withPasskeys = query
-	return _q
-}
-
-// WithFederatedIdentities tells the query-builder to eager-load the nodes that are connected to
-// the "federated_identities" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserRefQuery) WithFederatedIdentities(opts ...func(*UserFederatedIdentityQuery)) *UserRefQuery {
-	query := (&UserFederatedIdentityClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withFederatedIdentities = query
+	_q.withIdentities = query
 	return _q
 }
 
@@ -444,10 +408,9 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	var (
 		nodes       = []*UserRef{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [2]bool{
 			_q.withSessions != nil,
-			_q.withPasskeys != nil,
-			_q.withFederatedIdentities != nil,
+			_q.withIdentities != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -475,19 +438,10 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 			return nil, err
 		}
 	}
-	if query := _q.withPasskeys; query != nil {
-		if err := _q.loadPasskeys(ctx, query, nodes,
-			func(n *UserRef) { n.Edges.Passkeys = []*UserPasskey{} },
-			func(n *UserRef, e *UserPasskey) { n.Edges.Passkeys = append(n.Edges.Passkeys, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withFederatedIdentities; query != nil {
-		if err := _q.loadFederatedIdentities(ctx, query, nodes,
-			func(n *UserRef) { n.Edges.FederatedIdentities = []*UserFederatedIdentity{} },
-			func(n *UserRef, e *UserFederatedIdentity) {
-				n.Edges.FederatedIdentities = append(n.Edges.FederatedIdentities, e)
-			}); err != nil {
+	if query := _q.withIdentities; query != nil {
+		if err := _q.loadIdentities(ctx, query, nodes,
+			func(n *UserRef) { n.Edges.Identities = []*UserIdentity{} },
+			func(n *UserRef, e *UserIdentity) { n.Edges.Identities = append(n.Edges.Identities, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -524,7 +478,7 @@ func (_q *UserRefQuery) loadSessions(ctx context.Context, query *UserSessionQuer
 	}
 	return nil
 }
-func (_q *UserRefQuery) loadPasskeys(ctx context.Context, query *UserPasskeyQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *UserPasskey)) error {
+func (_q *UserRefQuery) loadIdentities(ctx context.Context, query *UserIdentityQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *UserIdentity)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*UserRef)
 	for i := range nodes {
@@ -535,40 +489,10 @@ func (_q *UserRefQuery) loadPasskeys(ctx context.Context, query *UserPasskeyQuer
 		}
 	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(userpasskey.FieldUserID)
+		query.ctx.AppendFieldOnce(useridentity.FieldUserID)
 	}
-	query.Where(predicate.UserPasskey(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(userref.PasskeysColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.UserID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *UserRefQuery) loadFederatedIdentities(ctx context.Context, query *UserFederatedIdentityQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *UserFederatedIdentity)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*UserRef)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(userfederatedidentity.FieldUserID)
-	}
-	query.Where(predicate.UserFederatedIdentity(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(userref.FederatedIdentitiesColumn), fks...))
+	query.Where(predicate.UserIdentity(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userref.IdentitiesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

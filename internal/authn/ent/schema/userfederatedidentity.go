@@ -20,7 +20,8 @@ type UserFederatedIdentity struct {
 func (UserFederatedIdentity) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
-		field.UUID("user_id", uuid.UUID{}).Immutable(),
+
+		field.UUID("identity_id", uuid.UUID{}).Immutable(),
 
 		field.String("provider").NotEmpty().MaxLen(50).Immutable(),
 		field.String("subject").NotEmpty().MaxLen(255).Immutable(),
@@ -46,7 +47,7 @@ func (UserFederatedIdentity) Fields() []ent.Field {
 func (UserFederatedIdentity) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("provider", "subject").Unique(),
-		index.Fields("user_id"),
+		index.Fields("identity_id"),
 		index.Fields("provider"),
 		index.Fields("email"),
 	}
@@ -55,10 +56,10 @@ func (UserFederatedIdentity) Indexes() []ent.Index {
 // Edges of the UserFederatedIdentity.
 func (UserFederatedIdentity) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.From("user", UserRef.Type).
-			Ref("federated_identities").
-			Field("user_id").
+		edge.From("identity", UserIdentity.Type).
+			Ref("federated_identity").
 			Unique().
+			Field("identity_id").
 			Required().
 			Immutable(),
 	}

@@ -23,7 +23,7 @@ var (
 		{Name: "linked_at", Type: field.TypeTime},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "identity_id", Type: field.TypeUUID, Unique: true},
 	}
 	// UserFederatedIdentitiesTable holds the schema information for the "user_federated_identities" table.
 	UserFederatedIdentitiesTable = &schema.Table{
@@ -32,9 +32,9 @@ var (
 		PrimaryKey: []*schema.Column{UserFederatedIdentitiesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "user_federated_identities_user_refs_federated_identities",
+				Symbol:     "user_federated_identities_user_identities_federated_identity",
 				Columns:    []*schema.Column{UserFederatedIdentitiesColumns[13]},
-				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
@@ -45,7 +45,7 @@ var (
 				Columns: []*schema.Column{UserFederatedIdentitiesColumns[1], UserFederatedIdentitiesColumns[2]},
 			},
 			{
-				Name:    "userfederatedidentity_user_id",
+				Name:    "userfederatedidentity_identity_id",
 				Unique:  false,
 				Columns: []*schema.Column{UserFederatedIdentitiesColumns[13]},
 			},
@@ -58,6 +58,42 @@ var (
 				Name:    "userfederatedidentity_email",
 				Unique:  false,
 				Columns: []*schema.Column{UserFederatedIdentitiesColumns[3]},
+			},
+		},
+	}
+	// UserIdentitiesColumns holds the columns for the "user_identities" table.
+	UserIdentitiesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "provider", Type: field.TypeString},
+		{Name: "subject", Type: field.TypeString},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// UserIdentitiesTable holds the schema information for the "user_identities" table.
+	UserIdentitiesTable = &schema.Table{
+		Name:       "user_identities",
+		Columns:    UserIdentitiesColumns,
+		PrimaryKey: []*schema.Column{UserIdentitiesColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_identities_user_refs_identities",
+				Columns:    []*schema.Column{UserIdentitiesColumns[6]},
+				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "useridentity_user_id_provider",
+				Unique:  true,
+				Columns: []*schema.Column{UserIdentitiesColumns[6], UserIdentitiesColumns[1]},
+			},
+			{
+				Name:    "useridentity_provider_subject",
+				Unique:  true,
+				Columns: []*schema.Column{UserIdentitiesColumns[1], UserIdentitiesColumns[2]},
 			},
 		},
 	}
@@ -78,7 +114,7 @@ var (
 		{Name: "last_used_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "user_id", Type: field.TypeUUID},
+		{Name: "identity_id", Type: field.TypeUUID, Unique: true},
 	}
 	// UserPasskeysTable holds the schema information for the "user_passkeys" table.
 	UserPasskeysTable = &schema.Table{
@@ -87,15 +123,15 @@ var (
 		PrimaryKey: []*schema.Column{UserPasskeysColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "user_passkeys_user_refs_passkeys",
+				Symbol:     "user_passkeys_user_identities_passkey_identity",
 				Columns:    []*schema.Column{UserPasskeysColumns[15]},
-				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "userpasskey_user_id",
+				Name:    "userpasskey_identity_id",
 				Unique:  false,
 				Columns: []*schema.Column{UserPasskeysColumns[15]},
 			},
@@ -166,6 +202,7 @@ var (
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		UserFederatedIdentitiesTable,
+		UserIdentitiesTable,
 		UserPasskeysTable,
 		UserRefsTable,
 		UserSessionsTable,
@@ -173,7 +210,8 @@ var (
 )
 
 func init() {
-	UserFederatedIdentitiesTable.ForeignKeys[0].RefTable = UserRefsTable
-	UserPasskeysTable.ForeignKeys[0].RefTable = UserRefsTable
+	UserFederatedIdentitiesTable.ForeignKeys[0].RefTable = UserIdentitiesTable
+	UserIdentitiesTable.ForeignKeys[0].RefTable = UserRefsTable
+	UserPasskeysTable.ForeignKeys[0].RefTable = UserIdentitiesTable
 	UserSessionsTable.ForeignKeys[0].RefTable = UserRefsTable
 }

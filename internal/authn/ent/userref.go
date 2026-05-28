@@ -36,13 +36,11 @@ type UserRef struct {
 type UserRefEdges struct {
 	// Sessions holds the value of the sessions edge.
 	Sessions []*UserSession `json:"sessions,omitempty"`
-	// Passkeys holds the value of the passkeys edge.
-	Passkeys []*UserPasskey `json:"passkeys,omitempty"`
-	// FederatedIdentities holds the value of the federated_identities edge.
-	FederatedIdentities []*UserFederatedIdentity `json:"federated_identities,omitempty"`
+	// Identities holds the value of the identities edge.
+	Identities []*UserIdentity `json:"identities,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -54,22 +52,13 @@ func (e UserRefEdges) SessionsOrErr() ([]*UserSession, error) {
 	return nil, &NotLoadedError{edge: "sessions"}
 }
 
-// PasskeysOrErr returns the Passkeys value or an error if the edge
+// IdentitiesOrErr returns the Identities value or an error if the edge
 // was not loaded in eager-loading.
-func (e UserRefEdges) PasskeysOrErr() ([]*UserPasskey, error) {
+func (e UserRefEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
 	if e.loadedTypes[1] {
-		return e.Passkeys, nil
+		return e.Identities, nil
 	}
-	return nil, &NotLoadedError{edge: "passkeys"}
-}
-
-// FederatedIdentitiesOrErr returns the FederatedIdentities value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserRefEdges) FederatedIdentitiesOrErr() ([]*UserFederatedIdentity, error) {
-	if e.loadedTypes[2] {
-		return e.FederatedIdentities, nil
-	}
-	return nil, &NotLoadedError{edge: "federated_identities"}
+	return nil, &NotLoadedError{edge: "identities"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -146,14 +135,9 @@ func (_m *UserRef) QuerySessions() *UserSessionQuery {
 	return NewUserRefClient(_m.config).QuerySessions(_m)
 }
 
-// QueryPasskeys queries the "passkeys" edge of the UserRef entity.
-func (_m *UserRef) QueryPasskeys() *UserPasskeyQuery {
-	return NewUserRefClient(_m.config).QueryPasskeys(_m)
-}
-
-// QueryFederatedIdentities queries the "federated_identities" edge of the UserRef entity.
-func (_m *UserRef) QueryFederatedIdentities() *UserFederatedIdentityQuery {
-	return NewUserRefClient(_m.config).QueryFederatedIdentities(_m)
+// QueryIdentities queries the "identities" edge of the UserRef entity.
+func (_m *UserRef) QueryIdentities() *UserIdentityQuery {
+	return NewUserRefClient(_m.config).QueryIdentities(_m)
 }
 
 // Update returns a builder for updating this UserRef.

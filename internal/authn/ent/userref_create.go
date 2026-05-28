@@ -11,8 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/authn/ent/userpasskey"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
 )
@@ -93,34 +92,19 @@ func (_c *UserRefCreate) AddSessions(v ...*UserSession) *UserRefCreate {
 	return _c.AddSessionIDs(ids...)
 }
 
-// AddPasskeyIDs adds the "passkeys" edge to the UserPasskey entity by IDs.
-func (_c *UserRefCreate) AddPasskeyIDs(ids ...uuid.UUID) *UserRefCreate {
-	_c.mutation.AddPasskeyIDs(ids...)
+// AddIdentityIDs adds the "identities" edge to the UserIdentity entity by IDs.
+func (_c *UserRefCreate) AddIdentityIDs(ids ...uuid.UUID) *UserRefCreate {
+	_c.mutation.AddIdentityIDs(ids...)
 	return _c
 }
 
-// AddPasskeys adds the "passkeys" edges to the UserPasskey entity.
-func (_c *UserRefCreate) AddPasskeys(v ...*UserPasskey) *UserRefCreate {
+// AddIdentities adds the "identities" edges to the UserIdentity entity.
+func (_c *UserRefCreate) AddIdentities(v ...*UserIdentity) *UserRefCreate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _c.AddPasskeyIDs(ids...)
-}
-
-// AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
-func (_c *UserRefCreate) AddFederatedIdentityIDs(ids ...uuid.UUID) *UserRefCreate {
-	_c.mutation.AddFederatedIdentityIDs(ids...)
-	return _c
-}
-
-// AddFederatedIdentities adds the "federated_identities" edges to the UserFederatedIdentity entity.
-func (_c *UserRefCreate) AddFederatedIdentities(v ...*UserFederatedIdentity) *UserRefCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddFederatedIdentityIDs(ids...)
+	return _c.AddIdentityIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -251,31 +235,15 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := _c.mutation.PasskeysIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.IdentitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.FederatedIdentitiesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -108,3 +108,21 @@ message SendAccountLinkedEmailEvent {
   // IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
   string timezone = 7;
 }
+
+// SendAccountUnlinkedEmailEvent is published on mail.send.account_unlinked after a user
+// removes a sign-in method (OIDC, email OTP, passkey) from their account.
+message SendAccountUnlinkedEmailEvent {
+  string id = 1;
+
+  string email = 2;
+  string locale = 3;
+
+  // Identity provider name (e.g. "google", "email", "passkey").
+  string provider = 4;
+
+  google.protobuf.Timestamp occurred_at = 5;
+  google.protobuf.Timestamp created_at = 6;
+
+  // IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+  string timezone = 7;
+}

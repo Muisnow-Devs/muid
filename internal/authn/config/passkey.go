@@ -4,9 +4,22 @@ import (
 	"encoding/json"
 	"strings"
 
-	"sanzi.io/muid/internal/authn/identity"
 	"sanzi.io/muid/pkg/utils"
 )
+
+type PasskeyConfig struct {
+	RPID          string
+	RPDisplayName string
+	RPOrigins     []string
+}
+
+func DefaultPasskeyConfig() PasskeyConfig {
+	return PasskeyConfig{
+		RPID:          "localhost",
+		RPDisplayName: "muid",
+		RPOrigins:     []string{"http://localhost", "http://localhost:3000", "https://localhost"},
+	}
+}
 
 type PasskeyOrigins []string
 
@@ -23,8 +36,8 @@ func ParsePasskeyConfig(
 	rpID string,
 	rpDisplayName string,
 	origins PasskeyOrigins,
-) identity.PasskeyConfig {
-	return identity.PasskeyConfig{
+) PasskeyConfig {
+	return PasskeyConfig{
 		RPID:          strings.TrimSpace(rpID),
 		RPDisplayName: strings.TrimSpace(rpDisplayName),
 		RPOrigins:     origins.values(),
@@ -33,7 +46,7 @@ func ParsePasskeyConfig(
 
 func (o PasskeyOrigins) values() []string {
 	if len(o) == 0 {
-		return identity.DefaultPasskeyConfig().RPOrigins
+		return DefaultPasskeyConfig().RPOrigins
 	}
 	return []string(o)
 }
@@ -41,7 +54,7 @@ func (o PasskeyOrigins) values() []string {
 func parsePasskeyOrigins(raw string) ([]string, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
-		return identity.DefaultPasskeyConfig().RPOrigins, nil
+		return DefaultPasskeyConfig().RPOrigins, nil
 	}
 
 	if strings.HasPrefix(raw, "[") {

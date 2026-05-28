@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
-	"sanzi.io/muid/internal/authn/ent/userref"
 )
 
 // UserPasskey is the model entity for the UserPasskey schema.
@@ -20,8 +20,8 @@ type UserPasskey struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// UserID holds the value of the "user_id" field.
-	UserID uuid.UUID `json:"user_id,omitempty"`
+	// IdentityID holds the value of the "identity_id" field.
+	IdentityID uuid.UUID `json:"identity_id,omitempty"`
 	// CredentialID holds the value of the "credential_id" field.
 	CredentialID []byte `json:"credential_id,omitempty"`
 	// PublicKey holds the value of the "public_key" field.
@@ -58,22 +58,22 @@ type UserPasskey struct {
 
 // UserPasskeyEdges holds the relations/edges for other nodes in the graph.
 type UserPasskeyEdges struct {
-	// User holds the value of the user edge.
-	User *UserRef `json:"user,omitempty"`
+	// Identity holds the value of the identity edge.
+	Identity *UserIdentity `json:"identity,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// UserOrErr returns the User value or an error if the edge
+// IdentityOrErr returns the Identity value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e UserPasskeyEdges) UserOrErr() (*UserRef, error) {
-	if e.User != nil {
-		return e.User, nil
+func (e UserPasskeyEdges) IdentityOrErr() (*UserIdentity, error) {
+	if e.Identity != nil {
+		return e.Identity, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: userref.Label}
+		return nil, &NotFoundError{label: useridentity.Label}
 	}
-	return nil, &NotLoadedError{edge: "user"}
+	return nil, &NotLoadedError{edge: "identity"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -91,7 +91,7 @@ func (*UserPasskey) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case userpasskey.FieldLastUsedAt, userpasskey.FieldCreatedAt, userpasskey.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case userpasskey.FieldID, userpasskey.FieldUserID:
+		case userpasskey.FieldID, userpasskey.FieldIdentityID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -114,11 +114,11 @@ func (_m *UserPasskey) assignValues(columns []string, values []any) error {
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case userpasskey.FieldUserID:
+		case userpasskey.FieldIdentityID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+				return fmt.Errorf("unexpected type %T for field identity_id", values[i])
 			} else if value != nil {
-				_m.UserID = *value
+				_m.IdentityID = *value
 			}
 		case userpasskey.FieldCredentialID:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -219,9 +219,9 @@ func (_m *UserPasskey) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryUser queries the "user" edge of the UserPasskey entity.
-func (_m *UserPasskey) QueryUser() *UserRefQuery {
-	return NewUserPasskeyClient(_m.config).QueryUser(_m)
+// QueryIdentity queries the "identity" edge of the UserPasskey entity.
+func (_m *UserPasskey) QueryIdentity() *UserIdentityQuery {
+	return NewUserPasskeyClient(_m.config).QueryIdentity(_m)
 }
 
 // Update returns a builder for updating this UserPasskey.
@@ -247,8 +247,8 @@ func (_m *UserPasskey) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserPasskey(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString("identity_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IdentityID))
 	builder.WriteString(", ")
 	builder.WriteString("credential_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.CredentialID))

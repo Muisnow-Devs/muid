@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"sanzi.io/muid/internal/authn/identity"
 	"sanzi.io/muid/pkg/utils"
 )
 
@@ -13,8 +12,27 @@ var ErrOIDCClientConfigRequired = errors.New(
 	"authn config: OIDC client config requires provider, endpoint, client_id, client_secret, and redirect_url",
 )
 
+type OIDCClaimFields struct {
+	Subject       string
+	Name          string
+	Picture       string
+	Email         string
+	EmailVerified string
+}
+
+type OIDCProviderConfig struct {
+	Name         string
+	Endpoint     string
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+	Scopes       []string
+	ClaimFields  OIDCClaimFields
+}
+
 type oidcClientJSON struct {
 	Provider     string              `json:"provider"`
+	Key          string              `json:"key"`
 	Endpoint     string              `json:"endpoint"`
 	ClientID     string              `json:"client_id"`
 	ClientSecret string              `json:"client_secret"`
@@ -31,7 +49,7 @@ type oidcClaimFieldsJSON struct {
 	EmailVerified string `json:"email_verified"`
 }
 
-type OIDCClients []identity.OIDCProviderConfig
+type OIDCClients []OIDCProviderConfig
 
 func (clients *OIDCClients) Decode(raw string) error {
 	parsed, err := parseOIDCClientsJSON(raw)
@@ -65,15 +83,20 @@ func parseOIDCClientsJSON(raw string) (OIDCClients, error) {
 	return out, nil
 }
 
-func (c oidcClientJSON) toOIDCProviderConfig() (identity.OIDCProviderConfig, error) {
-	cfg := identity.OIDCProviderConfig{
-		Name:         strings.TrimSpace(c.Provider),
+func (c oidcClientJSON) toOIDCProviderConfig() (OIDCProviderConfig, error) {
+	name := strings.TrimSpace(c.Provider)
+	if name == "" {
+		name = strings.TrimSpace(c.Key)
+	}
+
+	cfg := OIDCProviderConfig{
+		Name:         name,
 		Endpoint:     strings.TrimSpace(c.Endpoint),
 		ClientID:     strings.TrimSpace(c.ClientID),
 		ClientSecret: strings.TrimSpace(c.ClientSecret),
 		RedirectURL:  strings.TrimSpace(c.RedirectURL),
 		Scopes:       utils.TrimNonEmpty(c.Scopes),
-		ClaimFields: identity.OIDCClaimFields{
+		ClaimFields: OIDCClaimFields{
 			Subject:       strings.TrimSpace(c.ClaimFields.Subject),
 			Name:          strings.TrimSpace(c.ClaimFields.Name),
 			Picture:       strings.TrimSpace(c.ClaimFields.Picture),
@@ -86,7 +109,7 @@ func (c oidcClientJSON) toOIDCProviderConfig() (identity.OIDCProviderConfig, err
 		cfg.ClientID == "" ||
 		cfg.ClientSecret == "" ||
 		cfg.RedirectURL == "" {
-		return identity.OIDCProviderConfig{}, ErrOIDCClientConfigRequired
+		return OIDCProviderConfig{}, ErrOIDCClientConfigRequired
 	}
 	return cfg, nil
 }

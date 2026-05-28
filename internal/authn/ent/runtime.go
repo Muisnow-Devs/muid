@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/schema"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -89,6 +90,30 @@ func init() {
 	userfederatedidentityDescID := userfederatedidentityFields[0].Descriptor()
 	// userfederatedidentity.DefaultID holds the default value on creation for the id field.
 	userfederatedidentity.DefaultID = userfederatedidentityDescID.Default.(func() uuid.UUID)
+	useridentityFields := schema.UserIdentity{}.Fields()
+	_ = useridentityFields
+	// useridentityDescProvider is the schema descriptor for provider field.
+	useridentityDescProvider := useridentityFields[2].Descriptor()
+	// useridentity.ProviderValidator is a validator for the "provider" field. It is called by the builders before save.
+	useridentity.ProviderValidator = useridentityDescProvider.Validators[0].(func(string) error)
+	// useridentityDescSubject is the schema descriptor for subject field.
+	useridentityDescSubject := useridentityFields[3].Descriptor()
+	// useridentity.SubjectValidator is a validator for the "subject" field. It is called by the builders before save.
+	useridentity.SubjectValidator = useridentityDescSubject.Validators[0].(func(string) error)
+	// useridentityDescCreatedAt is the schema descriptor for created_at field.
+	useridentityDescCreatedAt := useridentityFields[4].Descriptor()
+	// useridentity.DefaultCreatedAt holds the default value on creation for the created_at field.
+	useridentity.DefaultCreatedAt = useridentityDescCreatedAt.Default.(func() time.Time)
+	// useridentityDescUpdatedAt is the schema descriptor for updated_at field.
+	useridentityDescUpdatedAt := useridentityFields[5].Descriptor()
+	// useridentity.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	useridentity.DefaultUpdatedAt = useridentityDescUpdatedAt.Default.(func() time.Time)
+	// useridentity.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	useridentity.UpdateDefaultUpdatedAt = useridentityDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// useridentityDescID is the schema descriptor for id field.
+	useridentityDescID := useridentityFields[0].Descriptor()
+	// useridentity.DefaultID holds the default value on creation for the id field.
+	useridentity.DefaultID = useridentityDescID.Default.(func() uuid.UUID)
 	userpasskeyFields := schema.UserPasskey{}.Fields()
 	_ = userpasskeyFields
 	// userpasskeyDescCredentialID is the schema descriptor for credential_id field.

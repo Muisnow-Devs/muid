@@ -2,8 +2,6 @@ package session
 
 import (
 	"testing"
-
-	"sanzi.io/muid/pkg/clientmeta"
 )
 
 func TestMergeMailClientContext_prefersPrimary(t *testing.T) {
@@ -33,15 +31,16 @@ func TestMergeMailClientContext_prefersPrimary(t *testing.T) {
 func TestApplyClientMeta_roundTripsThroughMailClientContext(t *testing.T) {
 	t.Parallel()
 
-	store := EmailOTPStore(StepStart, &EmailOTPFlow{Email: "a@b.c"})
-	ApplyClientMeta(&store, clientmeta.ClientMeta{
-		Locale:    "zh-TW",
-		Timezone:  "Asia/Taipei",
-		Device:    "Firefox",
-		Location:  "Taipei",
-		UserAgent: "Mozilla/5.0",
-		IPAddress: "127.0.0.1",
-	})
+	store := SessionStore{
+		Metadata: SessionMetadata{
+			Locale:    "zh-TW",
+			Timezone:  "Asia/Taipei",
+			Device:    "Firefox",
+			Location:  "Taipei",
+			UserAgent: "Mozilla/5.0",
+			IPAddress: "127.0.0.1",
+		},
+	}
 
 	got := store.MailClientContext()
 	if got.Device != "Firefox" || got.IPAddress != "127.0.0.1" {

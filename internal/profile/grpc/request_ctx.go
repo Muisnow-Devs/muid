@@ -36,7 +36,8 @@ func enrichRequiredPrincipal(ctx context.Context, _ string, _ any) (context.Cont
 func enrichGetProfile(ctx context.Context, _ string, req any) (context.Context, error) {
 	r, ok := req.(*pb.GetProfileRequest)
 	if !ok {
-		return ctx, status.Errorf(codes.Internal, "unsupported request type")
+		log.LogUnexpected(ctx, "enrich get profile", "invalid request type")
+		return ctx, status.Errorf(codes.Internal, "internal error")
 	}
 	return enrichProfileUserID(ctx, r.GetId(), "invalid profile id")
 }

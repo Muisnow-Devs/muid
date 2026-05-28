@@ -13,8 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
-	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/authn/ent/userpasskey"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
 )
@@ -87,34 +86,19 @@ func (_u *UserRefUpdate) AddSessions(v ...*UserSession) *UserRefUpdate {
 	return _u.AddSessionIDs(ids...)
 }
 
-// AddPasskeyIDs adds the "passkeys" edge to the UserPasskey entity by IDs.
-func (_u *UserRefUpdate) AddPasskeyIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.AddPasskeyIDs(ids...)
+// AddIdentityIDs adds the "identities" edge to the UserIdentity entity by IDs.
+func (_u *UserRefUpdate) AddIdentityIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.AddIdentityIDs(ids...)
 	return _u
 }
 
-// AddPasskeys adds the "passkeys" edges to the UserPasskey entity.
-func (_u *UserRefUpdate) AddPasskeys(v ...*UserPasskey) *UserRefUpdate {
+// AddIdentities adds the "identities" edges to the UserIdentity entity.
+func (_u *UserRefUpdate) AddIdentities(v ...*UserIdentity) *UserRefUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddPasskeyIDs(ids...)
-}
-
-// AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
-func (_u *UserRefUpdate) AddFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.AddFederatedIdentityIDs(ids...)
-	return _u
-}
-
-// AddFederatedIdentities adds the "federated_identities" edges to the UserFederatedIdentity entity.
-func (_u *UserRefUpdate) AddFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddFederatedIdentityIDs(ids...)
+	return _u.AddIdentityIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -143,46 +127,25 @@ func (_u *UserRefUpdate) RemoveSessions(v ...*UserSession) *UserRefUpdate {
 	return _u.RemoveSessionIDs(ids...)
 }
 
-// ClearPasskeys clears all "passkeys" edges to the UserPasskey entity.
-func (_u *UserRefUpdate) ClearPasskeys() *UserRefUpdate {
-	_u.mutation.ClearPasskeys()
+// ClearIdentities clears all "identities" edges to the UserIdentity entity.
+func (_u *UserRefUpdate) ClearIdentities() *UserRefUpdate {
+	_u.mutation.ClearIdentities()
 	return _u
 }
 
-// RemovePasskeyIDs removes the "passkeys" edge to UserPasskey entities by IDs.
-func (_u *UserRefUpdate) RemovePasskeyIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.RemovePasskeyIDs(ids...)
+// RemoveIdentityIDs removes the "identities" edge to UserIdentity entities by IDs.
+func (_u *UserRefUpdate) RemoveIdentityIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.RemoveIdentityIDs(ids...)
 	return _u
 }
 
-// RemovePasskeys removes "passkeys" edges to UserPasskey entities.
-func (_u *UserRefUpdate) RemovePasskeys(v ...*UserPasskey) *UserRefUpdate {
+// RemoveIdentities removes "identities" edges to UserIdentity entities.
+func (_u *UserRefUpdate) RemoveIdentities(v ...*UserIdentity) *UserRefUpdate {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemovePasskeyIDs(ids...)
-}
-
-// ClearFederatedIdentities clears all "federated_identities" edges to the UserFederatedIdentity entity.
-func (_u *UserRefUpdate) ClearFederatedIdentities() *UserRefUpdate {
-	_u.mutation.ClearFederatedIdentities()
-	return _u
-}
-
-// RemoveFederatedIdentityIDs removes the "federated_identities" edge to UserFederatedIdentity entities by IDs.
-func (_u *UserRefUpdate) RemoveFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.RemoveFederatedIdentityIDs(ids...)
-	return _u
-}
-
-// RemoveFederatedIdentities removes "federated_identities" edges to UserFederatedIdentity entities.
-func (_u *UserRefUpdate) RemoveFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveFederatedIdentityIDs(ids...)
+	return _u.RemoveIdentityIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -300,28 +263,28 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.PasskeysCleared() {
+	if _u.mutation.IdentitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedPasskeysIDs(); len(nodes) > 0 && !_u.mutation.PasskeysCleared() {
+	if nodes := _u.mutation.RemovedIdentitiesIDs(); len(nodes) > 0 && !_u.mutation.IdentitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -329,60 +292,15 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.PasskeysIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.IdentitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.FederatedIdentitiesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedFederatedIdentitiesIDs(); len(nodes) > 0 && !_u.mutation.FederatedIdentitiesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.FederatedIdentitiesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -465,34 +383,19 @@ func (_u *UserRefUpdateOne) AddSessions(v ...*UserSession) *UserRefUpdateOne {
 	return _u.AddSessionIDs(ids...)
 }
 
-// AddPasskeyIDs adds the "passkeys" edge to the UserPasskey entity by IDs.
-func (_u *UserRefUpdateOne) AddPasskeyIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.AddPasskeyIDs(ids...)
+// AddIdentityIDs adds the "identities" edge to the UserIdentity entity by IDs.
+func (_u *UserRefUpdateOne) AddIdentityIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.AddIdentityIDs(ids...)
 	return _u
 }
 
-// AddPasskeys adds the "passkeys" edges to the UserPasskey entity.
-func (_u *UserRefUpdateOne) AddPasskeys(v ...*UserPasskey) *UserRefUpdateOne {
+// AddIdentities adds the "identities" edges to the UserIdentity entity.
+func (_u *UserRefUpdateOne) AddIdentities(v ...*UserIdentity) *UserRefUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.AddPasskeyIDs(ids...)
-}
-
-// AddFederatedIdentityIDs adds the "federated_identities" edge to the UserFederatedIdentity entity by IDs.
-func (_u *UserRefUpdateOne) AddFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.AddFederatedIdentityIDs(ids...)
-	return _u
-}
-
-// AddFederatedIdentities adds the "federated_identities" edges to the UserFederatedIdentity entity.
-func (_u *UserRefUpdateOne) AddFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddFederatedIdentityIDs(ids...)
+	return _u.AddIdentityIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -521,46 +424,25 @@ func (_u *UserRefUpdateOne) RemoveSessions(v ...*UserSession) *UserRefUpdateOne 
 	return _u.RemoveSessionIDs(ids...)
 }
 
-// ClearPasskeys clears all "passkeys" edges to the UserPasskey entity.
-func (_u *UserRefUpdateOne) ClearPasskeys() *UserRefUpdateOne {
-	_u.mutation.ClearPasskeys()
+// ClearIdentities clears all "identities" edges to the UserIdentity entity.
+func (_u *UserRefUpdateOne) ClearIdentities() *UserRefUpdateOne {
+	_u.mutation.ClearIdentities()
 	return _u
 }
 
-// RemovePasskeyIDs removes the "passkeys" edge to UserPasskey entities by IDs.
-func (_u *UserRefUpdateOne) RemovePasskeyIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.RemovePasskeyIDs(ids...)
+// RemoveIdentityIDs removes the "identities" edge to UserIdentity entities by IDs.
+func (_u *UserRefUpdateOne) RemoveIdentityIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.RemoveIdentityIDs(ids...)
 	return _u
 }
 
-// RemovePasskeys removes "passkeys" edges to UserPasskey entities.
-func (_u *UserRefUpdateOne) RemovePasskeys(v ...*UserPasskey) *UserRefUpdateOne {
+// RemoveIdentities removes "identities" edges to UserIdentity entities.
+func (_u *UserRefUpdateOne) RemoveIdentities(v ...*UserIdentity) *UserRefUpdateOne {
 	ids := make([]uuid.UUID, len(v))
 	for i := range v {
 		ids[i] = v[i].ID
 	}
-	return _u.RemovePasskeyIDs(ids...)
-}
-
-// ClearFederatedIdentities clears all "federated_identities" edges to the UserFederatedIdentity entity.
-func (_u *UserRefUpdateOne) ClearFederatedIdentities() *UserRefUpdateOne {
-	_u.mutation.ClearFederatedIdentities()
-	return _u
-}
-
-// RemoveFederatedIdentityIDs removes the "federated_identities" edge to UserFederatedIdentity entities by IDs.
-func (_u *UserRefUpdateOne) RemoveFederatedIdentityIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.RemoveFederatedIdentityIDs(ids...)
-	return _u
-}
-
-// RemoveFederatedIdentities removes "federated_identities" edges to UserFederatedIdentity entities.
-func (_u *UserRefUpdateOne) RemoveFederatedIdentities(v ...*UserFederatedIdentity) *UserRefUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveFederatedIdentityIDs(ids...)
+	return _u.RemoveIdentityIDs(ids...)
 }
 
 // Where appends a list predicates to the UserRefUpdate builder.
@@ -708,28 +590,28 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if _u.mutation.PasskeysCleared() {
+	if _u.mutation.IdentitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.RemovedPasskeysIDs(); len(nodes) > 0 && !_u.mutation.PasskeysCleared() {
+	if nodes := _u.mutation.RemovedIdentitiesIDs(); len(nodes) > 0 && !_u.mutation.IdentitiesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
@@ -737,60 +619,15 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := _u.mutation.PasskeysIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.IdentitiesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   userref.PasskeysTable,
-			Columns: []string{userref.PasskeysColumn},
+			Table:   userref.IdentitiesTable,
+			Columns: []string{userref.IdentitiesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userpasskey.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.FederatedIdentitiesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedFederatedIdentitiesIDs(); len(nodes) > 0 && !_u.mutation.FederatedIdentitiesCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.FederatedIdentitiesIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.FederatedIdentitiesTable,
-			Columns: []string{userref.FederatedIdentitiesColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

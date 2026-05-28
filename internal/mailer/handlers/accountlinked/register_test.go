@@ -111,4 +111,3 @@ func TestHandler_localeFallbackToEnglish(t *testing.T) {
 		t.Fatalf("subject: %q", msg.Subject)
 	}
 }
-

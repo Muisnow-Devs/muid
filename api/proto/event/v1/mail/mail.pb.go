@@ -1139,6 +1139,173 @@ func (b0 SendAccountLinkedEmailEvent_builder) Build() *SendAccountLinkedEmailEve
 	return m0
 }
 
+// SendAccountUnlinkedEmailEvent is published on mail.send.account_unlinked after a user
+// removes a sign-in method (OIDC, email OTP, passkey) from their account.
+type SendAccountUnlinkedEmailEvent struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Id         string                 `protobuf:"bytes,1,opt,name=id,proto3"`
+	xxx_hidden_Email      string                 `protobuf:"bytes,2,opt,name=email,proto3"`
+	xxx_hidden_Locale     string                 `protobuf:"bytes,3,opt,name=locale,proto3"`
+	xxx_hidden_Provider   string                 `protobuf:"bytes,4,opt,name=provider,proto3"`
+	xxx_hidden_OccurredAt *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=occurred_at,json=occurredAt,proto3"`
+	xxx_hidden_CreatedAt  *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3"`
+	xxx_hidden_Timezone   string                 `protobuf:"bytes,7,opt,name=timezone,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *SendAccountUnlinkedEmailEvent) Reset() {
+	*x = SendAccountUnlinkedEmailEvent{}
+	mi := &file_event_v1_mail_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SendAccountUnlinkedEmailEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SendAccountUnlinkedEmailEvent) ProtoMessage() {}
+
+func (x *SendAccountUnlinkedEmailEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_event_v1_mail_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetId() string {
+	if x != nil {
+		return x.xxx_hidden_Id
+	}
+	return ""
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetEmail() string {
+	if x != nil {
+		return x.xxx_hidden_Email
+	}
+	return ""
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetLocale() string {
+	if x != nil {
+		return x.xxx_hidden_Locale
+	}
+	return ""
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetProvider() string {
+	if x != nil {
+		return x.xxx_hidden_Provider
+	}
+	return ""
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetOccurredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_OccurredAt
+	}
+	return nil
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_CreatedAt
+	}
+	return nil
+}
+
+func (x *SendAccountUnlinkedEmailEvent) GetTimezone() string {
+	if x != nil {
+		return x.xxx_hidden_Timezone
+	}
+	return ""
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetId(v string) {
+	x.xxx_hidden_Id = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetEmail(v string) {
+	x.xxx_hidden_Email = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetLocale(v string) {
+	x.xxx_hidden_Locale = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetProvider(v string) {
+	x.xxx_hidden_Provider = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetOccurredAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_OccurredAt = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetCreatedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_CreatedAt = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) SetTimezone(v string) {
+	x.xxx_hidden_Timezone = v
+}
+
+func (x *SendAccountUnlinkedEmailEvent) HasOccurredAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_OccurredAt != nil
+}
+
+func (x *SendAccountUnlinkedEmailEvent) HasCreatedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_CreatedAt != nil
+}
+
+func (x *SendAccountUnlinkedEmailEvent) ClearOccurredAt() {
+	x.xxx_hidden_OccurredAt = nil
+}
+
+func (x *SendAccountUnlinkedEmailEvent) ClearCreatedAt() {
+	x.xxx_hidden_CreatedAt = nil
+}
+
+type SendAccountUnlinkedEmailEvent_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Id     string
+	Email  string
+	Locale string
+	// Identity provider name (e.g. "google", "email", "passkey").
+	Provider   string
+	OccurredAt *timestamppb.Timestamp
+	CreatedAt  *timestamppb.Timestamp
+	// IANA time zone (e.g. "Asia/Taipei"). Empty means UTC for display.
+	Timezone string
+}
+
+func (b0 SendAccountUnlinkedEmailEvent_builder) Build() *SendAccountUnlinkedEmailEvent {
+	m0 := &SendAccountUnlinkedEmailEvent{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Id = b.Id
+	x.xxx_hidden_Email = b.Email
+	x.xxx_hidden_Locale = b.Locale
+	x.xxx_hidden_Provider = b.Provider
+	x.xxx_hidden_OccurredAt = b.OccurredAt
+	x.xxx_hidden_CreatedAt = b.CreatedAt
+	x.xxx_hidden_Timezone = b.Timezone
+	return m0
+}
+
 var File_event_v1_mail_proto protoreflect.FileDescriptor
 
 const file_event_v1_mail_proto_rawDesc = "" +
@@ -1217,40 +1384,53 @@ const file_event_v1_mail_proto_rawDesc = "" +
 	"occurredAt\x129\n" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
+	"\btimezone\x18\a \x01(\tR\btimezone\"\x8d\x02\n" +
+	"\x1dSendAccountUnlinkedEmailEvent\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x16\n" +
+	"\x06locale\x18\x03 \x01(\tR\x06locale\x12\x1a\n" +
+	"\bprovider\x18\x04 \x01(\tR\bprovider\x12;\n" +
+	"\voccurred_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"occurredAt\x129\n" +
+	"\n" +
+	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x12\x1a\n" +
 	"\btimezone\x18\a \x01(\tR\btimezoneB\xbb\x01\n" +
 	"\x16com.muid.event.v1.mailB\tMailProtoP\x01Z*sanzi.io/muid/api/proto/event/v1/mail;mail\xa2\x02\x04MEVM\xaa\x02\x12Muid.Event.V1.Mail\xca\x02\x12Muid\\Event\\V1\\Mail\xe2\x02\x1eMuid\\Event\\V1\\Mail\\GPBMetadata\xea\x02\x15Muid::Event::V1::Mailb\x06proto3"
 
-var file_event_v1_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_event_v1_mail_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_event_v1_mail_proto_goTypes = []any{
-	(*EmailAddress)(nil),                // 0: muid.event.v1.mail.EmailAddress
-	(*EmailMessage)(nil),                // 1: muid.event.v1.mail.EmailMessage
-	(*SendOTPEmailEvent)(nil),           // 2: muid.event.v1.mail.SendOTPEmailEvent
-	(*SendEmailChangedEvent)(nil),       // 3: muid.event.v1.mail.SendEmailChangedEvent
-	(*SendPasskeyAddedEmailEvent)(nil),  // 4: muid.event.v1.mail.SendPasskeyAddedEmailEvent
-	(*SendLoginAlertEmailEvent)(nil),    // 5: muid.event.v1.mail.SendLoginAlertEmailEvent
-	(*SendAccountLinkedEmailEvent)(nil), // 6: muid.event.v1.mail.SendAccountLinkedEmailEvent
-	nil,                                 // 7: muid.event.v1.mail.EmailMessage.DataEntry
-	(*timestamppb.Timestamp)(nil),       // 8: google.protobuf.Timestamp
+	(*EmailAddress)(nil),                  // 0: muid.event.v1.mail.EmailAddress
+	(*EmailMessage)(nil),                  // 1: muid.event.v1.mail.EmailMessage
+	(*SendOTPEmailEvent)(nil),             // 2: muid.event.v1.mail.SendOTPEmailEvent
+	(*SendEmailChangedEvent)(nil),         // 3: muid.event.v1.mail.SendEmailChangedEvent
+	(*SendPasskeyAddedEmailEvent)(nil),    // 4: muid.event.v1.mail.SendPasskeyAddedEmailEvent
+	(*SendLoginAlertEmailEvent)(nil),      // 5: muid.event.v1.mail.SendLoginAlertEmailEvent
+	(*SendAccountLinkedEmailEvent)(nil),   // 6: muid.event.v1.mail.SendAccountLinkedEmailEvent
+	(*SendAccountUnlinkedEmailEvent)(nil), // 7: muid.event.v1.mail.SendAccountUnlinkedEmailEvent
+	nil,                                   // 8: muid.event.v1.mail.EmailMessage.DataEntry
+	(*timestamppb.Timestamp)(nil),         // 9: google.protobuf.Timestamp
 }
 var file_event_v1_mail_proto_depIdxs = []int32{
 	0,  // 0: muid.event.v1.mail.EmailMessage.to:type_name -> muid.event.v1.mail.EmailAddress
-	7,  // 1: muid.event.v1.mail.EmailMessage.data:type_name -> muid.event.v1.mail.EmailMessage.DataEntry
-	8,  // 2: muid.event.v1.mail.EmailMessage.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 3: muid.event.v1.mail.SendOTPEmailEvent.expires_at:type_name -> google.protobuf.Timestamp
-	8,  // 4: muid.event.v1.mail.SendOTPEmailEvent.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 5: muid.event.v1.mail.SendEmailChangedEvent.occurred_at:type_name -> google.protobuf.Timestamp
-	8,  // 6: muid.event.v1.mail.SendEmailChangedEvent.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 7: muid.event.v1.mail.SendPasskeyAddedEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
-	8,  // 8: muid.event.v1.mail.SendPasskeyAddedEmailEvent.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 9: muid.event.v1.mail.SendLoginAlertEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
-	8,  // 10: muid.event.v1.mail.SendLoginAlertEmailEvent.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 11: muid.event.v1.mail.SendAccountLinkedEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
-	8,  // 12: muid.event.v1.mail.SendAccountLinkedEmailEvent.created_at:type_name -> google.protobuf.Timestamp
-	13, // [13:13] is the sub-list for method output_type
-	13, // [13:13] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	8,  // 1: muid.event.v1.mail.EmailMessage.data:type_name -> muid.event.v1.mail.EmailMessage.DataEntry
+	9,  // 2: muid.event.v1.mail.EmailMessage.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 3: muid.event.v1.mail.SendOTPEmailEvent.expires_at:type_name -> google.protobuf.Timestamp
+	9,  // 4: muid.event.v1.mail.SendOTPEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 5: muid.event.v1.mail.SendEmailChangedEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	9,  // 6: muid.event.v1.mail.SendEmailChangedEvent.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 7: muid.event.v1.mail.SendPasskeyAddedEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	9,  // 8: muid.event.v1.mail.SendPasskeyAddedEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 9: muid.event.v1.mail.SendLoginAlertEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	9,  // 10: muid.event.v1.mail.SendLoginAlertEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 11: muid.event.v1.mail.SendAccountLinkedEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	9,  // 12: muid.event.v1.mail.SendAccountLinkedEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 13: muid.event.v1.mail.SendAccountUnlinkedEmailEvent.occurred_at:type_name -> google.protobuf.Timestamp
+	9,  // 14: muid.event.v1.mail.SendAccountUnlinkedEmailEvent.created_at:type_name -> google.protobuf.Timestamp
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_event_v1_mail_proto_init() }
@@ -1264,7 +1444,7 @@ func file_event_v1_mail_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_event_v1_mail_proto_rawDesc), len(file_event_v1_mail_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/google/uuid"
 	"sanzi.io/muid/infra/mocked"
 	"sanzi.io/muid/internal/session"
 )
@@ -20,9 +21,6 @@ func TestKVAuthTransitionStore_CreateAndGet_Success(t *testing.T) {
 	created, err := store.Create(ctx, "password", storeData)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
-	}
-	if created.Id == "" {
-		t.Errorf("expected session id to be generated, got empty")
 	}
 
 	fetched, err := store.Get(ctx, created.Id)
@@ -42,7 +40,7 @@ func TestKVAuthTransitionStore_Get_NotFound(t *testing.T) {
 	store := NewKVAuthTransitionStore(mockKV)
 	ctx := context.Background()
 
-	_, err := store.Get(ctx, "non-existent")
+	_, err := store.Get(ctx, uuid.UUID{0})
 	if err != session.ErrSessionNotFound {
 		t.Fatalf("expected ErrSessionNotFound, got %v", err)
 	}
@@ -83,7 +81,7 @@ func TestKVAuthTransitionStore_Update_NotFound(t *testing.T) {
 		Step: session.AuthStep("init"),
 	}
 
-	err := store.Update(ctx, "session-404", storeData)
+	err := store.Update(ctx, uuid.UUID{0}, storeData)
 	if err != session.ErrSessionNotFound {
 		t.Fatalf("expected ErrSessionNotFound, got %v", err)
 	}
@@ -125,7 +123,7 @@ func TestKVAuthTransitionStore_Security_Expired_Get(t *testing.T) {
 	}
 
 	// Manually force expiration by rewriting the stored data
-	key := store.(*KVAuthTransitionStore).key(created.Id)
+	key := store.(*KVAuthTransitionStore).key(created.Id.String())
 	data, _ := mockKV.Get(ctx, key)
 	sess, _ := decode(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600 // Subtract an hour
@@ -156,7 +154,7 @@ func TestKVAuthTransitionStore_Security_Expired_Update(t *testing.T) {
 	created, _ := store.Create(ctx, "password", session.SessionStore{})
 
 	// Manually force expiration safely
-	key := store.(*KVAuthTransitionStore).key(created.Id)
+	key := store.(*KVAuthTransitionStore).key(created.Id.String())
 	data, _ := mockKV.Get(ctx, key)
 	sess, _ := decode(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600
@@ -189,7 +187,7 @@ func TestKVAuthTransitionStore_Security_UUIDEntropy(t *testing.T) {
 
 	// With the removal of 'provider' from Get and Update, the store relies purely on the UUID
 	// Check that the returned UUID is sufficiently unguessable (length of at least 32).
-	if len(created.Id) < 32 {
+	if len(created.Id.String()) < 32 {
 		t.Fatalf(
 			"expected generated session id to be sufficiently long to prevent brute-forcing, got %v",
 			len(created.Id),

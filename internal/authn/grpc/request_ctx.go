@@ -61,7 +61,12 @@ func AuthnRequestContextInterceptor() grpc.UnaryServerInterceptor {
 func enrichStartAuthSession(ctx context.Context, _ string, req any) (context.Context, error) {
 	r, ok := req.(*pb.StartAuthSessionRequest)
 	if !ok {
-		return ctx, status.Errorf(codes.Internal, "unsupported request type")
+		log.LogUnexpected(
+			ctx,
+			"authn request context interceptor",
+			"unexpected request type for StartAuthSession",
+		)
+		return ctx, status.Errorf(codes.Internal, "internal error")
 	}
 	ctx, err := enrichClientMeta(ctx)
 	if err != nil {
@@ -84,7 +89,12 @@ func enrichClientMeta(ctx context.Context) (context.Context, error) {
 func enrichContinueAuthSession(ctx context.Context, _ string, req any) (context.Context, error) {
 	r, ok := req.(*pb.ContinueAuthSessionRequest)
 	if !ok {
-		return ctx, status.Errorf(codes.Internal, "unsupported request type")
+		log.LogUnexpected(
+			ctx,
+			"authn request context interceptor",
+			"unexpected request type for ContinueAuthSession",
+		)
+		return ctx, status.Errorf(codes.Internal, "internal error")
 	}
 
 	tid, err := uuid.Parse(strings.TrimSpace(r.GetTransitionId()))
@@ -108,7 +118,8 @@ func enrichRequiredWireSession(ctx context.Context, _ string, req any) (context.
 	case *pb.RevokeFederatedIdentityRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	default:
-		return ctx, status.Errorf(codes.Internal, "unsupported request type")
+		log.LogUnexpected(ctx, "authn request context interceptor", "unexpected request type for required wire session")
+		return ctx, status.Errorf(codes.Internal, "internal error")
 	}
 }
 

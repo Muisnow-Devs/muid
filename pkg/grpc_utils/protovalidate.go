@@ -3,6 +3,7 @@ package grpcutils
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"sync"
 
@@ -47,7 +48,12 @@ func UnaryProtovalidateInterceptor() (grpc.UnaryServerInterceptor, error) {
 	) (any, error) {
 		msg, ok := req.(proto.Message)
 		if !ok {
-			return nil, status.Errorf(codes.Internal, "unsupported request type")
+			log.LogUnexpected(
+				ctx,
+				"protovalidate: request is not proto.Message",
+				fmt.Sprintf("type: %T", req),
+			)
+			return nil, status.Errorf(codes.Internal, "internal error")
 		}
 		if err := v.Validate(msg); err != nil {
 			var valErr *protovalidate.ValidationError

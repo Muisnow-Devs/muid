@@ -10,6 +10,7 @@ const (
 	TopicPasskeyAdded          MailTopic = "mail.send.passkey_added"
 	TopicPasskeyRemoved        MailTopic = "mail.send.passkey_removed"
 	TopicAccountLinked         MailTopic = "mail.send.account_linked"
+	TopicAccountUnlinked       MailTopic = "mail.send.account_unlinked"
 
 	TopicOIDCClientGranted MailTopic = "mail.oidc.client_granted"
 )

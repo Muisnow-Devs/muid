@@ -56,9 +56,9 @@ func IDLTE(id uuid.UUID) predicate.UserFederatedIdentity {
 	return predicate.UserFederatedIdentity(sql.FieldLTE(FieldID, id))
 }
 
-// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
-func UserID(v uuid.UUID) predicate.UserFederatedIdentity {
-	return predicate.UserFederatedIdentity(sql.FieldEQ(FieldUserID, v))
+// IdentityID applies equality check predicate on the "identity_id" field. It's identical to IdentityIDEQ.
+func IdentityID(v uuid.UUID) predicate.UserFederatedIdentity {
+	return predicate.UserFederatedIdentity(sql.FieldEQ(FieldIdentityID, v))
 }
 
 // Provider applies equality check predicate on the "provider" field. It's identical to ProviderEQ.
@@ -121,24 +121,24 @@ func UpdatedAt(v time.Time) predicate.UserFederatedIdentity {
 	return predicate.UserFederatedIdentity(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// UserIDEQ applies the EQ predicate on the "user_id" field.
-func UserIDEQ(v uuid.UUID) predicate.UserFederatedIdentity {
-	return predicate.UserFederatedIdentity(sql.FieldEQ(FieldUserID, v))
+// IdentityIDEQ applies the EQ predicate on the "identity_id" field.
+func IdentityIDEQ(v uuid.UUID) predicate.UserFederatedIdentity {
+	return predicate.UserFederatedIdentity(sql.FieldEQ(FieldIdentityID, v))
 }
 
-// UserIDNEQ applies the NEQ predicate on the "user_id" field.
-func UserIDNEQ(v uuid.UUID) predicate.UserFederatedIdentity {
-	return predicate.UserFederatedIdentity(sql.FieldNEQ(FieldUserID, v))
+// IdentityIDNEQ applies the NEQ predicate on the "identity_id" field.
+func IdentityIDNEQ(v uuid.UUID) predicate.UserFederatedIdentity {
+	return predicate.UserFederatedIdentity(sql.FieldNEQ(FieldIdentityID, v))
 }
 
-// UserIDIn applies the In predicate on the "user_id" field.
-func UserIDIn(vs ...uuid.UUID) predicate.UserFederatedIdentity {
-	return predicate.UserFederatedIdentity(sql.FieldIn(FieldUserID, vs...))
+// IdentityIDIn applies the In predicate on the "identity_id" field.
+func IdentityIDIn(vs ...uuid.UUID) predicate.UserFederatedIdentity {
+	return predicate.UserFederatedIdentity(sql.FieldIn(FieldIdentityID, vs...))
 }
 
-// UserIDNotIn applies the NotIn predicate on the "user_id" field.
-func UserIDNotIn(vs ...uuid.UUID) predicate.UserFederatedIdentity {
-	return predicate.UserFederatedIdentity(sql.FieldNotIn(FieldUserID, vs...))
+// IdentityIDNotIn applies the NotIn predicate on the "identity_id" field.
+func IdentityIDNotIn(vs ...uuid.UUID) predicate.UserFederatedIdentity {
+	return predicate.UserFederatedIdentity(sql.FieldNotIn(FieldIdentityID, vs...))
 }
 
 // ProviderEQ applies the EQ predicate on the "provider" field.
@@ -801,21 +801,21 @@ func UpdatedAtLTE(v time.Time) predicate.UserFederatedIdentity {
 	return predicate.UserFederatedIdentity(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasUser applies the HasEdge predicate on the "user" edge.
-func HasUser() predicate.UserFederatedIdentity {
+// HasIdentity applies the HasEdge predicate on the "identity" edge.
+func HasIdentity() predicate.UserFederatedIdentity {
 	return predicate.UserFederatedIdentity(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+			sqlgraph.Edge(sqlgraph.O2O, true, IdentityTable, IdentityColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasUserWith applies the HasEdge predicate on the "user" edge with a given conditions (other predicates).
-func HasUserWith(preds ...predicate.UserRef) predicate.UserFederatedIdentity {
+// HasIdentityWith applies the HasEdge predicate on the "identity" edge with a given conditions (other predicates).
+func HasIdentityWith(preds ...predicate.UserIdentity) predicate.UserFederatedIdentity {
 	return predicate.UserFederatedIdentity(func(s *sql.Selector) {
-		step := newUserStep()
+		step := newIdentityStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

@@ -17,6 +17,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -29,6 +30,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
 	UserFederatedIdentity *UserFederatedIdentityClient
+	// UserIdentity is the client for interacting with the UserIdentity builders.
+	UserIdentity *UserIdentityClient
 	// UserPasskey is the client for interacting with the UserPasskey builders.
 	UserPasskey *UserPasskeyClient
 	// UserRef is the client for interacting with the UserRef builders.
@@ -47,6 +50,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.UserFederatedIdentity = NewUserFederatedIdentityClient(c.config)
+	c.UserIdentity = NewUserIdentityClient(c.config)
 	c.UserPasskey = NewUserPasskeyClient(c.config)
 	c.UserRef = NewUserRefClient(c.config)
 	c.UserSession = NewUserSessionClient(c.config)
@@ -143,6 +147,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		ctx:                   ctx,
 		config:                cfg,
 		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
+		UserIdentity:          NewUserIdentityClient(cfg),
 		UserPasskey:           NewUserPasskeyClient(cfg),
 		UserRef:               NewUserRefClient(cfg),
 		UserSession:           NewUserSessionClient(cfg),
@@ -166,6 +171,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		ctx:                   ctx,
 		config:                cfg,
 		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
+		UserIdentity:          NewUserIdentityClient(cfg),
 		UserPasskey:           NewUserPasskeyClient(cfg),
 		UserRef:               NewUserRefClient(cfg),
 		UserSession:           NewUserSessionClient(cfg),
@@ -198,6 +204,7 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.UserFederatedIdentity.Use(hooks...)
+	c.UserIdentity.Use(hooks...)
 	c.UserPasskey.Use(hooks...)
 	c.UserRef.Use(hooks...)
 	c.UserSession.Use(hooks...)
@@ -207,6 +214,7 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.UserFederatedIdentity.Intercept(interceptors...)
+	c.UserIdentity.Intercept(interceptors...)
 	c.UserPasskey.Intercept(interceptors...)
 	c.UserRef.Intercept(interceptors...)
 	c.UserSession.Intercept(interceptors...)
@@ -217,6 +225,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *UserFederatedIdentityMutation:
 		return c.UserFederatedIdentity.mutate(ctx, m)
+	case *UserIdentityMutation:
+		return c.UserIdentity.mutate(ctx, m)
 	case *UserPasskeyMutation:
 		return c.UserPasskey.mutate(ctx, m)
 	case *UserRefMutation:
@@ -336,15 +346,15 @@ func (c *UserFederatedIdentityClient) GetX(ctx context.Context, id uuid.UUID) *U
 	return obj
 }
 
-// QueryUser queries the user edge of a UserFederatedIdentity.
-func (c *UserFederatedIdentityClient) QueryUser(_m *UserFederatedIdentity) *UserRefQuery {
-	query := (&UserRefClient{config: c.config}).Query()
+// QueryIdentity queries the identity edge of a UserFederatedIdentity.
+func (c *UserFederatedIdentityClient) QueryIdentity(_m *UserFederatedIdentity) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userfederatedidentity.Table, userfederatedidentity.FieldID, id),
-			sqlgraph.To(userref.Table, userref.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, userfederatedidentity.UserTable, userfederatedidentity.UserColumn),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, userfederatedidentity.IdentityTable, userfederatedidentity.IdentityColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -374,6 +384,187 @@ func (c *UserFederatedIdentityClient) mutate(ctx context.Context, m *UserFederat
 		return (&UserFederatedIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown UserFederatedIdentity mutation op: %q", m.Op())
+	}
+}
+
+// UserIdentityClient is a client for the UserIdentity schema.
+type UserIdentityClient struct {
+	config
+}
+
+// NewUserIdentityClient returns a client for the UserIdentity from the given config.
+func NewUserIdentityClient(c config) *UserIdentityClient {
+	return &UserIdentityClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `useridentity.Hooks(f(g(h())))`.
+func (c *UserIdentityClient) Use(hooks ...Hook) {
+	c.hooks.UserIdentity = append(c.hooks.UserIdentity, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `useridentity.Intercept(f(g(h())))`.
+func (c *UserIdentityClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserIdentity = append(c.inters.UserIdentity, interceptors...)
+}
+
+// Create returns a builder for creating a UserIdentity entity.
+func (c *UserIdentityClient) Create() *UserIdentityCreate {
+	mutation := newUserIdentityMutation(c.config, OpCreate)
+	return &UserIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserIdentity entities.
+func (c *UserIdentityClient) CreateBulk(builders ...*UserIdentityCreate) *UserIdentityCreateBulk {
+	return &UserIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserIdentityClient) MapCreateBulk(slice any, setFunc func(*UserIdentityCreate, int)) *UserIdentityCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserIdentityCreateBulk{err: fmt.Errorf("calling to UserIdentityClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserIdentityCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserIdentityCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserIdentity.
+func (c *UserIdentityClient) Update() *UserIdentityUpdate {
+	mutation := newUserIdentityMutation(c.config, OpUpdate)
+	return &UserIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserIdentityClient) UpdateOne(_m *UserIdentity) *UserIdentityUpdateOne {
+	mutation := newUserIdentityMutation(c.config, OpUpdateOne, withUserIdentity(_m))
+	return &UserIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserIdentityClient) UpdateOneID(id uuid.UUID) *UserIdentityUpdateOne {
+	mutation := newUserIdentityMutation(c.config, OpUpdateOne, withUserIdentityID(id))
+	return &UserIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserIdentity.
+func (c *UserIdentityClient) Delete() *UserIdentityDelete {
+	mutation := newUserIdentityMutation(c.config, OpDelete)
+	return &UserIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserIdentityClient) DeleteOne(_m *UserIdentity) *UserIdentityDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserIdentityClient) DeleteOneID(id uuid.UUID) *UserIdentityDeleteOne {
+	builder := c.Delete().Where(useridentity.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserIdentityDeleteOne{builder}
+}
+
+// Query returns a query builder for UserIdentity.
+func (c *UserIdentityClient) Query() *UserIdentityQuery {
+	return &UserIdentityQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserIdentity},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserIdentity entity by its id.
+func (c *UserIdentityClient) Get(ctx context.Context, id uuid.UUID) (*UserIdentity, error) {
+	return c.Query().Where(useridentity.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserIdentityClient) GetX(ctx context.Context, id uuid.UUID) *UserIdentity {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a UserIdentity.
+func (c *UserIdentityClient) QueryUser(_m *UserIdentity) *UserRefQuery {
+	query := (&UserRefClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useridentity.Table, useridentity.FieldID, id),
+			sqlgraph.To(userref.Table, userref.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, useridentity.UserTable, useridentity.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryPasskeyIdentity queries the passkey_identity edge of a UserIdentity.
+func (c *UserIdentityClient) QueryPasskeyIdentity(_m *UserIdentity) *UserPasskeyQuery {
+	query := (&UserPasskeyClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useridentity.Table, useridentity.FieldID, id),
+			sqlgraph.To(userpasskey.Table, userpasskey.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, useridentity.PasskeyIdentityTable, useridentity.PasskeyIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryFederatedIdentity queries the federated_identity edge of a UserIdentity.
+func (c *UserIdentityClient) QueryFederatedIdentity(_m *UserIdentity) *UserFederatedIdentityQuery {
+	query := (&UserFederatedIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useridentity.Table, useridentity.FieldID, id),
+			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, useridentity.FederatedIdentityTable, useridentity.FederatedIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UserIdentityClient) Hooks() []Hook {
+	return c.hooks.UserIdentity
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserIdentityClient) Interceptors() []Interceptor {
+	return c.inters.UserIdentity
+}
+
+func (c *UserIdentityClient) mutate(ctx context.Context, m *UserIdentityMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserIdentityCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserIdentityUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserIdentityUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserIdentityDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserIdentity mutation op: %q", m.Op())
 	}
 }
 
@@ -485,15 +676,15 @@ func (c *UserPasskeyClient) GetX(ctx context.Context, id uuid.UUID) *UserPasskey
 	return obj
 }
 
-// QueryUser queries the user edge of a UserPasskey.
-func (c *UserPasskeyClient) QueryUser(_m *UserPasskey) *UserRefQuery {
-	query := (&UserRefClient{config: c.config}).Query()
+// QueryIdentity queries the identity edge of a UserPasskey.
+func (c *UserPasskeyClient) QueryIdentity(_m *UserPasskey) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userpasskey.Table, userpasskey.FieldID, id),
-			sqlgraph.To(userref.Table, userref.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, userpasskey.UserTable, userpasskey.UserColumn),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, userpasskey.IdentityTable, userpasskey.IdentityColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -650,31 +841,15 @@ func (c *UserRefClient) QuerySessions(_m *UserRef) *UserSessionQuery {
 	return query
 }
 
-// QueryPasskeys queries the passkeys edge of a UserRef.
-func (c *UserRefClient) QueryPasskeys(_m *UserRef) *UserPasskeyQuery {
-	query := (&UserPasskeyClient{config: c.config}).Query()
+// QueryIdentities queries the identities edge of a UserRef.
+func (c *UserRefClient) QueryIdentities(_m *UserRef) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userref.Table, userref.FieldID, id),
-			sqlgraph.To(userpasskey.Table, userpasskey.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.PasskeysTable, userref.PasskeysColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
-// QueryFederatedIdentities queries the federated_identities edge of a UserRef.
-func (c *UserRefClient) QueryFederatedIdentities(_m *UserRef) *UserFederatedIdentityQuery {
-	query := (&UserFederatedIdentityClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userref.Table, userref.FieldID, id),
-			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.FederatedIdentitiesTable, userref.FederatedIdentitiesColumn),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.IdentitiesTable, userref.IdentitiesColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -859,9 +1034,11 @@ func (c *UserSessionClient) mutate(ctx context.Context, m *UserSessionMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		UserFederatedIdentity, UserPasskey, UserRef, UserSession []ent.Hook
+		UserFederatedIdentity, UserIdentity, UserPasskey, UserRef,
+		UserSession []ent.Hook
 	}
 	inters struct {
-		UserFederatedIdentity, UserPasskey, UserRef, UserSession []ent.Interceptor
+		UserFederatedIdentity, UserIdentity, UserPasskey, UserRef,
+		UserSession []ent.Interceptor
 	}
 )

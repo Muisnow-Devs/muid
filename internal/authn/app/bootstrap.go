@@ -8,20 +8,22 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect"
+	"github.com/go-webauthn/webauthn/protocol"
+	"github.com/go-webauthn/webauthn/webauthn"
 	"google.golang.org/grpc"
 
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/redis"
-	"sanzi.io/muid/internal/authn/account"
 	authnent "sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/kv"
+	authnkv "sanzi.io/muid/internal/authn/kv"
+	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
-// NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and the identity manager.
+// NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and WebAuthn.
 func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 	redisKV := redis.NewRedisKVStore(cfg.RedisAddr, cfg.RedisDatabase)
 
@@ -35,7 +37,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	if cfg.OTPSendCooldownSeconds < 0 {
 		otpSendCooldown = 0
 	}
-	otpStore := kv.NewKVOTPStore(redisKV, otpSecret, otpSendCooldown)
+	otpStore := authnkv.NewKVOTPStore(redisKV, otpSecret, otpSendCooldown)
 
 	pubSub, err := nats.NewNATSPubSub(cfg.NATSURL)
 	if err != nil {
@@ -43,8 +45,8 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		return nil, fmt.Errorf("nats: %w", err)
 	}
 
-	transitionStore := kv.NewKVAuthTransitionStore(redisKV)
-	sessionCache := kv.NewKVSessionCache(redisKV)
+	transitionStore := authnkv.NewKVAuthTransitionStore(redisKV)
+	sessionCache := authnkv.NewKVSessionCache(redisKV)
 
 	fatalCleanup := func() {
 		errutil.CloseIf(pubSub)
@@ -75,32 +77,38 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		profileCli = profilepb.NewProfileServiceClient(profileConn)
 	}
 
-	store := &account.Store{
-		DB:                 entClient,
-		Profile:            profileCli,
-		ProfileCallTimeout: time.Duration(cfg.ProfileGRPCTimeoutSeconds) * time.Second,
-		SessionCache:       sessionCache,
-	}
-	provision, email, oidc, federated, passkey, sessions, notifier := account.Wire(
-		store,
-		pubSub,
-		cfg.LoginAlertSecureLink,
-	)
-
-	ipm, err := InitializeIdentityManager(
-		ctx,
-		cfg,
-		transitionStore,
-		otpStore,
-		pubSub,
-		IdentityServices{
-			Email:     email,
-			OIDC:      oidc,
-			Federated: federated,
-			Passkey:   passkey,
-			Sessions:  sessions,
-			Notifier:  notifier,
+	// Initialize WebAuthn
+	wa, err := webauthn.New(&webauthn.Config{
+		RPID:          cfg.PasskeyRPID,
+		RPDisplayName: cfg.PasskeyRPDisplayName,
+		RPOrigins:     cfg.PasskeyRPOrigins,
+		AuthenticatorSelection: protocol.AuthenticatorSelection{
+			UserVerification: protocol.VerificationPreferred,
+			ResidentKey:      protocol.ResidentKeyRequirementPreferred,
 		},
+		AttestationPreference: protocol.PreferNoAttestation,
+		Timeouts: webauthn.TimeoutsConfig{
+			Login:        webauthn.TimeoutConfig{Enforce: true, Timeout: time.Minute},
+			Registration: webauthn.TimeoutConfig{Enforce: true, Timeout: time.Minute},
+		},
+	})
+	if err != nil {
+		errutil.Close(profileConn)
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		errutil.CloseIf(redisKV)
+		return nil, fmt.Errorf("webauthn: %w", err)
+	}
+
+	identityMgr, err := identity.NewIdentityManager(
+		ctx,
+		entClient,
+		otpStore,
+		transitionStore,
+		pubSub,
+		wa,
+		cfg.OTPSendCooldownSeconds,
+		cfg.OIDCClients,
 	)
 	if err != nil {
 		errutil.Close(profileConn)
@@ -111,22 +119,18 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	}
 
 	return &InfraDependencies{
-		GlobalConfig:    cfg,
-		Redis:           redisKV,
-		OTPStore:        otpStore,
-		TransitionStore: transitionStore,
-		SessionCache:    sessionCache,
-		PubSub:          pubSub,
-		IdentityManager: ipm,
-		Provision:       provision,
-		Email:           email,
-		OIDC:            oidc,
-		Federated:       federated,
-		Passkey:         passkey,
-		Sessions:        sessions,
-		Notifier:        notifier,
-		entClient:       entClient,
-		profileConn:     profileConn,
+		GlobalConfig:              cfg,
+		Redis:                     redisKV,
+		OTPStore:                  otpStore,
+		TransitionStore:           transitionStore,
+		SessionCache:              sessionCache,
+		PubSub:                    pubSub,
+		WebAuthn:                  wa,
+		ProfileCli:                profileCli,
+		ProfileCallTimeoutSeconds: time.Duration(cfg.ProfileGRPCTimeoutSeconds) * time.Second,
+		IdentityManager:           identityMgr,
+		entClient:                 entClient,
+		profileConn:               profileConn,
 	}, nil
 }
 

@@ -11,7 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/authn/ent/userref"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 )
 
 // UserFederatedIdentity is the model entity for the UserFederatedIdentity schema.
@@ -19,8 +19,8 @@ type UserFederatedIdentity struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// UserID holds the value of the "user_id" field.
-	UserID uuid.UUID `json:"user_id,omitempty"`
+	// IdentityID holds the value of the "identity_id" field.
+	IdentityID uuid.UUID `json:"identity_id,omitempty"`
 	// Provider holds the value of the "provider" field.
 	Provider string `json:"provider,omitempty"`
 	// Subject holds the value of the "subject" field.
@@ -53,22 +53,22 @@ type UserFederatedIdentity struct {
 
 // UserFederatedIdentityEdges holds the relations/edges for other nodes in the graph.
 type UserFederatedIdentityEdges struct {
-	// User holds the value of the user edge.
-	User *UserRef `json:"user,omitempty"`
+	// Identity holds the value of the identity edge.
+	Identity *UserIdentity `json:"identity,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [1]bool
 }
 
-// UserOrErr returns the User value or an error if the edge
+// IdentityOrErr returns the Identity value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
-func (e UserFederatedIdentityEdges) UserOrErr() (*UserRef, error) {
-	if e.User != nil {
-		return e.User, nil
+func (e UserFederatedIdentityEdges) IdentityOrErr() (*UserIdentity, error) {
+	if e.Identity != nil {
+		return e.Identity, nil
 	} else if e.loadedTypes[0] {
-		return nil, &NotFoundError{label: userref.Label}
+		return nil, &NotFoundError{label: useridentity.Label}
 	}
-	return nil, &NotLoadedError{edge: "user"}
+	return nil, &NotLoadedError{edge: "identity"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -82,7 +82,7 @@ func (*UserFederatedIdentity) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case userfederatedidentity.FieldLastUsedAt, userfederatedidentity.FieldCreatedAt, userfederatedidentity.FieldLinkedAt, userfederatedidentity.FieldRevokedAt, userfederatedidentity.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case userfederatedidentity.FieldID, userfederatedidentity.FieldUserID:
+		case userfederatedidentity.FieldID, userfederatedidentity.FieldIdentityID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -105,11 +105,11 @@ func (_m *UserFederatedIdentity) assignValues(columns []string, values []any) er
 			} else if value != nil {
 				_m.ID = *value
 			}
-		case userfederatedidentity.FieldUserID:
+		case userfederatedidentity.FieldIdentityID:
 			if value, ok := values[i].(*uuid.UUID); !ok {
-				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+				return fmt.Errorf("unexpected type %T for field identity_id", values[i])
 			} else if value != nil {
-				_m.UserID = *value
+				_m.IdentityID = *value
 			}
 		case userfederatedidentity.FieldProvider:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -197,9 +197,9 @@ func (_m *UserFederatedIdentity) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryUser queries the "user" edge of the UserFederatedIdentity entity.
-func (_m *UserFederatedIdentity) QueryUser() *UserRefQuery {
-	return NewUserFederatedIdentityClient(_m.config).QueryUser(_m)
+// QueryIdentity queries the "identity" edge of the UserFederatedIdentity entity.
+func (_m *UserFederatedIdentity) QueryIdentity() *UserIdentityQuery {
+	return NewUserFederatedIdentityClient(_m.config).QueryIdentity(_m)
 }
 
 // Update returns a builder for updating this UserFederatedIdentity.
@@ -225,8 +225,8 @@ func (_m *UserFederatedIdentity) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserFederatedIdentity(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("user_id=")
-	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
+	builder.WriteString("identity_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.IdentityID))
 	builder.WriteString(", ")
 	builder.WriteString("provider=")
 	builder.WriteString(_m.Provider)

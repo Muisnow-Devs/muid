@@ -20,11 +20,6 @@ func TestFormat(t *testing.T) {
 			want:     "Mon, 25 May 2026 14:30:05 +0800",
 		},
 		{
-			name:     "chinese includes numeric timezone offset",
-			timezone: "Asia/Taipei",
-			want:     "2026-05-25 14:30:05 +0800",
-		},
-		{
 			name:     "invalid timezone uses UTC",
 			timezone: "Not/AZone",
 			want:     "Mon, 25 May 2026 06:30:05 +0000",

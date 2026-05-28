@@ -160,8 +160,8 @@ func (_u *UserPasskeyUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserPasskeyUpdate) check() error {
-	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "UserPasskey.user"`)
+	if _u.mutation.IdentityCleared() && len(_u.mutation.IdentityIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "UserPasskey.identity"`)
 	}
 	return nil
 }
@@ -373,8 +373,8 @@ func (_u *UserPasskeyUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserPasskeyUpdateOne) check() error {
-	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "UserPasskey.user"`)
+	if _u.mutation.IdentityCleared() && len(_u.mutation.IdentityIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "UserPasskey.identity"`)
 	}
 	return nil
 }

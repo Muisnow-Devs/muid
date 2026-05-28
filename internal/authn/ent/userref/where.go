@@ -294,44 +294,21 @@ func HasSessionsWith(preds ...predicate.UserSession) predicate.UserRef {
 	})
 }
 
-// HasPasskeys applies the HasEdge predicate on the "passkeys" edge.
-func HasPasskeys() predicate.UserRef {
+// HasIdentities applies the HasEdge predicate on the "identities" edge.
+func HasIdentities() predicate.UserRef {
 	return predicate.UserRef(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, PasskeysTable, PasskeysColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, IdentitiesTable, IdentitiesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasPasskeysWith applies the HasEdge predicate on the "passkeys" edge with a given conditions (other predicates).
-func HasPasskeysWith(preds ...predicate.UserPasskey) predicate.UserRef {
+// HasIdentitiesWith applies the HasEdge predicate on the "identities" edge with a given conditions (other predicates).
+func HasIdentitiesWith(preds ...predicate.UserIdentity) predicate.UserRef {
 	return predicate.UserRef(func(s *sql.Selector) {
-		step := newPasskeysStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasFederatedIdentities applies the HasEdge predicate on the "federated_identities" edge.
-func HasFederatedIdentities() predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, FederatedIdentitiesTable, FederatedIdentitiesColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasFederatedIdentitiesWith applies the HasEdge predicate on the "federated_identities" edge with a given conditions (other predicates).
-func HasFederatedIdentitiesWith(preds ...predicate.UserFederatedIdentity) predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := newFederatedIdentitiesStep()
+		step := newIdentitiesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

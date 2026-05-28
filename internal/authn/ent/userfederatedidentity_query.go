@@ -14,17 +14,17 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
-	"sanzi.io/muid/internal/authn/ent/userref"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 )
 
 // UserFederatedIdentityQuery is the builder for querying UserFederatedIdentity entities.
 type UserFederatedIdentityQuery struct {
 	config
-	ctx        *QueryContext
-	order      []userfederatedidentity.OrderOption
-	inters     []Interceptor
-	predicates []predicate.UserFederatedIdentity
-	withUser   *UserRefQuery
+	ctx          *QueryContext
+	order        []userfederatedidentity.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.UserFederatedIdentity
+	withIdentity *UserIdentityQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -61,9 +61,9 @@ func (_q *UserFederatedIdentityQuery) Order(o ...userfederatedidentity.OrderOpti
 	return _q
 }
 
-// QueryUser chains the current query on the "user" edge.
-func (_q *UserFederatedIdentityQuery) QueryUser() *UserRefQuery {
-	query := (&UserRefClient{config: _q.config}).Query()
+// QueryIdentity chains the current query on the "identity" edge.
+func (_q *UserFederatedIdentityQuery) QueryIdentity() *UserIdentityQuery {
+	query := (&UserIdentityClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -74,8 +74,8 @@ func (_q *UserFederatedIdentityQuery) QueryUser() *UserRefQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(userfederatedidentity.Table, userfederatedidentity.FieldID, selector),
-			sqlgraph.To(userref.Table, userref.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, userfederatedidentity.UserTable, userfederatedidentity.UserColumn),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, userfederatedidentity.IdentityTable, userfederatedidentity.IdentityColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -270,26 +270,26 @@ func (_q *UserFederatedIdentityQuery) Clone() *UserFederatedIdentityQuery {
 		return nil
 	}
 	return &UserFederatedIdentityQuery{
-		config:     _q.config,
-		ctx:        _q.ctx.Clone(),
-		order:      append([]userfederatedidentity.OrderOption{}, _q.order...),
-		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.UserFederatedIdentity{}, _q.predicates...),
-		withUser:   _q.withUser.Clone(),
+		config:       _q.config,
+		ctx:          _q.ctx.Clone(),
+		order:        append([]userfederatedidentity.OrderOption{}, _q.order...),
+		inters:       append([]Interceptor{}, _q.inters...),
+		predicates:   append([]predicate.UserFederatedIdentity{}, _q.predicates...),
+		withIdentity: _q.withIdentity.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithUser tells the query-builder to eager-load the nodes that are connected to
-// the "user" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserFederatedIdentityQuery) WithUser(opts ...func(*UserRefQuery)) *UserFederatedIdentityQuery {
-	query := (&UserRefClient{config: _q.config}).Query()
+// WithIdentity tells the query-builder to eager-load the nodes that are connected to
+// the "identity" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserFederatedIdentityQuery) WithIdentity(opts ...func(*UserIdentityQuery)) *UserFederatedIdentityQuery {
+	query := (&UserIdentityClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withUser = query
+	_q.withIdentity = query
 	return _q
 }
 
@@ -299,12 +299,12 @@ func (_q *UserFederatedIdentityQuery) WithUser(opts ...func(*UserRefQuery)) *Use
 // Example:
 //
 //	var v []struct {
-//		UserID uuid.UUID `json:"user_id,omitempty"`
+//		IdentityID uuid.UUID `json:"identity_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.UserFederatedIdentity.Query().
-//		GroupBy(userfederatedidentity.FieldUserID).
+//		GroupBy(userfederatedidentity.FieldIdentityID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *UserFederatedIdentityQuery) GroupBy(field string, fields ...string) *UserFederatedIdentityGroupBy {
@@ -322,11 +322,11 @@ func (_q *UserFederatedIdentityQuery) GroupBy(field string, fields ...string) *U
 // Example:
 //
 //	var v []struct {
-//		UserID uuid.UUID `json:"user_id,omitempty"`
+//		IdentityID uuid.UUID `json:"identity_id,omitempty"`
 //	}
 //
 //	client.UserFederatedIdentity.Query().
-//		Select(userfederatedidentity.FieldUserID).
+//		Select(userfederatedidentity.FieldIdentityID).
 //		Scan(ctx, &v)
 func (_q *UserFederatedIdentityQuery) Select(fields ...string) *UserFederatedIdentitySelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -372,7 +372,7 @@ func (_q *UserFederatedIdentityQuery) sqlAll(ctx context.Context, hooks ...query
 		nodes       = []*UserFederatedIdentity{}
 		_spec       = _q.querySpec()
 		loadedTypes = [1]bool{
-			_q.withUser != nil,
+			_q.withIdentity != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -393,20 +393,20 @@ func (_q *UserFederatedIdentityQuery) sqlAll(ctx context.Context, hooks ...query
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withUser; query != nil {
-		if err := _q.loadUser(ctx, query, nodes, nil,
-			func(n *UserFederatedIdentity, e *UserRef) { n.Edges.User = e }); err != nil {
+	if query := _q.withIdentity; query != nil {
+		if err := _q.loadIdentity(ctx, query, nodes, nil,
+			func(n *UserFederatedIdentity, e *UserIdentity) { n.Edges.Identity = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *UserFederatedIdentityQuery) loadUser(ctx context.Context, query *UserRefQuery, nodes []*UserFederatedIdentity, init func(*UserFederatedIdentity), assign func(*UserFederatedIdentity, *UserRef)) error {
+func (_q *UserFederatedIdentityQuery) loadIdentity(ctx context.Context, query *UserIdentityQuery, nodes []*UserFederatedIdentity, init func(*UserFederatedIdentity), assign func(*UserFederatedIdentity, *UserIdentity)) error {
 	ids := make([]uuid.UUID, 0, len(nodes))
 	nodeids := make(map[uuid.UUID][]*UserFederatedIdentity)
 	for i := range nodes {
-		fk := nodes[i].UserID
+		fk := nodes[i].IdentityID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -415,7 +415,7 @@ func (_q *UserFederatedIdentityQuery) loadUser(ctx context.Context, query *UserR
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(userref.IDIn(ids...))
+	query.Where(useridentity.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -423,7 +423,7 @@ func (_q *UserFederatedIdentityQuery) loadUser(ctx context.Context, query *UserR
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "identity_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -457,8 +457,8 @@ func (_q *UserFederatedIdentityQuery) querySpec() *sqlgraph.QuerySpec {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
 		}
-		if _q.withUser != nil {
-			_spec.Node.AddColumnOnce(userfederatedidentity.FieldUserID)
+		if _q.withIdentity != nil {
+			_spec.Node.AddColumnOnce(userfederatedidentity.FieldIdentityID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {

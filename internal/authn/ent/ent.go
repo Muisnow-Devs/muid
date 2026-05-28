@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -77,6 +78,7 @@ func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			userfederatedidentity.Table: userfederatedidentity.ValidColumn,
+			useridentity.Table:          useridentity.ValidColumn,
 			userpasskey.Table:           userpasskey.ValidColumn,
 			userref.Table:               userref.ValidColumn,
 			usersession.Table:           usersession.ValidColumn,

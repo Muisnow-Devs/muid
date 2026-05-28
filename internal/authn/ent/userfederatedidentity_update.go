@@ -226,8 +226,8 @@ func (_u *UserFederatedIdentityUpdate) check() error {
 			return &ValidationError{Name: "raw_profile_etag", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.raw_profile_etag": %w`, err)}
 		}
 	}
-	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "UserFederatedIdentity.user"`)
+	if _u.mutation.IdentityCleared() && len(_u.mutation.IdentityIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "UserFederatedIdentity.identity"`)
 	}
 	return nil
 }
@@ -517,8 +517,8 @@ func (_u *UserFederatedIdentityUpdateOne) check() error {
 			return &ValidationError{Name: "raw_profile_etag", err: fmt.Errorf(`ent: validator failed for field "UserFederatedIdentity.raw_profile_etag": %w`, err)}
 		}
 	}
-	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
-		return errors.New(`ent: clearing a required unique edge "UserFederatedIdentity.user"`)
+	if _u.mutation.IdentityCleared() && len(_u.mutation.IdentityIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "UserFederatedIdentity.identity"`)
 	}
 	return nil
 }

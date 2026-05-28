@@ -50,4 +50,3 @@ func (Handler) Handle(
 		HTMLBody: rendered.HTML,
 	}, nil
 }
-

@@ -3,10 +3,12 @@ package app
 import (
 	"errors"
 	"io"
+	"time"
 
+	"github.com/go-webauthn/webauthn/webauthn"
 	"google.golang.org/grpc"
 
-	"sanzi.io/muid/internal/authn/account"
+	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	authnconfig "sanzi.io/muid/internal/authn/config"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/identity"
@@ -73,19 +75,14 @@ type InfraDependencies struct {
 
 	Redis kv.KVStore
 
-	OTPStore        otp.OTPStore
-	TransitionStore session.AuthTransitionStore
-	SessionCache    session.SessionCache
-	PubSub          pubsub.PubSub
-	IdentityManager *identity.IdentityManager
-
-	Provision account.Provisioning
-	Email     account.Email
-	OIDC      account.OIDC
-	Federated account.Federated
-	Passkey   account.Passkey
-	Sessions  account.Session
-	Notifier  account.Notifier
+	OTPStore                  otp.OTPStore
+	TransitionStore           session.AuthTransitionStore
+	SessionCache              session.SessionCache
+	PubSub                    pubsub.PubSub
+	WebAuthn                  *webauthn.WebAuthn
+	ProfileCli                profilepb.ProfileServiceClient
+	ProfileCallTimeoutSeconds time.Duration
+	IdentityManager           *identity.IdentityManager
 
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn
@@ -93,6 +90,9 @@ type InfraDependencies struct {
 
 func (d *InfraDependencies) Close() error {
 	var errs []error
+	if d.IdentityManager != nil {
+		d.IdentityManager.Close()
+	}
 	if d.profileConn != nil {
 		err := d.profileConn.Close()
 		if err != nil {

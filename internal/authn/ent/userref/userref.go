@@ -24,10 +24,8 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeSessions holds the string denoting the sessions edge name in mutations.
 	EdgeSessions = "sessions"
-	// EdgePasskeys holds the string denoting the passkeys edge name in mutations.
-	EdgePasskeys = "passkeys"
-	// EdgeFederatedIdentities holds the string denoting the federated_identities edge name in mutations.
-	EdgeFederatedIdentities = "federated_identities"
+	// EdgeIdentities holds the string denoting the identities edge name in mutations.
+	EdgeIdentities = "identities"
 	// Table holds the table name of the userref in the database.
 	Table = "user_refs"
 	// SessionsTable is the table that holds the sessions relation/edge.
@@ -37,20 +35,13 @@ const (
 	SessionsInverseTable = "user_sessions"
 	// SessionsColumn is the table column denoting the sessions relation/edge.
 	SessionsColumn = "user_id"
-	// PasskeysTable is the table that holds the passkeys relation/edge.
-	PasskeysTable = "user_passkeys"
-	// PasskeysInverseTable is the table name for the UserPasskey entity.
-	// It exists in this package in order to avoid circular dependency with the "userpasskey" package.
-	PasskeysInverseTable = "user_passkeys"
-	// PasskeysColumn is the table column denoting the passkeys relation/edge.
-	PasskeysColumn = "user_id"
-	// FederatedIdentitiesTable is the table that holds the federated_identities relation/edge.
-	FederatedIdentitiesTable = "user_federated_identities"
-	// FederatedIdentitiesInverseTable is the table name for the UserFederatedIdentity entity.
-	// It exists in this package in order to avoid circular dependency with the "userfederatedidentity" package.
-	FederatedIdentitiesInverseTable = "user_federated_identities"
-	// FederatedIdentitiesColumn is the table column denoting the federated_identities relation/edge.
-	FederatedIdentitiesColumn = "user_id"
+	// IdentitiesTable is the table that holds the identities relation/edge.
+	IdentitiesTable = "user_identities"
+	// IdentitiesInverseTable is the table name for the UserIdentity entity.
+	// It exists in this package in order to avoid circular dependency with the "useridentity" package.
+	IdentitiesInverseTable = "user_identities"
+	// IdentitiesColumn is the table column denoting the identities relation/edge.
+	IdentitiesColumn = "user_id"
 )
 
 // Columns holds all SQL columns for userref fields.
@@ -125,31 +116,17 @@ func BySessions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
-// ByPasskeysCount orders the results by passkeys count.
-func ByPasskeysCount(opts ...sql.OrderTermOption) OrderOption {
+// ByIdentitiesCount orders the results by identities count.
+func ByIdentitiesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newPasskeysStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newIdentitiesStep(), opts...)
 	}
 }
 
-// ByPasskeys orders the results by passkeys terms.
-func ByPasskeys(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByIdentities orders the results by identities terms.
+func ByIdentities(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newPasskeysStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByFederatedIdentitiesCount orders the results by federated_identities count.
-func ByFederatedIdentitiesCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newFederatedIdentitiesStep(), opts...)
-	}
-}
-
-// ByFederatedIdentities orders the results by federated_identities terms.
-func ByFederatedIdentities(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newFederatedIdentitiesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newIdentitiesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 func newSessionsStep() *sqlgraph.Step {
@@ -159,17 +136,10 @@ func newSessionsStep() *sqlgraph.Step {
 		sqlgraph.Edge(sqlgraph.O2M, false, SessionsTable, SessionsColumn),
 	)
 }
-func newPasskeysStep() *sqlgraph.Step {
+func newIdentitiesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(PasskeysInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, PasskeysTable, PasskeysColumn),
-	)
-}
-func newFederatedIdentitiesStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(FederatedIdentitiesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, FederatedIdentitiesTable, FederatedIdentitiesColumn),
+		sqlgraph.To(IdentitiesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, IdentitiesTable, IdentitiesColumn),
 	)
 }

@@ -11,8 +11,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
-	"sanzi.io/muid/internal/authn/ent/userref"
 )
 
 // UserPasskeyCreate is the builder for creating a UserPasskey entity.
@@ -22,9 +22,9 @@ type UserPasskeyCreate struct {
 	hooks    []Hook
 }
 
-// SetUserID sets the "user_id" field.
-func (_c *UserPasskeyCreate) SetUserID(v uuid.UUID) *UserPasskeyCreate {
-	_c.mutation.SetUserID(v)
+// SetIdentityID sets the "identity_id" field.
+func (_c *UserPasskeyCreate) SetIdentityID(v uuid.UUID) *UserPasskeyCreate {
+	_c.mutation.SetIdentityID(v)
 	return _c
 }
 
@@ -182,9 +182,9 @@ func (_c *UserPasskeyCreate) SetNillableID(v *uuid.UUID) *UserPasskeyCreate {
 	return _c
 }
 
-// SetUser sets the "user" edge to the UserRef entity.
-func (_c *UserPasskeyCreate) SetUser(v *UserRef) *UserPasskeyCreate {
-	return _c.SetUserID(v.ID)
+// SetIdentity sets the "identity" edge to the UserIdentity entity.
+func (_c *UserPasskeyCreate) SetIdentity(v *UserIdentity) *UserPasskeyCreate {
+	return _c.SetIdentityID(v.ID)
 }
 
 // Mutation returns the UserPasskeyMutation object of the builder.
@@ -254,8 +254,8 @@ func (_c *UserPasskeyCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserPasskeyCreate) check() error {
-	if _, ok := _c.mutation.UserID(); !ok {
-		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "UserPasskey.user_id"`)}
+	if _, ok := _c.mutation.IdentityID(); !ok {
+		return &ValidationError{Name: "identity_id", err: errors.New(`ent: missing required field "UserPasskey.identity_id"`)}
 	}
 	if _, ok := _c.mutation.CredentialID(); !ok {
 		return &ValidationError{Name: "credential_id", err: errors.New(`ent: missing required field "UserPasskey.credential_id"`)}
@@ -315,8 +315,8 @@ func (_c *UserPasskeyCreate) check() error {
 	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "UserPasskey.updated_at"`)}
 	}
-	if len(_c.mutation.UserIDs()) == 0 {
-		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserPasskey.user"`)}
+	if len(_c.mutation.IdentityIDs()) == 0 {
+		return &ValidationError{Name: "identity", err: errors.New(`ent: missing required edge "UserPasskey.identity"`)}
 	}
 	return nil
 }
@@ -409,21 +409,21 @@ func (_c *UserPasskeyCreate) createSpec() (*UserPasskey, *sqlgraph.CreateSpec) {
 		_spec.SetField(userpasskey.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := _c.mutation.UserIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.IdentityIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
+			Rel:     sqlgraph.O2O,
 			Inverse: true,
-			Table:   userpasskey.UserTable,
-			Columns: []string{userpasskey.UserColumn},
+			Table:   userpasskey.IdentityTable,
+			Columns: []string{userpasskey.IdentityColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID),
+				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.UserID = nodes[0]
+		_node.IdentityID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

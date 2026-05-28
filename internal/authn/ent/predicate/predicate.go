@@ -9,6 +9,9 @@ import (
 // UserFederatedIdentity is the predicate function for userfederatedidentity builders.
 type UserFederatedIdentity func(*sql.Selector)
 
+// UserIdentity is the predicate function for useridentity builders.
+type UserIdentity func(*sql.Selector)
+
 // UserPasskey is the predicate function for userpasskey builders.
 type UserPasskey func(*sql.Selector)
 

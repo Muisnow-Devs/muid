@@ -15,8 +15,8 @@ const (
 	Label = "user_federated_identity"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldUserID holds the string denoting the user_id field in the database.
-	FieldUserID = "user_id"
+	// FieldIdentityID holds the string denoting the identity_id field in the database.
+	FieldIdentityID = "identity_id"
 	// FieldProvider holds the string denoting the provider field in the database.
 	FieldProvider = "provider"
 	// FieldSubject holds the string denoting the subject field in the database.
@@ -41,23 +41,23 @@ const (
 	FieldRevokedAt = "revoked_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeUser holds the string denoting the user edge name in mutations.
-	EdgeUser = "user"
+	// EdgeIdentity holds the string denoting the identity edge name in mutations.
+	EdgeIdentity = "identity"
 	// Table holds the table name of the userfederatedidentity in the database.
 	Table = "user_federated_identities"
-	// UserTable is the table that holds the user relation/edge.
-	UserTable = "user_federated_identities"
-	// UserInverseTable is the table name for the UserRef entity.
-	// It exists in this package in order to avoid circular dependency with the "userref" package.
-	UserInverseTable = "user_refs"
-	// UserColumn is the table column denoting the user relation/edge.
-	UserColumn = "user_id"
+	// IdentityTable is the table that holds the identity relation/edge.
+	IdentityTable = "user_federated_identities"
+	// IdentityInverseTable is the table name for the UserIdentity entity.
+	// It exists in this package in order to avoid circular dependency with the "useridentity" package.
+	IdentityInverseTable = "user_identities"
+	// IdentityColumn is the table column denoting the identity relation/edge.
+	IdentityColumn = "identity_id"
 )
 
 // Columns holds all SQL columns for userfederatedidentity fields.
 var Columns = []string{
 	FieldID,
-	FieldUserID,
+	FieldIdentityID,
 	FieldProvider,
 	FieldSubject,
 	FieldEmail,
@@ -115,9 +115,9 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByUserID orders the results by the user_id field.
-func ByUserID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldUserID, opts...).ToFunc()
+// ByIdentityID orders the results by the identity_id field.
+func ByIdentityID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldIdentityID, opts...).ToFunc()
 }
 
 // ByProvider orders the results by the provider field.
@@ -180,16 +180,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByUserField orders the results by user field.
-func ByUserField(field string, opts ...sql.OrderTermOption) OrderOption {
+// ByIdentityField orders the results by identity field.
+func ByIdentityField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newUserStep(), sql.OrderByField(field, opts...))
+		sqlgraph.OrderByNeighborTerms(s, newIdentityStep(), sql.OrderByField(field, opts...))
 	}
 }
-func newUserStep() *sqlgraph.Step {
+func newIdentityStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(UserInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.M2O, true, UserTable, UserColumn),
+		sqlgraph.To(IdentityInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, true, IdentityTable, IdentityColumn),
 	)
 }

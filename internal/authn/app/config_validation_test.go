@@ -53,7 +53,7 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 			}(),
 			env: productionEnvWith(map[string]string{
 				"AUTHN_DATABASE_URL":       "postgres://user:pass@localhost:5432/authn",
-				"AUTHN_REDIS_URL":          "redis://localhost:6379/0",
+				"AUTHN_REDIS_ADDR":         "redis://localhost:6379/0",
 				"AUTHN_NATS_URL":           "nats://localhost:4222",
 				"AUTHN_PROFILE_GRPC_ADDR":  "localhost:5324",
 				"AUTHN_PASSKEY_RP_ID":      "localhost",
@@ -124,7 +124,7 @@ func validProductionConfig() Config {
 func productionEnv() map[string]string {
 	return map[string]string{
 		"AUTHN_DATABASE_URL":       "postgres://user:pass@db.example.com:5432/authn",
-		"AUTHN_REDIS_URL":          "redis://redis.example.com:6379/0",
+		"AUTHN_REDIS_ADDR":         "redis://redis.example.com:6379/0",
 		"AUTHN_NATS_URL":           "nats://nats.example.com:4222",
 		"AUTHN_PROFILE_GRPC_ADDR":  "profile.example.com:443",
 		"AUTHN_PASSKEY_RP_ID":      "app.example.com",

@@ -3933,25 +3933,27 @@ func (m *UserRefMutation) ResetEdge(name string) error {
 // UserSessionMutation represents an operation that mutates the UserSession nodes in the graph.
 type UserSessionMutation struct {
 	config
-	op             Op
-	typ            string
-	id             *uuid.UUID
-	selector       *[]byte
-	validator_hash *[]byte
-	ip_address     *string
-	user_agent     *string
-	device_name    *string
-	last_active_at *time.Time
-	created_at     *time.Time
-	updated_at     *time.Time
-	expires_at     *time.Time
-	revoked_at     *time.Time
-	clearedFields  map[string]struct{}
-	user           *uuid.UUID
-	cleareduser    bool
-	done           bool
-	oldValue       func(context.Context) (*UserSession, error)
-	predicates     []predicate.UserSession
+	op               Op
+	typ              string
+	id               *uuid.UUID
+	selector         *[]byte
+	validator_hash   *[]byte
+	ip_address       *string
+	user_agent       *string
+	device_name      *string
+	last_active_at   *time.Time
+	created_at       *time.Time
+	updated_at       *time.Time
+	expires_at       *time.Time
+	absolute_expiry  *time.Time
+	last_extended_at *time.Time
+	revoked_at       *time.Time
+	clearedFields    map[string]struct{}
+	user             *uuid.UUID
+	cleareduser      bool
+	done             bool
+	oldValue         func(context.Context) (*UserSession, error)
+	predicates       []predicate.UserSession
 }
 
 var _ ent.Mutation = (*UserSessionMutation)(nil)
@@ -4457,6 +4459,91 @@ func (m *UserSessionMutation) ResetExpiresAt() {
 	m.expires_at = nil
 }
 
+// SetAbsoluteExpiry sets the "absolute_expiry" field.
+func (m *UserSessionMutation) SetAbsoluteExpiry(t time.Time) {
+	m.absolute_expiry = &t
+}
+
+// AbsoluteExpiry returns the value of the "absolute_expiry" field in the mutation.
+func (m *UserSessionMutation) AbsoluteExpiry() (r time.Time, exists bool) {
+	v := m.absolute_expiry
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAbsoluteExpiry returns the old "absolute_expiry" field's value of the UserSession entity.
+// If the UserSession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSessionMutation) OldAbsoluteExpiry(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAbsoluteExpiry is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAbsoluteExpiry requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAbsoluteExpiry: %w", err)
+	}
+	return oldValue.AbsoluteExpiry, nil
+}
+
+// ResetAbsoluteExpiry resets all changes to the "absolute_expiry" field.
+func (m *UserSessionMutation) ResetAbsoluteExpiry() {
+	m.absolute_expiry = nil
+}
+
+// SetLastExtendedAt sets the "last_extended_at" field.
+func (m *UserSessionMutation) SetLastExtendedAt(t time.Time) {
+	m.last_extended_at = &t
+}
+
+// LastExtendedAt returns the value of the "last_extended_at" field in the mutation.
+func (m *UserSessionMutation) LastExtendedAt() (r time.Time, exists bool) {
+	v := m.last_extended_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastExtendedAt returns the old "last_extended_at" field's value of the UserSession entity.
+// If the UserSession object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserSessionMutation) OldLastExtendedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastExtendedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastExtendedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastExtendedAt: %w", err)
+	}
+	return oldValue.LastExtendedAt, nil
+}
+
+// ClearLastExtendedAt clears the value of the "last_extended_at" field.
+func (m *UserSessionMutation) ClearLastExtendedAt() {
+	m.last_extended_at = nil
+	m.clearedFields[usersession.FieldLastExtendedAt] = struct{}{}
+}
+
+// LastExtendedAtCleared returns if the "last_extended_at" field was cleared in this mutation.
+func (m *UserSessionMutation) LastExtendedAtCleared() bool {
+	_, ok := m.clearedFields[usersession.FieldLastExtendedAt]
+	return ok
+}
+
+// ResetLastExtendedAt resets all changes to the "last_extended_at" field.
+func (m *UserSessionMutation) ResetLastExtendedAt() {
+	m.last_extended_at = nil
+	delete(m.clearedFields, usersession.FieldLastExtendedAt)
+}
+
 // SetRevokedAt sets the "revoked_at" field.
 func (m *UserSessionMutation) SetRevokedAt(t time.Time) {
 	m.revoked_at = &t
@@ -4567,7 +4654,7 @@ func (m *UserSessionMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserSessionMutation) Fields() []string {
-	fields := make([]string, 0, 11)
+	fields := make([]string, 0, 13)
 	if m.user != nil {
 		fields = append(fields, usersession.FieldUserID)
 	}
@@ -4597,6 +4684,12 @@ func (m *UserSessionMutation) Fields() []string {
 	}
 	if m.expires_at != nil {
 		fields = append(fields, usersession.FieldExpiresAt)
+	}
+	if m.absolute_expiry != nil {
+		fields = append(fields, usersession.FieldAbsoluteExpiry)
+	}
+	if m.last_extended_at != nil {
+		fields = append(fields, usersession.FieldLastExtendedAt)
 	}
 	if m.revoked_at != nil {
 		fields = append(fields, usersession.FieldRevokedAt)
@@ -4629,6 +4722,10 @@ func (m *UserSessionMutation) Field(name string) (ent.Value, bool) {
 		return m.UpdatedAt()
 	case usersession.FieldExpiresAt:
 		return m.ExpiresAt()
+	case usersession.FieldAbsoluteExpiry:
+		return m.AbsoluteExpiry()
+	case usersession.FieldLastExtendedAt:
+		return m.LastExtendedAt()
 	case usersession.FieldRevokedAt:
 		return m.RevokedAt()
 	}
@@ -4660,6 +4757,10 @@ func (m *UserSessionMutation) OldField(ctx context.Context, name string) (ent.Va
 		return m.OldUpdatedAt(ctx)
 	case usersession.FieldExpiresAt:
 		return m.OldExpiresAt(ctx)
+	case usersession.FieldAbsoluteExpiry:
+		return m.OldAbsoluteExpiry(ctx)
+	case usersession.FieldLastExtendedAt:
+		return m.OldLastExtendedAt(ctx)
 	case usersession.FieldRevokedAt:
 		return m.OldRevokedAt(ctx)
 	}
@@ -4741,6 +4842,20 @@ func (m *UserSessionMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetExpiresAt(v)
 		return nil
+	case usersession.FieldAbsoluteExpiry:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAbsoluteExpiry(v)
+		return nil
+	case usersession.FieldLastExtendedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastExtendedAt(v)
+		return nil
 	case usersession.FieldRevokedAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -4787,6 +4902,9 @@ func (m *UserSessionMutation) ClearedFields() []string {
 	if m.FieldCleared(usersession.FieldDeviceName) {
 		fields = append(fields, usersession.FieldDeviceName)
 	}
+	if m.FieldCleared(usersession.FieldLastExtendedAt) {
+		fields = append(fields, usersession.FieldLastExtendedAt)
+	}
 	if m.FieldCleared(usersession.FieldRevokedAt) {
 		fields = append(fields, usersession.FieldRevokedAt)
 	}
@@ -4812,6 +4930,9 @@ func (m *UserSessionMutation) ClearField(name string) error {
 		return nil
 	case usersession.FieldDeviceName:
 		m.ClearDeviceName()
+		return nil
+	case usersession.FieldLastExtendedAt:
+		m.ClearLastExtendedAt()
 		return nil
 	case usersession.FieldRevokedAt:
 		m.ClearRevokedAt()
@@ -4853,6 +4974,12 @@ func (m *UserSessionMutation) ResetField(name string) error {
 		return nil
 	case usersession.FieldExpiresAt:
 		m.ResetExpiresAt()
+		return nil
+	case usersession.FieldAbsoluteExpiry:
+		m.ResetAbsoluteExpiry()
+		return nil
+	case usersession.FieldLastExtendedAt:
+		m.ResetLastExtendedAt()
 		return nil
 	case usersession.FieldRevokedAt:
 		m.ResetRevokedAt()

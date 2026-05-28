@@ -3,10 +3,11 @@ package session
 import "errors"
 
 var (
-	ErrSessionExpired   = errors.New("session has expired")
-	ErrSessionNotFound  = errors.New("session not found")
-	ErrSessionExists    = errors.New("session already exists")
-	ErrProviderMismatch = errors.New("cannot change session provider")
+	ErrSessionExpired        = errors.New("session has expired")
+	ErrSessionAbsoluteExpiry = errors.New("session absolute expiry reached")
+	ErrSessionNotFound       = errors.New("session not found")
+	ErrSessionExists         = errors.New("session already exists")
+	ErrProviderMismatch      = errors.New("cannot change session provider")
 
 	// ErrInvalidWireSessionToken is returned when a session wire token string is malformed.
 	ErrInvalidWireSessionToken = errors.New("invalid session token format")

@@ -86,14 +86,14 @@ var (
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "useridentity_user_id_provider",
+				Name:    "useridentity_user_id_provider_subject",
 				Unique:  true,
-				Columns: []*schema.Column{UserIdentitiesColumns[6], UserIdentitiesColumns[1]},
+				Columns: []*schema.Column{UserIdentitiesColumns[6], UserIdentitiesColumns[1], UserIdentitiesColumns[2]},
 			},
 			{
-				Name:    "useridentity_provider_subject",
-				Unique:  true,
-				Columns: []*schema.Column{UserIdentitiesColumns[1], UserIdentitiesColumns[2]},
+				Name:    "useridentity_provider_subject_revoked_at",
+				Unique:  false,
+				Columns: []*schema.Column{UserIdentitiesColumns[1], UserIdentitiesColumns[2], UserIdentitiesColumns[5]},
 			},
 		},
 	}
@@ -170,6 +170,8 @@ var (
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "expires_at", Type: field.TypeTime},
+		{Name: "absolute_expiry", Type: field.TypeTime},
+		{Name: "last_extended_at", Type: field.TypeTime, Nullable: true},
 		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "user_id", Type: field.TypeUUID},
 	}
@@ -181,7 +183,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "user_sessions_user_refs_sessions",
-				Columns:    []*schema.Column{UserSessionsColumns[11]},
+				Columns:    []*schema.Column{UserSessionsColumns[13]},
 				RefColumns: []*schema.Column{UserRefsColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
@@ -195,7 +197,7 @@ var (
 			{
 				Name:    "usersession_user_id",
 				Unique:  false,
-				Columns: []*schema.Column{UserSessionsColumns[11]},
+				Columns: []*schema.Column{UserSessionsColumns[13]},
 			},
 		},
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -15,10 +16,43 @@ import (
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/usersession"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
-const defaultSessionLifetime = 48 * time.Hour
+const (
+	defaultSessionLifetime  = 48 * time.Hour
+	SessionAbsoluteLifetime = 90 * 24 * time.Hour
+)
+
+// parsedToken holds the decoded selector bytes and pre-computed validator hash
+// derived from a wire session token.
+type parsedToken struct {
+	selector      []byte
+	validatorHash [32]byte
+}
+
+// parseWireToken parses a wire session token string into its selector bytes and
+// validator hash. All three token-handling operations (resolve, revoke, extend)
+// share this step so it lives in one place.
+func parseWireToken(wireToken string) (parsedToken, error) {
+	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
+	if err != nil {
+		return parsedToken{}, err
+	}
+	selector, err := session.DecodeWireSelectorBytes(selectorB64)
+	if err != nil {
+		return parsedToken{}, err
+	}
+	validatorSecret, err := session.DecodeWireValidatorSecret(validatorB64)
+	if err != nil {
+		return parsedToken{}, err
+	}
+	return parsedToken{
+		selector:      selector,
+		validatorHash: sha256.Sum256(validatorSecret),
+	}, nil
+}
 
 type EntSessionIssuer struct {
 	db           *ent.Client
@@ -63,12 +97,14 @@ func (s *EntSessionIssuer) CreateSession(
 	sum := sha256.Sum256(validatorSecret)
 	now := time.Now()
 	expires := now.Add(defaultSessionLifetime)
+	absoluteExpiry := now.Add(SessionAbsoluteLifetime)
 
 	row, err := s.db.UserSession.Create().
 		SetUserID(userID).
 		SetSelector(selectorBytes).
 		SetValidatorHash(sum[:]).
 		SetExpiresAt(expires).
+		SetAbsoluteExpiry(absoluteExpiry).
 		Save(ctx)
 	if err != nil {
 		return nil, err
@@ -113,16 +149,10 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 	ctx, span := tracing.StartSpan(ctx, "authn.resolve_session")
 	defer span.End()
 
-	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
+	tok, err := parseWireToken(wireToken)
 	if err != nil {
 		return ResolvedSession{}, err
 	}
-
-	validatorSecret, err := session.DecodeWireValidatorSecret(validatorB64)
-	if err != nil {
-		return ResolvedSession{}, err
-	}
-	validatorHash := sha256.Sum256(validatorSecret)
 
 	if s.sessionCache != nil {
 		ctx, cacheSpan := tracing.StartSpan(ctx, "authn.session_cache.get")
@@ -136,37 +166,28 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 				IssuedAt:  cached.IssuedAt,
 			}, nil
 		}
-
 		if errors.Is(cacheErr, session.ErrSessionCacheRejected) {
+			// The selector is known to the cache but the validator hash does not match.
+			// This strongly suggests token forgery or a cache-poisoning attempt.
+			// Revoke the DB session identified by this selector as a precaution.
+			go s.revokeBySelectorBytes(tok.selector)
 			return ResolvedSession{}, session.ErrSessionNotFound
 		}
 	}
 
-	selector, err := session.DecodeWireSelectorBytes(selectorB64)
-	if err != nil {
-		return ResolvedSession{}, err
-	}
-	sum := validatorHash
-
 	ctx, dbSpan := tracing.StartSpan(ctx, "authn.session_db.lookup")
-	row, err := s.db.UserSession.Query().
-		Where(
-			usersession.SelectorEQ(selector),
-			usersession.ValidatorHashEQ(sum[:]),
-		).
-		Only(ctx)
+	row, err := s.lookupSession(ctx, tok.selector, tok.validatorHash, wireToken)
 	dbSpan.End()
-	if ent.IsNotFound(err) {
-		return ResolvedSession{}, session.ErrSessionNotFound
-	}
 	if err != nil {
 		return ResolvedSession{}, err
 	}
-	if !row.RevokedAt.IsZero() {
-		return ResolvedSession{}, session.ErrSessionNotFound
-	}
-	if time.Now().After(row.ExpiresAt) {
+
+	now := time.Now()
+	if now.After(row.ExpiresAt) {
 		return ResolvedSession{}, session.ErrSessionExpired
+	}
+	if now.After(row.AbsoluteExpiry) {
+		return ResolvedSession{}, session.ErrSessionAbsoluteExpiry
 	}
 
 	res := ResolvedSession{
@@ -180,8 +201,9 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     res.SessionID,
 			UserID:        res.UserID,
+			IssuedAt:      res.IssuedAt,
 			ExpiresAt:     res.ExpiresAt,
-			ValidatorHash: sum,
+			ValidatorHash: tok.validatorHash,
 		})
 	}
 
@@ -189,57 +211,165 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 }
 
 func (s *EntSessionIssuer) RevokeSessionToken(ctx context.Context, wireToken string) error {
-	selectorB64, validatorB64, err := session.ParseWireSessionToken(wireToken)
+	tok, err := parseWireToken(wireToken)
 	if err != nil {
 		return err
 	}
 
-	selector, err := session.DecodeWireSelectorBytes(selectorB64)
-	if err != nil {
-		return err
-	}
-
-	validatorSecret, err := session.DecodeWireValidatorSecret(validatorB64)
-	if err != nil {
-		return err
-	}
-	sum := sha256.Sum256(validatorSecret)
-
-	now := time.Now()
-	n, err := s.db.UserSession.Update().
+	// Fetch by selector only; do not include validator in the WHERE clause.
+	row, err := s.db.UserSession.Query().
 		Where(
-			usersession.SelectorEQ(selector),
-			usersession.ValidatorHashEQ(sum[:]),
+			usersession.SelectorEQ(tok.selector),
 			usersession.RevokedAtIsNil(),
 		).
-		SetRevokedAt(now).
-		Save(ctx)
+		Only(ctx)
+	if ent.IsNotFound(err) {
+		return session.ErrSessionNotFound
+	}
 	if err != nil {
 		return err
 	}
-	if n == 0 {
+
+	// Constant-time comparison — no auto-revoke on mismatch here because the
+	// caller does not hold the real token and cannot trigger a DoS via selector.
+	if subtle.ConstantTimeCompare(row.ValidatorHash, tok.validatorHash[:]) != 1 {
 		return session.ErrSessionNotFound
 	}
 
+	err = s.db.UserSession.UpdateOneID(row.ID).
+		SetRevokedAt(time.Now()).
+		Exec(ctx)
+	if err != nil {
+		return err
+	}
+
 	if s.sessionCache != nil {
-		s.sessionCache.Delete(ctx, wireToken)
+		errutil.Discard(s.sessionCache.Delete(ctx, wireToken))
 	}
 
 	return nil
 }
 
-func (s *EntSessionIssuer) SessionCreatedAt(
+func (s *EntSessionIssuer) ExtendSession(
 	ctx context.Context,
-	sessionID uuid.UUID,
-) (time.Time, error) {
-	row, err := s.db.UserSession.Get(ctx, sessionID)
+	wireToken string,
+) (*sessionpb.SessionContext, error) {
+	tok, err := parseWireToken(wireToken)
+	if err != nil {
+		return nil, err
+	}
+
+	row, err := s.lookupSession(ctx, tok.selector, tok.validatorHash, wireToken)
+	if err != nil {
+		return nil, err
+	}
+
+	now := time.Now()
+	if now.After(row.ExpiresAt) {
+		return nil, session.ErrSessionExpired
+	}
+	if now.After(row.AbsoluteExpiry) {
+		return nil, session.ErrSessionAbsoluteExpiry
+	}
+
+	// Clamp: do not extend past the absolute expiry.
+	newExpiry := now.Add(defaultSessionLifetime)
+	if newExpiry.After(row.AbsoluteExpiry) {
+		newExpiry = row.AbsoluteExpiry
+	}
+
+	err = s.db.UserSession.UpdateOneID(row.ID).
+		SetExpiresAt(newExpiry).
+		SetLastExtendedAt(now).
+		Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if s.sessionCache != nil {
+		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
+			SessionID:     row.ID,
+			UserID:        row.UserID,
+			IssuedAt:      row.CreatedAt,
+			ExpiresAt:     newExpiry,
+			ValidatorHash: tok.validatorHash,
+		})
+	}
+
+	stok := &sessionpb.SessionToken{}
+	stok.SetValue(wireToken)
+
+	sctx := &sessionpb.SessionContext{}
+	sctx.SetSessionToken(stok)
+	sctx.SetIssuedAt(timestamppb.New(row.CreatedAt.UTC()))
+	sctx.SetExpiresAt(timestamppb.New(newExpiry.UTC()))
+
+	return sctx, nil
+}
+
+// lookupSession fetches the session row for the given selector from the database,
+// checks revocation, and verifies the validator hash in constant time.
+// On a validator mismatch it fires a background revocation and always returns
+// ErrSessionNotFound so callers cannot distinguish "not found" from "forged token".
+// Expiry checks are left to the caller.
+func (s *EntSessionIssuer) lookupSession(
+	ctx context.Context,
+	selector []byte,
+	validatorHash [32]byte,
+	wireToken string,
+) (*ent.UserSession, error) {
+	// Query by selector only — validator is never sent to the database.
+	row, err := s.db.UserSession.Query().
+		Where(usersession.SelectorEQ(selector)).
+		Only(ctx)
 	if ent.IsNotFound(err) {
-		return time.Time{}, session.ErrSessionNotFound
+		return nil, session.ErrSessionNotFound
 	}
 	if err != nil {
-		return time.Time{}, err
+		return nil, err
 	}
-	return row.CreatedAt, nil
+	if !row.RevokedAt.IsZero() {
+		return nil, session.ErrSessionNotFound
+	}
+
+	// Constant-time comparison prevents timing-based oracle attacks.
+	if subtle.ConstantTimeCompare(row.ValidatorHash, validatorHash[:]) != 1 {
+		// Selector found but validator is wrong — possible stolen selector or
+		// brute-force attempt. Revoke the real session immediately.
+		go s.revokeByID(row.ID, wireToken)
+		return nil, session.ErrSessionNotFound
+	}
+
+	return row, nil
+}
+
+// revokeByID revokes a session by its primary key using a detached context.
+// This is a best-effort protective action triggered by a validator mismatch;
+// errors are discarded because the revocation itself is the security response.
+func (s *EntSessionIssuer) revokeByID(sessionID uuid.UUID, wireToken string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	err := s.db.UserSession.UpdateOneID(sessionID).
+		SetRevokedAt(time.Now()).
+		Exec(ctx)
+	if err == nil && s.sessionCache != nil {
+		errutil.Discard(s.sessionCache.Delete(ctx, wireToken))
+	}
+}
+
+// revokeBySelectorBytes revokes any active session matching the given selector
+// bytes using a detached context. Used when a cache-rejection signals a
+// possible token forgery or cache-poisoning attempt.
+func (s *EntSessionIssuer) revokeBySelectorBytes(selector []byte) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	errutil.Discard(s.db.UserSession.Update().
+		Where(
+			usersession.SelectorEQ(selector),
+			usersession.RevokedAtIsNil(),
+		).
+		SetRevokedAt(time.Now()).
+		Exec(ctx))
 }
 
 func (s *EntSessionIssuer) AuthenticatedResultFromResolved(

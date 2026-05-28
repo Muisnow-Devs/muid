@@ -38,6 +38,13 @@ func (UserSession) Fields() []ent.Field {
 			return time.Now().Add(7 * 24 * time.Hour)
 		}),
 
+		// Set once at session creation; never updated.
+		field.Time("absolute_expiry").Default(func() time.Time {
+			return time.Now().Add(90 * 24 * time.Hour)
+		}).Immutable(),
+
+		// Updated on each successful extension; nil until the first extension.
+		field.Time("last_extended_at").Optional(),
 		field.Time("revoked_at").Optional(),
 	}
 }

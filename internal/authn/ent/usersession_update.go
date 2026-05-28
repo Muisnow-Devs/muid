@@ -62,6 +62,26 @@ func (_u *UserSessionUpdate) SetNillableExpiresAt(v *time.Time) *UserSessionUpda
 	return _u
 }
 
+// SetLastExtendedAt sets the "last_extended_at" field.
+func (_u *UserSessionUpdate) SetLastExtendedAt(v time.Time) *UserSessionUpdate {
+	_u.mutation.SetLastExtendedAt(v)
+	return _u
+}
+
+// SetNillableLastExtendedAt sets the "last_extended_at" field if the given value is not nil.
+func (_u *UserSessionUpdate) SetNillableLastExtendedAt(v *time.Time) *UserSessionUpdate {
+	if v != nil {
+		_u.SetLastExtendedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastExtendedAt clears the value of the "last_extended_at" field.
+func (_u *UserSessionUpdate) ClearLastExtendedAt() *UserSessionUpdate {
+	_u.mutation.ClearLastExtendedAt()
+	return _u
+}
+
 // SetRevokedAt sets the "revoked_at" field.
 func (_u *UserSessionUpdate) SetRevokedAt(v time.Time) *UserSessionUpdate {
 	_u.mutation.SetRevokedAt(v)
@@ -161,6 +181,12 @@ func (_u *UserSessionUpdate) sqlSave(ctx context.Context) (_node int, err error)
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(usersession.FieldExpiresAt, field.TypeTime, value)
 	}
+	if value, ok := _u.mutation.LastExtendedAt(); ok {
+		_spec.SetField(usersession.FieldLastExtendedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastExtendedAtCleared() {
+		_spec.ClearField(usersession.FieldLastExtendedAt, field.TypeTime)
+	}
 	if value, ok := _u.mutation.RevokedAt(); ok {
 		_spec.SetField(usersession.FieldRevokedAt, field.TypeTime, value)
 	}
@@ -218,6 +244,26 @@ func (_u *UserSessionUpdateOne) SetNillableExpiresAt(v *time.Time) *UserSessionU
 	if v != nil {
 		_u.SetExpiresAt(*v)
 	}
+	return _u
+}
+
+// SetLastExtendedAt sets the "last_extended_at" field.
+func (_u *UserSessionUpdateOne) SetLastExtendedAt(v time.Time) *UserSessionUpdateOne {
+	_u.mutation.SetLastExtendedAt(v)
+	return _u
+}
+
+// SetNillableLastExtendedAt sets the "last_extended_at" field if the given value is not nil.
+func (_u *UserSessionUpdateOne) SetNillableLastExtendedAt(v *time.Time) *UserSessionUpdateOne {
+	if v != nil {
+		_u.SetLastExtendedAt(*v)
+	}
+	return _u
+}
+
+// ClearLastExtendedAt clears the value of the "last_extended_at" field.
+func (_u *UserSessionUpdateOne) ClearLastExtendedAt() *UserSessionUpdateOne {
+	_u.mutation.ClearLastExtendedAt()
 	return _u
 }
 
@@ -349,6 +395,12 @@ func (_u *UserSessionUpdateOne) sqlSave(ctx context.Context) (_node *UserSession
 	}
 	if value, ok := _u.mutation.ExpiresAt(); ok {
 		_spec.SetField(usersession.FieldExpiresAt, field.TypeTime, value)
+	}
+	if value, ok := _u.mutation.LastExtendedAt(); ok {
+		_spec.SetField(usersession.FieldLastExtendedAt, field.TypeTime, value)
+	}
+	if _u.mutation.LastExtendedAtCleared() {
+		_spec.ClearField(usersession.FieldLastExtendedAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.RevokedAt(); ok {
 		_spec.SetField(usersession.FieldRevokedAt, field.TypeTime, value)

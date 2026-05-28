@@ -55,6 +55,7 @@ func AuthnRequestContextInterceptor() grpc.UnaryServerInterceptor {
 		pb.AuthnService_GetAuthenticatedPrincipal_FullMethodName: enrichRequiredWireSession,
 		pb.AuthnService_RevokeSession_FullMethodName:             enrichRequiredWireSession,
 		pb.AuthnService_RevokeFederatedIdentity_FullMethodName:   enrichRequiredWireSession,
+		pb.AuthnService_ExtendSession_FullMethodName:             enrichRequiredWireSession,
 	})
 }
 
@@ -116,6 +117,8 @@ func enrichRequiredWireSession(ctx context.Context, _ string, req any) (context.
 	case *pb.RevokeSessionRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	case *pb.RevokeFederatedIdentityRequest:
+		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
+	case *pb.ExtendSessionRequest:
 		return enrichRequiredWireSessionToken(ctx, r.GetSessionToken())
 	default:
 		log.LogUnexpected(ctx, "authn request context interceptor", "unexpected request type for required wire session")

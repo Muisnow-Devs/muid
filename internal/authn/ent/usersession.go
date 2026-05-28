@@ -39,6 +39,10 @@ type UserSession struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// ExpiresAt holds the value of the "expires_at" field.
 	ExpiresAt time.Time `json:"expires_at,omitempty"`
+	// AbsoluteExpiry holds the value of the "absolute_expiry" field.
+	AbsoluteExpiry time.Time `json:"absolute_expiry,omitempty"`
+	// LastExtendedAt holds the value of the "last_extended_at" field.
+	LastExtendedAt time.Time `json:"last_extended_at,omitempty"`
 	// RevokedAt holds the value of the "revoked_at" field.
 	RevokedAt time.Time `json:"revoked_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -76,7 +80,7 @@ func (*UserSession) scanValues(columns []string) ([]any, error) {
 			values[i] = new([]byte)
 		case usersession.FieldIPAddress, usersession.FieldUserAgent, usersession.FieldDeviceName:
 			values[i] = new(sql.NullString)
-		case usersession.FieldLastActiveAt, usersession.FieldCreatedAt, usersession.FieldUpdatedAt, usersession.FieldExpiresAt, usersession.FieldRevokedAt:
+		case usersession.FieldLastActiveAt, usersession.FieldCreatedAt, usersession.FieldUpdatedAt, usersession.FieldExpiresAt, usersession.FieldAbsoluteExpiry, usersession.FieldLastExtendedAt, usersession.FieldRevokedAt:
 			values[i] = new(sql.NullTime)
 		case usersession.FieldID, usersession.FieldUserID:
 			values[i] = new(uuid.UUID)
@@ -161,6 +165,18 @@ func (_m *UserSession) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.ExpiresAt = value.Time
 			}
+		case usersession.FieldAbsoluteExpiry:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field absolute_expiry", values[i])
+			} else if value.Valid {
+				_m.AbsoluteExpiry = value.Time
+			}
+		case usersession.FieldLastExtendedAt:
+			if value, ok := values[i].(*sql.NullTime); !ok {
+				return fmt.Errorf("unexpected type %T for field last_extended_at", values[i])
+			} else if value.Valid {
+				_m.LastExtendedAt = value.Time
+			}
 		case usersession.FieldRevokedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field revoked_at", values[i])
@@ -236,6 +252,12 @@ func (_m *UserSession) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("expires_at=")
 	builder.WriteString(_m.ExpiresAt.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("absolute_expiry=")
+	builder.WriteString(_m.AbsoluteExpiry.Format(time.ANSIC))
+	builder.WriteString(", ")
+	builder.WriteString("last_extended_at=")
+	builder.WriteString(_m.LastExtendedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("revoked_at=")
 	builder.WriteString(_m.RevokedAt.Format(time.ANSIC))

@@ -106,6 +106,16 @@ func ExpiresAt(v time.Time) predicate.UserSession {
 	return predicate.UserSession(sql.FieldEQ(FieldExpiresAt, v))
 }
 
+// AbsoluteExpiry applies equality check predicate on the "absolute_expiry" field. It's identical to AbsoluteExpiryEQ.
+func AbsoluteExpiry(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEQ(FieldAbsoluteExpiry, v))
+}
+
+// LastExtendedAt applies equality check predicate on the "last_extended_at" field. It's identical to LastExtendedAtEQ.
+func LastExtendedAt(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEQ(FieldLastExtendedAt, v))
+}
+
 // RevokedAt applies equality check predicate on the "revoked_at" field. It's identical to RevokedAtEQ.
 func RevokedAt(v time.Time) predicate.UserSession {
 	return predicate.UserSession(sql.FieldEQ(FieldRevokedAt, v))
@@ -594,6 +604,96 @@ func ExpiresAtLT(v time.Time) predicate.UserSession {
 // ExpiresAtLTE applies the LTE predicate on the "expires_at" field.
 func ExpiresAtLTE(v time.Time) predicate.UserSession {
 	return predicate.UserSession(sql.FieldLTE(FieldExpiresAt, v))
+}
+
+// AbsoluteExpiryEQ applies the EQ predicate on the "absolute_expiry" field.
+func AbsoluteExpiryEQ(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEQ(FieldAbsoluteExpiry, v))
+}
+
+// AbsoluteExpiryNEQ applies the NEQ predicate on the "absolute_expiry" field.
+func AbsoluteExpiryNEQ(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldNEQ(FieldAbsoluteExpiry, v))
+}
+
+// AbsoluteExpiryIn applies the In predicate on the "absolute_expiry" field.
+func AbsoluteExpiryIn(vs ...time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldIn(FieldAbsoluteExpiry, vs...))
+}
+
+// AbsoluteExpiryNotIn applies the NotIn predicate on the "absolute_expiry" field.
+func AbsoluteExpiryNotIn(vs ...time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldNotIn(FieldAbsoluteExpiry, vs...))
+}
+
+// AbsoluteExpiryGT applies the GT predicate on the "absolute_expiry" field.
+func AbsoluteExpiryGT(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldGT(FieldAbsoluteExpiry, v))
+}
+
+// AbsoluteExpiryGTE applies the GTE predicate on the "absolute_expiry" field.
+func AbsoluteExpiryGTE(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldGTE(FieldAbsoluteExpiry, v))
+}
+
+// AbsoluteExpiryLT applies the LT predicate on the "absolute_expiry" field.
+func AbsoluteExpiryLT(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldLT(FieldAbsoluteExpiry, v))
+}
+
+// AbsoluteExpiryLTE applies the LTE predicate on the "absolute_expiry" field.
+func AbsoluteExpiryLTE(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldLTE(FieldAbsoluteExpiry, v))
+}
+
+// LastExtendedAtEQ applies the EQ predicate on the "last_extended_at" field.
+func LastExtendedAtEQ(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldEQ(FieldLastExtendedAt, v))
+}
+
+// LastExtendedAtNEQ applies the NEQ predicate on the "last_extended_at" field.
+func LastExtendedAtNEQ(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldNEQ(FieldLastExtendedAt, v))
+}
+
+// LastExtendedAtIn applies the In predicate on the "last_extended_at" field.
+func LastExtendedAtIn(vs ...time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldIn(FieldLastExtendedAt, vs...))
+}
+
+// LastExtendedAtNotIn applies the NotIn predicate on the "last_extended_at" field.
+func LastExtendedAtNotIn(vs ...time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldNotIn(FieldLastExtendedAt, vs...))
+}
+
+// LastExtendedAtGT applies the GT predicate on the "last_extended_at" field.
+func LastExtendedAtGT(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldGT(FieldLastExtendedAt, v))
+}
+
+// LastExtendedAtGTE applies the GTE predicate on the "last_extended_at" field.
+func LastExtendedAtGTE(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldGTE(FieldLastExtendedAt, v))
+}
+
+// LastExtendedAtLT applies the LT predicate on the "last_extended_at" field.
+func LastExtendedAtLT(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldLT(FieldLastExtendedAt, v))
+}
+
+// LastExtendedAtLTE applies the LTE predicate on the "last_extended_at" field.
+func LastExtendedAtLTE(v time.Time) predicate.UserSession {
+	return predicate.UserSession(sql.FieldLTE(FieldLastExtendedAt, v))
+}
+
+// LastExtendedAtIsNil applies the IsNil predicate on the "last_extended_at" field.
+func LastExtendedAtIsNil() predicate.UserSession {
+	return predicate.UserSession(sql.FieldIsNull(FieldLastExtendedAt))
+}
+
+// LastExtendedAtNotNil applies the NotNil predicate on the "last_extended_at" field.
+func LastExtendedAtNotNil() predicate.UserSession {
+	return predicate.UserSession(sql.FieldNotNull(FieldLastExtendedAt))
 }
 
 // RevokedAtEQ applies the EQ predicate on the "revoked_at" field.

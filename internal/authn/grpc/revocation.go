@@ -43,14 +43,8 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 	if err != nil {
 		return nil, grpcutils.GRPCInternalError()
 	}
-
-	issuedAt, err := g.issuer.SessionCreatedAt(ctx, res.SessionID)
-	if err != nil {
-		return nil, grpcutils.GRPCInternalError()
-	}
-
 	// Reauth required if the session is too old, to prevent hijacked session from unlinking user account.
-	if time.Since(issuedAt) > reauthThreshold {
+	if time.Since(res.IssuedAt) > reauthThreshold {
 		return nil, status.Error(codes.FailedPrecondition, "reauthentication required")
 	}
 

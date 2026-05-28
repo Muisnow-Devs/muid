@@ -138,6 +138,34 @@ func (_c *UserSessionCreate) SetNillableExpiresAt(v *time.Time) *UserSessionCrea
 	return _c
 }
 
+// SetAbsoluteExpiry sets the "absolute_expiry" field.
+func (_c *UserSessionCreate) SetAbsoluteExpiry(v time.Time) *UserSessionCreate {
+	_c.mutation.SetAbsoluteExpiry(v)
+	return _c
+}
+
+// SetNillableAbsoluteExpiry sets the "absolute_expiry" field if the given value is not nil.
+func (_c *UserSessionCreate) SetNillableAbsoluteExpiry(v *time.Time) *UserSessionCreate {
+	if v != nil {
+		_c.SetAbsoluteExpiry(*v)
+	}
+	return _c
+}
+
+// SetLastExtendedAt sets the "last_extended_at" field.
+func (_c *UserSessionCreate) SetLastExtendedAt(v time.Time) *UserSessionCreate {
+	_c.mutation.SetLastExtendedAt(v)
+	return _c
+}
+
+// SetNillableLastExtendedAt sets the "last_extended_at" field if the given value is not nil.
+func (_c *UserSessionCreate) SetNillableLastExtendedAt(v *time.Time) *UserSessionCreate {
+	if v != nil {
+		_c.SetLastExtendedAt(*v)
+	}
+	return _c
+}
+
 // SetRevokedAt sets the "revoked_at" field.
 func (_c *UserSessionCreate) SetRevokedAt(v time.Time) *UserSessionCreate {
 	_c.mutation.SetRevokedAt(v)
@@ -222,6 +250,10 @@ func (_c *UserSessionCreate) defaults() {
 		v := usersession.DefaultExpiresAt()
 		_c.mutation.SetExpiresAt(v)
 	}
+	if _, ok := _c.mutation.AbsoluteExpiry(); !ok {
+		v := usersession.DefaultAbsoluteExpiry()
+		_c.mutation.SetAbsoluteExpiry(v)
+	}
 	if _, ok := _c.mutation.ID(); !ok {
 		v := usersession.DefaultID()
 		_c.mutation.SetID(v)
@@ -275,6 +307,9 @@ func (_c *UserSessionCreate) check() error {
 	}
 	if _, ok := _c.mutation.ExpiresAt(); !ok {
 		return &ValidationError{Name: "expires_at", err: errors.New(`ent: missing required field "UserSession.expires_at"`)}
+	}
+	if _, ok := _c.mutation.AbsoluteExpiry(); !ok {
+		return &ValidationError{Name: "absolute_expiry", err: errors.New(`ent: missing required field "UserSession.absolute_expiry"`)}
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "UserSession.user"`)}
@@ -349,6 +384,14 @@ func (_c *UserSessionCreate) createSpec() (*UserSession, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.ExpiresAt(); ok {
 		_spec.SetField(usersession.FieldExpiresAt, field.TypeTime, value)
 		_node.ExpiresAt = value
+	}
+	if value, ok := _c.mutation.AbsoluteExpiry(); ok {
+		_spec.SetField(usersession.FieldAbsoluteExpiry, field.TypeTime, value)
+		_node.AbsoluteExpiry = value
+	}
+	if value, ok := _c.mutation.LastExtendedAt(); ok {
+		_spec.SetField(usersession.FieldLastExtendedAt, field.TypeTime, value)
+		_node.LastExtendedAt = value
 	}
 	if value, ok := _c.mutation.RevokedAt(); ok {
 		_spec.SetField(usersession.FieldRevokedAt, field.TypeTime, value)

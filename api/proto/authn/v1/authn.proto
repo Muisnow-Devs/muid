@@ -23,6 +23,8 @@ service AuthnService {
 
   // user session management APIs
   rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+  // Extends the session token expiry up to the absolute 90-day cap.
+  rpc ExtendSession(ExtendSessionRequest) returns (ExtendSessionResponse);
 }
 
 message StartAuthSessionRequest {
@@ -97,4 +99,12 @@ message RevokeSessionRequest {
 
 message RevokeSessionResponse {
   bool success = 1;
+}
+
+message ExtendSessionRequest {
+  muid.authn.v1.session.SessionToken session_token = 1;
+}
+
+message ExtendSessionResponse {
+  muid.authn.v1.session.SessionContext session_context = 1;
 }

@@ -35,6 +35,10 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// FieldExpiresAt holds the string denoting the expires_at field in the database.
 	FieldExpiresAt = "expires_at"
+	// FieldAbsoluteExpiry holds the string denoting the absolute_expiry field in the database.
+	FieldAbsoluteExpiry = "absolute_expiry"
+	// FieldLastExtendedAt holds the string denoting the last_extended_at field in the database.
+	FieldLastExtendedAt = "last_extended_at"
 	// FieldRevokedAt holds the string denoting the revoked_at field in the database.
 	FieldRevokedAt = "revoked_at"
 	// EdgeUser holds the string denoting the user edge name in mutations.
@@ -63,6 +67,8 @@ var Columns = []string{
 	FieldCreatedAt,
 	FieldUpdatedAt,
 	FieldExpiresAt,
+	FieldAbsoluteExpiry,
+	FieldLastExtendedAt,
 	FieldRevokedAt,
 }
 
@@ -97,6 +103,8 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 	// DefaultExpiresAt holds the default value on creation for the "expires_at" field.
 	DefaultExpiresAt func() time.Time
+	// DefaultAbsoluteExpiry holds the default value on creation for the "absolute_expiry" field.
+	DefaultAbsoluteExpiry func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
 	DefaultID func() uuid.UUID
 )
@@ -147,6 +155,16 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 // ByExpiresAt orders the results by the expires_at field.
 func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
+}
+
+// ByAbsoluteExpiry orders the results by the absolute_expiry field.
+func ByAbsoluteExpiry(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAbsoluteExpiry, opts...).ToFunc()
+}
+
+// ByLastExtendedAt orders the results by the last_extended_at field.
+func ByLastExtendedAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldLastExtendedAt, opts...).ToFunc()
 }
 
 // ByRevokedAt orders the results by the revoked_at field.

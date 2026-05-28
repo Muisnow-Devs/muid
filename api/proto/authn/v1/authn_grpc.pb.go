@@ -25,6 +25,7 @@ const (
 	AuthnService_GetAuthorizedSession_FullMethodName      = "/muid.authn.v1.AuthnService/GetAuthorizedSession"
 	AuthnService_GetAuthenticatedPrincipal_FullMethodName = "/muid.authn.v1.AuthnService/GetAuthenticatedPrincipal"
 	AuthnService_RevokeSession_FullMethodName             = "/muid.authn.v1.AuthnService/RevokeSession"
+	AuthnService_ExtendSession_FullMethodName             = "/muid.authn.v1.AuthnService/ExtendSession"
 )
 
 // AuthnServiceClient is the client API for AuthnService service.
@@ -41,6 +42,8 @@ type AuthnServiceClient interface {
 	GetAuthenticatedPrincipal(ctx context.Context, in *GetAuthenticatedPrincipalRequest, opts ...grpc.CallOption) (*GetAuthenticatedPrincipalResponse, error)
 	// user session management APIs
 	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
+	// Extends the session token expiry up to the absolute 90-day cap.
+	ExtendSession(ctx context.Context, in *ExtendSessionRequest, opts ...grpc.CallOption) (*ExtendSessionResponse, error)
 }
 
 type authnServiceClient struct {
@@ -111,6 +114,16 @@ func (c *authnServiceClient) RevokeSession(ctx context.Context, in *RevokeSessio
 	return out, nil
 }
 
+func (c *authnServiceClient) ExtendSession(ctx context.Context, in *ExtendSessionRequest, opts ...grpc.CallOption) (*ExtendSessionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ExtendSessionResponse)
+	err := c.cc.Invoke(ctx, AuthnService_ExtendSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthnServiceServer is the server API for AuthnService service.
 // All implementations must embed UnimplementedAuthnServiceServer
 // for forward compatibility.
@@ -125,6 +138,8 @@ type AuthnServiceServer interface {
 	GetAuthenticatedPrincipal(context.Context, *GetAuthenticatedPrincipalRequest) (*GetAuthenticatedPrincipalResponse, error)
 	// user session management APIs
 	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
+	// Extends the session token expiry up to the absolute 90-day cap.
+	ExtendSession(context.Context, *ExtendSessionRequest) (*ExtendSessionResponse, error)
 	mustEmbedUnimplementedAuthnServiceServer()
 }
 
@@ -152,6 +167,9 @@ func (UnimplementedAuthnServiceServer) GetAuthenticatedPrincipal(context.Context
 }
 func (UnimplementedAuthnServiceServer) RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method RevokeSession not implemented")
+}
+func (UnimplementedAuthnServiceServer) ExtendSession(context.Context, *ExtendSessionRequest) (*ExtendSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ExtendSession not implemented")
 }
 func (UnimplementedAuthnServiceServer) mustEmbedUnimplementedAuthnServiceServer() {}
 func (UnimplementedAuthnServiceServer) testEmbeddedByValue()                      {}
@@ -282,6 +300,24 @@ func _AuthnService_RevokeSession_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthnService_ExtendSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExtendSessionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthnServiceServer).ExtendSession(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthnService_ExtendSession_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthnServiceServer).ExtendSession(ctx, req.(*ExtendSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthnService_ServiceDesc is the grpc.ServiceDesc for AuthnService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -312,6 +348,10 @@ var AuthnService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RevokeSession",
 			Handler:    _AuthnService_RevokeSession_Handler,
+		},
+		{
+			MethodName: "ExtendSession",
+			Handler:    _AuthnService_ExtendSession_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

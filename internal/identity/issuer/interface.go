@@ -19,7 +19,7 @@ type SessionIssuer interface {
 	CreateSession(ctx context.Context, userID uuid.UUID) (*sessionpb.AuthenticatedResult, error)
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
-	SessionCreatedAt(ctx context.Context, sessionID uuid.UUID) (time.Time, error)
+	ExtendSession(ctx context.Context, wireToken string) (*sessionpb.SessionContext, error)
 	AuthenticatedResultFromResolved(
 		wireToken string,
 		resolved ResolvedSession,

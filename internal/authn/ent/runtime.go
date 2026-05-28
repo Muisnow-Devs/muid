@@ -246,6 +246,10 @@ func init() {
 	usersessionDescExpiresAt := usersessionFields[10].Descriptor()
 	// usersession.DefaultExpiresAt holds the default value on creation for the expires_at field.
 	usersession.DefaultExpiresAt = usersessionDescExpiresAt.Default.(func() time.Time)
+	// usersessionDescAbsoluteExpiry is the schema descriptor for absolute_expiry field.
+	usersessionDescAbsoluteExpiry := usersessionFields[11].Descriptor()
+	// usersession.DefaultAbsoluteExpiry holds the default value on creation for the absolute_expiry field.
+	usersession.DefaultAbsoluteExpiry = usersessionDescAbsoluteExpiry.Default.(func() time.Time)
 	// usersessionDescID is the schema descriptor for id field.
 	usersessionDescID := usersessionFields[0].Descriptor()
 	// usersession.DefaultID holds the default value on creation for the id field.

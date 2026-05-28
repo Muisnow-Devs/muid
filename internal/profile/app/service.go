@@ -41,6 +41,7 @@ func NewProfileGRPC(
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
+			grpcutils.TraceMetadataInterceptor,
 			grpcutils.UnaryTracingInterceptor(tracer),
 			pvUnary,
 			profilegrpc.ProfileRequestContextInterceptor(),

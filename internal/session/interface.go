@@ -97,6 +97,11 @@ type SessionStore struct {
 
 type AuthTransitionStore interface {
 	Create(ctx context.Context, provider string, store SessionStore) (AuthSession, error)
+
+	// Get provides read-only access to the session for transition steps.
+	// Updates must be made via Update to ensure proper concurrency control.
+	// Also, if the session updated, the returned session may not reflect the
+	// latest state and should not be used after an Update call.
 	Get(ctx context.Context, id uuid.UUID) (AuthSession, error)
 	Update(ctx context.Context, id uuid.UUID, store SessionStore) error
 	Delete(ctx context.Context, id uuid.UUID) error

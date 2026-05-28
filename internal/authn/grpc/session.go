@@ -70,6 +70,7 @@ func (g *GRPCHandler) StartAuthSession(
 		UserAgent: meta.UserAgent,
 		IPAddress: meta.IPAddress,
 		Location:  meta.Location,
+		Device:    meta.Device,
 	}
 
 	startReq := method.StartRequest{

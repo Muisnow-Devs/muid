@@ -41,6 +41,7 @@ func NewAuthnGRPC(
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
+			grpcutils.TraceMetadataInterceptor,
 			grpcutils.UnaryTracingInterceptor(tracer),
 			pvUnary,
 			authngrpc.AuthnRequestContextInterceptor(),

@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// UserEmail is the client for interacting with the UserEmail builders.
+	UserEmail *UserEmailClient
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
 	UserFederatedIdentity *UserFederatedIdentityClient
 	// UserIdentity is the client for interacting with the UserIdentity builders.
@@ -153,6 +155,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.UserEmail = NewUserEmailClient(tx.config)
 	tx.UserFederatedIdentity = NewUserFederatedIdentityClient(tx.config)
 	tx.UserIdentity = NewUserIdentityClient(tx.config)
 	tx.UserPasskey = NewUserPasskeyClient(tx.config)
@@ -167,7 +170,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: UserFederatedIdentity.QueryXXX(), the query will be executed
+// applies a query, for example: UserEmail.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

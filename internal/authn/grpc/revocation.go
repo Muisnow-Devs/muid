@@ -23,45 +23,31 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 	ctx context.Context,
 	req *pb.RevokeFederatedIdentityRequest,
 ) (*pb.RevokeFederatedIdentityResponse, error) {
-	wire := sessionTokenValue(req.GetSessionToken())
-	if wire == "" {
-		return nil, status.Error(codes.InvalidArgument, "missing session token")
-	}
+	// Session resolved and validated by AuthnSessionPrincipalInterceptor.
+	resolved, _ := ResolvedSessionFromContext(ctx)
 
 	provider := strings.ToLower(strings.TrimSpace(req.GetProvider()))
 	if provider == "" {
 		return nil, status.Error(codes.InvalidArgument, "provider is required")
 	}
-
-	res, err := g.issuer.ResolveSessionToken(ctx, wire)
-	if errors.Is(err, session.ErrSessionNotFound) {
-		return nil, status.Error(codes.NotFound, "session not found")
-	}
-	if errors.Is(err, session.ErrSessionExpired) {
-		return nil, status.Error(codes.FailedPrecondition, "session expired")
-	}
-	if err != nil {
-		return nil, grpcutils.GRPCInternalError()
-	}
-	// Reauth required if the session is too old, to prevent hijacked session from unlinking user account.
-	if time.Since(res.IssuedAt) > reauthThreshold {
+	// Require fresh authentication to prevent hijacked sessions from unlinking accounts.
+	if time.Since(resolved.IssuedAt) > reauthThreshold {
 		return nil, status.Error(codes.FailedPrecondition, "reauthentication required")
 	}
 
-	// Soft revoke UserFederatedIdentity & UserIdentity
 	now := time.Now()
-	_, err = g.db.UserFederatedIdentity.Update().
+	_, err := g.db.UserFederatedIdentity.Update().
 		Where(
 			userfederatedidentity.ProviderEQ(provider),
 			userfederatedidentity.RevokedAtIsNil(),
-			userfederatedidentity.HasIdentityWith(useridentity.UserIDEQ(res.UserID)),
+			userfederatedidentity.HasIdentityWith(useridentity.UserIDEQ(resolved.UserID)),
 		).
 		SetRevokedAt(now).
 		Save(ctx)
 
 	n, err := g.db.UserIdentity.Update().
 		Where(
-			useridentity.UserID(res.UserID),
+			useridentity.UserID(resolved.UserID),
 			useridentity.Provider(provider),
 			useridentity.RevokedAtIsNil(),
 		).
@@ -74,11 +60,10 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 		return nil, status.Error(codes.NotFound, "federated identity not found")
 	}
 
-	// Publish account unlinked event
-	ref, err := g.db.UserRef.Get(ctx, res.UserID)
-	if err == nil && ref.Email != "" {
+	// Publish account unlinked event (best-effort).
+	if email := g.primaryEmail(ctx, resolved.UserID); email != "" {
 		meta, _ := clientmeta.FromContext(ctx)
-		g.notifyAccountUnlinked(ctx, ref.Email, provider, session.SessionMetadata{
+		g.notifyAccountUnlinked(ctx, email, provider, session.SessionMetadata{
 			Locale:   meta.Locale,
 			Timezone: meta.Timezone,
 		})
@@ -93,10 +78,8 @@ func (g *GRPCHandler) RevokeSession(
 	ctx context.Context,
 	req *pb.RevokeSessionRequest,
 ) (*pb.RevokeSessionResponse, error) {
-	wire := sessionTokenValue(req.GetSessionToken())
-	if wire == "" {
-		return nil, status.Error(codes.InvalidArgument, "missing session token")
-	}
+	// Wire token validated upstream by AuthnSessionPrincipalInterceptor.
+	wire, _ := grpcutils.WireSessionTokenFromContext(ctx)
 
 	err := g.issuer.RevokeSessionToken(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) {

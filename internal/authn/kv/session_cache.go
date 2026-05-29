@@ -16,6 +16,7 @@ import (
 type sessionCacheRecord struct {
 	SessionID     string `json:"session_id"`
 	UserID        string `json:"user_id"`
+	Email         string `json:"email,omitempty"`
 	ExpiresAt     int64  `json:"expires_at"`
 	IssuedAt      int64  `json:"issued_at"`
 	ValidatorHash []byte `json:"validator_hash,omitempty"`
@@ -102,6 +103,7 @@ func (c *KVSessionCache) getBySelector(
 	return session.CachedSession{
 		SessionID:     sid,
 		UserID:        uid,
+		Email:         rec.Email,
 		ExpiresAt:     exp,
 		IssuedAt:      time.Unix(rec.IssuedAt, 0),
 		ValidatorHash: validatorHash,
@@ -141,6 +143,7 @@ func (c *KVSessionCache) Set(
 	rec := sessionCacheRecord{
 		SessionID:     sess.SessionID.String(),
 		UserID:        sess.UserID.String(),
+		Email:         sess.Email,
 		ExpiresAt:     sess.ExpiresAt.Unix(),
 		IssuedAt:      sess.IssuedAt.Unix(),
 		ValidatorHash: sess.ValidatorHash[:],

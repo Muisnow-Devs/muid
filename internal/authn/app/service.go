@@ -6,9 +6,14 @@ import (
 	"net"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
+	"sanzi.io/muid/internal/identity/issuer"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/tracing"
@@ -22,6 +27,7 @@ type AuthnGRPC struct {
 func NewAuthnGRPC(
 	config Config,
 	handler pb.AuthnServiceServer,
+	iss issuer.SessionIssuer,
 	tracer tracing.Tracer,
 ) (*AuthnGRPC, error) {
 	if tracer == nil {
@@ -33,21 +39,26 @@ func NewAuthnGRPC(
 		return nil, err
 	}
 
-	pvUnary, err := grpcutils.UnaryProtovalidateInterceptor()
+	pvValidator, err := grpcutils.ProtovalidateValidator()
 	if err != nil {
 		return nil, err
 	}
 
 	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
 			grpcutils.TraceMetadataInterceptor,
-			grpcutils.UnaryTracingInterceptor(tracer),
-			pvUnary,
+			grpcutils.TracerContextInterceptor(tracer),
+			grpcutils.SessionTokenInterceptor(),
+			protovalidate.UnaryServerInterceptor(pvValidator),
 			authngrpc.AuthnRequestContextInterceptor(),
-			grpcutils.RecoveryInterceptor,
-			grpcutils.LoggerInterceptor,
+			authngrpc.AuthnSessionPrincipalInterceptor(iss),
+			grpcutils.LoggingInterceptor(),
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
+			recovery.UnaryServerInterceptor(
+				recovery.WithRecoveryHandlerContext(grpcutils.PanicRecoveryHandler),
+			),
 		),
 	)
 	pb.RegisterAuthnServiceServer(grpcServer, handler)

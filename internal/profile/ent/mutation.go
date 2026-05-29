@@ -1218,7 +1218,6 @@ type UserProfileMutation struct {
 	op                       Op
 	typ                      string
 	id                       *uuid.UUID
-	email_ref                *string
 	display_name             *string
 	username                 *string
 	locale                   *string
@@ -1339,42 +1338,6 @@ func (m *UserProfileMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
-}
-
-// SetEmailRef sets the "email_ref" field.
-func (m *UserProfileMutation) SetEmailRef(s string) {
-	m.email_ref = &s
-}
-
-// EmailRef returns the value of the "email_ref" field in the mutation.
-func (m *UserProfileMutation) EmailRef() (r string, exists bool) {
-	v := m.email_ref
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldEmailRef returns the old "email_ref" field's value of the UserProfile entity.
-// If the UserProfile object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *UserProfileMutation) OldEmailRef(ctx context.Context) (v string, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldEmailRef is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldEmailRef requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldEmailRef: %w", err)
-	}
-	return oldValue.EmailRef, nil
-}
-
-// ResetEmailRef resets all changes to the "email_ref" field.
-func (m *UserProfileMutation) ResetEmailRef() {
-	m.email_ref = nil
 }
 
 // SetDisplayName sets the "display_name" field.
@@ -1756,10 +1719,7 @@ func (m *UserProfileMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserProfileMutation) Fields() []string {
-	fields := make([]string, 0, 8)
-	if m.email_ref != nil {
-		fields = append(fields, userprofile.FieldEmailRef)
-	}
+	fields := make([]string, 0, 7)
 	if m.display_name != nil {
 		fields = append(fields, userprofile.FieldDisplayName)
 	}
@@ -1789,8 +1749,6 @@ func (m *UserProfileMutation) Fields() []string {
 // schema.
 func (m *UserProfileMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case userprofile.FieldEmailRef:
-		return m.EmailRef()
 	case userprofile.FieldDisplayName:
 		return m.DisplayName()
 	case userprofile.FieldUsername:
@@ -1814,8 +1772,6 @@ func (m *UserProfileMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *UserProfileMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case userprofile.FieldEmailRef:
-		return m.OldEmailRef(ctx)
 	case userprofile.FieldDisplayName:
 		return m.OldDisplayName(ctx)
 	case userprofile.FieldUsername:
@@ -1839,13 +1795,6 @@ func (m *UserProfileMutation) OldField(ctx context.Context, name string) (ent.Va
 // type.
 func (m *UserProfileMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case userprofile.FieldEmailRef:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetEmailRef(v)
-		return nil
 	case userprofile.FieldDisplayName:
 		v, ok := value.(string)
 		if !ok {
@@ -1944,9 +1893,6 @@ func (m *UserProfileMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *UserProfileMutation) ResetField(name string) error {
 	switch name {
-	case userprofile.FieldEmailRef:
-		m.ResetEmailRef()
-		return nil
 	case userprofile.FieldDisplayName:
 		m.ResetDisplayName()
 		return nil

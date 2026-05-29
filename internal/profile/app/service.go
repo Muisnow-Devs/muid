@@ -6,6 +6,9 @@ import (
 	"net"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/protovalidate"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 
 	pb "sanzi.io/muid/api/proto/profile/v1"
@@ -33,21 +36,24 @@ func NewProfileGRPC(
 		return nil, err
 	}
 
-	pvUnary, err := grpcutils.UnaryProtovalidateInterceptor()
+	pvValidator, err := grpcutils.ProtovalidateValidator()
 	if err != nil {
 		return nil, err
 	}
 
 	grpcServer := grpc.NewServer(
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
 			grpcutils.TraceMetadataInterceptor,
-			grpcutils.UnaryTracingInterceptor(tracer),
-			pvUnary,
+			grpcutils.TracerContextInterceptor(tracer),
+			protovalidate.UnaryServerInterceptor(pvValidator),
 			profilegrpc.ProfileRequestContextInterceptor(),
-			grpcutils.RecoveryInterceptor,
-			grpcutils.LoggerInterceptor,
+			grpcutils.LoggingInterceptor(),
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
+			recovery.UnaryServerInterceptor(
+				recovery.WithRecoveryHandlerContext(grpcutils.PanicRecoveryHandler),
+			),
 		),
 	)
 	pb.RegisterProfileServiceServer(grpcServer, handler)

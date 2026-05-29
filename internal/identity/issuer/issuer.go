@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/internal/authn/ent"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/usersession"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/errutil"
@@ -66,6 +67,22 @@ func NewEntSessionIssuer(db *ent.Client, sessionCache session.SessionCache) Sess
 	}
 }
 
+// primaryEmail returns the primary active email address for the given user.
+// It is best-effort: errors are silently ignored and an empty string is returned.
+func (s *EntSessionIssuer) primaryEmail(ctx context.Context, userID uuid.UUID) string {
+	ue, err := s.db.UserEmail.Query().
+		Where(
+			useremail.UserIDEQ(userID),
+			useremail.IsPrimaryEQ(true),
+			useremail.RevokedAtIsNil(),
+		).
+		Only(ctx)
+	if err != nil {
+		return ""
+	}
+	return ue.Email
+}
+
 func (s *EntSessionIssuer) CreateSession(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -110,16 +127,20 @@ func (s *EntSessionIssuer) CreateSession(
 		return nil, err
 	}
 
-	// Update last login
+	// Update last login timestamp.
 	err = s.db.UserRef.UpdateOneID(userID).SetLastLoginAt(now).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
+	// Best-effort: fetch the primary email for the session cache.
+	email := s.primaryEmail(ctx, userID)
+
 	if s.sessionCache != nil {
 		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     row.ID,
 			UserID:        userID,
+			Email:         email,
 			ValidatorHash: sum,
 			IssuedAt:      now,
 			ExpiresAt:     expires,
@@ -162,6 +183,7 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 			return ResolvedSession{
 				SessionID: cached.SessionID,
 				UserID:    cached.UserID,
+				Email:     cached.Email,
 				ExpiresAt: cached.ExpiresAt,
 				IssuedAt:  cached.IssuedAt,
 			}, nil
@@ -190,9 +212,14 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 		return ResolvedSession{}, session.ErrSessionAbsoluteExpiry
 	}
 
+	// Best-effort: get the user's primary email for the principal. The session is
+	// still valid even if the UserEmail lookup fails (e.g. transient DB error).
+	email := s.primaryEmail(ctx, row.UserID)
+
 	res := ResolvedSession{
 		SessionID: row.ID,
 		UserID:    row.UserID,
+		Email:     email,
 		ExpiresAt: row.ExpiresAt,
 		IssuedAt:  row.CreatedAt,
 	}
@@ -201,6 +228,7 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     res.SessionID,
 			UserID:        res.UserID,
+			Email:         email,
 			IssuedAt:      res.IssuedAt,
 			ExpiresAt:     res.ExpiresAt,
 			ValidatorHash: tok.validatorHash,
@@ -286,10 +314,14 @@ func (s *EntSessionIssuer) ExtendSession(
 		return nil, err
 	}
 
+	// Best-effort: refresh primary email in the cache on extension.
+	email := s.primaryEmail(ctx, row.UserID)
+
 	if s.sessionCache != nil {
 		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
 			SessionID:     row.ID,
 			UserID:        row.UserID,
+			Email:         email,
 			IssuedAt:      row.CreatedAt,
 			ExpiresAt:     newExpiry,
 			ValidatorHash: tok.validatorHash,
@@ -373,14 +405,9 @@ func (s *EntSessionIssuer) revokeBySelectorBytes(selector []byte) {
 }
 
 func (s *EntSessionIssuer) AuthenticatedResultFromResolved(
-	wireToken string,
 	resolved ResolvedSession,
 ) *sessionpb.AuthenticatedResult {
-	stok := &sessionpb.SessionToken{}
-	stok.SetValue(wireToken)
-
 	sctx := &sessionpb.SessionContext{}
-	sctx.SetSessionToken(stok)
 	sctx.SetIssuedAt(timestamppb.New(resolved.IssuedAt.UTC()))
 	sctx.SetExpiresAt(timestamppb.New(resolved.ExpiresAt.UTC()))
 
@@ -397,6 +424,7 @@ func (s *EntSessionIssuer) AuthenticatedPrincipalFromResolved(
 ) *sessionpb.AuthenticatedPrincipal {
 	out := &sessionpb.AuthenticatedPrincipal{}
 	out.SetUserId(resolved.UserID.String())
+	out.SetEmail(resolved.Email)
 	out.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM)
 	out.SetIssuedAt(timestamppb.New(resolved.IssuedAt.UTC()))
 	out.SetExpiresAt(timestamppb.New(resolved.ExpiresAt.UTC()))

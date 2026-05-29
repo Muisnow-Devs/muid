@@ -18,8 +18,6 @@ type UserRef struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// Email holds the value of the "email" field.
-	Email string `json:"email,omitempty"`
 	// LastLoginAt holds the value of the "last_login_at" field.
 	LastLoginAt time.Time `json:"last_login_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -38,9 +36,11 @@ type UserRefEdges struct {
 	Sessions []*UserSession `json:"sessions,omitempty"`
 	// Identities holds the value of the identities edge.
 	Identities []*UserIdentity `json:"identities,omitempty"`
+	// Emails holds the value of the emails edge.
+	Emails []*UserEmail `json:"emails,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -61,13 +61,20 @@ func (e UserRefEdges) IdentitiesOrErr() ([]*UserIdentity, error) {
 	return nil, &NotLoadedError{edge: "identities"}
 }
 
+// EmailsOrErr returns the Emails value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserRefEdges) EmailsOrErr() ([]*UserEmail, error) {
+	if e.loadedTypes[2] {
+		return e.Emails, nil
+	}
+	return nil, &NotLoadedError{edge: "emails"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*UserRef) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userref.FieldEmail:
-			values[i] = new(sql.NullString)
 		case userref.FieldLastLoginAt, userref.FieldCreatedAt, userref.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case userref.FieldID:
@@ -92,12 +99,6 @@ func (_m *UserRef) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
-			}
-		case userref.FieldEmail:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field email", values[i])
-			} else if value.Valid {
-				_m.Email = value.String
 			}
 		case userref.FieldLastLoginAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -140,6 +141,11 @@ func (_m *UserRef) QueryIdentities() *UserIdentityQuery {
 	return NewUserRefClient(_m.config).QueryIdentities(_m)
 }
 
+// QueryEmails queries the "emails" edge of the UserRef entity.
+func (_m *UserRef) QueryEmails() *UserEmailQuery {
+	return NewUserRefClient(_m.config).QueryEmails(_m)
+}
+
 // Update returns a builder for updating this UserRef.
 // Note that you need to call UserRef.Unwrap() before calling this method if this UserRef
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -163,9 +169,6 @@ func (_m *UserRef) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserRef(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("email=")
-	builder.WriteString(_m.Email)
-	builder.WriteString(", ")
 	builder.WriteString("last_login_at=")
 	builder.WriteString(_m.LastLoginAt.Format(time.ANSIC))
 	builder.WriteString(", ")

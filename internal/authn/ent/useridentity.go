@@ -10,6 +10,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -47,9 +48,11 @@ type UserIdentityEdges struct {
 	PasskeyIdentity *UserPasskey `json:"passkey_identity,omitempty"`
 	// FederatedIdentity holds the value of the federated_identity edge.
 	FederatedIdentity *UserFederatedIdentity `json:"federated_identity,omitempty"`
+	// EmailIdentity holds the value of the email_identity edge.
+	EmailIdentity *UserEmail `json:"email_identity,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [4]bool
 }
 
 // UserOrErr returns the User value or an error if the edge
@@ -83,6 +86,17 @@ func (e UserIdentityEdges) FederatedIdentityOrErr() (*UserFederatedIdentity, err
 		return nil, &NotFoundError{label: userfederatedidentity.Label}
 	}
 	return nil, &NotLoadedError{edge: "federated_identity"}
+}
+
+// EmailIdentityOrErr returns the EmailIdentity value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e UserIdentityEdges) EmailIdentityOrErr() (*UserEmail, error) {
+	if e.EmailIdentity != nil {
+		return e.EmailIdentity, nil
+	} else if e.loadedTypes[3] {
+		return nil, &NotFoundError{label: useremail.Label}
+	}
+	return nil, &NotLoadedError{edge: "email_identity"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -179,6 +193,11 @@ func (_m *UserIdentity) QueryPasskeyIdentity() *UserPasskeyQuery {
 // QueryFederatedIdentity queries the "federated_identity" edge of the UserIdentity entity.
 func (_m *UserIdentity) QueryFederatedIdentity() *UserFederatedIdentityQuery {
 	return NewUserIdentityClient(_m.config).QueryFederatedIdentity(_m)
+}
+
+// QueryEmailIdentity queries the "email_identity" edge of the UserIdentity entity.
+func (_m *UserIdentity) QueryEmailIdentity() *UserEmailQuery {
+	return NewUserIdentityClient(_m.config).QueryEmailIdentity(_m)
 }
 
 // Update returns a builder for updating this UserIdentity.

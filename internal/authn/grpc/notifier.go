@@ -9,26 +9,43 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/shared"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 )
 
+// primaryEmail returns the primary active email address for the given user,
+// or an empty string when none is found (best-effort; never errors).
+func (g *GRPCHandler) primaryEmail(ctx context.Context, userID uuid.UUID) string {
+	ue, err := g.db.UserEmail.Query().
+		Where(
+			useremail.UserIDEQ(userID),
+			useremail.IsPrimaryEQ(true),
+			useremail.RevokedAtIsNil(),
+		).
+		Only(ctx)
+	if err != nil {
+		return ""
+	}
+	return ue.Email
+}
+
 func (g *GRPCHandler) notifyLoginCompleted(
 	ctx context.Context,
 	userID uuid.UUID,
 	meta session.SessionMetadata,
 ) {
-	ref, err := g.db.UserRef.Get(ctx, userID)
-	if err != nil || ref.Email == "" {
+	email := g.primaryEmail(ctx, userID)
+	if email == "" {
 		return
 	}
 
 	now := time.Now().UTC()
 	ev := &mailpb.SendLoginAlertEmailEvent{}
 	ev.SetId(shared.UUIDV7().String())
-	ev.SetEmail(ref.Email)
+	ev.SetEmail(email)
 	ev.SetLocale(meta.Locale)
 	ev.SetTimezone(meta.Timezone)
 	ev.SetIpAddress(meta.IPAddress)
@@ -60,15 +77,15 @@ func (g *GRPCHandler) notifyAccountLinked(
 	provider string,
 	meta session.SessionMetadata,
 ) {
-	ref, err := g.db.UserRef.Get(ctx, userID)
-	if err != nil || ref.Email == "" {
+	email := g.primaryEmail(ctx, userID)
+	if email == "" {
 		return
 	}
 
 	now := time.Now().UTC()
 	ev := &mailpb.SendAccountLinkedEmailEvent{}
 	ev.SetId(shared.UUIDV7().String())
-	ev.SetEmail(ref.Email)
+	ev.SetEmail(email)
 	ev.SetLocale(meta.Locale)
 	ev.SetTimezone(meta.Timezone)
 	ev.SetProvider(provider)
@@ -127,15 +144,15 @@ func (g *GRPCHandler) notifyPasskeyAdded(
 	passkeyName string,
 	meta session.SessionMetadata,
 ) {
-	ref, err := g.db.UserRef.Get(ctx, userID)
-	if err != nil || ref.Email == "" {
+	email := g.primaryEmail(ctx, userID)
+	if email == "" {
 		return
 	}
 
 	now := time.Now().UTC()
 	ev := &mailpb.SendPasskeyAddedEmailEvent{}
 	ev.SetId(shared.UUIDV7().String())
-	ev.SetEmail(ref.Email)
+	ev.SetEmail(email)
 	ev.SetLocale(meta.Locale)
 	ev.SetTimezone(meta.Timezone)
 	ev.SetPasskeyName(passkeyName)

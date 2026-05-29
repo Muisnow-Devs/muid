@@ -11,6 +11,7 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
 	"sanzi.io/muid/pkg/enttx"
@@ -150,9 +151,22 @@ func (s *EntPasskeyIdentityStore) LoadCeremonyUser(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (*PasskeyCeremonyUser, error) {
-	ref, err := s.db.UserRef.Get(ctx, userID)
-	if err != nil {
+	// Verify the user exists.
+	if _, err := s.db.UserRef.Get(ctx, userID); err != nil {
 		return nil, err
+	}
+
+	// Fetch the primary active email for the user (used as WebAuthn display name).
+	email := ""
+	ue, err := s.db.UserEmail.Query().
+		Where(
+			useremail.UserIDEQ(userID),
+			useremail.IsPrimaryEQ(true),
+			useremail.RevokedAtIsNil(),
+		).
+		Only(ctx)
+	if err == nil {
+		email = ue.Email
 	}
 
 	rows, err := s.db.UserPasskey.Query().
@@ -166,8 +180,8 @@ func (s *EntPasskeyIdentityStore) LoadCeremonyUser(
 	}
 
 	return &PasskeyCeremonyUser{
-		ID:          ref.ID,
-		Email:       ref.Email,
+		ID:          userID,
+		Email:       email,
 		Credentials: buildCredentials(rows),
 	}, nil
 }

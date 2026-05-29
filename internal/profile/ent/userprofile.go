@@ -19,8 +19,6 @@ type UserProfile struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
-	// EmailRef holds the value of the "email_ref" field.
-	EmailRef string `json:"email_ref,omitempty"`
 	// DisplayName holds the value of the "display_name" field.
 	DisplayName string `json:"display_name,omitempty"`
 	// Username holds the value of the "username" field.
@@ -78,7 +76,7 @@ func (*UserProfile) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case userprofile.FieldEmailRef, userprofile.FieldDisplayName, userprofile.FieldUsername, userprofile.FieldLocale, userprofile.FieldTimezone, userprofile.FieldBiography:
+		case userprofile.FieldDisplayName, userprofile.FieldUsername, userprofile.FieldLocale, userprofile.FieldTimezone, userprofile.FieldBiography:
 			values[i] = new(sql.NullString)
 		case userprofile.FieldCreatedAt, userprofile.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -106,12 +104,6 @@ func (_m *UserProfile) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
-			}
-		case userprofile.FieldEmailRef:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field email_ref", values[i])
-			} else if value.Valid {
-				_m.EmailRef = value.String
 			}
 		case userprofile.FieldDisplayName:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -208,9 +200,6 @@ func (_m *UserProfile) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserProfile(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
-	builder.WriteString("email_ref=")
-	builder.WriteString(_m.EmailRef)
-	builder.WriteString(", ")
 	builder.WriteString("display_name=")
 	builder.WriteString(_m.DisplayName)
 	builder.WriteString(", ")

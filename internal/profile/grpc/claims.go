@@ -6,7 +6,7 @@ import (
 	idclaims "sanzi.io/muid/api/proto/shared/v1/claims"
 )
 
-func displayNameFromIdentity(c *idclaims.IdentityInformation, fallbackEmailLocal string) string {
+func displayNameFromIdentity(c *idclaims.IdentityInformation) string {
 	if c == nil {
 		return randomDisplayName()
 	}
@@ -21,10 +21,6 @@ func displayNameFromIdentity(c *idclaims.IdentityInformation, fallbackEmailLocal
 	combo := strings.TrimSpace(g + " " + f)
 	if combo != "" {
 		return combo
-	}
-
-	if fallbackEmailLocal != "" {
-		return fallbackEmailLocal
 	}
 
 	return randomDisplayName()

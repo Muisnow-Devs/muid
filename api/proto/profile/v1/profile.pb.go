@@ -26,8 +26,7 @@ const (
 
 type CreateProfileRequest struct {
 	state               protoimpl.MessageState      `protogen:"opaque.v1"`
-	xxx_hidden_Email    string                      `protobuf:"bytes,1,opt,name=email,proto3"`
-	xxx_hidden_Identity *claims.IdentityInformation `protobuf:"bytes,2,opt,name=identity,proto3,oneof"`
+	xxx_hidden_Identity *claims.IdentityInformation `protobuf:"bytes,1,opt,name=identity,proto3,oneof"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
@@ -57,22 +56,11 @@ func (x *CreateProfileRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *CreateProfileRequest) GetEmail() string {
-	if x != nil {
-		return x.xxx_hidden_Email
-	}
-	return ""
-}
-
 func (x *CreateProfileRequest) GetIdentity() *claims.IdentityInformation {
 	if x != nil {
 		return x.xxx_hidden_Identity
 	}
 	return nil
-}
-
-func (x *CreateProfileRequest) SetEmail(v string) {
-	x.xxx_hidden_Email = v
 }
 
 func (x *CreateProfileRequest) SetIdentity(v *claims.IdentityInformation) {
@@ -93,8 +81,8 @@ func (x *CreateProfileRequest) ClearIdentity() {
 type CreateProfileRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	Email string
-	// Optional OIDC-style claims: display name is taken from claims when resolvable, otherwise random; username is always auto-allocated (never from email); picture triggers async avatar bootstrap when https.
+	// Optional OIDC-style claims: display name is taken from claims when resolvable, otherwise random;
+	// username is always auto-allocated (never from email); picture triggers async avatar bootstrap when https.
 	Identity *claims.IdentityInformation
 }
 
@@ -102,7 +90,6 @@ func (b0 CreateProfileRequest_builder) Build() *CreateProfileRequest {
 	m0 := &CreateProfileRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_Email = b.Email
 	x.xxx_hidden_Identity = b.Identity
 	return m0
 }
@@ -872,10 +859,9 @@ var File_profile_v1_profile_proto protoreflect.FileDescriptor
 
 const file_profile_v1_profile_proto_rawDesc = "" +
 	"\n" +
-	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16shared/v1/claims.proto\"\x8f\x01\n" +
-	"\x14CreateProfileRequest\x12\x1d\n" +
-	"\x05email\x18\x01 \x01(\tB\a\xbaH\x04r\x02`\x01R\x05email\x12K\n" +
-	"\bidentity\x18\x02 \x01(\v2*.muid.shared.v1.claims.IdentityInformationH\x00R\bidentity\x88\x01\x01B\v\n" +
+	"\x18profile/v1/profile.proto\x12\x0fmuid.profile.v1\x1a\x1bbuf/validate/validate.proto\x1a google/protobuf/field_mask.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x16shared/v1/claims.proto\"p\n" +
+	"\x14CreateProfileRequest\x12K\n" +
+	"\bidentity\x18\x01 \x01(\v2*.muid.shared.v1.claims.IdentityInformationH\x00R\bidentity\x88\x01\x01B\v\n" +
 	"\t_identity\"1\n" +
 	"\x15CreateProfileResponse\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x02id\"-\n" +

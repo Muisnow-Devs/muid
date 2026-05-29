@@ -8,20 +8,18 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
+	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
-
-	"sanzi.io/muid/internal/session"
 )
 
 func (g *GRPCHandler) ExtendSession(
 	ctx context.Context,
 	req *pb.ExtendSessionRequest,
 ) (*pb.ExtendSessionResponse, error) {
-	wire, err := requiredWireSession(ctx)
-	if err != nil {
-		return nil, err
-	}
+	// Wire token resolved and validated by AuthnSessionPrincipalInterceptor.
+	// ResolvedSession is already on ctx; the issuer still needs the raw wire token.
+	wire, _ := grpcutils.WireSessionTokenFromContext(ctx)
 
 	sctx, err := g.issuer.ExtendSession(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) {

@@ -1,8 +1,6 @@
 package authngrpc
 
 import (
-	"strings"
-
 	"github.com/google/uuid"
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	basicpb "sanzi.io/muid/api/proto/authn/v1/basic"
@@ -43,13 +41,6 @@ func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
 		issuer:          deps.Issuer,
 		identityManager: deps.IdentityManager,
 	}
-}
-
-func sessionTokenValue(tok *sessionpb.SessionToken) string {
-	if tok == nil {
-		return ""
-	}
-	return strings.TrimSpace(tok.GetValue())
 }
 
 func continueAuthSuccess(

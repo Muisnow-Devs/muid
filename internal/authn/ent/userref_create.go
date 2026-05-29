@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -21,12 +22,6 @@ type UserRefCreate struct {
 	config
 	mutation *UserRefMutation
 	hooks    []Hook
-}
-
-// SetEmail sets the "email" field.
-func (_c *UserRefCreate) SetEmail(v string) *UserRefCreate {
-	_c.mutation.SetEmail(v)
-	return _c
 }
 
 // SetLastLoginAt sets the "last_login_at" field.
@@ -107,6 +102,21 @@ func (_c *UserRefCreate) AddIdentities(v ...*UserIdentity) *UserRefCreate {
 	return _c.AddIdentityIDs(ids...)
 }
 
+// AddEmailIDs adds the "emails" edge to the UserEmail entity by IDs.
+func (_c *UserRefCreate) AddEmailIDs(ids ...uuid.UUID) *UserRefCreate {
+	_c.mutation.AddEmailIDs(ids...)
+	return _c
+}
+
+// AddEmails adds the "emails" edges to the UserEmail entity.
+func (_c *UserRefCreate) AddEmails(v ...*UserEmail) *UserRefCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddEmailIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_c *UserRefCreate) Mutation() *UserRefMutation {
 	return _c.mutation
@@ -154,14 +164,6 @@ func (_c *UserRefCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserRefCreate) check() error {
-	if _, ok := _c.mutation.Email(); !ok {
-		return &ValidationError{Name: "email", err: errors.New(`ent: missing required field "UserRef.email"`)}
-	}
-	if v, ok := _c.mutation.Email(); ok {
-		if err := userref.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserRef.email": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "UserRef.created_at"`)}
 	}
@@ -203,10 +205,6 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := _c.mutation.Email(); ok {
-		_spec.SetField(userref.FieldEmail, field.TypeString, value)
-		_node.Email = value
-	}
 	if value, ok := _c.mutation.LastLoginAt(); ok {
 		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
 		_node.LastLoginAt = value
@@ -244,6 +242,22 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EmailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

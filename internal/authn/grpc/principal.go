@@ -4,22 +4,25 @@ import (
 	"context"
 	"errors"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
 
+// GetAuthorizedSession validates the session token sent via the authorization
+// metadata header ("Session <token>") and returns the resolved session.
+// Returns valid=false instead of an error when the session is expired or not
+// found — this is the contract used by the gateway to check session validity.
 func (g *GRPCHandler) GetAuthorizedSession(
 	ctx context.Context,
 	req *pb.GetAuthorizedSessionRequest,
 ) (*pb.GetAuthorizedSessionResponse, error) {
-	wire := sessionTokenValue(req.GetSessionToken())
-	if wire == "" {
-		return nil, status.Error(codes.InvalidArgument, "missing session token")
+	wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
+	if !ok {
+		out := &pb.GetAuthorizedSessionResponse{}
+		out.SetValid(false)
+		return out, nil
 	}
 
 	res, err := g.issuer.ResolveSessionToken(ctx, wire)
@@ -35,17 +38,22 @@ func (g *GRPCHandler) GetAuthorizedSession(
 
 	out := &pb.GetAuthorizedSessionResponse{}
 	out.SetValid(true)
-	out.SetSession(g.issuer.AuthenticatedResultFromResolved(wire, res))
+	out.SetSession(g.issuer.AuthenticatedResultFromResolved(res))
 	return out, nil
 }
 
+// GetAuthenticatedPrincipal resolves the session token sent via the authorization
+// metadata header into an authenticated principal for downstream services.
+// Returns valid=false instead of an error when the session is expired or not found.
 func (g *GRPCHandler) GetAuthenticatedPrincipal(
 	ctx context.Context,
 	req *pb.GetAuthenticatedPrincipalRequest,
 ) (*pb.GetAuthenticatedPrincipalResponse, error) {
-	wire := sessionTokenValue(req.GetSessionToken())
-	if wire == "" {
-		return nil, status.Error(codes.InvalidArgument, "missing session token")
+	wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
+	if !ok {
+		out := &pb.GetAuthenticatedPrincipalResponse{}
+		out.SetValid(false)
+		return out, nil
 	}
 
 	res, err := g.issuer.ResolveSessionToken(ctx, wire)

@@ -33,7 +33,7 @@ func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, erro
 		Issuer:          iss,
 		IdentityManager: infra.IdentityManager,
 	})
-	service, err := NewAuthnGRPC(infra.GlobalConfig, handler, nil)
+	service, err := NewAuthnGRPC(infra.GlobalConfig, handler, iss, nil)
 	if err != nil {
 		return nil, err
 	}

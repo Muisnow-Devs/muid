@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -30,6 +31,7 @@ type UserIdentityQuery struct {
 	withUser              *UserRefQuery
 	withPasskeyIdentity   *UserPasskeyQuery
 	withFederatedIdentity *UserFederatedIdentityQuery
+	withEmailIdentity     *UserEmailQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +127,28 @@ func (_q *UserIdentityQuery) QueryFederatedIdentity() *UserFederatedIdentityQuer
 			sqlgraph.From(useridentity.Table, useridentity.FieldID, selector),
 			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, useridentity.FederatedIdentityTable, useridentity.FederatedIdentityColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEmailIdentity chains the current query on the "email_identity" edge.
+func (_q *UserIdentityQuery) QueryEmailIdentity() *UserEmailQuery {
+	query := (&UserEmailClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useridentity.Table, useridentity.FieldID, selector),
+			sqlgraph.To(useremail.Table, useremail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, useridentity.EmailIdentityTable, useridentity.EmailIdentityColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -327,6 +351,7 @@ func (_q *UserIdentityQuery) Clone() *UserIdentityQuery {
 		withUser:              _q.withUser.Clone(),
 		withPasskeyIdentity:   _q.withPasskeyIdentity.Clone(),
 		withFederatedIdentity: _q.withFederatedIdentity.Clone(),
+		withEmailIdentity:     _q.withEmailIdentity.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +388,17 @@ func (_q *UserIdentityQuery) WithFederatedIdentity(opts ...func(*UserFederatedId
 		opt(query)
 	}
 	_q.withFederatedIdentity = query
+	return _q
+}
+
+// WithEmailIdentity tells the query-builder to eager-load the nodes that are connected to
+// the "email_identity" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserIdentityQuery) WithEmailIdentity(opts ...func(*UserEmailQuery)) *UserIdentityQuery {
+	query := (&UserEmailClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEmailIdentity = query
 	return _q
 }
 
@@ -444,10 +480,11 @@ func (_q *UserIdentityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	var (
 		nodes       = []*UserIdentity{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [4]bool{
 			_q.withUser != nil,
 			_q.withPasskeyIdentity != nil,
 			_q.withFederatedIdentity != nil,
+			_q.withEmailIdentity != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -483,6 +520,12 @@ func (_q *UserIdentityQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if query := _q.withFederatedIdentity; query != nil {
 		if err := _q.loadFederatedIdentity(ctx, query, nodes, nil,
 			func(n *UserIdentity, e *UserFederatedIdentity) { n.Edges.FederatedIdentity = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEmailIdentity; query != nil {
+		if err := _q.loadEmailIdentity(ctx, query, nodes, nil,
+			func(n *UserIdentity, e *UserEmail) { n.Edges.EmailIdentity = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -557,6 +600,33 @@ func (_q *UserIdentityQuery) loadFederatedIdentity(ctx context.Context, query *U
 	}
 	query.Where(predicate.UserFederatedIdentity(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(useridentity.FederatedIdentityColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.IdentityID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "identity_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserIdentityQuery) loadEmailIdentity(ctx context.Context, query *UserEmailQuery, nodes []*UserIdentity, init func(*UserIdentity), assign func(*UserIdentity, *UserEmail)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*UserIdentity)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(useremail.FieldIdentityID)
+	}
+	query.Where(predicate.UserEmail(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(useridentity.EmailIdentityColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

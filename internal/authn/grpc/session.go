@@ -25,6 +25,7 @@ import (
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/clientmeta"
 	"sanzi.io/muid/pkg/errutil"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/authn"
 )
@@ -48,15 +49,15 @@ func (g *GRPCHandler) StartAuthSession(
 		sessionIntent = session.AuthIntentReauth
 	}
 
-	linkSessionToken := sessionTokenValue(req.GetSessionToken())
-
+	// For link_account / reauth: session token must be present in the authorization header.
 	var currentSession *issuer.ResolvedSession
 	if intent == basicpb.AuthIntent_AUTH_INTENT_LINK_ACCOUNT ||
 		intent == basicpb.AuthIntent_AUTH_INTENT_REAUTHENTICATE {
-		if linkSessionToken == "" {
+		wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
+		if !ok {
 			return nil, status.Error(codes.PermissionDenied, "action requires valid session")
 		}
-		sess, err := g.issuer.ResolveSessionToken(ctx, linkSessionToken)
+		sess, err := g.issuer.ResolveSessionToken(ctx, wire)
 		if err != nil {
 			return nil, status.Error(codes.PermissionDenied, "valid session required")
 		}
@@ -129,10 +130,10 @@ func (g *GRPCHandler) ContinueAuthSession(
 		return nil, status.Error(codes.NotFound, "transition not found")
 	}
 
-	linkSessionToken := sessionTokenValue(req.GetSessionToken())
+	// For link_account flows: the existing user session comes from the authorization header.
 	var resolvedSession *issuer.ResolvedSession
-	if linkSessionToken != "" {
-		rs, err := g.issuer.ResolveSessionToken(ctx, linkSessionToken)
+	if wire, ok := grpcutils.WireSessionTokenFromContext(ctx); ok {
+		rs, err := g.issuer.ResolveSessionToken(ctx, wire)
 		if err != nil {
 			return nil, status.Error(codes.PermissionDenied, "valid session required")
 		}

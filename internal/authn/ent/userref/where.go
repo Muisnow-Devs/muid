@@ -56,11 +56,6 @@ func IDLTE(id uuid.UUID) predicate.UserRef {
 	return predicate.UserRef(sql.FieldLTE(FieldID, id))
 }
 
-// Email applies equality check predicate on the "email" field. It's identical to EmailEQ.
-func Email(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldEQ(FieldEmail, v))
-}
-
 // LastLoginAt applies equality check predicate on the "last_login_at" field. It's identical to LastLoginAtEQ.
 func LastLoginAt(v time.Time) predicate.UserRef {
 	return predicate.UserRef(sql.FieldEQ(FieldLastLoginAt, v))
@@ -74,71 +69,6 @@ func CreatedAt(v time.Time) predicate.UserRef {
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.UserRef {
 	return predicate.UserRef(sql.FieldEQ(FieldUpdatedAt, v))
-}
-
-// EmailEQ applies the EQ predicate on the "email" field.
-func EmailEQ(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldEQ(FieldEmail, v))
-}
-
-// EmailNEQ applies the NEQ predicate on the "email" field.
-func EmailNEQ(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldNEQ(FieldEmail, v))
-}
-
-// EmailIn applies the In predicate on the "email" field.
-func EmailIn(vs ...string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldIn(FieldEmail, vs...))
-}
-
-// EmailNotIn applies the NotIn predicate on the "email" field.
-func EmailNotIn(vs ...string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldNotIn(FieldEmail, vs...))
-}
-
-// EmailGT applies the GT predicate on the "email" field.
-func EmailGT(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldGT(FieldEmail, v))
-}
-
-// EmailGTE applies the GTE predicate on the "email" field.
-func EmailGTE(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldGTE(FieldEmail, v))
-}
-
-// EmailLT applies the LT predicate on the "email" field.
-func EmailLT(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldLT(FieldEmail, v))
-}
-
-// EmailLTE applies the LTE predicate on the "email" field.
-func EmailLTE(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldLTE(FieldEmail, v))
-}
-
-// EmailContains applies the Contains predicate on the "email" field.
-func EmailContains(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldContains(FieldEmail, v))
-}
-
-// EmailHasPrefix applies the HasPrefix predicate on the "email" field.
-func EmailHasPrefix(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldHasPrefix(FieldEmail, v))
-}
-
-// EmailHasSuffix applies the HasSuffix predicate on the "email" field.
-func EmailHasSuffix(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldHasSuffix(FieldEmail, v))
-}
-
-// EmailEqualFold applies the EqualFold predicate on the "email" field.
-func EmailEqualFold(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldEqualFold(FieldEmail, v))
-}
-
-// EmailContainsFold applies the ContainsFold predicate on the "email" field.
-func EmailContainsFold(v string) predicate.UserRef {
-	return predicate.UserRef(sql.FieldContainsFold(FieldEmail, v))
 }
 
 // LastLoginAtEQ applies the EQ predicate on the "last_login_at" field.
@@ -309,6 +239,29 @@ func HasIdentities() predicate.UserRef {
 func HasIdentitiesWith(preds ...predicate.UserIdentity) predicate.UserRef {
 	return predicate.UserRef(func(s *sql.Selector) {
 		step := newIdentitiesStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasEmails applies the HasEdge predicate on the "emails" edge.
+func HasEmails() predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, EmailsTable, EmailsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEmailsWith applies the HasEdge predicate on the "emails" edge with a given conditions (other predicates).
+func HasEmailsWith(preds ...predicate.UserEmail) predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := newEmailsStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

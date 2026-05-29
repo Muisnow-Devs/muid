@@ -33,14 +33,9 @@ func (g *GRPCHandler) CreateProfile(
 	ctx context.Context,
 	req *pb.CreateProfileRequest,
 ) (*pb.CreateProfileResponse, error) {
-	email := strings.TrimSpace(strings.ToLower(req.GetEmail()))
-	if email == "" {
-		return nil, status.Error(codes.InvalidArgument, "email is required")
-	}
-
 	identity := req.GetIdentity()
 	var (
-		displayName = displayNameFromIdentity(identity, emailLocalPart(email))
+		displayName = displayNameFromIdentity(identity)
 		pictureURL  string
 		locale      string
 		timezone    string
@@ -77,7 +72,6 @@ func (g *GRPCHandler) CreateProfile(
 				}
 
 				user, err = tx.UserProfile.Create().
-					SetEmailRef(email).
 					SetLocale(locale).
 					SetTimezone(timezone).
 					SetDisplayName(displayName).
@@ -152,7 +146,6 @@ func (g *GRPCHandler) GetProfile(
 
 	resp := &pb.GetProfileResponse{}
 	resp.SetId(p.ID.String())
-	resp.SetEmail(p.EmailRef)
 	resp.SetDisplayName(p.DisplayName)
 	resp.SetUsername(p.Username)
 	resp.SetAvatarUrl(avatarURL)

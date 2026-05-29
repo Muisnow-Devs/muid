@@ -21,7 +21,7 @@ func (UserFederatedIdentity) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 
-		field.UUID("identity_id", uuid.UUID{}).Immutable(),
+		field.UUID("identity_id", uuid.UUID{}).Unique().Immutable(),
 
 		field.String("provider").NotEmpty().MaxLen(50).Immutable(),
 		field.String("subject").NotEmpty().MaxLen(255).Immutable(),

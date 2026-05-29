@@ -13,6 +13,9 @@ type ResolvedSession struct {
 	UserID    uuid.UUID
 	ExpiresAt time.Time
 	IssuedAt  time.Time
+	// Email is the primary email address for the authenticated user.
+	// Populated from UserRef on resolution; empty when unavailable.
+	Email string
 }
 
 type SessionIssuer interface {
@@ -20,9 +23,6 @@ type SessionIssuer interface {
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
 	ExtendSession(ctx context.Context, wireToken string) (*sessionpb.SessionContext, error)
-	AuthenticatedResultFromResolved(
-		wireToken string,
-		resolved ResolvedSession,
-	) *sessionpb.AuthenticatedResult
+	AuthenticatedResultFromResolved(resolved ResolvedSession) *sessionpb.AuthenticatedResult
 	AuthenticatedPrincipalFromResolved(resolved ResolvedSession) *sessionpb.AuthenticatedPrincipal
 }

@@ -23,7 +23,7 @@ func TestEntLinkPolicy_ValidateLink(t *testing.T) {
 	user1 := uuid.New()
 
 	// Insert UserRef to satisfy foreign key constraints
-	err := client.UserRef.Create().SetID(user1).SetEmail("user1@example.com").Exec(ctx)
+	err := client.UserRef.Create().SetID(user1).Exec(ctx)
 	if err != nil {
 		t.Fatalf("failed to create user1 ref: %v", err)
 	}

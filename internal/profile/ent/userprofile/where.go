@@ -56,11 +56,6 @@ func IDLTE(id uuid.UUID) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldLTE(FieldID, id))
 }
 
-// EmailRef applies equality check predicate on the "email_ref" field. It's identical to EmailRefEQ.
-func EmailRef(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEQ(FieldEmailRef, v))
-}
-
 // DisplayName applies equality check predicate on the "display_name" field. It's identical to DisplayNameEQ.
 func DisplayName(v string) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldDisplayName, v))
@@ -94,71 +89,6 @@ func CreatedAt(v time.Time) predicate.UserProfile {
 // UpdatedAt applies equality check predicate on the "updated_at" field. It's identical to UpdatedAtEQ.
 func UpdatedAt(v time.Time) predicate.UserProfile {
 	return predicate.UserProfile(sql.FieldEQ(FieldUpdatedAt, v))
-}
-
-// EmailRefEQ applies the EQ predicate on the "email_ref" field.
-func EmailRefEQ(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEQ(FieldEmailRef, v))
-}
-
-// EmailRefNEQ applies the NEQ predicate on the "email_ref" field.
-func EmailRefNEQ(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldNEQ(FieldEmailRef, v))
-}
-
-// EmailRefIn applies the In predicate on the "email_ref" field.
-func EmailRefIn(vs ...string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldIn(FieldEmailRef, vs...))
-}
-
-// EmailRefNotIn applies the NotIn predicate on the "email_ref" field.
-func EmailRefNotIn(vs ...string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldNotIn(FieldEmailRef, vs...))
-}
-
-// EmailRefGT applies the GT predicate on the "email_ref" field.
-func EmailRefGT(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldGT(FieldEmailRef, v))
-}
-
-// EmailRefGTE applies the GTE predicate on the "email_ref" field.
-func EmailRefGTE(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldGTE(FieldEmailRef, v))
-}
-
-// EmailRefLT applies the LT predicate on the "email_ref" field.
-func EmailRefLT(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldLT(FieldEmailRef, v))
-}
-
-// EmailRefLTE applies the LTE predicate on the "email_ref" field.
-func EmailRefLTE(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldLTE(FieldEmailRef, v))
-}
-
-// EmailRefContains applies the Contains predicate on the "email_ref" field.
-func EmailRefContains(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldContains(FieldEmailRef, v))
-}
-
-// EmailRefHasPrefix applies the HasPrefix predicate on the "email_ref" field.
-func EmailRefHasPrefix(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldHasPrefix(FieldEmailRef, v))
-}
-
-// EmailRefHasSuffix applies the HasSuffix predicate on the "email_ref" field.
-func EmailRefHasSuffix(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldHasSuffix(FieldEmailRef, v))
-}
-
-// EmailRefEqualFold applies the EqualFold predicate on the "email_ref" field.
-func EmailRefEqualFold(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldEqualFold(FieldEmailRef, v))
-}
-
-// EmailRefContainsFold applies the ContainsFold predicate on the "email_ref" field.
-func EmailRefContainsFold(v string) predicate.UserProfile {
-	return predicate.UserProfile(sql.FieldContainsFold(FieldEmailRef, v))
 }
 
 // DisplayNameEQ applies the EQ predicate on the "display_name" field.

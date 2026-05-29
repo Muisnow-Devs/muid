@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -28,6 +29,7 @@ type UserRefQuery struct {
 	predicates     []predicate.UserRef
 	withSessions   *UserSessionQuery
 	withIdentities *UserIdentityQuery
+	withEmails     *UserEmailQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -101,6 +103,28 @@ func (_q *UserRefQuery) QueryIdentities() *UserIdentityQuery {
 			sqlgraph.From(userref.Table, userref.FieldID, selector),
 			sqlgraph.To(useridentity.Table, useridentity.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userref.IdentitiesTable, userref.IdentitiesColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryEmails chains the current query on the "emails" edge.
+func (_q *UserRefQuery) QueryEmails() *UserEmailQuery {
+	query := (&UserEmailClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, selector),
+			sqlgraph.To(useremail.Table, useremail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.EmailsTable, userref.EmailsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -302,6 +326,7 @@ func (_q *UserRefQuery) Clone() *UserRefQuery {
 		predicates:     append([]predicate.UserRef{}, _q.predicates...),
 		withSessions:   _q.withSessions.Clone(),
 		withIdentities: _q.withIdentities.Clone(),
+		withEmails:     _q.withEmails.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -330,18 +355,29 @@ func (_q *UserRefQuery) WithIdentities(opts ...func(*UserIdentityQuery)) *UserRe
 	return _q
 }
 
+// WithEmails tells the query-builder to eager-load the nodes that are connected to
+// the "emails" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserRefQuery) WithEmails(opts ...func(*UserEmailQuery)) *UserRefQuery {
+	query := (&UserEmailClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withEmails = query
+	return _q
+}
+
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
 //
 // Example:
 //
 //	var v []struct {
-//		Email string `json:"email,omitempty"`
+//		LastLoginAt time.Time `json:"last_login_at,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.UserRef.Query().
-//		GroupBy(userref.FieldEmail).
+//		GroupBy(userref.FieldLastLoginAt).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *UserRefQuery) GroupBy(field string, fields ...string) *UserRefGroupBy {
@@ -359,11 +395,11 @@ func (_q *UserRefQuery) GroupBy(field string, fields ...string) *UserRefGroupBy 
 // Example:
 //
 //	var v []struct {
-//		Email string `json:"email,omitempty"`
+//		LastLoginAt time.Time `json:"last_login_at,omitempty"`
 //	}
 //
 //	client.UserRef.Query().
-//		Select(userref.FieldEmail).
+//		Select(userref.FieldLastLoginAt).
 //		Scan(ctx, &v)
 func (_q *UserRefQuery) Select(fields ...string) *UserRefSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
@@ -408,9 +444,10 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	var (
 		nodes       = []*UserRef{}
 		_spec       = _q.querySpec()
-		loadedTypes = [2]bool{
+		loadedTypes = [3]bool{
 			_q.withSessions != nil,
 			_q.withIdentities != nil,
+			_q.withEmails != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -442,6 +479,13 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 		if err := _q.loadIdentities(ctx, query, nodes,
 			func(n *UserRef) { n.Edges.Identities = []*UserIdentity{} },
 			func(n *UserRef, e *UserIdentity) { n.Edges.Identities = append(n.Edges.Identities, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withEmails; query != nil {
+		if err := _q.loadEmails(ctx, query, nodes,
+			func(n *UserRef) { n.Edges.Emails = []*UserEmail{} },
+			func(n *UserRef, e *UserEmail) { n.Edges.Emails = append(n.Edges.Emails, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -493,6 +537,36 @@ func (_q *UserRefQuery) loadIdentities(ctx context.Context, query *UserIdentityQ
 	}
 	query.Where(predicate.UserIdentity(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(userref.IdentitiesColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserRefQuery) loadEmails(ctx context.Context, query *UserEmailQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *UserEmail)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*UserRef)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(useremail.FieldUserID)
+	}
+	query.Where(predicate.UserEmail(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userref.EmailsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

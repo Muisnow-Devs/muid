@@ -3,28 +3,26 @@ package grpcutils
 import (
 	"context"
 	"log/slog"
-	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"google.golang.org/grpc"
 
 	"sanzi.io/muid/pkg/log"
 )
 
-func LoggerInterceptor(
-	ctx context.Context,
-	req any,
-	info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler,
-) (any, error) {
-	start := time.Now()
-
-	resp, err := handler(ctx, req)
-
-	log.Logger(ctx).Info("grpc request",
-		slog.String("method", info.FullMethod),
-		slog.Duration("duration", time.Since(start)),
-		slog.Any("err", err),
+// interceptorLogger adapts pkg/log to the [logging.Logger] interface so that
+// the go-grpc-middleware/v2 logging interceptor emits via the request-scoped
+// slog logger (trace_id + WithAttrs fields are automatically included).
+func interceptorLogger() logging.Logger {
+	return logging.LoggerFunc(
+		func(ctx context.Context, lvl logging.Level, msg string, fields ...any) {
+			log.Logger(ctx).Log(ctx, slog.Level(lvl), msg, fields...)
+		},
 	)
+}
 
-	return resp, err
+// LoggingInterceptor returns a go-grpc-middleware/v2 logging unary server
+// interceptor that forwards to the request-scoped pkg/log logger.
+func LoggingInterceptor(opts ...logging.Option) grpc.UnaryServerInterceptor {
+	return logging.UnaryServerInterceptor(interceptorLogger(), opts...)
 }

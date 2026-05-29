@@ -3,9 +3,12 @@ package authngrpc
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -13,9 +16,13 @@ import (
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
+	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/clientmeta"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
+
+// ---- helpers -----------------------------------------------------------------
 
 func validWireToken(t *testing.T) string {
 	t.Helper()
@@ -34,94 +41,72 @@ func validWireToken(t *testing.T) string {
 	)
 }
 
-func TestAuthnRequestContextInterceptor_requiredWireSession(t *testing.T) {
-	t.Parallel()
-
-	interceptor := AuthnRequestContextInterceptor()
-	wire := validWireToken(t)
-
-	req := &pb.GetAuthorizedSessionRequest{}
-	tok := &sessionpb.SessionToken{}
-	tok.SetValue(wire)
-	req.SetSessionToken(tok)
-
-	var got string
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_GetAuthorizedSession_FullMethodName}
-	_, err := interceptor(
+// ctxWithHeaderToken runs SessionTokenInterceptor to store the wire token on ctx,
+// mirroring what the real interceptor chain does.
+func ctxWithHeaderToken(t *testing.T, wire string) context.Context {
+	t.Helper()
+	ic := grpcutils.SessionTokenInterceptor()
+	inCtx := metadata.NewIncomingContext(
 		context.Background(),
-		req,
-		info,
+		metadata.Pairs(grpcutils.AuthorizationMetadataKey, "Session "+wire),
+	)
+	var out context.Context
+	_, err := ic(
+		inCtx,
+		nil,
+		&grpc.UnaryServerInfo{FullMethod: "/test/Method"},
 		func(ctx context.Context, _ any) (any, error) {
-			var ok bool
-			got, ok = WireSessionFromContext(ctx)
-			if !ok {
-				t.Fatal("missing wire session on context")
-			}
+			out = ctx
 			return nil, nil
 		},
 	)
 	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		t.Fatalf("SessionTokenInterceptor setup: %v", err)
 	}
-	if got != wire {
-		t.Fatalf("wire: got %q want %q", got, wire)
-	}
+	return out
 }
 
-func TestAuthnRequestContextInterceptor_requiredWireSession_principal(t *testing.T) {
-	t.Parallel()
-
-	interceptor := AuthnRequestContextInterceptor()
-	wire := validWireToken(t)
-
-	req := &pb.GetAuthenticatedPrincipalRequest{}
-	tok := &sessionpb.SessionToken{}
-	tok.SetValue(wire)
-	req.SetSessionToken(tok)
-
-	var got string
-	info := &grpc.UnaryServerInfo{
-		FullMethod: pb.AuthnService_GetAuthenticatedPrincipal_FullMethodName,
-	}
-	_, err := interceptor(
-		context.Background(),
-		req,
-		info,
-		func(ctx context.Context, _ any) (any, error) {
-			var ok bool
-			got, ok = WireSessionFromContext(ctx)
-			if !ok {
-				t.Fatal("missing wire session on context")
-			}
-			return nil, nil
-		},
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if got != wire {
-		t.Fatalf("wire: got %q want %q", got, wire)
-	}
+// mockSessionIssuer is a minimal SessionIssuer stub for tests.
+type mockSessionIssuer struct {
+	resolved issuer.ResolvedSession
+	err      error
 }
 
-func TestAuthnRequestContextInterceptor_missingWireSession(t *testing.T) {
-	t.Parallel()
-
-	interceptor := AuthnRequestContextInterceptor()
-	req := &pb.RevokeSessionRequest{}
-
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_RevokeSession_FullMethodName}
-	_, err := interceptor(context.Background(), req, info, func(context.Context, any) (any, error) {
-		t.Fatal("handler should not run")
-		return nil, nil
-	})
-	if status.Code(err) != codes.InvalidArgument {
-		t.Fatalf("code: got %v", status.Code(err))
-	}
-	if !strings.Contains(status.Convert(err).Message(), msgMissingSessionToken) {
-		t.Fatalf("message: %v", status.Convert(err).Message())
-	}
+func (m *mockSessionIssuer) ResolveSessionToken(
+	_ context.Context,
+	_ string,
+) (issuer.ResolvedSession, error) {
+	return m.resolved, m.err
 }
+
+func (m *mockSessionIssuer) CreateSession(
+	_ context.Context,
+	_ uuid.UUID,
+) (*sessionpb.AuthenticatedResult, error) {
+	return nil, nil
+}
+func (m *mockSessionIssuer) RevokeSessionToken(_ context.Context, _ string) error { return nil }
+
+func (m *mockSessionIssuer) ExtendSession(
+	_ context.Context,
+	_ string,
+) (*sessionpb.SessionContext, error) {
+	return nil, nil
+}
+
+func (m *mockSessionIssuer) AuthenticatedResultFromResolved(
+	_ issuer.ResolvedSession,
+) *sessionpb.AuthenticatedResult {
+	return nil
+}
+
+func (m *mockSessionIssuer) AuthenticatedPrincipalFromResolved(
+	_ issuer.ResolvedSession,
+) *sessionpb.AuthenticatedPrincipal {
+	return nil
+}
+
+// ---- AuthnRequestContextInterceptor tests ------------------------------------
 
 func TestAuthnRequestContextInterceptor_continueTransitionID(t *testing.T) {
 	t.Parallel()
@@ -142,37 +127,6 @@ func TestAuthnRequestContextInterceptor_continueTransitionID(t *testing.T) {
 			}
 			if id.String() != req.GetTransitionId() {
 				t.Fatalf("transition id mismatch: %v", id)
-			}
-			return nil, nil
-		},
-	)
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-}
-
-func TestAuthnRequestContextInterceptor_revokeFederatedWireSession(t *testing.T) {
-	t.Parallel()
-
-	interceptor := AuthnRequestContextInterceptor()
-	wire := validWireToken(t)
-
-	req := &pb.RevokeFederatedIdentityRequest{}
-	tok := &sessionpb.SessionToken{}
-	tok.SetValue(wire)
-	req.SetSessionToken(tok)
-
-	info := &grpc.UnaryServerInfo{
-		FullMethod: pb.AuthnService_RevokeFederatedIdentity_FullMethodName,
-	}
-	_, err := interceptor(
-		context.Background(),
-		req,
-		info,
-		func(ctx context.Context, _ any) (any, error) {
-			got, ok := WireSessionFromContext(ctx)
-			if !ok || got != wire {
-				t.Fatalf("wire session: got %q ok=%v", got, ok)
 			}
 			return nil, nil
 		},
@@ -247,21 +201,95 @@ func TestAuthnRequestContextInterceptor_startInvalidTimezone(t *testing.T) {
 	}
 }
 
-func TestAuthnRequestContextInterceptor_invalidWireSession(t *testing.T) {
+// ---- AuthnSessionPrincipalInterceptor tests ----------------------------------
+
+func TestAuthnSessionPrincipalInterceptor_resolvesSession(t *testing.T) {
 	t.Parallel()
 
-	interceptor := AuthnRequestContextInterceptor()
-	req := &pb.StartAuthSessionRequest{}
-	tok := &sessionpb.SessionToken{}
-	tok.SetValue("bad.token")
-	req.SetSessionToken(tok)
+	userID := uuid.New()
+	iss := &mockSessionIssuer{
+		resolved: issuer.ResolvedSession{
+			UserID:    userID,
+			SessionID: uuid.New(),
+			IssuedAt:  time.Now(),
+			ExpiresAt: time.Now().Add(time.Hour),
+		},
+	}
 
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
-	_, err := interceptor(context.Background(), req, info, func(context.Context, any) (any, error) {
-		t.Fatal("handler should not run")
+	ic := AuthnSessionPrincipalInterceptor(iss)
+	wire := validWireToken(t)
+	ctx := ctxWithHeaderToken(t, wire)
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_RevokeSession_FullMethodName}
+
+	_, err := ic(ctx, nil, info, func(ctx context.Context, _ any) (any, error) {
+		resolved, ok := ResolvedSessionFromContext(ctx)
+		if !ok {
+			t.Fatal("expected resolved session in ctx")
+		}
+		if resolved.UserID != userID {
+			t.Fatalf("userID: got %v want %v", resolved.UserID, userID)
+		}
 		return nil, nil
 	})
-	if status.Code(err) != codes.InvalidArgument {
-		t.Fatalf("code: got %v", status.Code(err))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestAuthnSessionPrincipalInterceptor_missingToken(t *testing.T) {
+	t.Parallel()
+
+	ic := AuthnSessionPrincipalInterceptor(&mockSessionIssuer{})
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_ExtendSession_FullMethodName}
+
+	_, err := ic(context.Background(), nil, info, func(context.Context, any) (any, error) {
+		t.Fatal("handler must not be called")
+		return nil, nil
+	})
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("got %v, want Unauthenticated", status.Code(err))
+	}
+}
+
+func TestAuthnSessionPrincipalInterceptor_sessionExpired(t *testing.T) {
+	t.Parallel()
+
+	iss := &mockSessionIssuer{err: session.ErrSessionExpired}
+	ic := AuthnSessionPrincipalInterceptor(iss)
+	wire := validWireToken(t)
+	ctx := ctxWithHeaderToken(t, wire)
+	info := &grpc.UnaryServerInfo{
+		FullMethod: pb.AuthnService_RevokeFederatedIdentity_FullMethodName,
+	}
+
+	_, err := ic(ctx, nil, info, func(context.Context, any) (any, error) {
+		t.Fatal("handler must not be called for expired session")
+		return nil, nil
+	})
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("got %v, want Unauthenticated", status.Code(err))
+	}
+	if !strings.Contains(status.Convert(err).Message(), "expired") {
+		t.Fatalf("message: %q", status.Convert(err).Message())
+	}
+}
+
+func TestAuthnSessionPrincipalInterceptor_unmappedRoute(t *testing.T) {
+	t.Parallel()
+
+	// Routes not in AuthnSessionPrincipalInterceptor must be passed through.
+	ic := AuthnSessionPrincipalInterceptor(&mockSessionIssuer{err: errors.New("should not call")})
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
+
+	called := false
+	_, err := ic(context.Background(), nil, info, func(context.Context, any) (any, error) {
+		called = true
+		return nil, nil
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !called {
+		t.Fatal("handler must be called for unmapped routes")
 	}
 }

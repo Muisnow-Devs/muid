@@ -435,6 +435,29 @@ func HasFederatedIdentityWith(preds ...predicate.UserFederatedIdentity) predicat
 	})
 }
 
+// HasEmailIdentity applies the HasEdge predicate on the "email_identity" edge.
+func HasEmailIdentity() predicate.UserIdentity {
+	return predicate.UserIdentity(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, EmailIdentityTable, EmailIdentityColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasEmailIdentityWith applies the HasEdge predicate on the "email_identity" edge with a given conditions (other predicates).
+func HasEmailIdentityWith(preds ...predicate.UserEmail) predicate.UserIdentity {
+	return predicate.UserIdentity(func(s *sql.Selector) {
+		step := newEmailIdentityStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserIdentity) predicate.UserIdentity {
 	return predicate.UserIdentity(sql.AndPredicates(predicates...))

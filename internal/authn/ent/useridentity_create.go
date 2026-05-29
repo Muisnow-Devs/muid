@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -139,6 +140,25 @@ func (_c *UserIdentityCreate) SetNillableFederatedIdentityID(id *uuid.UUID) *Use
 // SetFederatedIdentity sets the "federated_identity" edge to the UserFederatedIdentity entity.
 func (_c *UserIdentityCreate) SetFederatedIdentity(v *UserFederatedIdentity) *UserIdentityCreate {
 	return _c.SetFederatedIdentityID(v.ID)
+}
+
+// SetEmailIdentityID sets the "email_identity" edge to the UserEmail entity by ID.
+func (_c *UserIdentityCreate) SetEmailIdentityID(id uuid.UUID) *UserIdentityCreate {
+	_c.mutation.SetEmailIdentityID(id)
+	return _c
+}
+
+// SetNillableEmailIdentityID sets the "email_identity" edge to the UserEmail entity by ID if the given value is not nil.
+func (_c *UserIdentityCreate) SetNillableEmailIdentityID(id *uuid.UUID) *UserIdentityCreate {
+	if id != nil {
+		_c = _c.SetEmailIdentityID(*id)
+	}
+	return _c
+}
+
+// SetEmailIdentity sets the "email_identity" edge to the UserEmail entity.
+func (_c *UserIdentityCreate) SetEmailIdentity(v *UserEmail) *UserIdentityCreate {
+	return _c.SetEmailIdentityID(v.ID)
 }
 
 // Mutation returns the UserIdentityMutation object of the builder.
@@ -317,6 +337,22 @@ func (_c *UserIdentityCreate) createSpec() (*UserIdentity, *sqlgraph.CreateSpec)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.EmailIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   useridentity.EmailIdentityTable,
+			Columns: []string{useridentity.EmailIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

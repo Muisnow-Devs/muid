@@ -26,13 +26,12 @@ const (
 )
 
 type StartAuthSessionRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Method       basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod"`
-	xxx_hidden_Identifier   string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
-	xxx_hidden_Intent       basic.AuthIntent       `protobuf:"varint,3,opt,name=intent,proto3,enum=muid.authn.v1.basic.AuthIntent"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,4,opt,name=session_token,json=sessionToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Method     basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod"`
+	xxx_hidden_Identifier string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
+	xxx_hidden_Intent     basic.AuthIntent       `protobuf:"varint,3,opt,name=intent,proto3,enum=muid.authn.v1.basic.AuthIntent"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
 }
 
 func (x *StartAuthSessionRequest) Reset() {
@@ -81,13 +80,6 @@ func (x *StartAuthSessionRequest) GetIntent() basic.AuthIntent {
 	return basic.AuthIntent(0)
 }
 
-func (x *StartAuthSessionRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
 func (x *StartAuthSessionRequest) SetMethod(v basic.AuthMethod) {
 	x.xxx_hidden_Method = v
 }
@@ -100,21 +92,6 @@ func (x *StartAuthSessionRequest) SetIntent(v basic.AuthIntent) {
 	x.xxx_hidden_Intent = v
 }
 
-func (x *StartAuthSessionRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *StartAuthSessionRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *StartAuthSessionRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
 type StartAuthSessionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
@@ -122,8 +99,6 @@ type StartAuthSessionRequest_builder struct {
 	Identifier string
 	// intent defaults to AUTH_INTENT_LOGIN when unset.
 	Intent basic.AuthIntent
-	// Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
-	SessionToken *session.SessionToken
 }
 
 func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
@@ -133,7 +108,6 @@ func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
 	x.xxx_hidden_Method = b.Method
 	x.xxx_hidden_Identifier = b.Identifier
 	x.xxx_hidden_Intent = b.Intent
-	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -223,7 +197,6 @@ type ContinueAuthSessionRequest struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_TransitionId string                 `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
 	xxx_hidden_Proof        *proof.AuthProof       `protobuf:"bytes,2,opt,name=proof,proto3"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,3,opt,name=session_token,json=sessionToken,proto3"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
@@ -267,23 +240,12 @@ func (x *ContinueAuthSessionRequest) GetProof() *proof.AuthProof {
 	return nil
 }
 
-func (x *ContinueAuthSessionRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
 func (x *ContinueAuthSessionRequest) SetTransitionId(v string) {
 	x.xxx_hidden_TransitionId = v
 }
 
 func (x *ContinueAuthSessionRequest) SetProof(v *proof.AuthProof) {
 	x.xxx_hidden_Proof = v
-}
-
-func (x *ContinueAuthSessionRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
 }
 
 func (x *ContinueAuthSessionRequest) HasProof() bool {
@@ -293,19 +255,8 @@ func (x *ContinueAuthSessionRequest) HasProof() bool {
 	return x.xxx_hidden_Proof != nil
 }
 
-func (x *ContinueAuthSessionRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
 func (x *ContinueAuthSessionRequest) ClearProof() {
 	x.xxx_hidden_Proof = nil
-}
-
-func (x *ContinueAuthSessionRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
 }
 
 type ContinueAuthSessionRequest_builder struct {
@@ -313,8 +264,6 @@ type ContinueAuthSessionRequest_builder struct {
 
 	TransitionId string
 	Proof        *proof.AuthProof
-	// Optional; required to return session context after AUTH_INTENT_LINK_ACCOUNT completes.
-	SessionToken *session.SessionToken
 }
 
 func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest {
@@ -323,7 +272,6 @@ func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest
 	_, _ = b, x
 	x.xxx_hidden_TransitionId = b.TransitionId
 	x.xxx_hidden_Proof = b.Proof
-	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -570,11 +518,11 @@ func (*continueAuthSessionResponse_AuthSuccess) isContinueAuthSessionResponse_Re
 
 func (*continueAuthSessionResponse_AuthFailure) isContinueAuthSessionResponse_Result() {}
 
+// Session token is passed via the authorization metadata header: "Session <token>".
 type GetAuthorizedSessionRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetAuthorizedSessionRequest) Reset() {
@@ -602,39 +550,15 @@ func (x *GetAuthorizedSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *GetAuthorizedSessionRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *GetAuthorizedSessionRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *GetAuthorizedSessionRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *GetAuthorizedSessionRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
 type GetAuthorizedSessionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SessionToken *session.SessionToken
 }
 
 func (b0 GetAuthorizedSessionRequest_builder) Build() *GetAuthorizedSessionRequest {
 	m0 := &GetAuthorizedSessionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -720,11 +644,11 @@ func (b0 GetAuthorizedSessionResponse_builder) Build() *GetAuthorizedSessionResp
 	return m0
 }
 
+// Session token is passed via the authorization metadata header: "Session <token>".
 type GetAuthenticatedPrincipalRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetAuthenticatedPrincipalRequest) Reset() {
@@ -752,39 +676,15 @@ func (x *GetAuthenticatedPrincipalRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *GetAuthenticatedPrincipalRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *GetAuthenticatedPrincipalRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *GetAuthenticatedPrincipalRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *GetAuthenticatedPrincipalRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
 type GetAuthenticatedPrincipalRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SessionToken *session.SessionToken
 }
 
 func (b0 GetAuthenticatedPrincipalRequest_builder) Build() *GetAuthenticatedPrincipalRequest {
 	m0 := &GetAuthenticatedPrincipalRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -870,12 +770,12 @@ func (b0 GetAuthenticatedPrincipalResponse_builder) Build() *GetAuthenticatedPri
 	return m0
 }
 
+// Session token is passed via the authorization metadata header: "Session <token>".
 type RevokeFederatedIdentityRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	xxx_hidden_Provider     string                 `protobuf:"bytes,2,opt,name=provider,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state               protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Provider string                 `protobuf:"bytes,1,opt,name=provider,proto3"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
 }
 
 func (x *RevokeFederatedIdentityRequest) Reset() {
@@ -903,13 +803,6 @@ func (x *RevokeFederatedIdentityRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *RevokeFederatedIdentityRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
 func (x *RevokeFederatedIdentityRequest) GetProvider() string {
 	if x != nil {
 		return x.xxx_hidden_Provider
@@ -917,37 +810,20 @@ func (x *RevokeFederatedIdentityRequest) GetProvider() string {
 	return ""
 }
 
-func (x *RevokeFederatedIdentityRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
 func (x *RevokeFederatedIdentityRequest) SetProvider(v string) {
 	x.xxx_hidden_Provider = v
-}
-
-func (x *RevokeFederatedIdentityRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *RevokeFederatedIdentityRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
 }
 
 type RevokeFederatedIdentityRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SessionToken *session.SessionToken
-	Provider     string
+	Provider string
 }
 
 func (b0 RevokeFederatedIdentityRequest_builder) Build() *RevokeFederatedIdentityRequest {
 	m0 := &RevokeFederatedIdentityRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
 	x.xxx_hidden_Provider = b.Provider
 	return m0
 }
@@ -1009,11 +885,11 @@ func (b0 RevokeFederatedIdentityResponse_builder) Build() *RevokeFederatedIdenti
 	return m0
 }
 
+// Session token is passed via the authorization metadata header: "Session <token>".
 type RevokeSessionRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RevokeSessionRequest) Reset() {
@@ -1041,39 +917,15 @@ func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *RevokeSessionRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *RevokeSessionRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *RevokeSessionRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *RevokeSessionRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
 type RevokeSessionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SessionToken *session.SessionToken
 }
 
 func (b0 RevokeSessionRequest_builder) Build() *RevokeSessionRequest {
 	m0 := &RevokeSessionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -1134,11 +986,11 @@ func (b0 RevokeSessionResponse_builder) Build() *RevokeSessionResponse {
 	return m0
 }
 
+// Session token is passed via the authorization metadata header: "Session <token>".
 type ExtendSessionRequest struct {
-	state                   protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_SessionToken *session.SessionToken  `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
-	unknownFields           protoimpl.UnknownFields
-	sizeCache               protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ExtendSessionRequest) Reset() {
@@ -1166,39 +1018,15 @@ func (x *ExtendSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ExtendSessionRequest) GetSessionToken() *session.SessionToken {
-	if x != nil {
-		return x.xxx_hidden_SessionToken
-	}
-	return nil
-}
-
-func (x *ExtendSessionRequest) SetSessionToken(v *session.SessionToken) {
-	x.xxx_hidden_SessionToken = v
-}
-
-func (x *ExtendSessionRequest) HasSessionToken() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_SessionToken != nil
-}
-
-func (x *ExtendSessionRequest) ClearSessionToken() {
-	x.xxx_hidden_SessionToken = nil
-}
-
 type ExtendSessionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
-	SessionToken *session.SessionToken
 }
 
 func (b0 ExtendSessionRequest_builder) Build() *ExtendSessionRequest {
 	m0 := &ExtendSessionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
-	x.xxx_hidden_SessionToken = b.SessionToken
 	return m0
 }
 
@@ -1274,49 +1102,42 @@ var File_authn_v1_authn_proto protoreflect.FileDescriptor
 
 const file_authn_v1_authn_proto_rawDesc = "" +
 	"\n" +
-	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xff\x01\n" +
+	"\x14authn/v1/authn.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xb5\x01\n" +
 	"\x17StartAuthSessionRequest\x127\n" +
 	"\x06method\x18\x01 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthMethodR\x06method\x12(\n" +
 	"\n" +
 	"identifier\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\x80\x02R\n" +
 	"identifier\x127\n" +
-	"\x06intent\x18\x03 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthIntentR\x06intent\x12H\n" +
-	"\rsession_token\x18\x04 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\x8f\x01\n" +
+	"\x06intent\x18\x03 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthIntentR\x06intent\"\x8f\x01\n" +
 	"\x18StartAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x12D\n" +
-	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\xcb\x01\n" +
+	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\x81\x01\n" +
 	"\x1aContinueAuthSessionRequest\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x124\n" +
-	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\x12H\n" +
-	"\rsession_token\x18\x03 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\xfc\x02\n" +
+	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xfc\x02\n" +
 	"\x1bContinueAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x127\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthStatusR\x06status\x12Y\n" +
 	"\x12challenge_required\x18\x03 \x01(\v2(.muid.authn.v1.session.ChallengeRequiredH\x00R\x11challengeRequired\x12G\n" +
 	"\fauth_success\x18\x04 \x01(\v2\".muid.authn.v1.session.AuthSuccessH\x00R\vauthSuccess\x12G\n" +
 	"\fauth_failure\x18\x05 \x01(\v2\".muid.authn.v1.session.AuthFailureH\x00R\vauthFailureB\b\n" +
-	"\x06result\"g\n" +
-	"\x1bGetAuthorizedSessionRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"z\n" +
+	"\x06result\"\x1d\n" +
+	"\x1bGetAuthorizedSessionRequest\"z\n" +
 	"\x1cGetAuthorizedSessionResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12D\n" +
-	"\asession\x18\x02 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\asession\"l\n" +
-	" GetAuthenticatedPrincipalRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"\x86\x01\n" +
+	"\asession\x18\x02 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\asession\"\"\n" +
+	" GetAuthenticatedPrincipalRequest\"\x86\x01\n" +
 	"!GetAuthenticatedPrincipalResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12K\n" +
-	"\tprincipal\x18\x02 \x01(\v2-.muid.authn.v1.session.AuthenticatedPrincipalR\tprincipal\"\x91\x01\n" +
-	"\x1eRevokeFederatedIdentityRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x12%\n" +
-	"\bprovider\x18\x02 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x182R\bprovider\";\n" +
+	"\tprincipal\x18\x02 \x01(\v2-.muid.authn.v1.session.AuthenticatedPrincipalR\tprincipal\"G\n" +
+	"\x1eRevokeFederatedIdentityRequest\x12%\n" +
+	"\bprovider\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x182R\bprovider\";\n" +
 	"\x1fRevokeFederatedIdentityResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"`\n" +
-	"\x14RevokeSessionRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"1\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x16\n" +
+	"\x14RevokeSessionRequest\"1\n" +
 	"\x15RevokeSessionResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"`\n" +
-	"\x14ExtendSessionRequest\x12H\n" +
-	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\"g\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x16\n" +
+	"\x14ExtendSessionRequest\"g\n" +
 	"\x15ExtendSessionResponse\x12N\n" +
 	"\x0fsession_context\x18\x01 \x01(\v2%.muid.authn.v1.session.SessionContextR\x0esessionContext2\x84\x06\n" +
 	"\fAuthnService\x12c\n" +
@@ -1348,55 +1169,47 @@ var file_authn_v1_authn_proto_goTypes = []any{
 	(*ExtendSessionResponse)(nil),             // 13: muid.authn.v1.ExtendSessionResponse
 	(basic.AuthMethod)(0),                     // 14: muid.authn.v1.basic.AuthMethod
 	(basic.AuthIntent)(0),                     // 15: muid.authn.v1.basic.AuthIntent
-	(*session.SessionToken)(nil),              // 16: muid.authn.v1.session.SessionToken
-	(*challenge.AuthChallenge)(nil),           // 17: muid.authn.v1.challenge.AuthChallenge
-	(*proof.AuthProof)(nil),                   // 18: muid.authn.v1.proof.AuthProof
-	(basic.AuthStatus)(0),                     // 19: muid.authn.v1.basic.AuthStatus
-	(*session.ChallengeRequired)(nil),         // 20: muid.authn.v1.session.ChallengeRequired
-	(*session.AuthSuccess)(nil),               // 21: muid.authn.v1.session.AuthSuccess
-	(*session.AuthFailure)(nil),               // 22: muid.authn.v1.session.AuthFailure
-	(*session.AuthenticatedResult)(nil),       // 23: muid.authn.v1.session.AuthenticatedResult
-	(*session.AuthenticatedPrincipal)(nil),    // 24: muid.authn.v1.session.AuthenticatedPrincipal
-	(*session.SessionContext)(nil),            // 25: muid.authn.v1.session.SessionContext
+	(*challenge.AuthChallenge)(nil),           // 16: muid.authn.v1.challenge.AuthChallenge
+	(*proof.AuthProof)(nil),                   // 17: muid.authn.v1.proof.AuthProof
+	(basic.AuthStatus)(0),                     // 18: muid.authn.v1.basic.AuthStatus
+	(*session.ChallengeRequired)(nil),         // 19: muid.authn.v1.session.ChallengeRequired
+	(*session.AuthSuccess)(nil),               // 20: muid.authn.v1.session.AuthSuccess
+	(*session.AuthFailure)(nil),               // 21: muid.authn.v1.session.AuthFailure
+	(*session.AuthenticatedResult)(nil),       // 22: muid.authn.v1.session.AuthenticatedResult
+	(*session.AuthenticatedPrincipal)(nil),    // 23: muid.authn.v1.session.AuthenticatedPrincipal
+	(*session.SessionContext)(nil),            // 24: muid.authn.v1.session.SessionContext
 }
 var file_authn_v1_authn_proto_depIdxs = []int32{
 	14, // 0: muid.authn.v1.StartAuthSessionRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
 	15, // 1: muid.authn.v1.StartAuthSessionRequest.intent:type_name -> muid.authn.v1.basic.AuthIntent
-	16, // 2: muid.authn.v1.StartAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	17, // 3: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	18, // 4: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
-	16, // 5: muid.authn.v1.ContinueAuthSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	19, // 6: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
-	20, // 7: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
-	21, // 8: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
-	22, // 9: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
-	16, // 10: muid.authn.v1.GetAuthorizedSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	23, // 11: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
-	16, // 12: muid.authn.v1.GetAuthenticatedPrincipalRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	24, // 13: muid.authn.v1.GetAuthenticatedPrincipalResponse.principal:type_name -> muid.authn.v1.session.AuthenticatedPrincipal
-	16, // 14: muid.authn.v1.RevokeFederatedIdentityRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	16, // 15: muid.authn.v1.RevokeSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	16, // 16: muid.authn.v1.ExtendSessionRequest.session_token:type_name -> muid.authn.v1.session.SessionToken
-	25, // 17: muid.authn.v1.ExtendSessionResponse.session_context:type_name -> muid.authn.v1.session.SessionContext
-	0,  // 18: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
-	2,  // 19: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
-	8,  // 20: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
-	4,  // 21: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetAuthorizedSessionRequest
-	6,  // 22: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:input_type -> muid.authn.v1.GetAuthenticatedPrincipalRequest
-	10, // 23: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
-	12, // 24: muid.authn.v1.AuthnService.ExtendSession:input_type -> muid.authn.v1.ExtendSessionRequest
-	1,  // 25: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
-	3,  // 26: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
-	9,  // 27: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
-	5,  // 28: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetAuthorizedSessionResponse
-	7,  // 29: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:output_type -> muid.authn.v1.GetAuthenticatedPrincipalResponse
-	11, // 30: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
-	13, // 31: muid.authn.v1.AuthnService.ExtendSession:output_type -> muid.authn.v1.ExtendSessionResponse
-	25, // [25:32] is the sub-list for method output_type
-	18, // [18:25] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	16, // 2: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	17, // 3: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
+	18, // 4: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
+	19, // 5: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
+	20, // 6: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
+	21, // 7: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
+	22, // 8: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
+	23, // 9: muid.authn.v1.GetAuthenticatedPrincipalResponse.principal:type_name -> muid.authn.v1.session.AuthenticatedPrincipal
+	24, // 10: muid.authn.v1.ExtendSessionResponse.session_context:type_name -> muid.authn.v1.session.SessionContext
+	0,  // 11: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
+	2,  // 12: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
+	8,  // 13: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
+	4,  // 14: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetAuthorizedSessionRequest
+	6,  // 15: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:input_type -> muid.authn.v1.GetAuthenticatedPrincipalRequest
+	10, // 16: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
+	12, // 17: muid.authn.v1.AuthnService.ExtendSession:input_type -> muid.authn.v1.ExtendSessionRequest
+	1,  // 18: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
+	3,  // 19: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
+	9,  // 20: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
+	5,  // 21: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetAuthorizedSessionResponse
+	7,  // 22: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:output_type -> muid.authn.v1.GetAuthenticatedPrincipalResponse
+	11, // 23: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
+	13, // 24: muid.authn.v1.AuthnService.ExtendSession:output_type -> muid.authn.v1.ExtendSessionResponse
+	18, // [18:25] is the sub-list for method output_type
+	11, // [11:18] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_authn_proto_init() }

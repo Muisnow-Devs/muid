@@ -15,8 +15,6 @@ const (
 	Label = "user_profile"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldEmailRef holds the string denoting the email_ref field in the database.
-	FieldEmailRef = "email_ref"
 	// FieldDisplayName holds the string denoting the display_name field in the database.
 	FieldDisplayName = "display_name"
 	// FieldUsername holds the string denoting the username field in the database.
@@ -56,7 +54,6 @@ const (
 // Columns holds all SQL columns for userprofile fields.
 var Columns = []string{
 	FieldID,
-	FieldEmailRef,
 	FieldDisplayName,
 	FieldUsername,
 	FieldLocale,
@@ -88,8 +85,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// EmailRefValidator is a validator for the "email_ref" field. It is called by the builders before save.
-	EmailRefValidator func(string) error
 	// DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
 	DisplayNameValidator func(string) error
 	// UsernameValidator is a validator for the "username" field. It is called by the builders before save.
@@ -120,11 +115,6 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
-}
-
-// ByEmailRef orders the results by the email_ref field.
-func ByEmailRef(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEmailRef, opts...).ToFunc()
 }
 
 // ByDisplayName orders the results by the display_name field.

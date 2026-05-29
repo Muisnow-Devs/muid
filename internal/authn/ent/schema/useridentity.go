@@ -55,5 +55,8 @@ func (UserIdentity) Edges() []ent.Edge {
 		edge.To("federated_identity", UserFederatedIdentity.Type).
 			Unique().
 			Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("email_identity", UserEmail.Type).
+			Unique().
+			Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

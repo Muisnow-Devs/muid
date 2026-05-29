@@ -23,7 +23,6 @@ type UserProfile struct {
 func (UserProfile) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Immutable().Default(shared.UUIDV7),
-		field.String("email_ref").NotEmpty().Unique(),
 		field.String("display_name").NotEmpty(),
 		field.String("username").NotEmpty().Unique().Validate(validation.CheckUsername),
 
@@ -42,7 +41,6 @@ func (UserProfile) Fields() []ent.Field {
 // Indexes of the UserProfile.
 func (UserProfile) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("email_ref"),
 		index.Fields("username"),
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userref"
 	"sanzi.io/muid/internal/authn/ent/usersession"
@@ -28,20 +29,6 @@ type UserRefUpdate struct {
 // Where appends a list predicates to the UserRefUpdate builder.
 func (_u *UserRefUpdate) Where(ps ...predicate.UserRef) *UserRefUpdate {
 	_u.mutation.Where(ps...)
-	return _u
-}
-
-// SetEmail sets the "email" field.
-func (_u *UserRefUpdate) SetEmail(v string) *UserRefUpdate {
-	_u.mutation.SetEmail(v)
-	return _u
-}
-
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_u *UserRefUpdate) SetNillableEmail(v *string) *UserRefUpdate {
-	if v != nil {
-		_u.SetEmail(*v)
-	}
 	return _u
 }
 
@@ -101,6 +88,21 @@ func (_u *UserRefUpdate) AddIdentities(v ...*UserIdentity) *UserRefUpdate {
 	return _u.AddIdentityIDs(ids...)
 }
 
+// AddEmailIDs adds the "emails" edge to the UserEmail entity by IDs.
+func (_u *UserRefUpdate) AddEmailIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.AddEmailIDs(ids...)
+	return _u
+}
+
+// AddEmails adds the "emails" edges to the UserEmail entity.
+func (_u *UserRefUpdate) AddEmails(v ...*UserEmail) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEmailIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdate) Mutation() *UserRefMutation {
 	return _u.mutation
@@ -148,6 +150,27 @@ func (_u *UserRefUpdate) RemoveIdentities(v ...*UserIdentity) *UserRefUpdate {
 	return _u.RemoveIdentityIDs(ids...)
 }
 
+// ClearEmails clears all "emails" edges to the UserEmail entity.
+func (_u *UserRefUpdate) ClearEmails() *UserRefUpdate {
+	_u.mutation.ClearEmails()
+	return _u
+}
+
+// RemoveEmailIDs removes the "emails" edge to UserEmail entities by IDs.
+func (_u *UserRefUpdate) RemoveEmailIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.RemoveEmailIDs(ids...)
+	return _u
+}
+
+// RemoveEmails removes "emails" edges to UserEmail entities.
+func (_u *UserRefUpdate) RemoveEmails(v ...*UserEmail) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEmailIDs(ids...)
+}
+
 // Save executes the query and returns the number of nodes affected by the update operation.
 func (_u *UserRefUpdate) Save(ctx context.Context) (int, error) {
 	_u.defaults()
@@ -184,20 +207,7 @@ func (_u *UserRefUpdate) defaults() {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (_u *UserRefUpdate) check() error {
-	if v, ok := _u.mutation.Email(); ok {
-		if err := userref.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserRef.email": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(userref.Table, userref.Columns, sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -205,9 +215,6 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.Email(); ok {
-		_spec.SetField(userref.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.LastLoginAt(); ok {
 		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
@@ -308,6 +315,51 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.EmailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEmailsIDs(); len(nodes) > 0 && !_u.mutation.EmailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EmailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userref.Label}
@@ -326,20 +378,6 @@ type UserRefUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserRefMutation
-}
-
-// SetEmail sets the "email" field.
-func (_u *UserRefUpdateOne) SetEmail(v string) *UserRefUpdateOne {
-	_u.mutation.SetEmail(v)
-	return _u
-}
-
-// SetNillableEmail sets the "email" field if the given value is not nil.
-func (_u *UserRefUpdateOne) SetNillableEmail(v *string) *UserRefUpdateOne {
-	if v != nil {
-		_u.SetEmail(*v)
-	}
-	return _u
 }
 
 // SetLastLoginAt sets the "last_login_at" field.
@@ -398,6 +436,21 @@ func (_u *UserRefUpdateOne) AddIdentities(v ...*UserIdentity) *UserRefUpdateOne 
 	return _u.AddIdentityIDs(ids...)
 }
 
+// AddEmailIDs adds the "emails" edge to the UserEmail entity by IDs.
+func (_u *UserRefUpdateOne) AddEmailIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.AddEmailIDs(ids...)
+	return _u
+}
+
+// AddEmails adds the "emails" edges to the UserEmail entity.
+func (_u *UserRefUpdateOne) AddEmails(v ...*UserEmail) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddEmailIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdateOne) Mutation() *UserRefMutation {
 	return _u.mutation
@@ -443,6 +496,27 @@ func (_u *UserRefUpdateOne) RemoveIdentities(v ...*UserIdentity) *UserRefUpdateO
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveIdentityIDs(ids...)
+}
+
+// ClearEmails clears all "emails" edges to the UserEmail entity.
+func (_u *UserRefUpdateOne) ClearEmails() *UserRefUpdateOne {
+	_u.mutation.ClearEmails()
+	return _u
+}
+
+// RemoveEmailIDs removes the "emails" edge to UserEmail entities by IDs.
+func (_u *UserRefUpdateOne) RemoveEmailIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.RemoveEmailIDs(ids...)
+	return _u
+}
+
+// RemoveEmails removes "emails" edges to UserEmail entities.
+func (_u *UserRefUpdateOne) RemoveEmails(v ...*UserEmail) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveEmailIDs(ids...)
 }
 
 // Where appends a list predicates to the UserRefUpdate builder.
@@ -494,20 +568,7 @@ func (_u *UserRefUpdateOne) defaults() {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (_u *UserRefUpdateOne) check() error {
-	if v, ok := _u.mutation.Email(); ok {
-		if err := userref.EmailValidator(v); err != nil {
-			return &ValidationError{Name: "email", err: fmt.Errorf(`ent: validator failed for field "UserRef.email": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err error) {
-	if err := _u.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(userref.Table, userref.Columns, sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -532,9 +593,6 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.Email(); ok {
-		_spec.SetField(userref.FieldEmail, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.LastLoginAt(); ok {
 		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
@@ -628,6 +686,51 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(useridentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EmailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedEmailsIDs(); len(nodes) > 0 && !_u.mutation.EmailsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EmailsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.EmailsTable,
+			Columns: []string{userref.EmailsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

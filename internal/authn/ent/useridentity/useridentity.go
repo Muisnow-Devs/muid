@@ -33,6 +33,8 @@ const (
 	EdgePasskeyIdentity = "passkey_identity"
 	// EdgeFederatedIdentity holds the string denoting the federated_identity edge name in mutations.
 	EdgeFederatedIdentity = "federated_identity"
+	// EdgeEmailIdentity holds the string denoting the email_identity edge name in mutations.
+	EdgeEmailIdentity = "email_identity"
 	// Table holds the table name of the useridentity in the database.
 	Table = "user_identities"
 	// UserTable is the table that holds the user relation/edge.
@@ -56,6 +58,13 @@ const (
 	FederatedIdentityInverseTable = "user_federated_identities"
 	// FederatedIdentityColumn is the table column denoting the federated_identity relation/edge.
 	FederatedIdentityColumn = "identity_id"
+	// EmailIdentityTable is the table that holds the email_identity relation/edge.
+	EmailIdentityTable = "user_emails"
+	// EmailIdentityInverseTable is the table name for the UserEmail entity.
+	// It exists in this package in order to avoid circular dependency with the "useremail" package.
+	EmailIdentityInverseTable = "user_emails"
+	// EmailIdentityColumn is the table column denoting the email_identity relation/edge.
+	EmailIdentityColumn = "identity_id"
 )
 
 // Columns holds all SQL columns for useridentity fields.
@@ -152,6 +161,13 @@ func ByFederatedIdentityField(field string, opts ...sql.OrderTermOption) OrderOp
 		sqlgraph.OrderByNeighborTerms(s, newFederatedIdentityStep(), sql.OrderByField(field, opts...))
 	}
 }
+
+// ByEmailIdentityField orders the results by email_identity field.
+func ByEmailIdentityField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEmailIdentityStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newUserStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -171,5 +187,12 @@ func newFederatedIdentityStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(FederatedIdentityInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2O, false, FederatedIdentityTable, FederatedIdentityColumn),
+	)
+}
+func newEmailIdentityStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EmailIdentityInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2O, false, EmailIdentityTable, EmailIdentityColumn),
 	)
 }

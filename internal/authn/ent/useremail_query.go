@@ -4,7 +4,6 @@ package ent
 
 import (
 	"context"
-	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -13,61 +12,60 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/profile/ent/predicate"
-	"sanzi.io/muid/internal/profile/ent/useravatar"
-	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
-	"sanzi.io/muid/internal/profile/ent/userprofile"
+	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/useremail"
+	"sanzi.io/muid/internal/authn/ent/useridentity"
+	"sanzi.io/muid/internal/authn/ent/userref"
 )
 
-// UserProfileQuery is the builder for querying UserProfile entities.
-type UserProfileQuery struct {
+// UserEmailQuery is the builder for querying UserEmail entities.
+type UserEmailQuery struct {
 	config
-	ctx                  *QueryContext
-	order                []userprofile.OrderOption
-	inters               []Interceptor
-	predicates           []predicate.UserProfile
-	withAvatars          *UserAvatarQuery
-	withOriginalIdentity *UserOriginalIdentityQuery
-	withFKs              bool
+	ctx          *QueryContext
+	order        []useremail.OrderOption
+	inters       []Interceptor
+	predicates   []predicate.UserEmail
+	withUser     *UserRefQuery
+	withIdentity *UserIdentityQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the UserProfileQuery builder.
-func (_q *UserProfileQuery) Where(ps ...predicate.UserProfile) *UserProfileQuery {
+// Where adds a new predicate for the UserEmailQuery builder.
+func (_q *UserEmailQuery) Where(ps ...predicate.UserEmail) *UserEmailQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *UserProfileQuery) Limit(limit int) *UserProfileQuery {
+func (_q *UserEmailQuery) Limit(limit int) *UserEmailQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *UserProfileQuery) Offset(offset int) *UserProfileQuery {
+func (_q *UserEmailQuery) Offset(offset int) *UserEmailQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *UserProfileQuery) Unique(unique bool) *UserProfileQuery {
+func (_q *UserEmailQuery) Unique(unique bool) *UserEmailQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *UserProfileQuery) Order(o ...userprofile.OrderOption) *UserProfileQuery {
+func (_q *UserEmailQuery) Order(o ...useremail.OrderOption) *UserEmailQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryAvatars chains the current query on the "avatars" edge.
-func (_q *UserProfileQuery) QueryAvatars() *UserAvatarQuery {
-	query := (&UserAvatarClient{config: _q.config}).Query()
+// QueryUser chains the current query on the "user" edge.
+func (_q *UserEmailQuery) QueryUser() *UserRefQuery {
+	query := (&UserRefClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -77,9 +75,9 @@ func (_q *UserProfileQuery) QueryAvatars() *UserAvatarQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(userprofile.Table, userprofile.FieldID, selector),
-			sqlgraph.To(useravatar.Table, useravatar.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userprofile.AvatarsTable, userprofile.AvatarsColumn),
+			sqlgraph.From(useremail.Table, useremail.FieldID, selector),
+			sqlgraph.To(userref.Table, userref.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, useremail.UserTable, useremail.UserColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -87,9 +85,9 @@ func (_q *UserProfileQuery) QueryAvatars() *UserAvatarQuery {
 	return query
 }
 
-// QueryOriginalIdentity chains the current query on the "original_identity" edge.
-func (_q *UserProfileQuery) QueryOriginalIdentity() *UserOriginalIdentityQuery {
-	query := (&UserOriginalIdentityClient{config: _q.config}).Query()
+// QueryIdentity chains the current query on the "identity" edge.
+func (_q *UserEmailQuery) QueryIdentity() *UserIdentityQuery {
+	query := (&UserIdentityClient{config: _q.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := _q.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -99,9 +97,9 @@ func (_q *UserProfileQuery) QueryOriginalIdentity() *UserOriginalIdentityQuery {
 			return nil, err
 		}
 		step := sqlgraph.NewStep(
-			sqlgraph.From(userprofile.Table, userprofile.FieldID, selector),
-			sqlgraph.To(useroriginalidentity.Table, useroriginalidentity.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, false, userprofile.OriginalIdentityTable, userprofile.OriginalIdentityColumn),
+			sqlgraph.From(useremail.Table, useremail.FieldID, selector),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, useremail.IdentityTable, useremail.IdentityColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -109,21 +107,21 @@ func (_q *UserProfileQuery) QueryOriginalIdentity() *UserOriginalIdentityQuery {
 	return query
 }
 
-// First returns the first UserProfile entity from the query.
-// Returns a *NotFoundError when no UserProfile was found.
-func (_q *UserProfileQuery) First(ctx context.Context) (*UserProfile, error) {
+// First returns the first UserEmail entity from the query.
+// Returns a *NotFoundError when no UserEmail was found.
+func (_q *UserEmailQuery) First(ctx context.Context) (*UserEmail, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{userprofile.Label}
+		return nil, &NotFoundError{useremail.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *UserProfileQuery) FirstX(ctx context.Context) *UserProfile {
+func (_q *UserEmailQuery) FirstX(ctx context.Context) *UserEmail {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -131,22 +129,22 @@ func (_q *UserProfileQuery) FirstX(ctx context.Context) *UserProfile {
 	return node
 }
 
-// FirstID returns the first UserProfile ID from the query.
-// Returns a *NotFoundError when no UserProfile ID was found.
-func (_q *UserProfileQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+// FirstID returns the first UserEmail ID from the query.
+// Returns a *NotFoundError when no UserEmail ID was found.
+func (_q *UserEmailQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{userprofile.Label}
+		err = &NotFoundError{useremail.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *UserProfileQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (_q *UserEmailQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -154,10 +152,10 @@ func (_q *UserProfileQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// Only returns a single UserProfile entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one UserProfile entity is found.
-// Returns a *NotFoundError when no UserProfile entities are found.
-func (_q *UserProfileQuery) Only(ctx context.Context) (*UserProfile, error) {
+// Only returns a single UserEmail entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one UserEmail entity is found.
+// Returns a *NotFoundError when no UserEmail entities are found.
+func (_q *UserEmailQuery) Only(ctx context.Context) (*UserEmail, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -166,14 +164,14 @@ func (_q *UserProfileQuery) Only(ctx context.Context) (*UserProfile, error) {
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{userprofile.Label}
+		return nil, &NotFoundError{useremail.Label}
 	default:
-		return nil, &NotSingularError{userprofile.Label}
+		return nil, &NotSingularError{useremail.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *UserProfileQuery) OnlyX(ctx context.Context) *UserProfile {
+func (_q *UserEmailQuery) OnlyX(ctx context.Context) *UserEmail {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -181,10 +179,10 @@ func (_q *UserProfileQuery) OnlyX(ctx context.Context) *UserProfile {
 	return node
 }
 
-// OnlyID is like Only, but returns the only UserProfile ID in the query.
-// Returns a *NotSingularError when more than one UserProfile ID is found.
+// OnlyID is like Only, but returns the only UserEmail ID in the query.
+// Returns a *NotSingularError when more than one UserEmail ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *UserProfileQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *UserEmailQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -193,15 +191,15 @@ func (_q *UserProfileQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{userprofile.Label}
+		err = &NotFoundError{useremail.Label}
 	default:
-		err = &NotSingularError{userprofile.Label}
+		err = &NotSingularError{useremail.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *UserProfileQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (_q *UserEmailQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -209,18 +207,18 @@ func (_q *UserProfileQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// All executes the query and returns a list of UserProfiles.
-func (_q *UserProfileQuery) All(ctx context.Context) ([]*UserProfile, error) {
+// All executes the query and returns a list of UserEmails.
+func (_q *UserEmailQuery) All(ctx context.Context) ([]*UserEmail, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*UserProfile, *UserProfileQuery]()
-	return withInterceptors[[]*UserProfile](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*UserEmail, *UserEmailQuery]()
+	return withInterceptors[[]*UserEmail](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *UserProfileQuery) AllX(ctx context.Context) []*UserProfile {
+func (_q *UserEmailQuery) AllX(ctx context.Context) []*UserEmail {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -228,20 +226,20 @@ func (_q *UserProfileQuery) AllX(ctx context.Context) []*UserProfile {
 	return nodes
 }
 
-// IDs executes the query and returns a list of UserProfile IDs.
-func (_q *UserProfileQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+// IDs executes the query and returns a list of UserEmail IDs.
+func (_q *UserEmailQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(userprofile.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(useremail.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *UserProfileQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (_q *UserEmailQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -250,16 +248,16 @@ func (_q *UserProfileQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *UserProfileQuery) Count(ctx context.Context) (int, error) {
+func (_q *UserEmailQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*UserProfileQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*UserEmailQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *UserProfileQuery) CountX(ctx context.Context) int {
+func (_q *UserEmailQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -268,7 +266,7 @@ func (_q *UserProfileQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *UserProfileQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *UserEmailQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -281,7 +279,7 @@ func (_q *UserProfileQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *UserProfileQuery) ExistX(ctx context.Context) bool {
+func (_q *UserEmailQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -289,45 +287,45 @@ func (_q *UserProfileQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the UserProfileQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the UserEmailQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *UserProfileQuery) Clone() *UserProfileQuery {
+func (_q *UserEmailQuery) Clone() *UserEmailQuery {
 	if _q == nil {
 		return nil
 	}
-	return &UserProfileQuery{
-		config:               _q.config,
-		ctx:                  _q.ctx.Clone(),
-		order:                append([]userprofile.OrderOption{}, _q.order...),
-		inters:               append([]Interceptor{}, _q.inters...),
-		predicates:           append([]predicate.UserProfile{}, _q.predicates...),
-		withAvatars:          _q.withAvatars.Clone(),
-		withOriginalIdentity: _q.withOriginalIdentity.Clone(),
+	return &UserEmailQuery{
+		config:       _q.config,
+		ctx:          _q.ctx.Clone(),
+		order:        append([]useremail.OrderOption{}, _q.order...),
+		inters:       append([]Interceptor{}, _q.inters...),
+		predicates:   append([]predicate.UserEmail{}, _q.predicates...),
+		withUser:     _q.withUser.Clone(),
+		withIdentity: _q.withIdentity.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
 }
 
-// WithAvatars tells the query-builder to eager-load the nodes that are connected to
-// the "avatars" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserProfileQuery) WithAvatars(opts ...func(*UserAvatarQuery)) *UserProfileQuery {
-	query := (&UserAvatarClient{config: _q.config}).Query()
+// WithUser tells the query-builder to eager-load the nodes that are connected to
+// the "user" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserEmailQuery) WithUser(opts ...func(*UserRefQuery)) *UserEmailQuery {
+	query := (&UserRefClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withAvatars = query
+	_q.withUser = query
 	return _q
 }
 
-// WithOriginalIdentity tells the query-builder to eager-load the nodes that are connected to
-// the "original_identity" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserProfileQuery) WithOriginalIdentity(opts ...func(*UserOriginalIdentityQuery)) *UserProfileQuery {
-	query := (&UserOriginalIdentityClient{config: _q.config}).Query()
+// WithIdentity tells the query-builder to eager-load the nodes that are connected to
+// the "identity" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserEmailQuery) WithIdentity(opts ...func(*UserIdentityQuery)) *UserEmailQuery {
+	query := (&UserIdentityClient{config: _q.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	_q.withOriginalIdentity = query
+	_q.withIdentity = query
 	return _q
 }
 
@@ -337,19 +335,19 @@ func (_q *UserProfileQuery) WithOriginalIdentity(opts ...func(*UserOriginalIdent
 // Example:
 //
 //	var v []struct {
-//		DisplayName string `json:"display_name,omitempty"`
+//		IdentityID uuid.UUID `json:"identity_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.UserProfile.Query().
-//		GroupBy(userprofile.FieldDisplayName).
+//	client.UserEmail.Query().
+//		GroupBy(useremail.FieldIdentityID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *UserProfileQuery) GroupBy(field string, fields ...string) *UserProfileGroupBy {
+func (_q *UserEmailQuery) GroupBy(field string, fields ...string) *UserEmailGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &UserProfileGroupBy{build: _q}
+	grbuild := &UserEmailGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = userprofile.Label
+	grbuild.label = useremail.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -360,26 +358,26 @@ func (_q *UserProfileQuery) GroupBy(field string, fields ...string) *UserProfile
 // Example:
 //
 //	var v []struct {
-//		DisplayName string `json:"display_name,omitempty"`
+//		IdentityID uuid.UUID `json:"identity_id,omitempty"`
 //	}
 //
-//	client.UserProfile.Query().
-//		Select(userprofile.FieldDisplayName).
+//	client.UserEmail.Query().
+//		Select(useremail.FieldIdentityID).
 //		Scan(ctx, &v)
-func (_q *UserProfileQuery) Select(fields ...string) *UserProfileSelect {
+func (_q *UserEmailQuery) Select(fields ...string) *UserEmailSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &UserProfileSelect{UserProfileQuery: _q}
-	sbuild.label = userprofile.Label
+	sbuild := &UserEmailSelect{UserEmailQuery: _q}
+	sbuild.label = useremail.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a UserProfileSelect configured with the given aggregations.
-func (_q *UserProfileQuery) Aggregate(fns ...AggregateFunc) *UserProfileSelect {
+// Aggregate returns a UserEmailSelect configured with the given aggregations.
+func (_q *UserEmailQuery) Aggregate(fns ...AggregateFunc) *UserEmailSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *UserProfileQuery) prepareQuery(ctx context.Context) error {
+func (_q *UserEmailQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -391,7 +389,7 @@ func (_q *UserProfileQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !userprofile.ValidColumn(f) {
+		if !useremail.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -405,27 +403,20 @@ func (_q *UserProfileQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *UserProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*UserProfile, error) {
+func (_q *UserEmailQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*UserEmail, error) {
 	var (
-		nodes       = []*UserProfile{}
-		withFKs     = _q.withFKs
+		nodes       = []*UserEmail{}
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			_q.withAvatars != nil,
-			_q.withOriginalIdentity != nil,
+			_q.withUser != nil,
+			_q.withIdentity != nil,
 		}
 	)
-	if _q.withOriginalIdentity != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, userprofile.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*UserProfile).scanValues(nil, columns)
+		return (*UserEmail).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &UserProfile{config: _q.config}
+		node := &UserEmail{config: _q.config}
 		nodes = append(nodes, node)
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
@@ -439,60 +430,26 @@ func (_q *UserProfileQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withAvatars; query != nil {
-		if err := _q.loadAvatars(ctx, query, nodes,
-			func(n *UserProfile) { n.Edges.Avatars = []*UserAvatar{} },
-			func(n *UserProfile, e *UserAvatar) { n.Edges.Avatars = append(n.Edges.Avatars, e) }); err != nil {
+	if query := _q.withUser; query != nil {
+		if err := _q.loadUser(ctx, query, nodes, nil,
+			func(n *UserEmail, e *UserRef) { n.Edges.User = e }); err != nil {
 			return nil, err
 		}
 	}
-	if query := _q.withOriginalIdentity; query != nil {
-		if err := _q.loadOriginalIdentity(ctx, query, nodes, nil,
-			func(n *UserProfile, e *UserOriginalIdentity) { n.Edges.OriginalIdentity = e }); err != nil {
+	if query := _q.withIdentity; query != nil {
+		if err := _q.loadIdentity(ctx, query, nodes, nil,
+			func(n *UserEmail, e *UserIdentity) { n.Edges.Identity = e }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (_q *UserProfileQuery) loadAvatars(ctx context.Context, query *UserAvatarQuery, nodes []*UserProfile, init func(*UserProfile), assign func(*UserProfile, *UserAvatar)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*UserProfile)
+func (_q *UserEmailQuery) loadUser(ctx context.Context, query *UserRefQuery, nodes []*UserEmail, init func(*UserEmail), assign func(*UserEmail, *UserRef)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*UserEmail)
 	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(useravatar.FieldUserID)
-	}
-	query.Where(predicate.UserAvatar(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(userprofile.AvatarsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.UserID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *UserProfileQuery) loadOriginalIdentity(ctx context.Context, query *UserOriginalIdentityQuery, nodes []*UserProfile, init func(*UserProfile), assign func(*UserProfile, *UserOriginalIdentity)) error {
-	ids := make([]int, 0, len(nodes))
-	nodeids := make(map[int][]*UserProfile)
-	for i := range nodes {
-		if nodes[i].user_profile_original_identity == nil {
-			continue
-		}
-		fk := *nodes[i].user_profile_original_identity
+		fk := nodes[i].UserID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -501,7 +458,7 @@ func (_q *UserProfileQuery) loadOriginalIdentity(ctx context.Context, query *Use
 	if len(ids) == 0 {
 		return nil
 	}
-	query.Where(useroriginalidentity.IDIn(ids...))
+	query.Where(userref.IDIn(ids...))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
@@ -509,7 +466,36 @@ func (_q *UserProfileQuery) loadOriginalIdentity(ctx context.Context, query *Use
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "user_profile_original_identity" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "user_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *UserEmailQuery) loadIdentity(ctx context.Context, query *UserIdentityQuery, nodes []*UserEmail, init func(*UserEmail), assign func(*UserEmail, *UserIdentity)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*UserEmail)
+	for i := range nodes {
+		fk := nodes[i].IdentityID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(useridentity.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "identity_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -518,7 +504,7 @@ func (_q *UserProfileQuery) loadOriginalIdentity(ctx context.Context, query *Use
 	return nil
 }
 
-func (_q *UserProfileQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *UserEmailQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -527,8 +513,8 @@ func (_q *UserProfileQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *UserProfileQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(userprofile.Table, userprofile.Columns, sqlgraph.NewFieldSpec(userprofile.FieldID, field.TypeUUID))
+func (_q *UserEmailQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(useremail.Table, useremail.Columns, sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -537,11 +523,17 @@ func (_q *UserProfileQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, userprofile.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, useremail.FieldID)
 		for i := range fields {
-			if fields[i] != userprofile.FieldID {
+			if fields[i] != useremail.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withUser != nil {
+			_spec.Node.AddColumnOnce(useremail.FieldUserID)
+		}
+		if _q.withIdentity != nil {
+			_spec.Node.AddColumnOnce(useremail.FieldIdentityID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -567,12 +559,12 @@ func (_q *UserProfileQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *UserProfileQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *UserEmailQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(userprofile.Table)
+	t1 := builder.Table(useremail.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = userprofile.Columns
+		columns = useremail.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -599,28 +591,28 @@ func (_q *UserProfileQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// UserProfileGroupBy is the group-by builder for UserProfile entities.
-type UserProfileGroupBy struct {
+// UserEmailGroupBy is the group-by builder for UserEmail entities.
+type UserEmailGroupBy struct {
 	selector
-	build *UserProfileQuery
+	build *UserEmailQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *UserProfileGroupBy) Aggregate(fns ...AggregateFunc) *UserProfileGroupBy {
+func (_g *UserEmailGroupBy) Aggregate(fns ...AggregateFunc) *UserEmailGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *UserProfileGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *UserEmailGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*UserProfileQuery, *UserProfileGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*UserEmailQuery, *UserEmailGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *UserProfileGroupBy) sqlScan(ctx context.Context, root *UserProfileQuery, v any) error {
+func (_g *UserEmailGroupBy) sqlScan(ctx context.Context, root *UserEmailQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -647,28 +639,28 @@ func (_g *UserProfileGroupBy) sqlScan(ctx context.Context, root *UserProfileQuer
 	return sql.ScanSlice(rows, v)
 }
 
-// UserProfileSelect is the builder for selecting fields of UserProfile entities.
-type UserProfileSelect struct {
-	*UserProfileQuery
+// UserEmailSelect is the builder for selecting fields of UserEmail entities.
+type UserEmailSelect struct {
+	*UserEmailQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *UserProfileSelect) Aggregate(fns ...AggregateFunc) *UserProfileSelect {
+func (_s *UserEmailSelect) Aggregate(fns ...AggregateFunc) *UserEmailSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *UserProfileSelect) Scan(ctx context.Context, v any) error {
+func (_s *UserEmailSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*UserProfileQuery, *UserProfileSelect](ctx, _s.UserProfileQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*UserEmailQuery, *UserEmailSelect](ctx, _s.UserEmailQuery, _s, _s.inters, v)
 }
 
-func (_s *UserProfileSelect) sqlScan(ctx context.Context, root *UserProfileQuery, v any) error {
+func (_s *UserEmailSelect) sqlScan(ctx context.Context, root *UserEmailQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

@@ -32,8 +32,8 @@ message StartAuthSessionRequest {
   string identifier = 2 [(buf.validate.field).string.max_len = 256];
   // intent defaults to AUTH_INTENT_LOGIN when unset.
   muid.authn.v1.basic.AuthIntent intent = 3;
-  // Required for AUTH_INTENT_LINK_ACCOUNT (and reauth-sensitive flows): proves an active session.
-  muid.authn.v1.session.SessionToken session_token = 4;
+  // Session token for AUTH_INTENT_LINK_ACCOUNT and AUTH_INTENT_REAUTHENTICATE is
+  // passed via the authorization metadata header: "Session <token>".
   // Client locale, timezone, device context, and IP are gRPC metadata only (see pkg/clientmeta):
   // x-client-locale, x-client-timezone, x-client-device, x-client-location,
   // x-client-user-agent, x-client-ip (set by the gateway). Login-alert secure_link is
@@ -48,8 +48,8 @@ message StartAuthSessionResponse {
 message ContinueAuthSessionRequest {
   string transition_id = 1 [(buf.validate.field).string.uuid = true];
   muid.authn.v1.proof.AuthProof proof = 2;
-  // Optional; required to return session context after AUTH_INTENT_LINK_ACCOUNT completes.
-  muid.authn.v1.session.SessionToken session_token = 3;
+  // Session token for AUTH_INTENT_LINK_ACCOUNT is passed via the authorization
+  // metadata header: "Session <token>".
 }
 
 message ContinueAuthSessionResponse {
@@ -63,27 +63,25 @@ message ContinueAuthSessionResponse {
   }
 }
 
-message GetAuthorizedSessionRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-}
+// Session token is passed via the authorization metadata header: "Session <token>".
+message GetAuthorizedSessionRequest {}
 
 message GetAuthorizedSessionResponse {
   bool valid = 1;
   muid.authn.v1.session.AuthenticatedResult session = 2;
 }
 
-message GetAuthenticatedPrincipalRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-}
+// Session token is passed via the authorization metadata header: "Session <token>".
+message GetAuthenticatedPrincipalRequest {}
 
 message GetAuthenticatedPrincipalResponse {
   bool valid = 1;
   muid.authn.v1.session.AuthenticatedPrincipal principal = 2;
 }
 
+// Session token is passed via the authorization metadata header: "Session <token>".
 message RevokeFederatedIdentityRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-  string provider = 2 [(buf.validate.field).string = {
+  string provider = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
   }];
@@ -93,17 +91,15 @@ message RevokeFederatedIdentityResponse {
   bool success = 1;
 }
 
-message RevokeSessionRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-}
+// Session token is passed via the authorization metadata header: "Session <token>".
+message RevokeSessionRequest {}
 
 message RevokeSessionResponse {
   bool success = 1;
 }
 
-message ExtendSessionRequest {
-  muid.authn.v1.session.SessionToken session_token = 1;
-}
+// Session token is passed via the authorization metadata header: "Session <token>".
+message ExtendSessionRequest {}
 
 message ExtendSessionResponse {
   muid.authn.v1.session.SessionContext session_context = 1;

@@ -23,9 +23,9 @@ service ProfileService {
 }
 
 message CreateProfileRequest {
-  string email = 1 [(buf.validate.field).string.email = true];
-  // Optional OIDC-style claims: display name is taken from claims when resolvable, otherwise random; username is always auto-allocated (never from email); picture triggers async avatar bootstrap when https.
-  optional muid.shared.v1.claims.IdentityInformation identity = 2;
+  // Optional OIDC-style claims: display name is taken from claims when resolvable, otherwise random;
+  // username is always auto-allocated (never from email); picture triggers async avatar bootstrap when https.
+  optional muid.shared.v1.claims.IdentityInformation identity = 1;
 }
 
 message CreateProfileResponse {

@@ -14,8 +14,6 @@ const (
 	Label = "user_ref"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldEmail holds the string denoting the email field in the database.
-	FieldEmail = "email"
 	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
 	FieldLastLoginAt = "last_login_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -26,6 +24,8 @@ const (
 	EdgeSessions = "sessions"
 	// EdgeIdentities holds the string denoting the identities edge name in mutations.
 	EdgeIdentities = "identities"
+	// EdgeEmails holds the string denoting the emails edge name in mutations.
+	EdgeEmails = "emails"
 	// Table holds the table name of the userref in the database.
 	Table = "user_refs"
 	// SessionsTable is the table that holds the sessions relation/edge.
@@ -42,12 +42,18 @@ const (
 	IdentitiesInverseTable = "user_identities"
 	// IdentitiesColumn is the table column denoting the identities relation/edge.
 	IdentitiesColumn = "user_id"
+	// EmailsTable is the table that holds the emails relation/edge.
+	EmailsTable = "user_emails"
+	// EmailsInverseTable is the table name for the UserEmail entity.
+	// It exists in this package in order to avoid circular dependency with the "useremail" package.
+	EmailsInverseTable = "user_emails"
+	// EmailsColumn is the table column denoting the emails relation/edge.
+	EmailsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for userref fields.
 var Columns = []string{
 	FieldID,
-	FieldEmail,
 	FieldLastLoginAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -64,8 +70,6 @@ func ValidColumn(column string) bool {
 }
 
 var (
-	// EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	EmailValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -80,11 +84,6 @@ type OrderOption func(*sql.Selector)
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
-}
-
-// ByEmail orders the results by the email field.
-func ByEmail(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldEmail, opts...).ToFunc()
 }
 
 // ByLastLoginAt orders the results by the last_login_at field.
@@ -129,6 +128,20 @@ func ByIdentities(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newIdentitiesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByEmailsCount orders the results by emails count.
+func ByEmailsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEmailsStep(), opts...)
+	}
+}
+
+// ByEmails orders the results by emails terms.
+func ByEmails(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEmailsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newSessionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -141,5 +154,12 @@ func newIdentitiesStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(IdentitiesInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, IdentitiesTable, IdentitiesColumn),
+	)
+}
+func newEmailsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EmailsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EmailsTable, EmailsColumn),
 	)
 }

@@ -3,32 +3,18 @@ package grpcutils
 import (
 	"context"
 	"fmt"
-	"log/slog"
 
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"sanzi.io/muid/pkg/log"
 )
 
-func RecoveryInterceptor(
-	ctx context.Context,
-	req interface{},
-	info *grpc.UnaryServerInfo,
-	handler grpc.UnaryHandler,
-) (resp interface{}, err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.LogUnexpected(
-				ctx,
-				"grpc panic",
-				fmt.Sprintf("%v", r),
-				slog.String("method", info.FullMethod),
-			)
-			err = status.Error(codes.Internal, "internal error")
-		}
-	}()
-
-	return handler(ctx, req)
+// PanicRecoveryHandler is a [recovery.RecoveryHandlerFuncContext] that logs the
+// panic via [log.LogUnexpected] and returns a fixed client-safe internal error.
+// Use with [recovery.WithRecoveryHandlerContext] from
+// github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery.
+func PanicRecoveryHandler(ctx context.Context, p any) error {
+	log.LogUnexpected(ctx, "grpc panic", fmt.Sprintf("%v", p))
+	return status.Error(codes.Internal, "internal error")
 }

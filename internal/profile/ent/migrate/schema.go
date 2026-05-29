@@ -63,7 +63,6 @@ var (
 	// UserProfilesColumns holds the columns for the "user_profiles" table.
 	UserProfilesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "email_ref", Type: field.TypeString, Unique: true},
 		{Name: "display_name", Type: field.TypeString},
 		{Name: "username", Type: field.TypeString, Unique: true},
 		{Name: "locale", Type: field.TypeString, Default: "en"},
@@ -81,21 +80,16 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "user_profiles_user_original_identities_original_identity",
-				Columns:    []*schema.Column{UserProfilesColumns[9]},
+				Columns:    []*schema.Column{UserProfilesColumns[8]},
 				RefColumns: []*schema.Column{UserOriginalIdentitiesColumns[0]},
 				OnDelete:   schema.Cascade,
 			},
 		},
 		Indexes: []*schema.Index{
 			{
-				Name:    "userprofile_email_ref",
-				Unique:  false,
-				Columns: []*schema.Column{UserProfilesColumns[1]},
-			},
-			{
 				Name:    "userprofile_username",
 				Unique:  false,
-				Columns: []*schema.Column{UserProfilesColumns[3]},
+				Columns: []*schema.Column{UserProfilesColumns[2]},
 			},
 		},
 	}

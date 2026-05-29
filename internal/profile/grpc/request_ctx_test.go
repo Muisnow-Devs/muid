@@ -116,7 +116,6 @@ func TestProfileRequestContextInterceptor_createProfilePassthrough(t *testing.T)
 
 	interceptor := ProfileRequestContextInterceptor()
 	req := &pb.CreateProfileRequest{}
-	req.SetEmail("a@example.com")
 
 	info := &grpc.UnaryServerInfo{FullMethod: pb.ProfileService_CreateProfile_FullMethodName}
 	called := false

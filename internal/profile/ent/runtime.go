@@ -46,16 +46,12 @@ func init() {
 	useroriginalidentity.OriginalIdentityValidator = useroriginalidentityDescOriginalIdentity.Validators[0].(func(string) error)
 	userprofileFields := schema.UserProfile{}.Fields()
 	_ = userprofileFields
-	// userprofileDescEmailRef is the schema descriptor for email_ref field.
-	userprofileDescEmailRef := userprofileFields[1].Descriptor()
-	// userprofile.EmailRefValidator is a validator for the "email_ref" field. It is called by the builders before save.
-	userprofile.EmailRefValidator = userprofileDescEmailRef.Validators[0].(func(string) error)
 	// userprofileDescDisplayName is the schema descriptor for display_name field.
-	userprofileDescDisplayName := userprofileFields[2].Descriptor()
+	userprofileDescDisplayName := userprofileFields[1].Descriptor()
 	// userprofile.DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
 	userprofile.DisplayNameValidator = userprofileDescDisplayName.Validators[0].(func(string) error)
 	// userprofileDescUsername is the schema descriptor for username field.
-	userprofileDescUsername := userprofileFields[3].Descriptor()
+	userprofileDescUsername := userprofileFields[2].Descriptor()
 	// userprofile.UsernameValidator is a validator for the "username" field. It is called by the builders before save.
 	userprofile.UsernameValidator = func() func(string) error {
 		validators := userprofileDescUsername.Validators
@@ -73,27 +69,27 @@ func init() {
 		}
 	}()
 	// userprofileDescLocale is the schema descriptor for locale field.
-	userprofileDescLocale := userprofileFields[4].Descriptor()
+	userprofileDescLocale := userprofileFields[3].Descriptor()
 	// userprofile.DefaultLocale holds the default value on creation for the locale field.
 	userprofile.DefaultLocale = userprofileDescLocale.Default.(string)
 	// userprofileDescTimezone is the schema descriptor for timezone field.
-	userprofileDescTimezone := userprofileFields[5].Descriptor()
+	userprofileDescTimezone := userprofileFields[4].Descriptor()
 	// userprofile.DefaultTimezone holds the default value on creation for the timezone field.
 	userprofile.DefaultTimezone = userprofileDescTimezone.Default.(string)
 	// userprofile.TimezoneValidator is a validator for the "timezone" field. It is called by the builders before save.
 	userprofile.TimezoneValidator = userprofileDescTimezone.Validators[0].(func(string) error)
 	// userprofileDescBiography is the schema descriptor for biography field.
-	userprofileDescBiography := userprofileFields[6].Descriptor()
+	userprofileDescBiography := userprofileFields[5].Descriptor()
 	// userprofile.DefaultBiography holds the default value on creation for the biography field.
 	userprofile.DefaultBiography = userprofileDescBiography.Default.(string)
 	// userprofile.BiographyValidator is a validator for the "biography" field. It is called by the builders before save.
 	userprofile.BiographyValidator = userprofileDescBiography.Validators[0].(func(string) error)
 	// userprofileDescCreatedAt is the schema descriptor for created_at field.
-	userprofileDescCreatedAt := userprofileFields[7].Descriptor()
+	userprofileDescCreatedAt := userprofileFields[6].Descriptor()
 	// userprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userprofile.DefaultCreatedAt = userprofileDescCreatedAt.Default.(func() time.Time)
 	// userprofileDescUpdatedAt is the schema descriptor for updated_at field.
-	userprofileDescUpdatedAt := userprofileFields[8].Descriptor()
+	userprofileDescUpdatedAt := userprofileFields[7].Descriptor()
 	// userprofile.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userprofile.DefaultUpdatedAt = userprofileDescUpdatedAt.Default.(func() time.Time)
 	// userprofile.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

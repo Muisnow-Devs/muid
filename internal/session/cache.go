@@ -16,6 +16,7 @@ type CachedSession struct {
 	UserID        uuid.UUID
 	ValidatorHash [32]byte
 
+	Email     string
 	IssuedAt  time.Time
 	ExpiresAt time.Time
 }

@@ -21,7 +21,7 @@ func (UserPasskey) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 
-		field.UUID("identity_id", uuid.UUID{}).Immutable(),
+		field.UUID("identity_id", uuid.UUID{}).Unique().Immutable(),
 
 		field.Bytes("credential_id").Immutable().NotEmpty().Unique(),
 		field.Bytes("public_key").Immutable().NotEmpty(),
@@ -49,6 +49,8 @@ func (UserPasskey) Fields() []ent.Field {
 func (UserPasskey) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("identity_id"),
+		index.Fields("credential_id").Unique(),
+		index.Fields("identity_id", "rp_id"),
 	}
 }
 

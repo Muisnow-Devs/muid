@@ -10,7 +10,7 @@ import (
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/ent"
-	"sanzi.io/muid/internal/authn/ent/userref"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
@@ -49,11 +49,16 @@ func (r *EntUserResolver) ResolveUser(
 		return UserResolution{}, errors.New("resolver: missing email claim")
 	}
 
-	// 1. Lookup in UserRef table
-	ref, err := r.db.UserRef.Query().Where(userref.EmailEQ(email)).Only(ctx)
+	// 1. Look up an active UserEmail record for this email address.
+	ue, err := r.db.UserEmail.Query().
+		Where(
+			useremail.EmailEQ(email),
+			useremail.RevokedAtIsNil(),
+		).
+		Only(ctx)
 	if err == nil {
 		return UserResolution{
-			UserID:   ref.ID,
+			UserID:   ue.UserID,
 			Created:  false,
 			Existing: true,
 		}, nil
@@ -62,7 +67,7 @@ func (r *EntUserResolver) ResolveUser(
 		return UserResolution{}, err
 	}
 
-	// 2. Not found, create user
+	// 2. Not found — create a new user account via the profile service.
 	var uid uuid.UUID
 	if r.profileCli != nil {
 		pctx, cancel := context.WithTimeout(ctx, r.profileCallTimeout)
@@ -73,7 +78,6 @@ func (r *EntUserResolver) ResolveUser(
 		}
 
 		req := &profilepb.CreateProfileRequest{}
-		req.SetEmail(email)
 		req.SetIdentity(identity)
 
 		pctx, span := tracing.StartSpan(pctx, "authn.profile.create_profile")
@@ -92,10 +96,9 @@ func (r *EntUserResolver) ResolveUser(
 		return UserResolution{}, errors.New("resolver: profile client not configured")
 	}
 
-	// Insert UserRef record
+	// Insert the UserRef record (identity anchor; email lives in UserEmail via LinkIdentity).
 	err = r.db.UserRef.Create().
 		SetID(uid).
-		SetEmail(email).
 		Exec(ctx)
 	if err != nil {
 		return UserResolution{}, err

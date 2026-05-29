@@ -13,7 +13,8 @@ import (
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/ent/enttest"
-	"sanzi.io/muid/internal/authn/ent/userref"
+	"sanzi.io/muid/internal/authn/ent/useremail"
+	"sanzi.io/muid/pkg/shared"
 )
 
 type mockProfileServiceClient struct {
@@ -43,15 +44,33 @@ func TestEntUserResolver_ResolveUser(t *testing.T) {
 
 	ctx := context.Background()
 
-	// 1. Test existing user reference
+	// 1. Test existing user reference — seed via UserRef + UserEmail (email lives in UserEmail now)
 	existingID := uuid.New()
 	email := "existing@example.com"
-	err := client.UserRef.Create().
-		SetID(existingID).
-		SetEmail(email).
-		Exec(ctx)
+
+	err := client.UserRef.Create().SetID(existingID).Exec(ctx)
 	if err != nil {
 		t.Fatalf("failed to seed userref: %v", err)
+	}
+
+	// Create the UserIdentity and UserEmail rows that ResolveUser looks up.
+	identityRow, err := client.UserIdentity.Create().
+		SetUserID(existingID).
+		SetProvider("email").
+		SetSubject(email).
+		Save(ctx)
+	if err != nil {
+		t.Fatalf("failed to seed useridentity: %v", err)
+	}
+	err = client.UserEmail.Create().
+		SetID(shared.UUIDV7()).
+		SetIdentityID(identityRow.ID).
+		SetUserID(existingID).
+		SetEmail(email).
+		SetIsPrimary(true).
+		Exec(ctx)
+	if err != nil {
+		t.Fatalf("failed to seed useremail: %v", err)
 	}
 
 	mockCli := &mockProfileServiceClient{
@@ -102,13 +121,24 @@ func TestEntUserResolver_ResolveUser(t *testing.T) {
 		t.Error("expected Existing to be false")
 	}
 
-	// Verify UserRef record was saved to database
-	saved, err := client.UserRef.Query().Where(userref.EmailEQ(newEmail)).Only(ctx)
+	// Verify the UserRef record was saved (email is NOT on UserRef any more).
+	saved, err := client.UserRef.Get(ctx, newID)
 	if err != nil {
 		t.Fatalf("failed to query new userref: %v", err)
 	}
 	if saved.ID != newID {
 		t.Errorf("expected saved UserRef ID to be %v, got %v", newID, saved.ID)
+	}
+	// No UserEmail row is expected here: the resolver only creates UserRef.
+	// UserEmail is created later by email_store.LinkIdentity in the auth flow.
+	hasEmail, err := client.UserEmail.Query().
+		Where(useremail.UserIDEQ(newID)).
+		Exist(ctx)
+	if err != nil {
+		t.Fatalf("failed to query useremail: %v", err)
+	}
+	if hasEmail {
+		t.Error("expected no UserEmail row for resolver-created user (LinkIdentity creates it)")
 	}
 
 	// 3. Test new user creation - profile service error

@@ -41,6 +41,8 @@ message AuthenticatedPrincipal {
   AuthLevel auth_level = 2;
   google.protobuf.Timestamp issued_at = 3;
   google.protobuf.Timestamp expires_at = 4;
+  // Email address associated with the authenticated user. Empty when unavailable.
+  string email = 5;
 }
 
 message ChallengeRequired {

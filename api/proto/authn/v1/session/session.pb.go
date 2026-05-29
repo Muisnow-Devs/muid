@@ -347,6 +347,7 @@ type AuthenticatedPrincipal struct {
 	xxx_hidden_AuthLevel AuthLevel              `protobuf:"varint,2,opt,name=auth_level,json=authLevel,proto3,enum=muid.authn.v1.session.AuthLevel"`
 	xxx_hidden_IssuedAt  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=issued_at,json=issuedAt,proto3"`
 	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_Email     string                 `protobuf:"bytes,5,opt,name=email,proto3"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -404,6 +405,13 @@ func (x *AuthenticatedPrincipal) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *AuthenticatedPrincipal) GetEmail() string {
+	if x != nil {
+		return x.xxx_hidden_Email
+	}
+	return ""
+}
+
 func (x *AuthenticatedPrincipal) SetUserId(v string) {
 	x.xxx_hidden_UserId = v
 }
@@ -418,6 +426,10 @@ func (x *AuthenticatedPrincipal) SetIssuedAt(v *timestamppb.Timestamp) {
 
 func (x *AuthenticatedPrincipal) SetExpiresAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *AuthenticatedPrincipal) SetEmail(v string) {
+	x.xxx_hidden_Email = v
 }
 
 func (x *AuthenticatedPrincipal) HasIssuedAt() bool {
@@ -449,6 +461,8 @@ type AuthenticatedPrincipal_builder struct {
 	AuthLevel AuthLevel
 	IssuedAt  *timestamppb.Timestamp
 	ExpiresAt *timestamppb.Timestamp
+	// Email address associated with the authenticated user. Empty when unavailable.
+	Email string
 }
 
 func (b0 AuthenticatedPrincipal_builder) Build() *AuthenticatedPrincipal {
@@ -459,6 +473,7 @@ func (b0 AuthenticatedPrincipal_builder) Build() *AuthenticatedPrincipal {
 	x.xxx_hidden_AuthLevel = b.AuthLevel
 	x.xxx_hidden_IssuedAt = b.IssuedAt
 	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	x.xxx_hidden_Email = b.Email
 	return m0
 }
 
@@ -685,14 +700,15 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12N\n" +
 	"\x0fsession_context\x18\x02 \x01(\v2%.muid.authn.v1.session.SessionContextR\x0esessionContext\x12?\n" +
 	"\n" +
-	"auth_level\x18\x03 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\"\xf0\x01\n" +
+	"auth_level\x18\x03 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\"\x86\x02\n" +
 	"\x16AuthenticatedPrincipal\x12!\n" +
 	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12?\n" +
 	"\n" +
 	"auth_level\x18\x02 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\x127\n" +
 	"\tissued_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
 	"\n" +
-	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"Y\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12\x14\n" +
+	"\x05email\x18\x05 \x01(\tR\x05email\"Y\n" +
 	"\x11ChallengeRequired\x12D\n" +
 	"\tchallenge\x18\x01 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"Q\n" +
 	"\vAuthSuccess\x12B\n" +

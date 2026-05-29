@@ -10,7 +10,7 @@ import (
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
-func TestUnaryTracingInterceptor_storesTracerOnContext(t *testing.T) {
+func TestTracerContextInterceptor_storesTracerOnContext(t *testing.T) {
 	t.Parallel()
 
 	tr := tracing.NewNoopTracer(tracing.NoopConfig{})
@@ -23,7 +23,7 @@ func TestUnaryTracingInterceptor_storesTracerOnContext(t *testing.T) {
 	}
 
 	info := &grpc.UnaryServerInfo{FullMethod: "/test.Service/Method"}
-	ic := grpcutils.UnaryTracingInterceptor(tr)
+	ic := grpcutils.TracerContextInterceptor(tr)
 	_, err := ic(context.Background(), nil, info, handler)
 	if err != nil {
 		t.Fatalf("interceptor: %v", err)
@@ -31,7 +31,9 @@ func TestUnaryTracingInterceptor_storesTracerOnContext(t *testing.T) {
 	if !gotTracer {
 		t.Fatal("expected tracer on handler context")
 	}
-	if tracing.NoopSpanCount(tr) < 2 {
-		t.Fatalf("expected grpc + child spans, got %d", tracing.NoopSpanCount(tr))
+	// Only the handler's child span is recorded. The server-level OTel span is
+	// created by otelgrpc.NewServerHandler at the transport layer, not here.
+	if tracing.NoopSpanCount(tr) < 1 {
+		t.Fatalf("expected at least 1 span (handler child), got %d", tracing.NoopSpanCount(tr))
 	}
 }

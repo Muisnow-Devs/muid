@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/schema"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -18,6 +19,26 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	useremailFields := schema.UserEmail{}.Fields()
+	_ = useremailFields
+	// useremailDescEmail is the schema descriptor for email field.
+	useremailDescEmail := useremailFields[3].Descriptor()
+	// useremail.EmailValidator is a validator for the "email" field. It is called by the builders before save.
+	useremail.EmailValidator = useremailDescEmail.Validators[0].(func(string) error)
+	// useremailDescIsPrimary is the schema descriptor for is_primary field.
+	useremailDescIsPrimary := useremailFields[4].Descriptor()
+	// useremail.DefaultIsPrimary holds the default value on creation for the is_primary field.
+	useremail.DefaultIsPrimary = useremailDescIsPrimary.Default.(bool)
+	// useremailDescCreatedAt is the schema descriptor for created_at field.
+	useremailDescCreatedAt := useremailFields[5].Descriptor()
+	// useremail.DefaultCreatedAt holds the default value on creation for the created_at field.
+	useremail.DefaultCreatedAt = useremailDescCreatedAt.Default.(func() time.Time)
+	// useremailDescUpdatedAt is the schema descriptor for updated_at field.
+	useremailDescUpdatedAt := useremailFields[6].Descriptor()
+	// useremail.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	useremail.DefaultUpdatedAt = useremailDescUpdatedAt.Default.(func() time.Time)
+	// useremail.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	useremail.UpdateDefaultUpdatedAt = useremailDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userfederatedidentityFields := schema.UserFederatedIdentity{}.Fields()
 	_ = userfederatedidentityFields
 	// userfederatedidentityDescProvider is the schema descriptor for provider field.
@@ -164,16 +185,12 @@ func init() {
 	userpasskey.DefaultID = userpasskeyDescID.Default.(func() uuid.UUID)
 	userrefFields := schema.UserRef{}.Fields()
 	_ = userrefFields
-	// userrefDescEmail is the schema descriptor for email field.
-	userrefDescEmail := userrefFields[1].Descriptor()
-	// userref.EmailValidator is a validator for the "email" field. It is called by the builders before save.
-	userref.EmailValidator = userrefDescEmail.Validators[0].(func(string) error)
 	// userrefDescCreatedAt is the schema descriptor for created_at field.
-	userrefDescCreatedAt := userrefFields[3].Descriptor()
+	userrefDescCreatedAt := userrefFields[2].Descriptor()
 	// userref.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userref.DefaultCreatedAt = userrefDescCreatedAt.Default.(func() time.Time)
 	// userrefDescUpdatedAt is the schema descriptor for updated_at field.
-	userrefDescUpdatedAt := userrefFields[4].Descriptor()
+	userrefDescUpdatedAt := userrefFields[3].Descriptor()
 	// userref.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userref.DefaultUpdatedAt = userrefDescUpdatedAt.Default.(func() time.Time)
 	// userref.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

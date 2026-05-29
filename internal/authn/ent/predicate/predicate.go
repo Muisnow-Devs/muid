@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// UserEmail is the predicate function for useremail builders.
+type UserEmail func(*sql.Selector)
+
 // UserFederatedIdentity is the predicate function for userfederatedidentity builders.
 type UserFederatedIdentity func(*sql.Selector)
 

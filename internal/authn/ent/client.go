@@ -16,6 +16,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -28,6 +29,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// UserEmail is the client for interacting with the UserEmail builders.
+	UserEmail *UserEmailClient
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
 	UserFederatedIdentity *UserFederatedIdentityClient
 	// UserIdentity is the client for interacting with the UserIdentity builders.
@@ -49,6 +52,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.UserEmail = NewUserEmailClient(c.config)
 	c.UserFederatedIdentity = NewUserFederatedIdentityClient(c.config)
 	c.UserIdentity = NewUserIdentityClient(c.config)
 	c.UserPasskey = NewUserPasskeyClient(c.config)
@@ -146,6 +150,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
+		UserEmail:             NewUserEmailClient(cfg),
 		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
 		UserIdentity:          NewUserIdentityClient(cfg),
 		UserPasskey:           NewUserPasskeyClient(cfg),
@@ -170,6 +175,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                   ctx,
 		config:                cfg,
+		UserEmail:             NewUserEmailClient(cfg),
 		UserFederatedIdentity: NewUserFederatedIdentityClient(cfg),
 		UserIdentity:          NewUserIdentityClient(cfg),
 		UserPasskey:           NewUserPasskeyClient(cfg),
@@ -181,7 +187,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		UserFederatedIdentity.
+//		UserEmail.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -203,26 +209,30 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.UserFederatedIdentity.Use(hooks...)
-	c.UserIdentity.Use(hooks...)
-	c.UserPasskey.Use(hooks...)
-	c.UserRef.Use(hooks...)
-	c.UserSession.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.UserEmail, c.UserFederatedIdentity, c.UserIdentity, c.UserPasskey, c.UserRef,
+		c.UserSession,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.UserFederatedIdentity.Intercept(interceptors...)
-	c.UserIdentity.Intercept(interceptors...)
-	c.UserPasskey.Intercept(interceptors...)
-	c.UserRef.Intercept(interceptors...)
-	c.UserSession.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.UserEmail, c.UserFederatedIdentity, c.UserIdentity, c.UserPasskey, c.UserRef,
+		c.UserSession,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *UserEmailMutation:
+		return c.UserEmail.mutate(ctx, m)
 	case *UserFederatedIdentityMutation:
 		return c.UserFederatedIdentity.mutate(ctx, m)
 	case *UserIdentityMutation:
@@ -235,6 +245,171 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserSession.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// UserEmailClient is a client for the UserEmail schema.
+type UserEmailClient struct {
+	config
+}
+
+// NewUserEmailClient returns a client for the UserEmail from the given config.
+func NewUserEmailClient(c config) *UserEmailClient {
+	return &UserEmailClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `useremail.Hooks(f(g(h())))`.
+func (c *UserEmailClient) Use(hooks ...Hook) {
+	c.hooks.UserEmail = append(c.hooks.UserEmail, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `useremail.Intercept(f(g(h())))`.
+func (c *UserEmailClient) Intercept(interceptors ...Interceptor) {
+	c.inters.UserEmail = append(c.inters.UserEmail, interceptors...)
+}
+
+// Create returns a builder for creating a UserEmail entity.
+func (c *UserEmailClient) Create() *UserEmailCreate {
+	mutation := newUserEmailMutation(c.config, OpCreate)
+	return &UserEmailCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of UserEmail entities.
+func (c *UserEmailClient) CreateBulk(builders ...*UserEmailCreate) *UserEmailCreateBulk {
+	return &UserEmailCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *UserEmailClient) MapCreateBulk(slice any, setFunc func(*UserEmailCreate, int)) *UserEmailCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &UserEmailCreateBulk{err: fmt.Errorf("calling to UserEmailClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*UserEmailCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &UserEmailCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for UserEmail.
+func (c *UserEmailClient) Update() *UserEmailUpdate {
+	mutation := newUserEmailMutation(c.config, OpUpdate)
+	return &UserEmailUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *UserEmailClient) UpdateOne(_m *UserEmail) *UserEmailUpdateOne {
+	mutation := newUserEmailMutation(c.config, OpUpdateOne, withUserEmail(_m))
+	return &UserEmailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *UserEmailClient) UpdateOneID(id uuid.UUID) *UserEmailUpdateOne {
+	mutation := newUserEmailMutation(c.config, OpUpdateOne, withUserEmailID(id))
+	return &UserEmailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for UserEmail.
+func (c *UserEmailClient) Delete() *UserEmailDelete {
+	mutation := newUserEmailMutation(c.config, OpDelete)
+	return &UserEmailDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *UserEmailClient) DeleteOne(_m *UserEmail) *UserEmailDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *UserEmailClient) DeleteOneID(id uuid.UUID) *UserEmailDeleteOne {
+	builder := c.Delete().Where(useremail.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &UserEmailDeleteOne{builder}
+}
+
+// Query returns a query builder for UserEmail.
+func (c *UserEmailClient) Query() *UserEmailQuery {
+	return &UserEmailQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeUserEmail},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a UserEmail entity by its id.
+func (c *UserEmailClient) Get(ctx context.Context, id uuid.UUID) (*UserEmail, error) {
+	return c.Query().Where(useremail.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *UserEmailClient) GetX(ctx context.Context, id uuid.UUID) *UserEmail {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryUser queries the user edge of a UserEmail.
+func (c *UserEmailClient) QueryUser(_m *UserEmail) *UserRefQuery {
+	query := (&UserRefClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useremail.Table, useremail.FieldID, id),
+			sqlgraph.To(userref.Table, userref.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, useremail.UserTable, useremail.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryIdentity queries the identity edge of a UserEmail.
+func (c *UserEmailClient) QueryIdentity(_m *UserEmail) *UserIdentityQuery {
+	query := (&UserIdentityClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useremail.Table, useremail.FieldID, id),
+			sqlgraph.To(useridentity.Table, useridentity.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, true, useremail.IdentityTable, useremail.IdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *UserEmailClient) Hooks() []Hook {
+	return c.hooks.UserEmail
+}
+
+// Interceptors returns the client interceptors.
+func (c *UserEmailClient) Interceptors() []Interceptor {
+	return c.inters.UserEmail
+}
+
+func (c *UserEmailClient) mutate(ctx context.Context, m *UserEmailMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&UserEmailCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&UserEmailUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&UserEmailUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&UserEmailDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown UserEmail mutation op: %q", m.Op())
 	}
 }
 
@@ -536,6 +711,22 @@ func (c *UserIdentityClient) QueryFederatedIdentity(_m *UserIdentity) *UserFeder
 			sqlgraph.From(useridentity.Table, useridentity.FieldID, id),
 			sqlgraph.To(userfederatedidentity.Table, userfederatedidentity.FieldID),
 			sqlgraph.Edge(sqlgraph.O2O, false, useridentity.FederatedIdentityTable, useridentity.FederatedIdentityColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEmailIdentity queries the email_identity edge of a UserIdentity.
+func (c *UserIdentityClient) QueryEmailIdentity(_m *UserIdentity) *UserEmailQuery {
+	query := (&UserEmailClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(useridentity.Table, useridentity.FieldID, id),
+			sqlgraph.To(useremail.Table, useremail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2O, false, useridentity.EmailIdentityTable, useridentity.EmailIdentityColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -857,6 +1048,22 @@ func (c *UserRefClient) QueryIdentities(_m *UserRef) *UserIdentityQuery {
 	return query
 }
 
+// QueryEmails queries the emails edge of a UserRef.
+func (c *UserRefClient) QueryEmails(_m *UserRef) *UserEmailQuery {
+	query := (&UserEmailClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, id),
+			sqlgraph.To(useremail.Table, useremail.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.EmailsTable, userref.EmailsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserRefClient) Hooks() []Hook {
 	return c.hooks.UserRef
@@ -1034,11 +1241,11 @@ func (c *UserSessionClient) mutate(ctx context.Context, m *UserSessionMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		UserFederatedIdentity, UserIdentity, UserPasskey, UserRef,
+		UserEmail, UserFederatedIdentity, UserIdentity, UserPasskey, UserRef,
 		UserSession []ent.Hook
 	}
 	inters struct {
-		UserFederatedIdentity, UserIdentity, UserPasskey, UserRef,
+		UserEmail, UserFederatedIdentity, UserIdentity, UserPasskey, UserRef,
 		UserSession []ent.Interceptor
 	}
 )

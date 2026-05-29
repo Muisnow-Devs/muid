@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/predicate"
+	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/authn/ent/userpasskey"
@@ -123,6 +124,25 @@ func (_u *UserIdentityUpdate) SetFederatedIdentity(v *UserFederatedIdentity) *Us
 	return _u.SetFederatedIdentityID(v.ID)
 }
 
+// SetEmailIdentityID sets the "email_identity" edge to the UserEmail entity by ID.
+func (_u *UserIdentityUpdate) SetEmailIdentityID(id uuid.UUID) *UserIdentityUpdate {
+	_u.mutation.SetEmailIdentityID(id)
+	return _u
+}
+
+// SetNillableEmailIdentityID sets the "email_identity" edge to the UserEmail entity by ID if the given value is not nil.
+func (_u *UserIdentityUpdate) SetNillableEmailIdentityID(id *uuid.UUID) *UserIdentityUpdate {
+	if id != nil {
+		_u = _u.SetEmailIdentityID(*id)
+	}
+	return _u
+}
+
+// SetEmailIdentity sets the "email_identity" edge to the UserEmail entity.
+func (_u *UserIdentityUpdate) SetEmailIdentity(v *UserEmail) *UserIdentityUpdate {
+	return _u.SetEmailIdentityID(v.ID)
+}
+
 // Mutation returns the UserIdentityMutation object of the builder.
 func (_u *UserIdentityUpdate) Mutation() *UserIdentityMutation {
 	return _u.mutation
@@ -137,6 +157,12 @@ func (_u *UserIdentityUpdate) ClearPasskeyIdentity() *UserIdentityUpdate {
 // ClearFederatedIdentity clears the "federated_identity" edge to the UserFederatedIdentity entity.
 func (_u *UserIdentityUpdate) ClearFederatedIdentity() *UserIdentityUpdate {
 	_u.mutation.ClearFederatedIdentity()
+	return _u
+}
+
+// ClearEmailIdentity clears the "email_identity" edge to the UserEmail entity.
+func (_u *UserIdentityUpdate) ClearEmailIdentity() *UserIdentityUpdate {
+	_u.mutation.ClearEmailIdentity()
 	return _u
 }
 
@@ -279,6 +305,35 @@ func (_u *UserIdentityUpdate) sqlSave(ctx context.Context) (_node int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.EmailIdentityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   useridentity.EmailIdentityTable,
+			Columns: []string{useridentity.EmailIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EmailIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   useridentity.EmailIdentityTable,
+			Columns: []string{useridentity.EmailIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{useridentity.Label}
@@ -391,6 +446,25 @@ func (_u *UserIdentityUpdateOne) SetFederatedIdentity(v *UserFederatedIdentity) 
 	return _u.SetFederatedIdentityID(v.ID)
 }
 
+// SetEmailIdentityID sets the "email_identity" edge to the UserEmail entity by ID.
+func (_u *UserIdentityUpdateOne) SetEmailIdentityID(id uuid.UUID) *UserIdentityUpdateOne {
+	_u.mutation.SetEmailIdentityID(id)
+	return _u
+}
+
+// SetNillableEmailIdentityID sets the "email_identity" edge to the UserEmail entity by ID if the given value is not nil.
+func (_u *UserIdentityUpdateOne) SetNillableEmailIdentityID(id *uuid.UUID) *UserIdentityUpdateOne {
+	if id != nil {
+		_u = _u.SetEmailIdentityID(*id)
+	}
+	return _u
+}
+
+// SetEmailIdentity sets the "email_identity" edge to the UserEmail entity.
+func (_u *UserIdentityUpdateOne) SetEmailIdentity(v *UserEmail) *UserIdentityUpdateOne {
+	return _u.SetEmailIdentityID(v.ID)
+}
+
 // Mutation returns the UserIdentityMutation object of the builder.
 func (_u *UserIdentityUpdateOne) Mutation() *UserIdentityMutation {
 	return _u.mutation
@@ -405,6 +479,12 @@ func (_u *UserIdentityUpdateOne) ClearPasskeyIdentity() *UserIdentityUpdateOne {
 // ClearFederatedIdentity clears the "federated_identity" edge to the UserFederatedIdentity entity.
 func (_u *UserIdentityUpdateOne) ClearFederatedIdentity() *UserIdentityUpdateOne {
 	_u.mutation.ClearFederatedIdentity()
+	return _u
+}
+
+// ClearEmailIdentity clears the "email_identity" edge to the UserEmail entity.
+func (_u *UserIdentityUpdateOne) ClearEmailIdentity() *UserIdentityUpdateOne {
+	_u.mutation.ClearEmailIdentity()
 	return _u
 }
 
@@ -570,6 +650,35 @@ func (_u *UserIdentityUpdateOne) sqlSave(ctx context.Context) (_node *UserIdenti
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(userfederatedidentity.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.EmailIdentityCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   useridentity.EmailIdentityTable,
+			Columns: []string{useridentity.EmailIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.EmailIdentityIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2O,
+			Inverse: false,
+			Table:   useridentity.EmailIdentityTable,
+			Columns: []string{useridentity.EmailIdentityColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(useremail.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

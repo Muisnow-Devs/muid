@@ -9,6 +9,18 @@ import (
 	"sanzi.io/muid/internal/authn/ent"
 )
 
+// The UserEmailFunc type is an adapter to allow the use of ordinary
+// function as UserEmail mutator.
+type UserEmailFunc func(context.Context, *ent.UserEmailMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f UserEmailFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.UserEmailMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.UserEmailMutation", m)
+}
+
 // The UserFederatedIdentityFunc type is an adapter to allow the use of ordinary
 // function as UserFederatedIdentity mutator.
 type UserFederatedIdentityFunc func(context.Context, *ent.UserFederatedIdentityMutation) (ent.Value, error)

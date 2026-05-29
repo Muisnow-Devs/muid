@@ -23,12 +23,6 @@ type UserProfileCreate struct {
 	hooks    []Hook
 }
 
-// SetEmailRef sets the "email_ref" field.
-func (_c *UserProfileCreate) SetEmailRef(v string) *UserProfileCreate {
-	_c.mutation.SetEmailRef(v)
-	return _c
-}
-
 // SetDisplayName sets the "display_name" field.
 func (_c *UserProfileCreate) SetDisplayName(v string) *UserProfileCreate {
 	_c.mutation.SetDisplayName(v)
@@ -222,14 +216,6 @@ func (_c *UserProfileCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserProfileCreate) check() error {
-	if _, ok := _c.mutation.EmailRef(); !ok {
-		return &ValidationError{Name: "email_ref", err: errors.New(`ent: missing required field "UserProfile.email_ref"`)}
-	}
-	if v, ok := _c.mutation.EmailRef(); ok {
-		if err := userprofile.EmailRefValidator(v); err != nil {
-			return &ValidationError{Name: "email_ref", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email_ref": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.DisplayName(); !ok {
 		return &ValidationError{Name: "display_name", err: errors.New(`ent: missing required field "UserProfile.display_name"`)}
 	}
@@ -305,10 +291,6 @@ func (_c *UserProfileCreate) createSpec() (*UserProfile, *sqlgraph.CreateSpec) {
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := _c.mutation.EmailRef(); ok {
-		_spec.SetField(userprofile.FieldEmailRef, field.TypeString, value)
-		_node.EmailRef = value
 	}
 	if value, ok := _c.mutation.DisplayName(); ok {
 		_spec.SetField(userprofile.FieldDisplayName, field.TypeString, value)

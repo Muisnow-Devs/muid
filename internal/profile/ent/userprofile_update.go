@@ -30,20 +30,6 @@ func (_u *UserProfileUpdate) Where(ps ...predicate.UserProfile) *UserProfileUpda
 	return _u
 }
 
-// SetEmailRef sets the "email_ref" field.
-func (_u *UserProfileUpdate) SetEmailRef(v string) *UserProfileUpdate {
-	_u.mutation.SetEmailRef(v)
-	return _u
-}
-
-// SetNillableEmailRef sets the "email_ref" field if the given value is not nil.
-func (_u *UserProfileUpdate) SetNillableEmailRef(v *string) *UserProfileUpdate {
-	if v != nil {
-		_u.SetEmailRef(*v)
-	}
-	return _u
-}
-
 // SetDisplayName sets the "display_name" field.
 func (_u *UserProfileUpdate) SetDisplayName(v string) *UserProfileUpdate {
 	_u.mutation.SetDisplayName(v)
@@ -199,11 +185,6 @@ func (_u *UserProfileUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserProfileUpdate) check() error {
-	if v, ok := _u.mutation.EmailRef(); ok {
-		if err := userprofile.EmailRefValidator(v); err != nil {
-			return &ValidationError{Name: "email_ref", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email_ref": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.DisplayName(); ok {
 		if err := userprofile.DisplayNameValidator(v); err != nil {
 			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "UserProfile.display_name": %w`, err)}
@@ -238,9 +219,6 @@ func (_u *UserProfileUpdate) sqlSave(ctx context.Context) (_node int, err error)
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.EmailRef(); ok {
-		_spec.SetField(userprofile.FieldEmailRef, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.DisplayName(); ok {
 		_spec.SetField(userprofile.FieldDisplayName, field.TypeString, value)
@@ -323,20 +301,6 @@ type UserProfileUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *UserProfileMutation
-}
-
-// SetEmailRef sets the "email_ref" field.
-func (_u *UserProfileUpdateOne) SetEmailRef(v string) *UserProfileUpdateOne {
-	_u.mutation.SetEmailRef(v)
-	return _u
-}
-
-// SetNillableEmailRef sets the "email_ref" field if the given value is not nil.
-func (_u *UserProfileUpdateOne) SetNillableEmailRef(v *string) *UserProfileUpdateOne {
-	if v != nil {
-		_u.SetEmailRef(*v)
-	}
-	return _u
 }
 
 // SetDisplayName sets the "display_name" field.
@@ -507,11 +471,6 @@ func (_u *UserProfileUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *UserProfileUpdateOne) check() error {
-	if v, ok := _u.mutation.EmailRef(); ok {
-		if err := userprofile.EmailRefValidator(v); err != nil {
-			return &ValidationError{Name: "email_ref", err: fmt.Errorf(`ent: validator failed for field "UserProfile.email_ref": %w`, err)}
-		}
-	}
 	if v, ok := _u.mutation.DisplayName(); ok {
 		if err := userprofile.DisplayNameValidator(v); err != nil {
 			return &ValidationError{Name: "display_name", err: fmt.Errorf(`ent: validator failed for field "UserProfile.display_name": %w`, err)}
@@ -563,9 +522,6 @@ func (_u *UserProfileUpdateOne) sqlSave(ctx context.Context) (_node *UserProfile
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := _u.mutation.EmailRef(); ok {
-		_spec.SetField(userprofile.FieldEmailRef, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.DisplayName(); ok {
 		_spec.SetField(userprofile.FieldDisplayName, field.TypeString, value)

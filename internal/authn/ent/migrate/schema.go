@@ -8,6 +8,54 @@ import (
 )
 
 var (
+	// UserEmailsColumns holds the columns for the "user_emails" table.
+	UserEmailsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "email", Type: field.TypeString, Unique: true, Size: 254},
+		{Name: "is_primary", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "revoked_at", Type: field.TypeTime, Nullable: true},
+		{Name: "identity_id", Type: field.TypeUUID, Unique: true},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// UserEmailsTable holds the schema information for the "user_emails" table.
+	UserEmailsTable = &schema.Table{
+		Name:       "user_emails",
+		Columns:    UserEmailsColumns,
+		PrimaryKey: []*schema.Column{UserEmailsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "user_emails_user_identities_email_identity",
+				Columns:    []*schema.Column{UserEmailsColumns[6]},
+				RefColumns: []*schema.Column{UserIdentitiesColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+			{
+				Symbol:     "user_emails_user_refs_emails",
+				Columns:    []*schema.Column{UserEmailsColumns[7]},
+				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "useremail_identity_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserEmailsColumns[6]},
+			},
+			{
+				Name:    "useremail_user_id_email",
+				Unique:  true,
+				Columns: []*schema.Column{UserEmailsColumns[7], UserEmailsColumns[1]},
+			},
+			{
+				Name:    "useremail_email",
+				Unique:  false,
+				Columns: []*schema.Column{UserEmailsColumns[1]},
+			},
+		},
+	}
 	// UserFederatedIdentitiesColumns holds the columns for the "user_federated_identities" table.
 	UserFederatedIdentitiesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -135,12 +183,21 @@ var (
 				Unique:  false,
 				Columns: []*schema.Column{UserPasskeysColumns[15]},
 			},
+			{
+				Name:    "userpasskey_credential_id",
+				Unique:  true,
+				Columns: []*schema.Column{UserPasskeysColumns[1]},
+			},
+			{
+				Name:    "userpasskey_identity_id_rp_id",
+				Unique:  false,
+				Columns: []*schema.Column{UserPasskeysColumns[15], UserPasskeysColumns[3]},
+			},
 		},
 	}
 	// UserRefsColumns holds the columns for the "user_refs" table.
 	UserRefsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "email", Type: field.TypeString, Unique: true},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
@@ -150,13 +207,6 @@ var (
 		Name:       "user_refs",
 		Columns:    UserRefsColumns,
 		PrimaryKey: []*schema.Column{UserRefsColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "userref_email",
-				Unique:  false,
-				Columns: []*schema.Column{UserRefsColumns[1]},
-			},
-		},
 	}
 	// UserSessionsColumns holds the columns for the "user_sessions" table.
 	UserSessionsColumns = []*schema.Column{
@@ -203,6 +253,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		UserEmailsTable,
 		UserFederatedIdentitiesTable,
 		UserIdentitiesTable,
 		UserPasskeysTable,
@@ -212,6 +263,8 @@ var (
 )
 
 func init() {
+	UserEmailsTable.ForeignKeys[0].RefTable = UserIdentitiesTable
+	UserEmailsTable.ForeignKeys[1].RefTable = UserRefsTable
 	UserFederatedIdentitiesTable.ForeignKeys[0].RefTable = UserIdentitiesTable
 	UserIdentitiesTable.ForeignKeys[0].RefTable = UserRefsTable
 	UserPasskeysTable.ForeignKeys[0].RefTable = UserIdentitiesTable

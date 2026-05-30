@@ -58,9 +58,6 @@ type IdentityMethod interface {
 // VerifiedIdentity is the resolved identity returned by a method after
 // successful verification.
 type VerifiedIdentity struct {
-	Provider string
-	Subject  string
-
 	// UserClaims carries user-profile information (email, display name, …)
 	// used by the resolver to find or create the user account.
 	UserClaims *claims.IdentityInformation
@@ -70,8 +67,4 @@ type VerifiedIdentity struct {
 	// when the identity is already known (login path where FindUser returns a
 	// record).
 	IdentityClaims identitystore.IdentityClaims
-
-	// Store is the IdentityStore for this method. The handler calls FindUser
-	// and LinkIdentity on it directly — no type switch needed.
-	Store identitystore.IdentityStore
 }

@@ -225,9 +225,9 @@ func (m *OIDCMethod) Continue(
 	}
 
 	return &VerifiedStep{
+		Provider: m.Name(),
+		Subject:  oidcClaims.Subject,
 		Identity: VerifiedIdentity{
-			Provider:   m.Name(),
-			Subject:    oidcClaims.Subject,
 			UserClaims: claimsInfo,
 			IdentityClaims: identitystore.OIDCIdentityClaims{
 				Provider:      m.Name(),
@@ -237,7 +237,6 @@ func (m *OIDCMethod) Continue(
 				Email:         claimsInfo.GetEmail(),
 				EmailVerified: claimsInfo.GetEmailVerified(),
 			},
-			Store: m.identityStore,
 		},
 	}, nil
 }

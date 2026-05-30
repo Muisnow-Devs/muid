@@ -158,15 +158,14 @@ func (m *EmailOTPMethod) Continue(
 		claimsInfo.SetEmailVerified(true)
 
 		return &VerifiedStep{
+			Provider: m.Name(),
+			Subject:  emailFlow.Email,
 			Identity: VerifiedIdentity{
-				Provider:   m.Name(),
-				Subject:    emailFlow.Email,
 				UserClaims: claimsInfo,
 				IdentityClaims: identitystore.EmailIdentityClaims{
 					Email:         emailFlow.Email,
 					EmailVerified: true,
 				},
-				Store: m.identityStore,
 			},
 		}, nil
 

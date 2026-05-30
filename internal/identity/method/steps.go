@@ -34,6 +34,9 @@ func (*PendingStep) StepKind() StepKind {
 
 // Verified
 type VerifiedStep struct {
+	Provider string
+	Subject  string
+
 	Identity VerifiedIdentity
 }
 

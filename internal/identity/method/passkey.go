@@ -233,13 +233,8 @@ func (m *PasskeyMethod) continueLogin(
 
 	subject := base64.RawURLEncoding.EncodeToString(verifiedCredential.ID)
 	return &VerifiedStep{
-		Identity: VerifiedIdentity{
-			Provider: m.Name(),
-			Subject:  subject,
-			// IdentityClaims is nil for login: FindUser will find the existing record.
-			// LinkIdentity will not be called.
-			Store: m.identityStore,
-		},
+		Provider: m.Name(),
+		Subject:  subject,
 	}, nil
 }
 
@@ -293,9 +288,9 @@ func (m *PasskeyMethod) continueRegister(
 
 	subject := base64.RawURLEncoding.EncodeToString(credential.ID)
 	return &VerifiedStep{
+		Provider: m.Name(),
+		Subject:  subject,
 		Identity: VerifiedIdentity{
-			Provider: m.Name(),
-			Subject:  subject,
 			IdentityClaims: identitystore.PasskeyIdentityClaims{
 				CredentialId:   credential.ID,
 				PublicKey:      credential.PublicKey,
@@ -306,7 +301,6 @@ func (m *PasskeyMethod) continueRegister(
 				Transports:     transports,
 				DisplayName:    "Passkey",
 			},
-			Store: m.identityStore,
 		},
 	}, nil
 }

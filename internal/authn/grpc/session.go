@@ -99,12 +99,15 @@ func (g *GRPCHandler) resolveMethod(
 ) (method.IdentityMethod, error) {
 	switch req.GetMethod() {
 	case basicpb.AuthMethod_AUTH_METHOD_EMAIL_OTP:
-		return g.identityManager.GetMethod("email")
+		p, err := g.identityManager.GetProvider("email")
+		return p.Method, err
 	case basicpb.AuthMethod_AUTH_METHOD_OAUTH:
 		provider := strings.ToLower(strings.TrimSpace(req.GetIdentifier()))
-		return g.identityManager.GetMethod(provider)
+		p, err := g.identityManager.GetProvider(provider)
+		return p.Method, err
 	case basicpb.AuthMethod_AUTH_METHOD_PASSKEY:
-		return g.identityManager.GetMethod("passkey")
+		p, err := g.identityManager.GetProvider("passkey")
+		return p.Method, err
 	default:
 		return nil, status.Errorf(
 			codes.InvalidArgument,
@@ -188,19 +191,17 @@ func (g *GRPCHandler) verifyProof(
 		return nil, status.Error(codes.InvalidArgument, "missing proof")
 	}
 
-	var (
-		idm method.IdentityMethod
-		err error
-	)
+	var idm method.IdentityMethod
 
 	switch {
 	case proof.GetEmailProof() != nil:
 		ep := proof.GetEmailProof()
-		idm, err = g.identityManager.GetMethod("email")
+		p, err := g.identityManager.GetProvider("email")
 		if err != nil {
-			log.LogUnexpected(ctx, "get email method", err.Error())
+			log.LogUnexpected(ctx, "get email provider", err.Error())
 			return nil, status.Error(codes.Internal, "internal error")
 		}
+		idm = p.Method
 		if ep.GetOtpCode() != "" {
 			continueReq.Payload = method.EmailOTPCodePayload{Code: ep.GetOtpCode()}
 		} else if ep.HasResend() {
@@ -213,7 +214,7 @@ func (g *GRPCHandler) verifyProof(
 		op := proof.GetOauthProof()
 		continueReq.Payload = method.OIDCCallbackPayload{Code: op.GetCode(), State: op.GetState()}
 		provider := strings.ToLower(transition.Provider)
-		idm, err = g.identityManager.GetMethod(provider)
+		p, err := g.identityManager.GetProvider(provider)
 		if err != nil {
 			return nil, status.Errorf(
 				codes.InvalidArgument,
@@ -221,14 +222,16 @@ func (g *GRPCHandler) verifyProof(
 				transition.Provider,
 			)
 		}
+		idm = p.Method
 
 	case proof.GetPasskeyProof() != nil:
 		pp := proof.GetPasskeyProof()
-		idm, err = g.identityManager.GetMethod("passkey")
+		p, err := g.identityManager.GetProvider("passkey")
 		if err != nil {
-			log.LogUnexpected(ctx, "get passkey method", err.Error())
+			log.LogUnexpected(ctx, "get passkey provider", err.Error())
 			return nil, status.Error(codes.Internal, "internal error")
 		}
+		idm = p.Method
 		if pp.GetCredentialCreationResponseJson() != "" {
 			continueReq.Payload = method.PasskeyCreationPayload{
 				CredentialCreationResponseJSON: pp.GetCredentialCreationResponseJson(),
@@ -255,9 +258,6 @@ func (g *GRPCHandler) verifyProof(
 
 // handleVerifiedStep is the unified post-verification flow. All auth intents
 // converge here and produce the same result: an issued session token.
-//
-// The method has already placed its IdentityStore on VerifiedStep.Identity.Store,
-// so there are no type switches on identity kind here.
 func (g *GRPCHandler) handleVerifiedStep(
 	ctx context.Context,
 	tid uuid.UUID,
@@ -271,8 +271,16 @@ func (g *GRPCHandler) handleVerifiedStep(
 
 	reqMeta := transitionData.Store.Metadata
 
-	// Look up any existing identity for this provider+subject via the method's store.
-	identityRecord, err := s.Identity.Store.FindUser(ctx, s.Identity.Provider, s.Identity.Subject)
+	// Retrieve the per-method provider (method + store) by provider name.
+	provider, err := g.identityManager.GetProvider(s.Provider)
+	if err != nil {
+		log.LogUnexpected(ctx, "get identity provider", err.Error())
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	store := provider.Store
+
+	// Look up any existing identity for this provider+subject.
+	identityRecord, err := store.FindUser(ctx, s.Provider, s.Subject)
 	if err != nil {
 		log.LogUnexpected(ctx, "find identity", err.Error())
 		return nil, status.Error(codes.Internal, "internal error")
@@ -290,7 +298,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 
 	// Link identity when it is not yet persisted.
 	if identityRecord == nil {
-		if _, err = s.Identity.Store.LinkIdentity(ctx, userID, s.Identity.IdentityClaims); err != nil {
+		if _, err = store.LinkIdentity(ctx, userID, s.Identity.IdentityClaims); err != nil {
 			if errors.Is(err, identitystore.ErrCredentialAlreadyRegistered) {
 				return continueAuthFailure(
 					tid,
@@ -303,7 +311,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 		}
 	} else {
 		// Best-effort: update last-used timestamp on an existing identity.
-		errutil.Discard(s.Identity.Store.UpdateLastUsed(ctx, identityRecord.ID))
+		errutil.Discard(store.UpdateLastUsed(ctx, identityRecord.ID))
 	}
 
 	// All intents end with an issued session.
@@ -312,7 +320,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 		return nil, err
 	}
 
-	g.dispatchAuthNotification(ctx, transitionData.Intent, userID, s.Identity.Provider, reqMeta)
+	g.dispatchAuthNotification(ctx, transitionData.Intent, userID, s.Provider, reqMeta)
 
 	return continueAuthSuccess(tid, authResult), nil
 }
@@ -330,8 +338,8 @@ func (g *GRPCHandler) resolveUserID(
 	case session.AuthIntentLinkAccount:
 		linkUserID := transitionData.Store.OperationUserId
 		decision, err := g.policy.ValidateLink(ctx, policy.LinkRequest{
-			Provider: s.Identity.Provider,
-			Subject:  s.Identity.Subject,
+			Provider: s.Provider,
+			Subject:  s.Subject,
 		})
 		if err != nil {
 			return uuid.Nil, nil, err

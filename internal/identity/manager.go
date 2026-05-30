@@ -16,12 +16,19 @@ import (
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
+// IdentityProvider pairs an IdentityMethod with its per-method IdentityStore.
+// The store is kept here so that VerifiedIdentity no longer needs to carry it.
+type IdentityProvider struct {
+	Method method.IdentityMethod
+	Store  identitystore.IdentityStore
+}
+
 // IdentityManager manages all singleton instances of IdentityMethod. Each method
 // is wired with its own IdentityStore so that no method needs a direct database
 // dependency.
 type IdentityManager struct {
 	transitionStore session.AuthTransitionStore
-	providers       map[string]method.IdentityMethod
+	providers       map[string]IdentityProvider
 	mu              sync.RWMutex
 }
 
@@ -41,40 +48,51 @@ func NewIdentityManager(
 	oidcStore := identitystore.NewEntOIDCIdentityStore(db)
 	passkeyStore := identitystore.NewEntPasskeyIdentityStore(db)
 
-	identityProvider := make(map[string]method.IdentityMethod)
-	identityProvider["email"] = method.NewEmailOTPMethod(
-		emailStore,
-		otpStore,
-		transitionStore,
-		pubSub,
-		cooldownSeconds,
-	)
-	identityProvider["passkey"] = method.NewPasskeyMethod(passkeyStore, transitionStore, wa)
+	providers := make(map[string]IdentityProvider)
+	providers["email"] = IdentityProvider{
+		Method: method.NewEmailOTPMethod(
+			emailStore,
+			otpStore,
+			transitionStore,
+			pubSub,
+			cooldownSeconds,
+		),
+		Store: emailStore,
+	}
+	providers["passkey"] = IdentityProvider{
+		Method: method.NewPasskeyMethod(passkeyStore, transitionStore, wa),
+		Store:  passkeyStore,
+	}
 
 	for _, cfg := range oidcConfigs {
 		m, err := method.NewOIDCMethod(ctx, cfg, oidcStore, transitionStore)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create OIDC provider %s: %w", cfg.Name, err)
 		}
-		identityProvider[cfg.Name] = m
+		providers[cfg.Name] = IdentityProvider{
+			Method: m,
+			Store:  oidcStore,
+		}
 	}
 
 	return &IdentityManager{
 		transitionStore: transitionStore,
-		providers:       identityProvider,
+		providers:       providers,
 	}, nil
 }
 
-// GetMethod retrieves a registered IdentityMethod by name.
-func (m *IdentityManager) GetMethod(name string) (method.IdentityMethod, error) {
+// GetProvider retrieves the IdentityProvider (method + store) registered under
+// the given name. Callers that need only the method or only the store use the
+// relevant field of the returned struct.
+func (m *IdentityManager) GetProvider(name string) (IdentityProvider, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	provider, ok := m.providers[name]
-	if !ok || provider == nil {
-		return nil, fmt.Errorf("identity method %q not found", name)
+	p, ok := m.providers[name]
+	if !ok || p.Method == nil {
+		return IdentityProvider{}, fmt.Errorf("identity provider %q not found", name)
 	}
-	return provider, nil
+	return p, nil
 }
 
 // Close cleans up registered methods.
@@ -82,8 +100,8 @@ func (m *IdentityManager) Close() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	for _, provider := range m.providers {
-		if closer, ok := provider.(io.Closer); ok {
+	for _, p := range m.providers {
+		if closer, ok := p.Method.(io.Closer); ok {
 			closer.Close()
 		}
 	}

@@ -38,6 +38,11 @@ func (EmailOTPResendPayload) PayloadKind() string {
 	return "email_resend"
 }
 
+type EmailOTPChallenge struct {
+	MaskedEmail string
+	Cooldown    time.Duration
+}
+
 // EmailOTPMethod handles OTP-based email authentication. It has no direct
 // database dependency; identity persistence is delegated to the injected store.
 type EmailOTPMethod struct {
@@ -103,12 +108,9 @@ func (m *EmailOTPMethod) Start(
 		return nil, err
 	}
 
-	ev := &mail.SendOTPEmailEvent{}
-	ev.SetEmail(maskEmail(email))
-
 	return ChallengeStep{
 		TransitionId: parsedTid,
-		Challenge:    ev,
+		Challenge:    EmailOTPChallenge{MaskedEmail: maskEmail(email), Cooldown: m.cooldown},
 	}, nil
 }
 
@@ -176,12 +178,9 @@ func (m *EmailOTPMethod) Continue(
 			return nil, err
 		}
 
-		ev := &mail.SendOTPEmailEvent{}
-		ev.SetEmail(maskEmail(emailFlow.Email))
-
 		return ChallengeStep{
 			TransitionId: req.TransitionId,
-			Challenge:    ev,
+			Challenge:    EmailOTPChallenge{MaskedEmail: maskEmail(emailFlow.Email), Cooldown: m.cooldown},
 		}, nil
 
 	default:

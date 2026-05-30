@@ -77,19 +77,6 @@ func (m *IdentityManager) GetMethod(name string) (method.IdentityMethod, error) 
 	return provider, nil
 }
 
-// Email returns the registered EmailOTPMethod, or nil if not configured.
-func (m *IdentityManager) Email() *method.EmailOTPMethod {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	provider, ok := m.providers["email"]
-	if !ok {
-		return nil
-	}
-	em, _ := provider.(*method.EmailOTPMethod)
-	return em
-}
-
 // Close cleans up registered methods.
 func (m *IdentityManager) Close() {
 	m.mu.Lock()

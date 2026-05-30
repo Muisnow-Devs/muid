@@ -17,7 +17,6 @@ import (
 	basicpb "sanzi.io/muid/api/proto/authn/v1/basic"
 	challengepb "sanzi.io/muid/api/proto/authn/v1/challenge"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
-	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/identity/method"
 	"sanzi.io/muid/internal/identity/policy"
@@ -385,14 +384,10 @@ func (g *GRPCHandler) buildAuthChallenge(
 	ch.SetExpiresAt(timestamppb.New(time.Now().Add(15 * time.Minute)))
 
 	switch payload := challenge.(type) {
-	case *mailpb.SendOTPEmailEvent:
+	case *method.EmailOTPChallenge:
 		ec := &challengepb.EmailChallenge{}
-		ec.SetEmailMasked(payload.GetEmail())
-		cooldown := 60 * time.Second
-		if emailMethod := g.identityManager.Email(); emailMethod != nil {
-			cooldown = emailMethod.Cooldown()
-		}
-		ec.SetResendCooldownMillis(int64(cooldown.Seconds()) * 1000)
+		ec.SetEmailMasked(payload.MaskedEmail)
+		ec.SetResendCooldownMillis(payload.Cooldown.Milliseconds())
 		ch.SetEmailChallenge(ec)
 
 	case *method.PasskeyChallengePayload:

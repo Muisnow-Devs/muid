@@ -356,7 +356,11 @@ func (g *GRPCHandler) resolveUserID(
 ) (uuid.UUID, *pb.ContinueAuthSessionResponse, error) {
 	switch transitionData.Store.Intent {
 	case session.AuthIntentLinkAccount:
+		if transitionData.Store.OperationUserId == nil {
+			return uuid.Nil, nil, errors.New("link_account transition missing operation user id")
+		}
 		linkUserID := *transitionData.Store.OperationUserId
+
 		decision, err := g.policy.ValidateLink(ctx, policy.LinkRequest{
 			Provider: s.Provider,
 			Subject:  s.Subject,

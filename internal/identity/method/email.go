@@ -79,6 +79,7 @@ func (m *EmailOTPMethod) Cooldown() time.Duration { return m.cooldown }
 
 func (m *EmailOTPMethod) Start(
 	ctx context.Context,
+	sessionStore session.SessionStore,
 	req StartRequest,
 ) (Step, error) {
 	email := strings.TrimSpace(strings.ToLower(req.Identifier))
@@ -89,17 +90,13 @@ func (m *EmailOTPMethod) Start(
 		}, nil
 	}
 
-	store := session.SessionStore{
-		Flow:     &session.EmailOTPFlow{Email: email},
-		Intent:   req.Intent,
-		Metadata: req.Metadata,
-	}
-	sess, err := m.transitionStore.Create(ctx, m.Name(), store)
+	sessionStore.Flow = &session.EmailOTPFlow{Email: email}
+	sess, err := m.transitionStore.Create(ctx, m.Name(), sessionStore)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = m.generateAndSendOTP(ctx, sess.Id.String(), email, req.Metadata); err != nil {
+	if err = m.generateAndSendOTP(ctx, sess.Id.String(), email, sessionStore.Metadata); err != nil {
 		return nil, err
 	}
 
@@ -110,7 +107,7 @@ func (m *EmailOTPMethod) Start(
 
 	return ChallengeStep{
 		TransitionId: parsedTid,
-		Challenge:    EmailOTPChallenge{MaskedEmail: maskEmail(email), Cooldown: m.cooldown},
+		Challenge:    &EmailOTPChallenge{MaskedEmail: maskEmail(email), Cooldown: m.cooldown},
 	}, nil
 }
 
@@ -179,7 +176,7 @@ func (m *EmailOTPMethod) Continue(
 
 		return ChallengeStep{
 			TransitionId: req.TransitionId,
-			Challenge:    EmailOTPChallenge{MaskedEmail: maskEmail(emailFlow.Email), Cooldown: m.cooldown},
+			Challenge:    &EmailOTPChallenge{MaskedEmail: maskEmail(emailFlow.Email), Cooldown: m.cooldown},
 		}, nil
 
 	default:

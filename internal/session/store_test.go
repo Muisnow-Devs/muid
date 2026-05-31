@@ -3,16 +3,21 @@ package session
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/google/uuid"
 )
 
 func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	t.Parallel()
 
+	// Import uuid if needed or use a helper
+	opUserID := uuid.New()
 	original := SessionStore{
-		Attempts: 2,
-		Step:     StepStart,
-		Intent:   AuthIntentLogin,
-		Flow:     &EmailOTPFlow{Email: "user@example.com"},
+		Attempts:        2,
+		Step:            StepStart,
+		Intent:          AuthIntentLinkAccount,
+		OperationUserId: &opUserID,
+		Flow:            &EmailOTPFlow{Email: "user@example.com"},
 	}
 
 	data, err := json.Marshal(original)
@@ -29,8 +34,14 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	if decoded.Attempts != 2 || decoded.Step != StepStart {
 		t.Fatalf("metadata mismatch: %+v", decoded)
 	}
+	if decoded.Intent != AuthIntentLinkAccount {
+		t.Fatalf("intent mismatch: expected %s, got %s", AuthIntentLinkAccount, decoded.Intent)
+	}
+	if decoded.OperationUserId == nil || *decoded.OperationUserId != opUserID {
+		t.Fatalf("op_user_id mismatch: expected %v, got %v", opUserID, decoded.OperationUserId)
+	}
 	email, ok := decoded.Flow.(*EmailOTPFlow)
-	if !ok || email.Email != "user@example.com" || decoded.Intent != AuthIntentLogin {
+	if !ok || email.Email != "user@example.com" {
 		t.Fatalf("email flow mismatch: ok=%v %+v", ok, email)
 	}
 }
@@ -49,7 +60,6 @@ func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
 
 	original := SessionStore{
 		Attempts: 1,
-		Intent:   AuthIntentLogin,
 		Flow:     &EmailOTPFlow{Email: "user@example.com"},
 		Metadata: meta,
 	}

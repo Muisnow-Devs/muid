@@ -22,15 +22,14 @@ const (
 )
 
 type AuthSession struct {
-	Id       uuid.UUID
-	Provider string
-	Intent   AuthIntent
+	Id       uuid.UUID `json:"id"`
+	Provider string    `json:"provider"`
 
-	Store SessionStore
+	Store SessionStore `json:"store"`
 
-	CreatedAt int64
-	UpdatedAt int64
-	ExpiresAt int64
+	CreatedAt int64 `json:"created_at"`
+	UpdatedAt int64 `json:"updated_at"`
+	ExpiresAt int64 `json:"expires_at"`
 }
 
 // SessionPayload represents flow-specific payload transition state.
@@ -87,12 +86,12 @@ type SessionStore struct {
 	Attempts int      `json:"attempts"`
 	Step     AuthStep `json:"step"`
 
-	Flow   SessionPayload `json:"-"`
-	Intent AuthIntent     `json:"intent"`
+	Flow            SessionPayload `json:"-"`
+	Intent          AuthIntent     `json:"intent"`
+	OperationUserId *uuid.UUID     `json:"op_user_id,omitempty"`
 
 	// LinkUserID is the authenticated user for link_account / reauthenticate flows.
-	OperationUserId uuid.UUID       `json:"op_user_id,omitempty"`
-	Metadata        SessionMetadata `json:"metadata,omitempty"`
+	Metadata SessionMetadata `json:"metadata"`
 }
 
 type AuthTransitionStore interface {

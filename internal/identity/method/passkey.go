@@ -65,25 +65,19 @@ func (m *PasskeyMethod) Name() string { return "passkey" }
 
 func (m *PasskeyMethod) Start(
 	ctx context.Context,
+	sessionStore session.SessionStore,
 	req StartRequest,
 ) (Step, error) {
-	store := session.SessionStore{
-		Attempts:        0,
-		Intent:          req.Intent,
-		OperationUserId: req.Session.UserID,
-		Metadata:        req.Metadata,
-	}
-
 	var challenge *PasskeyChallengePayload
 
-	switch req.Intent {
+	switch sessionStore.Intent {
 	case session.AuthIntentLogin, session.AuthIntentReauth:
 		assertion, webAuthnSession, err := m.webAuthn.BeginDiscoverableLogin()
 		if err != nil {
 			return nil, err
 		}
 
-		store.Flow = &session.PasskeyFlow{
+		sessionStore.Flow = &session.PasskeyFlow{
 			Ceremony: CeremonyAuthentication,
 			Session:  *webAuthnSession,
 		}
@@ -100,14 +94,14 @@ func (m *PasskeyMethod) Start(
 		}
 
 	case session.AuthIntentLinkAccount:
-		if req.Session == nil {
+		if sessionStore.OperationUserId == nil {
 			return &FailureStep{
 				Code:    authn.ErrCodeInvalidSessionState,
 				Message: "session required for passkey registration",
 			}, nil
 		}
 
-		user, err := m.identityStore.LoadCeremonyUser(ctx, req.Session.UserID)
+		user, err := m.identityStore.LoadCeremonyUser(ctx, *sessionStore.OperationUserId)
 		if err != nil {
 			return nil, err
 		}
@@ -121,10 +115,10 @@ func (m *PasskeyMethod) Start(
 			return nil, err
 		}
 
-		store.Flow = &session.PasskeyFlow{
+		sessionStore.Flow = &session.PasskeyFlow{
 			Ceremony:      CeremonyRegistration,
 			Session:       *webAuthnSession,
-			SubjectUserID: req.Session.UserID.String(),
+			SubjectUserID: (*sessionStore.OperationUserId).String(),
 		}
 
 		optsJSON, err := json.Marshal(creation.Response)
@@ -145,7 +139,7 @@ func (m *PasskeyMethod) Start(
 		}, nil
 	}
 
-	sess, err := m.transitionStore.Create(ctx, m.Name(), store)
+	sess, err := m.transitionStore.Create(ctx, m.Name(), sessionStore)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +179,7 @@ func (m *PasskeyMethod) Continue(
 		}, nil
 	}
 
-	switch sess.Intent {
+	switch sess.Store.Intent {
 	case session.AuthIntentLogin, session.AuthIntentReauth:
 		return m.continueLogin(ctx, req, pkFlow)
 	case session.AuthIntentLinkAccount:

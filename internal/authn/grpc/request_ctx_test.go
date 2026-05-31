@@ -82,6 +82,7 @@ func (m *mockSessionIssuer) ResolveSessionToken(
 func (m *mockSessionIssuer) CreateSession(
 	_ context.Context,
 	_ uuid.UUID,
+	_ session.SessionMetadata,
 ) (*sessionpb.AuthenticatedResult, error) {
 	return nil, nil
 }

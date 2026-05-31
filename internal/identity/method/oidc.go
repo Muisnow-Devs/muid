@@ -8,7 +8,6 @@ import (
 	"errors"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 	"sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/config"
@@ -75,27 +74,18 @@ func (m *OIDCMethod) Name() string {
 
 func (m *OIDCMethod) Start(
 	ctx context.Context,
+	sessionStore session.SessionStore,
 	req StartRequest,
 ) (Step, error) {
 	state := generateRandomState()
 	verifier := oauth2.GenerateVerifier()
 
-	var operationUserID uuid.UUID
-	if req.Session != nil {
-		operationUserID = req.Session.UserID
+	sessionStore.Flow = &session.OIDCFlow{
+		OAuthState:       state,
+		PKCECodeVerifier: verifier,
 	}
 
-	store := session.SessionStore{
-		Flow: &session.OIDCFlow{
-			OAuthState:       state,
-			PKCECodeVerifier: verifier,
-		},
-		Intent:          req.Intent,
-		OperationUserId: operationUserID,
-		Metadata:        req.Metadata,
-	}
-
-	sess, err := m.transitionStore.Create(ctx, m.Name(), store)
+	sess, err := m.transitionStore.Create(ctx, m.Name(), sessionStore)
 	if err != nil {
 		return nil, err
 	}

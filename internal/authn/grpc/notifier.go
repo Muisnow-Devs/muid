@@ -50,7 +50,7 @@ func (g *GRPCHandler) notifyLoginCompleted(
 	ev.SetTimezone(meta.Timezone)
 	ev.SetIpAddress(meta.IPAddress)
 	ev.SetLocation(meta.Location)
-	ev.SetDevice(meta.UserAgent)
+	ev.SetDevice(meta.Device)
 	ev.SetUserAgent(meta.UserAgent)
 	ev.SetSecureLink(g.secureLink)
 	ev.SetOccurredAt(timestamppb.New(now))

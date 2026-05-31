@@ -86,6 +86,7 @@ func (s *EntSessionIssuer) primaryEmail(ctx context.Context, userID uuid.UUID) s
 func (s *EntSessionIssuer) CreateSession(
 	ctx context.Context,
 	userID uuid.UUID,
+	metadata session.SessionMetadata,
 ) (*sessionpb.AuthenticatedResult, error) {
 	selectorBytes := make([]byte, 16)
 	_, err := rand.Read(selectorBytes)
@@ -122,6 +123,9 @@ func (s *EntSessionIssuer) CreateSession(
 		SetValidatorHash(sum[:]).
 		SetExpiresAt(expires).
 		SetAbsoluteExpiry(absoluteExpiry).
+		SetDeviceName(metadata.Device).
+		SetIPAddress(metadata.IPAddress).
+		SetUserAgent(metadata.UserAgent).
 		Save(ctx)
 	if err != nil {
 		return nil, err

@@ -29,10 +29,7 @@ type RequestPayload interface {
 }
 
 type StartRequest struct {
-	Metadata   session.SessionMetadata
 	Identifier string
-	Intent     session.AuthIntent
-	Session    *issuer.ResolvedSession
 }
 
 type ContinueRequest struct {
@@ -46,6 +43,7 @@ type IdentityMethod interface {
 
 	Start(
 		ctx context.Context,
+		sessionStore session.SessionStore,
 		req StartRequest,
 	) (Step, error)
 

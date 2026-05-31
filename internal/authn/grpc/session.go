@@ -74,10 +74,20 @@ func (g *GRPCHandler) StartAuthSession(
 	}
 
 	startReq := method.StartRequest{
-		Metadata:   reqMeta,
 		Identifier: req.GetIdentifier(),
-		Intent:     sessionIntent,
-		Session:    currentSession,
+	}
+
+	var operationUserID *uuid.UUID
+	if currentSession != nil {
+		operationUserID = &currentSession.UserID
+	}
+
+	sessionStore := session.SessionStore{
+		Attempts:        0,
+		Step:            session.StepStart,
+		Intent:          sessionIntent,
+		OperationUserId: operationUserID,
+		Metadata:        reqMeta,
 	}
 
 	// Resolve the method — the only place where auth method type drives a branch.
@@ -86,7 +96,7 @@ func (g *GRPCHandler) StartAuthSession(
 		return nil, err
 	}
 
-	step, err := idm.Start(ctx, startReq)
+	step, err := idm.Start(ctx, sessionStore, startReq)
 	if err != nil {
 		return nil, err
 	}
@@ -134,12 +144,18 @@ func (g *GRPCHandler) ContinueAuthSession(
 
 	// For link_account flows: the existing user session comes from the authorization header.
 	var resolvedSession *issuer.ResolvedSession
-	if wire, ok := grpcutils.WireSessionTokenFromContext(ctx); ok {
+	wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
+	if ok {
 		rs, err := g.issuer.ResolveSessionToken(ctx, wire)
 		if err != nil {
 			return nil, status.Error(codes.PermissionDenied, "valid session required")
 		}
 		resolvedSession = &rs
+	}
+
+	if sess.Store.Intent != session.AuthIntentLogin &&
+		(resolvedSession == nil || sess.Store.OperationUserId == nil || *sess.Store.OperationUserId != resolvedSession.UserID) {
+		return nil, status.Error(codes.PermissionDenied, "session user mismatch")
 	}
 
 	continueReq := method.ContinueRequest{
@@ -169,7 +185,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 		return resp, nil
 
 	case *method.VerifiedStep:
-		return g.handleVerifiedStep(ctx, tid, s)
+		return g.handleVerifiedStep(ctx, tid, wire, s)
 
 	default:
 		log.LogUnexpected(ctx, "continue auth session", "unexpected step type", slog.Any("type", fmt.Sprintf("%T", step)))
@@ -261,6 +277,7 @@ func (g *GRPCHandler) verifyProof(
 func (g *GRPCHandler) handleVerifiedStep(
 	ctx context.Context,
 	tid uuid.UUID,
+	wire string,
 	s *method.VerifiedStep,
 ) (*pb.ContinueAuthSessionResponse, error) {
 	transitionData, err := g.transitionStore.Get(ctx, tid)
@@ -314,14 +331,17 @@ func (g *GRPCHandler) handleVerifiedStep(
 		errutil.Discard(store.UpdateLastUsed(ctx, identityRecord.ID))
 	}
 
+	if wire != "" {
+		errutil.Discard(g.issuer.RevokeSessionToken(ctx, wire))
+	}
+
 	// All intents end with an issued session.
-	authResult, err := g.issuer.CreateSession(ctx, userID)
+	authResult, err := g.issuer.CreateSession(ctx, userID, transitionData.Store.Metadata)
 	if err != nil {
 		return nil, err
 	}
 
-	g.dispatchAuthNotification(ctx, transitionData.Intent, userID, s.Provider, reqMeta)
-
+	g.dispatchAuthNotification(ctx, transitionData.Store.Intent, userID, s.Provider, reqMeta)
 	return continueAuthSuccess(tid, authResult), nil
 }
 
@@ -334,9 +354,9 @@ func (g *GRPCHandler) resolveUserID(
 	identityRecord *identitystore.Identity,
 	s *method.VerifiedStep,
 ) (uuid.UUID, *pb.ContinueAuthSessionResponse, error) {
-	switch transitionData.Intent {
+	switch transitionData.Store.Intent {
 	case session.AuthIntentLinkAccount:
-		linkUserID := transitionData.Store.OperationUserId
+		linkUserID := *transitionData.Store.OperationUserId
 		decision, err := g.policy.ValidateLink(ctx, policy.LinkRequest{
 			Provider: s.Provider,
 			Subject:  s.Subject,

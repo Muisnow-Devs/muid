@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
+	"sanzi.io/muid/internal/session"
 )
 
 type ResolvedSession struct {
@@ -19,7 +20,7 @@ type ResolvedSession struct {
 }
 
 type SessionIssuer interface {
-	CreateSession(ctx context.Context, userID uuid.UUID) (*sessionpb.AuthenticatedResult, error)
+	CreateSession(ctx context.Context, userID uuid.UUID, metadata session.SessionMetadata) (*sessionpb.AuthenticatedResult, error)
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
 	ExtendSession(ctx context.Context, wireToken string) (*sessionpb.SessionContext, error)

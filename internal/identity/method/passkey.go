@@ -19,6 +19,7 @@ const (
 	CeremonyAuthentication = "authentication"
 )
 
+// PasskeyChallengePayload contains the WebAuthn options for the next step.
 type PasskeyChallengePayload struct {
 	Ceremony                               string
 	PublicKeyCredentialRequestOptionsJSON  string
@@ -26,6 +27,7 @@ type PasskeyChallengePayload struct {
 	TimeoutMillis                          int64
 }
 
+// PasskeyAssertionPayload submits a login ceremony assertion response.
 type PasskeyAssertionPayload struct {
 	CredentialID                    []byte
 	ClientDataJSON                  []byte
@@ -34,6 +36,7 @@ type PasskeyAssertionPayload struct {
 
 func (PasskeyAssertionPayload) PayloadKind() string { return "passkey_assertion" }
 
+// PasskeyCreationPayload submits the registration ceremony response.
 type PasskeyCreationPayload struct {
 	CredentialCreationResponseJSON string
 }
@@ -94,14 +97,15 @@ func (m *PasskeyMethod) Start(
 		}
 
 	case session.AuthIntentLinkAccount:
-		if sessionStore.OperationUserId == nil {
+		if sessionStore.OperationUserID == nil {
 			return &FailureStep{
 				Code:    authn.ErrCodeInvalidSessionState,
 				Message: "session required for passkey registration",
 			}, nil
 		}
+		operationUserID := *sessionStore.OperationUserID
 
-		user, err := m.identityStore.LoadCeremonyUser(ctx, *sessionStore.OperationUserId)
+		user, err := m.identityStore.LoadCeremonyUser(ctx, *sessionStore.OperationUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -118,7 +122,7 @@ func (m *PasskeyMethod) Start(
 		sessionStore.Flow = &session.PasskeyFlow{
 			Ceremony:      CeremonyRegistration,
 			Session:       *webAuthnSession,
-			SubjectUserID: (*sessionStore.OperationUserId).String(),
+			SubjectUserID: operationUserID.String(),
 		}
 
 		optsJSON, err := json.Marshal(creation.Response)
@@ -145,7 +149,7 @@ func (m *PasskeyMethod) Start(
 	}
 
 	return ChallengeStep{
-		TransitionId: sess.Id,
+		TransitionID: sess.ID,
 		Challenge:    challenge,
 	}, nil
 }
@@ -154,7 +158,7 @@ func (m *PasskeyMethod) Continue(
 	ctx context.Context,
 	req ContinueRequest,
 ) (Step, error) {
-	sess, err := m.transitionStore.Get(ctx, req.TransitionId)
+	sess, err := m.transitionStore.Get(ctx, req.TransitionID)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
 			return &FailureStep{
@@ -286,9 +290,9 @@ func (m *PasskeyMethod) continueRegister(
 		Subject:  subject,
 		Identity: VerifiedIdentity{
 			IdentityClaims: identitystore.PasskeyIdentityClaims{
-				CredentialId:   credential.ID,
+				CredentialID:   credential.ID,
 				PublicKey:      credential.PublicKey,
-				RpId:           pkFlow.Session.RelyingPartyID,
+				RPID:           pkFlow.Session.RelyingPartyID,
 				DeviceType:     deviceType,
 				BackupEligible: credential.Flags.BackupEligible,
 				BackupState:    credential.Flags.BackupState,

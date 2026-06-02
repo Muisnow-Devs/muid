@@ -8,10 +8,12 @@ import (
 	"sanzi.io/muid/pkg/utils"
 )
 
+// ErrOIDCClientConfigRequired reports that an OIDC client entry is incomplete.
 var ErrOIDCClientConfigRequired = errors.New(
 	"authn config: OIDC client config requires provider, endpoint, client_id, client_secret, and redirect_url",
 )
 
+// OIDCClaimFields names optional claims extracted from the provider profile.
 type OIDCClaimFields struct {
 	Subject       string
 	Name          string
@@ -20,6 +22,7 @@ type OIDCClaimFields struct {
 	EmailVerified string
 }
 
+// OIDCProviderConfig describes a single configured OIDC provider.
 type OIDCProviderConfig struct {
 	Name         string
 	Endpoint     string
@@ -49,8 +52,10 @@ type oidcClaimFieldsJSON struct {
 	EmailVerified string `json:"email_verified"`
 }
 
+// OIDCClients is the decoded OIDC provider configuration list.
 type OIDCClients []OIDCProviderConfig
 
+// Decode parses raw envconfig input into OIDC provider configurations.
 func (clients *OIDCClients) Decode(raw string) error {
 	parsed, err := parseOIDCClientsJSON(raw)
 	if err != nil {
@@ -60,6 +65,7 @@ func (clients *OIDCClients) Decode(raw string) error {
 	return nil
 }
 
+// parseOIDCClientsJSON parses a JSON array of provider definitions.
 func parseOIDCClientsJSON(raw string) (OIDCClients, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -83,6 +89,7 @@ func parseOIDCClientsJSON(raw string) (OIDCClients, error) {
 	return out, nil
 }
 
+// toOIDCProviderConfig normalizes a single provider definition.
 func (c oidcClientJSON) toOIDCProviderConfig() (OIDCProviderConfig, error) {
 	name := strings.TrimSpace(c.Provider)
 	if name == "" {

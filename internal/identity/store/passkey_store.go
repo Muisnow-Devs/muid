@@ -77,7 +77,7 @@ func (s *EntPasskeyIdentityStore) LinkIdentity(
 
 	// Duplicate-credential guard (returns a user-visible sentinel, not internal error).
 	exists, err := s.db.UserPasskey.Query().
-		Where(userpasskey.CredentialIDEQ(pc.CredentialId)).
+		Where(userpasskey.CredentialIDEQ(pc.CredentialID)).
 		Exist(ctx)
 	if err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (s *EntPasskeyIdentityStore) LinkIdentity(
 		return nil, ErrCredentialAlreadyRegistered
 	}
 
-	subject := base64.RawURLEncoding.EncodeToString(pc.CredentialId)
+	subject := base64.RawURLEncoding.EncodeToString(pc.CredentialID)
 
 	return enttx.Run(ctx, s.db.Tx, func(ctx context.Context, tx *ent.Tx) (*Identity, error) {
 		identityRow, err := tx.UserIdentity.Create().
@@ -100,9 +100,9 @@ func (s *EntPasskeyIdentityStore) LinkIdentity(
 
 		pkCreate := tx.UserPasskey.Create().
 			SetIdentityID(identityRow.ID).
-			SetCredentialID(pc.CredentialId).
+			SetCredentialID(pc.CredentialID).
 			SetPublicKey(pc.PublicKey).
-			SetRpID(pc.RpId).
+			SetRpID(pc.RPID).
 			SetDeviceType(pc.DeviceType).
 			SetBackupEligible(pc.BackupEligible).
 			SetBackupState(pc.BackupState).

@@ -22,8 +22,6 @@ import (
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
-// ---- helpers -----------------------------------------------------------------
-
 func validWireToken(t *testing.T) string {
 	t.Helper()
 	sel := make([]byte, session.SelectorByteLength)
@@ -41,8 +39,7 @@ func validWireToken(t *testing.T) string {
 	)
 }
 
-// ctxWithHeaderToken runs SessionTokenInterceptor to store the wire token on ctx,
-// mirroring what the real interceptor chain does.
+// ctxWithHeaderToken mirrors the interceptor chain and stores the wire token on ctx.
 func ctxWithHeaderToken(t *testing.T, wire string) context.Context {
 	t.Helper()
 	ic := grpcutils.SessionTokenInterceptor()
@@ -106,8 +103,6 @@ func (m *mockSessionIssuer) AuthenticatedPrincipalFromResolved(
 ) *sessionpb.AuthenticatedPrincipal {
 	return nil
 }
-
-// ---- AuthnRequestContextInterceptor tests ------------------------------------
 
 func TestAuthnRequestContextInterceptor_continueTransitionID(t *testing.T) {
 	t.Parallel()
@@ -202,8 +197,6 @@ func TestAuthnRequestContextInterceptor_startInvalidTimezone(t *testing.T) {
 	}
 }
 
-// ---- AuthnSessionPrincipalInterceptor tests ----------------------------------
-
 func TestAuthnSessionPrincipalInterceptor_resolvesSession(t *testing.T) {
 	t.Parallel()
 
@@ -278,7 +271,6 @@ func TestAuthnSessionPrincipalInterceptor_sessionExpired(t *testing.T) {
 func TestAuthnSessionPrincipalInterceptor_unmappedRoute(t *testing.T) {
 	t.Parallel()
 
-	// Routes not in AuthnSessionPrincipalInterceptor must be passed through.
 	ic := AuthnSessionPrincipalInterceptor(&mockSessionIssuer{err: errors.New("should not call")})
 	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
 

@@ -2,9 +2,9 @@ package method
 
 import "github.com/google/uuid"
 
-// Challenge
+// ChallengeStep asks the caller to present a challenge to the user.
 type ChallengeStep struct {
-	TransitionId uuid.UUID
+	TransitionID uuid.UUID
 	Challenge    any
 }
 
@@ -12,9 +12,9 @@ func (c ChallengeStep) StepKind() StepKind {
 	return StepKindChallenge
 }
 
-// Redirect
+// RedirectStep asks the caller to redirect the user.
 type RedirectStep struct {
-	TransitionId uuid.UUID
+	TransitionID uuid.UUID
 	RedirectURL  string
 }
 
@@ -22,7 +22,7 @@ func (r RedirectStep) StepKind() StepKind {
 	return StepKindRedirect
 }
 
-// Pending
+// PendingStep tells the caller that the flow is waiting on another action.
 type PendingStep struct {
 	SessionID string
 	Message   string
@@ -32,7 +32,7 @@ func (*PendingStep) StepKind() StepKind {
 	return StepKindPending
 }
 
-// Verified
+// VerifiedStep carries a successfully verified identity.
 type VerifiedStep struct {
 	Provider string
 	Subject  string
@@ -44,7 +44,7 @@ func (*VerifiedStep) StepKind() StepKind {
 	return StepKindVerified
 }
 
-// Failure
+// FailureStep reports a user-visible failure.
 type FailureStep struct {
 	Code    string
 	Message string

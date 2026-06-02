@@ -86,7 +86,7 @@ func (g *GRPCHandler) StartAuthSession(
 		Attempts:        0,
 		Step:            session.StepStart,
 		Intent:          sessionIntent,
-		OperationUserId: operationUserID,
+		OperationUserID: operationUserID,
 		Metadata:        reqMeta,
 	}
 
@@ -154,12 +154,12 @@ func (g *GRPCHandler) ContinueAuthSession(
 	}
 
 	if sess.Store.Intent != session.AuthIntentLogin &&
-		(resolvedSession == nil || sess.Store.OperationUserId == nil || *sess.Store.OperationUserId != resolvedSession.UserID) {
+		(resolvedSession == nil || sess.Store.OperationUserID == nil || *sess.Store.OperationUserID != resolvedSession.UserID) {
 		return nil, status.Error(codes.PermissionDenied, "session user mismatch")
 	}
 
 	continueReq := method.ContinueRequest{
-		TransitionId: tid,
+		TransitionID: tid,
 		Session:      resolvedSession,
 	}
 
@@ -175,7 +175,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 
 	case method.ChallengeStep:
 		cr := &sessionpb.ChallengeRequired{}
-		ch := g.buildAuthChallenge(s.TransitionId.String(), s.Challenge)
+		ch := g.buildAuthChallenge(s.TransitionID.String(), s.Challenge)
 		cr.SetChallenge(ch)
 
 		resp := &pb.ContinueAuthSessionResponse{}
@@ -356,10 +356,10 @@ func (g *GRPCHandler) resolveUserID(
 ) (uuid.UUID, *pb.ContinueAuthSessionResponse, error) {
 	switch transitionData.Store.Intent {
 	case session.AuthIntentLinkAccount:
-		if transitionData.Store.OperationUserId == nil {
+		if transitionData.Store.OperationUserID == nil {
 			return uuid.Nil, nil, errors.New("link_account transition missing operation user id")
 		}
-		linkUserID := *transitionData.Store.OperationUserId
+		linkUserID := *transitionData.Store.OperationUserID
 
 		decision, err := g.policy.ValidateLink(ctx, policy.LinkRequest{
 			Provider: s.Provider,
@@ -450,14 +450,14 @@ func (g *GRPCHandler) combineStartResponse(
 	resp := &pb.StartAuthSessionResponse{}
 	switch s := step.(type) {
 	case method.ChallengeStep:
-		resp.SetTransitionId(s.TransitionId.String())
-		resp.SetChallenge(g.buildAuthChallenge(s.TransitionId.String(), s.Challenge))
+		resp.SetTransitionId(s.TransitionID.String())
+		resp.SetChallenge(g.buildAuthChallenge(s.TransitionID.String(), s.Challenge))
 
 	case method.RedirectStep:
-		resp.SetTransitionId(s.TransitionId.String())
+		resp.SetTransitionId(s.TransitionID.String())
 
 		ch := &challengepb.AuthChallenge{}
-		ch.SetChallengeId(s.TransitionId.String())
+		ch.SetChallengeId(s.TransitionID.String())
 		ch.SetIssuedAt(timestamppb.New(time.Now()))
 		ch.SetExpiresAt(timestamppb.New(time.Now().Add(15 * time.Minute)))
 

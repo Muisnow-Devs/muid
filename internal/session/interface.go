@@ -22,7 +22,7 @@ const (
 )
 
 type AuthSession struct {
-	Id       uuid.UUID `json:"id"`
+	ID       uuid.UUID `json:"id"`
 	Provider string    `json:"provider"`
 
 	Store SessionStore `json:"store"`
@@ -88,9 +88,9 @@ type SessionStore struct {
 
 	Flow            SessionPayload `json:"-"`
 	Intent          AuthIntent     `json:"intent"`
-	OperationUserId *uuid.UUID     `json:"op_user_id,omitempty"`
+	OperationUserID *uuid.UUID     `json:"op_user_id,omitempty"`
 
-	// LinkUserID is the authenticated user for link_account / reauthenticate flows.
+	// OperationUserID is the authenticated user for link_account / reauthenticate flows.
 	Metadata SessionMetadata `json:"metadata"`
 }
 

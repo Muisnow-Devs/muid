@@ -40,9 +40,9 @@ func (OIDCIdentityClaims) IdentityClaimsKind() string { return "oidc" }
 
 // PasskeyIdentityClaims carries the data required to link a passkey identity.
 type PasskeyIdentityClaims struct {
-	CredentialId   []byte
+	CredentialID   []byte
 	PublicKey      []byte
-	RpId           string
+	RPID           string
 	DeviceType     userpasskey.DeviceType
 	BackupEligible bool
 	BackupState    bool

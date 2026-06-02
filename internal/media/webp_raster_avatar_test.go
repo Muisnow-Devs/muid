@@ -6,10 +6,12 @@ import (
 	"testing"
 )
 
-// 1×1 red PNG (base64).
+// 1x1 red PNG (base64).
 const tinyPNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
 
 func TestWebPRasterAvatarProcessor_ProcessToSquareWebP(t *testing.T) {
+	t.Parallel()
+
 	raw, err := base64.StdEncoding.DecodeString(tinyPNG)
 	if err != nil {
 		t.Fatal(err)

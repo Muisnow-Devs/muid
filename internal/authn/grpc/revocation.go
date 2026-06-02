@@ -36,7 +36,7 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 	}
 
 	now := time.Now()
-	_, err := g.db.UserFederatedIdentity.Update().
+	federatedUpdated, err := g.db.UserFederatedIdentity.Update().
 		Where(
 			userfederatedidentity.ProviderEQ(provider),
 			userfederatedidentity.RevokedAtIsNil(),
@@ -44,8 +44,11 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 		).
 		SetRevokedAt(now).
 		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	n, err := g.db.UserIdentity.Update().
+	userIdentityUpdated, err := g.db.UserIdentity.Update().
 		Where(
 			useridentity.UserID(resolved.UserID),
 			useridentity.Provider(provider),
@@ -56,7 +59,7 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 	if err != nil {
 		return nil, err
 	}
-	if n == 0 {
+	if federatedUpdated+userIdentityUpdated == 0 {
 		return nil, status.Error(codes.NotFound, "federated identity not found")
 	}
 

@@ -12,24 +12,24 @@ import (
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
-const (
-	TRANSITION_SESSION_TTL = 15 * time.Minute
-)
+const transitionSessionTTL = 15 * time.Minute
 
+// KVAuthTransitionStore stores auth transitions in a KV backend.
 type KVAuthTransitionStore struct {
 	client kv.KVStore
 }
 
-func encode(s session.AuthSession) ([]byte, error) {
+func encodeSession(s session.AuthSession) ([]byte, error) {
 	return json.Marshal(s)
 }
 
-func decode(data []byte) (session.AuthSession, error) {
+func decodeSession(data []byte) (session.AuthSession, error) {
 	var s session.AuthSession
 	err := json.Unmarshal(data, &s)
 	return s, err
 }
 
+// NewKVAuthTransitionStore returns a KV-backed transition store.
 func NewKVAuthTransitionStore(kvStore kv.KVStore) session.AuthTransitionStore {
 	return &KVAuthTransitionStore{client: kvStore}
 }
@@ -45,10 +45,10 @@ func (k *KVAuthTransitionStore) Create(
 ) (session.AuthSession, error) {
 	id := uuid.New()
 	now := time.Now()
-	expiresAt := now.Add(TRANSITION_SESSION_TTL)
+	expiresAt := now.Add(transitionSessionTTL)
 
 	sess := session.AuthSession{
-		Id:        id,
+		ID:        id,
 		Provider:  provider,
 		Store:     store,
 		CreatedAt: now.Unix(),
@@ -56,10 +56,10 @@ func (k *KVAuthTransitionStore) Create(
 		ExpiresAt: expiresAt.Unix(),
 	}
 
-	key := k.key(sess.Id.String())
-	ttl := time.Until(time.Unix(sess.ExpiresAt, 0))
+	key := k.key(sess.ID.String())
+	ttl := time.Until(expiresAt)
 
-	data, err := encode(sess)
+	data, err := encodeSession(sess)
 	if err != nil {
 		return session.AuthSession{}, err
 	}
@@ -101,7 +101,7 @@ func (k *KVAuthTransitionStore) Get(
 		return session.AuthSession{}, err
 	}
 
-	sess, err := decode(data)
+	sess, err := decodeSession(data)
 	if err != nil {
 		return session.AuthSession{}, err
 	}
@@ -121,7 +121,7 @@ func (k *KVAuthTransitionStore) Update(
 ) error {
 	key := k.key(id.String())
 
-	// Ensure the session exists and is not expired before updating
+	// Ensure the session exists and is not expired before updating.
 	existing, err := k.Get(ctx, id)
 	if err != nil {
 		return err
@@ -138,7 +138,7 @@ func (k *KVAuthTransitionStore) Update(
 		return session.ErrSessionExpired
 	}
 
-	data, err := encode(existing)
+	data, err := encodeSession(existing)
 	if err != nil {
 		return err
 	}

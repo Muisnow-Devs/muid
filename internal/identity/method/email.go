@@ -24,6 +24,7 @@ const (
 	OTPLifetime = 5 * time.Minute
 )
 
+// EmailOTPCodePayload submits the one-time code for email verification.
 type EmailOTPCodePayload struct {
 	Code string
 }
@@ -32,12 +33,14 @@ func (EmailOTPCodePayload) PayloadKind() string {
 	return "email_code"
 }
 
+// EmailOTPResendPayload asks the method to send a fresh code.
 type EmailOTPResendPayload struct{}
 
 func (EmailOTPResendPayload) PayloadKind() string {
 	return "email_resend"
 }
 
+// EmailOTPChallenge describes the masked email and resend cooldown.
 type EmailOTPChallenge struct {
 	MaskedEmail string
 	Cooldown    time.Duration
@@ -96,17 +99,17 @@ func (m *EmailOTPMethod) Start(
 		return nil, err
 	}
 
-	if err = m.generateAndSendOTP(ctx, sess.Id.String(), email, sessionStore.Metadata); err != nil {
+	if err = m.generateAndSendOTP(ctx, sess.ID.String(), email, sessionStore.Metadata); err != nil {
 		return nil, err
 	}
 
-	parsedTid, err := uuid.Parse(sess.Id.String())
+	parsedTid, err := uuid.Parse(sess.ID.String())
 	if err != nil {
 		return nil, err
 	}
 
 	return ChallengeStep{
-		TransitionId: parsedTid,
+		TransitionID: parsedTid,
 		Challenge:    &EmailOTPChallenge{MaskedEmail: maskEmail(email), Cooldown: m.cooldown},
 	}, nil
 }
@@ -115,7 +118,7 @@ func (m *EmailOTPMethod) Continue(
 	ctx context.Context,
 	req ContinueRequest,
 ) (Step, error) {
-	tid := req.TransitionId
+	tid := req.TransitionID
 	sess, err := m.transitionStore.Get(ctx, tid)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
@@ -175,7 +178,7 @@ func (m *EmailOTPMethod) Continue(
 		}
 
 		return ChallengeStep{
-			TransitionId: req.TransitionId,
+			TransitionID: req.TransitionID,
 			Challenge:    &EmailOTPChallenge{MaskedEmail: maskEmail(emailFlow.Email), Cooldown: m.cooldown},
 		}, nil
 

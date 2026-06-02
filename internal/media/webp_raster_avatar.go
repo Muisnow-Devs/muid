@@ -83,7 +83,8 @@ func validateRasterProcessInput(raw []byte, claimedContentType string) error {
 // AllowedRasterContentType reports whether ct is a supported raster image MIME type
 // (before object download / processing).
 func AllowedRasterContentType(ct string) bool {
-	ct = strings.ToLower(strings.TrimSpace(strings.Split(ct, ";")[0]))
+	ct, _, _ = strings.Cut(ct, ";")
+	ct = strings.ToLower(strings.TrimSpace(ct))
 	switch ct {
 	case "image/jpeg", "image/png", "image/gif", ContentTypeWebP:
 		return true

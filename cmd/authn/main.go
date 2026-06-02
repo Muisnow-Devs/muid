@@ -41,7 +41,7 @@ func run() error {
 		return fmt.Errorf("init infra: %w", err)
 	}
 
-	authnApp, err := app.NewAuthnApp(ctx, infra)
+	authnApp, err := app.NewAuthnApp(infra)
 	if err != nil {
 		infra.Close()
 		return fmt.Errorf("create app: %w", err)

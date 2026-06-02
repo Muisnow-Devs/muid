@@ -5,10 +5,30 @@ import (
 	"errors"
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
+	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
+
+func (g *GRPCHandler) resolveSessionFromContext(
+	ctx context.Context,
+) (issuer.ResolvedSession, bool, error) {
+	wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
+	if !ok {
+		return issuer.ResolvedSession{}, false, nil
+	}
+
+	resolved, err := g.issuer.ResolveSessionToken(ctx, wire)
+	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
+		return issuer.ResolvedSession{}, false, nil
+	}
+	if err != nil {
+		log.LogUnexpected(ctx, "resolve authn session", err.Error())
+		return issuer.ResolvedSession{}, false, grpcutils.GRPCInternalError()
+	}
+	return resolved, true, nil
+}
 
 // GetAuthorizedSession validates the session token sent via the authorization
 // metadata header ("Session <token>") and returns the resolved session.
@@ -18,27 +38,18 @@ func (g *GRPCHandler) GetAuthorizedSession(
 	ctx context.Context,
 	req *pb.GetAuthorizedSessionRequest,
 ) (*pb.GetAuthorizedSessionResponse, error) {
-	wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
-	if !ok {
-		out := &pb.GetAuthorizedSessionResponse{}
-		out.SetValid(false)
-		return out, nil
-	}
-
-	res, err := g.issuer.ResolveSessionToken(ctx, wire)
-	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
-		out := &pb.GetAuthorizedSessionResponse{}
-		out.SetValid(false)
-		return out, nil
-	}
+	res, ok, err := g.resolveSessionFromContext(ctx)
 	if err != nil {
-		log.LogUnexpected(ctx, "authn get session", err.Error())
-		return nil, grpcutils.GRPCInternalError()
+		return nil, err
 	}
 
 	out := &pb.GetAuthorizedSessionResponse{}
-	out.SetValid(true)
-	out.SetSession(g.issuer.AuthenticatedResultFromResolved(res))
+	if ok {
+		out.SetValid(true)
+		out.SetSession(g.issuer.AuthenticatedResultFromResolved(res))
+	} else {
+		out.SetValid(false)
+	}
 	return out, nil
 }
 
@@ -49,26 +60,17 @@ func (g *GRPCHandler) GetAuthenticatedPrincipal(
 	ctx context.Context,
 	req *pb.GetAuthenticatedPrincipalRequest,
 ) (*pb.GetAuthenticatedPrincipalResponse, error) {
-	wire, ok := grpcutils.WireSessionTokenFromContext(ctx)
-	if !ok {
-		out := &pb.GetAuthenticatedPrincipalResponse{}
-		out.SetValid(false)
-		return out, nil
-	}
-
-	res, err := g.issuer.ResolveSessionToken(ctx, wire)
-	if errors.Is(err, session.ErrSessionNotFound) || errors.Is(err, session.ErrSessionExpired) {
-		out := &pb.GetAuthenticatedPrincipalResponse{}
-		out.SetValid(false)
-		return out, nil
-	}
+	res, ok, err := g.resolveSessionFromContext(ctx)
 	if err != nil {
-		log.LogUnexpected(ctx, "authn get principal", err.Error())
-		return nil, grpcutils.GRPCInternalError()
+		return nil, err
 	}
 
 	out := &pb.GetAuthenticatedPrincipalResponse{}
-	out.SetValid(true)
-	out.SetPrincipal(g.issuer.AuthenticatedPrincipalFromResolved(res))
+	if ok {
+		out.SetValid(true)
+		out.SetPrincipal(g.issuer.AuthenticatedPrincipalFromResolved(res))
+	} else {
+		out.SetValid(false)
+	}
 	return out, nil
 }

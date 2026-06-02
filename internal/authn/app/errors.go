@@ -1,6 +1,6 @@
 package app
 
-// OIDCProviderInitError records a failure while constructing a named OIDC provider.
+// OIDCProviderInitError records a failure while constructing an OIDC provider.
 type OIDCProviderInitError struct {
 	Name string
 	Err  error

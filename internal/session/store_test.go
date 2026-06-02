@@ -16,7 +16,7 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 		Attempts:        2,
 		Step:            StepStart,
 		Intent:          AuthIntentLinkAccount,
-		OperationUserId: &opUserID,
+		OperationUserID: &opUserID,
 		Flow:            &EmailOTPFlow{Email: "user@example.com"},
 	}
 
@@ -37,8 +37,8 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	if decoded.Intent != AuthIntentLinkAccount {
 		t.Fatalf("intent mismatch: expected %s, got %s", AuthIntentLinkAccount, decoded.Intent)
 	}
-	if decoded.OperationUserId == nil || *decoded.OperationUserId != opUserID {
-		t.Fatalf("op_user_id mismatch: expected %v, got %v", opUserID, decoded.OperationUserId)
+	if decoded.OperationUserID == nil || *decoded.OperationUserID != opUserID {
+		t.Fatalf("op_user_id mismatch: expected %v, got %v", opUserID, decoded.OperationUserID)
 	}
 	email, ok := decoded.Flow.(*EmailOTPFlow)
 	if !ok || email.Email != "user@example.com" {

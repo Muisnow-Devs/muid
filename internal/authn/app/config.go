@@ -19,9 +19,11 @@ import (
 )
 
 const (
+	// ConfigEnvPrefix is the environment variable prefix for authn config.
 	ConfigEnvPrefix = "AUTHN"
 )
 
+// Config holds the authn service configuration.
 type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 
@@ -70,6 +72,7 @@ type Config struct {
 	ProfileGRPCCBHalfOpenMaxRequests int  `envconfig:"PROFILE_GRPC_CB_HALF_OPEN_MAX_REQUESTS" default:"3"`
 }
 
+// InfraDependencies holds the runtime dependencies for the authn app.
 type InfraDependencies struct {
 	GlobalConfig Config
 
@@ -88,6 +91,7 @@ type InfraDependencies struct {
 	profileConn *grpc.ClientConn
 }
 
+// Close releases the owned dependencies.
 func (d *InfraDependencies) Close() error {
 	var errs []error
 	if d.IdentityManager != nil {

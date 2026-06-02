@@ -23,7 +23,7 @@ func TestKVAuthTransitionStore_CreateAndGet_Success(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	fetched, err := store.Get(ctx, created.Id)
+	fetched, err := store.Get(ctx, created.ID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -61,12 +61,12 @@ func TestKVAuthTransitionStore_Update_Success(t *testing.T) {
 	}
 
 	storeData.Step = session.AuthStep("authenticated")
-	err = store.Update(ctx, created.Id, storeData)
+	err = store.Update(ctx, created.ID, storeData)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	fetched, _ := store.Get(ctx, created.Id)
+	fetched, _ := store.Get(ctx, created.ID)
 	if fetched.Store.Step != session.AuthStep("authenticated") {
 		t.Errorf("expected step 'authenticated', got '%s'", fetched.Store.Step)
 	}
@@ -101,12 +101,12 @@ func TestKVAuthTransitionStore_Delete(t *testing.T) {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	err = store.Delete(ctx, created.Id)
+	err = store.Delete(ctx, created.ID)
 	if err != nil {
 		t.Fatalf("expected no error on delete, got %v", err)
 	}
 
-	_, err = store.Get(ctx, created.Id)
+	_, err = store.Get(ctx, created.ID)
 	if err != session.ErrSessionNotFound {
 		t.Fatalf("expected ErrSessionNotFound after deletion, got %v", err)
 	}
@@ -123,18 +123,18 @@ func TestKVAuthTransitionStore_Security_Expired_Get(t *testing.T) {
 	}
 
 	// Manually force expiration by rewriting the stored data
-	key := store.(*KVAuthTransitionStore).key(created.Id.String())
+	key := store.(*KVAuthTransitionStore).key(created.ID.String())
 	data, _ := mockKV.Get(ctx, key)
-	sess, _ := decode(data)
+	sess, _ := decodeSession(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600 // Subtract an hour
-	expiredData, _ := encode(sess)
+	expiredData, _ := encodeSession(sess)
 
 	err = mockKV.Set(ctx, key, expiredData, 0)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	_, err = store.Get(ctx, created.Id)
+	_, err = store.Get(ctx, created.ID)
 	if err != session.ErrSessionExpired {
 		t.Fatalf("expected ErrSessionExpired, got %v", err)
 	}
@@ -154,18 +154,18 @@ func TestKVAuthTransitionStore_Security_Expired_Update(t *testing.T) {
 	created, _ := store.Create(ctx, "password", session.SessionStore{})
 
 	// Manually force expiration safely
-	key := store.(*KVAuthTransitionStore).key(created.Id.String())
+	key := store.(*KVAuthTransitionStore).key(created.ID.String())
 	data, _ := mockKV.Get(ctx, key)
-	sess, _ := decode(data)
+	sess, _ := decodeSession(data)
 	sess.ExpiresAt = sess.ExpiresAt - 3600
-	expiredData, _ := encode(sess)
+	expiredData, _ := encodeSession(sess)
 
 	err := mockKV.Set(ctx, key, expiredData, 0)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 
-	err = store.Update(ctx, created.Id, session.SessionStore{Step: session.AuthStep("bypassed")})
+	err = store.Update(ctx, created.ID, session.SessionStore{Step: session.AuthStep("bypassed")})
 	if err != session.ErrSessionExpired && err != session.ErrSessionNotFound {
 		t.Fatalf(
 			"expected ErrSessionExpired during update of an already expired token, got %v",
@@ -187,16 +187,16 @@ func TestKVAuthTransitionStore_Security_UUIDEntropy(t *testing.T) {
 
 	// With the removal of 'provider' from Get and Update, the store relies purely on the UUID
 	// Check that the returned UUID is sufficiently unguessable (length of at least 32).
-	if len(created.Id.String()) < 32 {
+	if len(created.ID.String()) < 32 {
 		t.Fatalf(
 			"expected generated session id to be sufficiently long to prevent brute-forcing, got %v",
-			len(created.Id),
+			len(created.ID),
 		)
 	}
 
 	// Ensure that while the provider is not a parameter for Get,
 	// it correctly retrieves and passes back the Provider for application-layer validation.
-	fetched, err := store.Get(ctx, created.Id)
+	fetched, err := store.Get(ctx, created.ID)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

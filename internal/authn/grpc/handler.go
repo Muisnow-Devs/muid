@@ -29,7 +29,7 @@ type GRPCHandler struct {
 	identityManager *identity.IdentityManager
 }
 
-// NewGRPCHandler wires a GRPCHandler from the provided dependencies.
+// NewGRPCHandler returns a GRPCHandler wired from the provided dependencies.
 func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
 	return &GRPCHandler{
 		db:              deps.DB,

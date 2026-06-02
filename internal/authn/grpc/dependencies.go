@@ -10,9 +10,7 @@ import (
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
-// HandlerDependencies houses all dependency injections for GRPCHandler.
-// Per-method identity stores are now encapsulated inside IdentityManager and
-// accessed via VerifiedStep.Identity.Store; they are no longer listed here.
+// HandlerDependencies contains the dependencies for GRPCHandler.
 type HandlerDependencies struct {
 	DB              *authnent.Client
 	TransitionStore session.AuthTransitionStore

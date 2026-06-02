@@ -3,7 +3,6 @@ package identity
 import (
 	"context"
 	"fmt"
-	"io"
 	"sync"
 
 	"github.com/go-webauthn/webauthn/webauthn"
@@ -13,6 +12,7 @@ import (
 	identitystore "sanzi.io/muid/internal/identity/store"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -27,9 +27,8 @@ type IdentityProvider struct {
 // is wired with its own IdentityStore so that no method needs a direct database
 // dependency.
 type IdentityManager struct {
-	transitionStore session.AuthTransitionStore
-	providers       map[string]IdentityProvider
-	mu              sync.RWMutex
+	providers map[string]IdentityProvider
+	mu        sync.RWMutex
 }
 
 // NewIdentityManager creates a new IdentityManager, creates per-method stores
@@ -48,7 +47,7 @@ func NewIdentityManager(
 	oidcStore := identitystore.NewEntOIDCIdentityStore(db)
 	passkeyStore := identitystore.NewEntPasskeyIdentityStore(db)
 
-	providers := make(map[string]IdentityProvider)
+	providers := make(map[string]IdentityProvider, len(oidcConfigs)+2)
 	providers["email"] = IdentityProvider{
 		Method: method.NewEmailOTPMethod(
 			emailStore,
@@ -76,8 +75,7 @@ func NewIdentityManager(
 	}
 
 	return &IdentityManager{
-		transitionStore: transitionStore,
-		providers:       providers,
+		providers: providers,
 	}, nil
 }
 
@@ -90,7 +88,7 @@ func (m *IdentityManager) GetProvider(name string) (IdentityProvider, error) {
 
 	p, ok := m.providers[name]
 	if !ok || p.Method == nil {
-		return IdentityProvider{}, fmt.Errorf("identity provider %q not found", name)
+		return IdentityProvider{}, ErrProviderNotFound
 	}
 	return p, nil
 }
@@ -101,8 +99,6 @@ func (m *IdentityManager) Close() {
 	defer m.mu.Unlock()
 
 	for _, p := range m.providers {
-		if closer, ok := p.Method.(io.Closer); ok {
-			closer.Close()
-		}
+		errutil.CloseIf(p.Method)
 	}
 }

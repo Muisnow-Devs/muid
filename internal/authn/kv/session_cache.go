@@ -22,10 +22,12 @@ type sessionCacheRecord struct {
 	ValidatorHash []byte `json:"validator_hash,omitempty"`
 }
 
+// KVSessionCache stores resolved session snapshots in a KV backend.
 type KVSessionCache struct {
 	client kv.KVStore
 }
 
+// NewKVSessionCache returns a KV-backed session cache.
 func NewKVSessionCache(client kv.KVStore) session.SessionCache {
 	return &KVSessionCache{client: client}
 }

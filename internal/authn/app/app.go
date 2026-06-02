@@ -7,14 +7,17 @@ import (
 	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/identity/policy"
 	"sanzi.io/muid/internal/identity/resolver"
+	"sanzi.io/muid/pkg/errutil"
 )
 
+// AuthnApp wires the authn gRPC server lifecycle.
 type AuthnApp struct {
 	server             *AuthnGRPC
 	dependencyInjector *InfraDependencies
 }
 
-func NewAuthnApp(ctx context.Context, infra *InfraDependencies) (*AuthnApp, error) {
+// NewAuthnApp returns an authn application wired from infra dependencies.
+func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 	pol := policy.NewEntLinkPolicy(infra.entClient)
 	res := resolver.NewEntUserResolver(
 		infra.entClient,
@@ -50,5 +53,5 @@ func (app *AuthnApp) Start(ctx context.Context) error {
 
 func (app *AuthnApp) Stop() {
 	app.server.Stop()
-	app.dependencyInjector.Close()
+	errutil.Discard(app.dependencyInjector.Close())
 }

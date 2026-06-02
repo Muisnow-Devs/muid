@@ -10,6 +10,7 @@ import (
 	"sanzi.io/muid/internal/session"
 )
 
+// StepKind identifies the kind of step returned by a method.
 type StepKind string
 
 const (
@@ -20,24 +21,29 @@ const (
 	StepKindFailure   StepKind = "failure"
 )
 
+// Step is the sealed interface for the outcomes returned by a method.
 type Step interface {
 	StepKind() StepKind
 }
 
+// RequestPayload is the sealed interface for step continuation payloads.
 type RequestPayload interface {
 	PayloadKind() string
 }
 
+// StartRequest carries the caller-provided identifier used to start a method.
 type StartRequest struct {
 	Identifier string
 }
 
+// ContinueRequest carries the transition being continued and its payload.
 type ContinueRequest struct {
-	TransitionId uuid.UUID
+	TransitionID uuid.UUID
 	Payload      RequestPayload
 	Session      *issuer.ResolvedSession
 }
 
+// IdentityMethod drives one authentication or linking method.
 type IdentityMethod interface {
 	Name() string
 

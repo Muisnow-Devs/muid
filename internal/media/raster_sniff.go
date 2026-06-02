@@ -66,7 +66,8 @@ func SniffRasterKind(b []byte) RasterKind {
 
 // normalizeMIME strips parameters and lowercases the primary type/subtype.
 func normalizeMIME(ct string) string {
-	ct = strings.TrimSpace(strings.Split(ct, ";")[0])
+	ct, _, _ = strings.Cut(ct, ";")
+	ct = strings.TrimSpace(ct)
 	return strings.ToLower(ct)
 }
 

@@ -6,6 +6,7 @@ import (
 	"sanzi.io/muid/pkg/shared"
 )
 
+// Validate checks the authn configuration for required production settings.
 func (cfg Config) Validate() error {
 	return cfg.validate(os.LookupEnv)
 }

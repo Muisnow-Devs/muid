@@ -20,7 +20,11 @@ type ResolvedSession struct {
 }
 
 type SessionIssuer interface {
-	CreateSession(ctx context.Context, userID uuid.UUID, metadata session.SessionMetadata) (*sessionpb.AuthenticatedResult, error)
+	CreateSession(
+		ctx context.Context,
+		userID uuid.UUID,
+		metadata session.SessionMetadata,
+	) (*sessionpb.AuthenticatedResult, error)
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
 	ExtendSession(ctx context.Context, wireToken string) (*sessionpb.SessionContext, error)

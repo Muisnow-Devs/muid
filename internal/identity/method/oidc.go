@@ -17,6 +17,7 @@ import (
 	"sanzi.io/muid/pkg/utils"
 )
 
+// OIDCCallbackPayload carries the authorization code and state from the redirect callback.
 type OIDCCallbackPayload struct {
 	Code  string
 	State string
@@ -26,6 +27,7 @@ func (OIDCCallbackPayload) PayloadKind() string {
 	return "oidc_callback"
 }
 
+// OIDCMethod drives an OIDC authentication flow.
 type OIDCMethod struct {
 	providerName    string
 	provider        *oidc.Provider
@@ -77,7 +79,14 @@ func (m *OIDCMethod) Start(
 	sessionStore session.SessionStore,
 	req StartRequest,
 ) (Step, error) {
-	state := generateRandomState()
+	state, err := generateRandomState()
+	if err != nil {
+		return nil, err
+	}
+	nonce, err := generateRandomState()
+	if err != nil {
+		return nil, err
+	}
 	verifier := oauth2.GenerateVerifier()
 
 	sessionStore.Flow = &session.OIDCFlow{
@@ -92,12 +101,12 @@ func (m *OIDCMethod) Start(
 
 	authURL := m.oauth2Config.AuthCodeURL(
 		state,
-		oidc.Nonce(generateRandomState()),
+		oidc.Nonce(nonce),
 		oauth2.S256ChallengeOption(verifier),
 	)
 
 	return RedirectStep{
-		TransitionId: sess.Id,
+		TransitionID: sess.ID,
 		RedirectURL:  authURL,
 	}, nil
 }
@@ -106,7 +115,7 @@ func (m *OIDCMethod) Continue(
 	ctx context.Context,
 	req ContinueRequest,
 ) (Step, error) {
-	tid := req.TransitionId
+	tid := req.TransitionID
 	sess, err := m.transitionStore.Get(ctx, tid)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
@@ -231,6 +240,7 @@ func (m *OIDCMethod) Continue(
 	}, nil
 }
 
+// OIDCUserClaims is the subset of OIDC claims used by the method.
 type OIDCUserClaims struct {
 	Subject       string
 	Name          string
@@ -239,10 +249,12 @@ type OIDCUserClaims struct {
 	EmailVerified bool
 }
 
-func generateRandomState() string {
+func generateRandomState() (string, error) {
 	b := make([]byte, 32)
-	rand.Read(b)
-	return base64.RawURLEncoding.EncodeToString(b)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func oidcScopes(scopes []string) []string {
@@ -288,9 +300,9 @@ func oidcUserClaimsFromRaw(
 
 func oidcUserClaimsNeedUserInfo(claims OIDCUserClaims, fields config.OIDCClaimFields) bool {
 	fields = oidcClaimFieldsWithDefaults(fields)
-	return fields.Name != "" && claims.Name == "" ||
-		fields.Picture != "" && claims.Picture == "" ||
-		fields.Email != "" && claims.Email == ""
+	return (fields.Name != "" && claims.Name == "") ||
+		(fields.Picture != "" && claims.Picture == "") ||
+		(fields.Email != "" && claims.Email == "")
 }
 
 func oidcMergeClaims(primary, secondary OIDCUserClaims) OIDCUserClaims {

@@ -15,11 +15,9 @@ import (
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
-const (
-	OTPLength = 6
-)
+const otpLength = 6
 
-type OTPInformation struct {
+type otpInformation struct {
 	OTPHash    []byte    `json:"otp_hash"`
 	Attempts   int       `json:"attempts"`
 	ExpireAt   time.Time `json:"expire_at"`
@@ -27,7 +25,7 @@ type OTPInformation struct {
 }
 
 // recipientSendState tracks the last OTP send for a normalized recipient so send
-// cooldown can apply across transitions (mirrors OTPInformation cooldown rules).
+// cooldown can apply across transitions (mirrors otpInformation cooldown rules).
 type recipientSendState struct {
 	LastSentAt time.Time `json:"last_sent_at"`
 	ExpireAt   time.Time `json:"expire_at"`
@@ -39,6 +37,7 @@ type KVOTPStore struct {
 	sendCooldown time.Duration
 }
 
+// NewKVOTPStore returns a KV-backed OTP store.
 func NewKVOTPStore(kvStore kv.KVStore, otpSecret []byte, sendCooldown time.Duration) otp.OTPStore {
 	return &KVOTPStore{client: kvStore, otpSecret: otpSecret, sendCooldown: sendCooldown}
 }
@@ -126,7 +125,7 @@ func (store *KVOTPStore) CreateOTP(
 		return otp.OTPChallenge{}, err
 	}
 
-	otpCode, err := generateOTP(OTPLength)
+	otpCode, err := generateOTP(otpLength)
 	if err != nil {
 		return otp.OTPChallenge{}, err
 	}
@@ -134,7 +133,7 @@ func (store *KVOTPStore) CreateOTP(
 	sha := store.hashOTP(otpCode, transitionId)
 	now := time.Now()
 	expiresAt := now.Add(expiration)
-	info := OTPInformation{
+	info := otpInformation{
 		OTPHash:    sha[:],
 		Attempts:   0,
 		ExpireAt:   expiresAt,
@@ -184,7 +183,7 @@ func (store *KVOTPStore) checkSendCooldown(ctx context.Context, transitionId str
 		return err
 	}
 
-	var info OTPInformation
+	var info otpInformation
 	err = json.Unmarshal(data, &info)
 	if err != nil {
 		return err
@@ -235,7 +234,7 @@ func (store *KVOTPStore) VerifyOTP(
 	ctx, span := tracing.StartSpan(ctx, "authn.otp.verify")
 	defer span.End()
 
-	if code == "" || len(code) != OTPLength {
+	if code == "" || len(code) != otpLength {
 		return otp.ErrOTPInvalid
 	}
 
@@ -248,7 +247,7 @@ func (store *KVOTPStore) VerifyOTP(
 		return err
 	}
 
-	var info OTPInformation
+	var info otpInformation
 	err = json.Unmarshal(data, &info)
 	if err != nil {
 		return err

@@ -4,11 +4,26 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-redis/redis"
 	goredis "github.com/go-redis/redis"
 	"sanzi.io/muid/pkg/shared/kv"
 )
 
 const payloadSizeLimit = 64 * 1024 // 64KB
+var compareAndDeleteScript = redis.NewScript(`
+local value = redis.call("GET", KEYS[1])
+
+if not value then
+    return 0
+end
+
+if value == ARGV[1] then
+    redis.call("DEL", KEYS[1])
+    return 1
+end
+
+return 0
+`)
 
 // RedisKVStore is a Redis-backed [KVStore].
 type RedisKVStore struct {
@@ -91,4 +106,61 @@ func (r *RedisKVStore) SetNX(
 	}
 
 	return result.Val(), nil
+}
+
+func (r *RedisKVStore) Exists(ctx context.Context, key string) (bool, error) {
+	if key == "" {
+		return false, kv.ErrInvalidKey
+	}
+
+	result := r.client.Exists(key)
+	if err := result.Err(); err != nil {
+		return false, err
+	}
+
+	return result.Val() > 0, nil
+}
+
+func (r *RedisKVStore) Expire(ctx context.Context, key string, ttl time.Duration) error {
+	if key == "" {
+		return kv.ErrInvalidKey
+	}
+
+	result := r.client.Expire(key, ttl)
+	return result.Err()
+}
+
+func (r *RedisKVStore) TTL(ctx context.Context, key string) (time.Duration, error) {
+	if key == "" {
+		return 0, kv.ErrInvalidKey
+	}
+
+	result := r.client.TTL(key)
+	return result.Val(), result.Err()
+}
+
+func (r *RedisKVStore) Increment(ctx context.Context, key string) (int64, error) {
+	if key == "" {
+		return 0, kv.ErrInvalidKey
+	}
+
+	result := r.client.Incr(key)
+	return result.Val(), result.Err()
+}
+
+func (r *RedisKVStore) CompareAndDelete(
+	ctx context.Context,
+	key string,
+	expected []byte,
+) (bool, error) {
+	if key == "" {
+		return false, kv.ErrInvalidKey
+	}
+
+	result, err := compareAndDeleteScript.Run(r.client, []string{key}, expected).Int()
+	if err != nil {
+		return false, err
+	}
+
+	return result == 1, nil
 }

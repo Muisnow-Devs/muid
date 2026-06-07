@@ -8,10 +8,10 @@ import (
 var (
 	ErrOTPAuthFailed = errors.New("otp: authentication failed")
 
-	ErrOTPNotFound     = fmt.Errorf("otp: OTP not found: %w", ErrOTPAuthFailed)
-	ErrOTPInvalid      = fmt.Errorf("otp: invalid OTP: %w", ErrOTPAuthFailed)
-	ErrOTPExpired      = fmt.Errorf("otp: OTP has expired: %w", ErrOTPAuthFailed)
-	ErrTooManyAttempts = fmt.Errorf("otp: too many OTP verification attempts: %w", ErrOTPAuthFailed)
+	ErrOTPNotFound     = fmt.Errorf("%w: OTP not found", ErrOTPAuthFailed)
+	ErrOTPInvalid      = fmt.Errorf("%w: invalid OTP", ErrOTPAuthFailed)
+	ErrOTPExpired      = fmt.Errorf("%w: OTP has expired", ErrOTPAuthFailed)
+	ErrTooManyAttempts = fmt.Errorf("%w: too many OTP verification attempts", ErrOTPAuthFailed)
 
 	// ErrOTPSendRateLimited is returned when CreateOTP is called again before the
 	// configured send cooldown elapses for the same transition and/or recipient.

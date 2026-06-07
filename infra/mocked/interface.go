@@ -4,4 +4,4 @@ package mocked
 import "sanzi.io/muid/pkg/shared/kv"
 
 // KVStore names the contract implemented by [NewMockKVStore].
-type KVStore = kv.KVStore
+type KVStore = kv.AtomicKVStore

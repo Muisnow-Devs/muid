@@ -16,9 +16,11 @@ type CachedSession struct {
 	UserID        uuid.UUID
 	ValidatorHash [32]byte
 
-	Email     string
-	IssuedAt  time.Time
-	ExpiresAt time.Time
+	Email string
+
+	IssuedAt       time.Time
+	ExpiresAt      time.Time
+	AbsoluteExpiry time.Time
 }
 
 // SessionCache stores resolved sessions with TTL bounded by session expiry.
@@ -29,7 +31,11 @@ type CachedSession struct {
 // but the wire validator does not match the cached hash (callers resolving sessions
 // must not treat this as a cache miss that falls through to the database).
 type SessionCache interface {
-	Get(ctx context.Context, wireToken string) (CachedSession, error)
-	Set(ctx context.Context, wireToken string, sess CachedSession) error
-	Delete(ctx context.Context, wireToken string) error
+	Get(
+		ctx context.Context,
+		selector string,
+	) (CachedSession, bool, error) // returns (session, found, error)
+	Set(ctx context.Context, selector string, sess CachedSession) error
+	Delete(ctx context.Context, selector string) error
+	DeleteByID(ctx context.Context, id string) error
 }

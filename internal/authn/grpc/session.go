@@ -83,7 +83,6 @@ func (g *GRPCHandler) StartAuthSession(
 	}
 
 	sessionStore := session.SessionStore{
-		Attempts:        0,
 		Step:            session.StepStart,
 		Intent:          sessionIntent,
 		OperationUserID: operationUserID,
@@ -138,8 +137,13 @@ func (g *GRPCHandler) ContinueAuthSession(
 	}
 
 	sess, err := g.transitionStore.Get(ctx, tid)
-	if err != nil {
-		return nil, status.Error(codes.NotFound, "transition not found")
+	switch {
+	case errors.Is(err, session.ErrSessionValidationFailed):
+		g.transitionStore.Delete(ctx, tid)
+		return nil, status.Error(codes.InvalidArgument, "invalid transition state")
+	case err != nil:
+		log.LogUnexpected(ctx, "get auth session transition", err.Error())
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	// For link_account flows: the existing user session comes from the authorization header.

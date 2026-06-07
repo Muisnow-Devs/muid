@@ -207,3 +207,70 @@ func TestKVAuthTransitionStore_Security_UUIDEntropy(t *testing.T) {
 		)
 	}
 }
+
+func TestKVAuthTransitionStore_IncrementAttempts(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVAuthTransitionStore(mockKV)
+	ctx := context.Background()
+
+	created, err := store.Create(ctx, "email", session.SessionStore{Step: session.StepStart})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	// First increment returns 1.
+	n, err := store.IncrementAttempts(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("first increment: %v", err)
+	}
+	if n != 1 {
+		t.Fatalf("expected 1, got %d", n)
+	}
+
+	// Second increment returns 2.
+	n, err = store.IncrementAttempts(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("second increment: %v", err)
+	}
+	if n != 2 {
+		t.Fatalf("expected 2, got %d", n)
+	}
+}
+
+func TestKVAuthTransitionStore_IncrementAttempts_DeleteClearsCounter(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVAuthTransitionStore(mockKV)
+	ctx := context.Background()
+
+	created, err := store.Create(ctx, "email", session.SessionStore{Step: session.StepStart})
+	if err != nil {
+		t.Fatalf("create: %v", err)
+	}
+
+	_, err = store.IncrementAttempts(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("increment: %v", err)
+	}
+
+	err = store.Delete(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("delete: %v", err)
+	}
+
+	// After deletion IncrementAttempts should fail — session is gone.
+	_, err = store.IncrementAttempts(ctx, created.ID)
+	if err != session.ErrSessionNotFound {
+		t.Fatalf("expected ErrSessionNotFound after delete, got %v", err)
+	}
+}
+
+func TestKVAuthTransitionStore_IncrementAttempts_NotFound(t *testing.T) {
+	mockKV := mocked.NewMockKVStore()
+	store := NewKVAuthTransitionStore(mockKV)
+	ctx := context.Background()
+
+	_, err := store.IncrementAttempts(ctx, uuid.New())
+	if err != session.ErrSessionNotFound {
+		t.Fatalf("expected ErrSessionNotFound for unknown id, got %v", err)
+	}
+}

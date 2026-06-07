@@ -10,10 +10,11 @@ import (
 )
 
 type ResolvedSession struct {
-	SessionID uuid.UUID
-	UserID    uuid.UUID
-	ExpiresAt time.Time
-	IssuedAt  time.Time
+	SessionID      uuid.UUID
+	UserID         uuid.UUID
+	ExpiresAt      time.Time
+	IssuedAt       time.Time
+	AbsoluteExpiry time.Time
 	// Email is the primary email address for the authenticated user.
 	// Populated from UserRef on resolution; empty when unavailable.
 	Email string

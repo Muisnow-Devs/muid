@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"time"
 
@@ -18,6 +17,7 @@ import (
 	"sanzi.io/muid/internal/authn/ent/usersession"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/pkg/errutil"
+	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
@@ -141,7 +141,7 @@ func (s *EntSessionIssuer) CreateSession(
 	email := s.primaryEmail(ctx, userID)
 
 	if s.sessionCache != nil {
-		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
+		s.sessionCache.Set(ctx, selectorB64, session.CachedSession{
 			SessionID:     row.ID,
 			UserID:        userID,
 			Email:         email,
@@ -174,69 +174,17 @@ func (s *EntSessionIssuer) ResolveSessionToken(
 	ctx, span := tracing.StartSpan(ctx, "authn.resolve_session")
 	defer span.End()
 
-	tok, err := parseWireToken(wireToken)
-	if err != nil {
-		return ResolvedSession{}, err
-	}
-
-	if s.sessionCache != nil {
-		ctx, cacheSpan := tracing.StartSpan(ctx, "authn.session_cache.get")
-		cached, cacheErr := s.sessionCache.Get(ctx, wireToken)
-		cacheSpan.End()
-		if cacheErr == nil {
-			return ResolvedSession{
-				SessionID: cached.SessionID,
-				UserID:    cached.UserID,
-				Email:     cached.Email,
-				ExpiresAt: cached.ExpiresAt,
-				IssuedAt:  cached.IssuedAt,
-			}, nil
-		}
-		if errors.Is(cacheErr, session.ErrSessionCacheRejected) {
-			// The selector is known to the cache but the validator hash does not match.
-			// This strongly suggests token forgery or a cache-poisoning attempt.
-			// Revoke the DB session identified by this selector as a precaution.
-			go s.revokeBySelectorBytes(tok.selector)
-			return ResolvedSession{}, session.ErrSessionNotFound
-		}
-	}
-
-	ctx, dbSpan := tracing.StartSpan(ctx, "authn.session_db.lookup")
-	row, err := s.lookupSession(ctx, tok.selector, tok.validatorHash, wireToken)
-	dbSpan.End()
+	res, err := s.lookupSession(ctx, wireToken)
 	if err != nil {
 		return ResolvedSession{}, err
 	}
 
 	now := time.Now()
-	if now.After(row.ExpiresAt) {
+	if now.After(res.ExpiresAt) {
 		return ResolvedSession{}, session.ErrSessionExpired
 	}
-	if now.After(row.AbsoluteExpiry) {
+	if now.After(res.AbsoluteExpiry) {
 		return ResolvedSession{}, session.ErrSessionAbsoluteExpiry
-	}
-
-	// Best-effort: get the user's primary email for the principal. The session is
-	// still valid even if the UserEmail lookup fails (e.g. transient DB error).
-	email := s.primaryEmail(ctx, row.UserID)
-
-	res := ResolvedSession{
-		SessionID: row.ID,
-		UserID:    row.UserID,
-		Email:     email,
-		ExpiresAt: row.ExpiresAt,
-		IssuedAt:  row.CreatedAt,
-	}
-
-	if s.sessionCache != nil {
-		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
-			SessionID:     res.SessionID,
-			UserID:        res.UserID,
-			Email:         email,
-			IssuedAt:      res.IssuedAt,
-			ExpiresAt:     res.ExpiresAt,
-			ValidatorHash: tok.validatorHash,
-		})
 	}
 
 	return res, nil
@@ -276,7 +224,8 @@ func (s *EntSessionIssuer) RevokeSessionToken(ctx context.Context, wireToken str
 	}
 
 	if s.sessionCache != nil {
-		errutil.Discard(s.sessionCache.Delete(ctx, wireToken))
+		selectorB64 := base64.RawURLEncoding.EncodeToString(tok.selector)
+		errutil.Discard(s.sessionCache.Delete(ctx, selectorB64))
 	}
 
 	return nil
@@ -286,31 +235,26 @@ func (s *EntSessionIssuer) ExtendSession(
 	ctx context.Context,
 	wireToken string,
 ) (*sessionpb.SessionContext, error) {
-	tok, err := parseWireToken(wireToken)
-	if err != nil {
-		return nil, err
-	}
-
-	row, err := s.lookupSession(ctx, tok.selector, tok.validatorHash, wireToken)
+	res, err := s.lookupSession(ctx, wireToken)
 	if err != nil {
 		return nil, err
 	}
 
 	now := time.Now()
-	if now.After(row.ExpiresAt) {
+	if now.After(res.ExpiresAt) {
 		return nil, session.ErrSessionExpired
 	}
-	if now.After(row.AbsoluteExpiry) {
+	if now.After(res.AbsoluteExpiry) {
 		return nil, session.ErrSessionAbsoluteExpiry
 	}
 
 	// Clamp: do not extend past the absolute expiry.
 	newExpiry := now.Add(defaultSessionLifetime)
-	if newExpiry.After(row.AbsoluteExpiry) {
-		newExpiry = row.AbsoluteExpiry
+	if newExpiry.After(res.AbsoluteExpiry) {
+		newExpiry = res.AbsoluteExpiry
 	}
 
-	err = s.db.UserSession.UpdateOneID(row.ID).
+	err = s.db.UserSession.UpdateOneID(res.SessionID).
 		SetExpiresAt(newExpiry).
 		SetLastExtendedAt(now).
 		Exec(ctx)
@@ -319,17 +263,20 @@ func (s *EntSessionIssuer) ExtendSession(
 	}
 
 	// Best-effort: refresh primary email in the cache on extension.
-	email := s.primaryEmail(ctx, row.UserID)
-
 	if s.sessionCache != nil {
-		s.sessionCache.Set(ctx, wireToken, session.CachedSession{
-			SessionID:     row.ID,
-			UserID:        row.UserID,
-			Email:         email,
-			IssuedAt:      row.CreatedAt,
-			ExpiresAt:     newExpiry,
-			ValidatorHash: tok.validatorHash,
-		})
+		tok, err := parseWireToken(wireToken)
+		if err == nil {
+			selectorB64 := base64.RawURLEncoding.EncodeToString(tok.selector)
+			s.sessionCache.Set(ctx, selectorB64, session.CachedSession{
+				SessionID:      res.SessionID,
+				UserID:         res.UserID,
+				Email:          res.Email,
+				IssuedAt:       res.IssuedAt,
+				ExpiresAt:      newExpiry,
+				AbsoluteExpiry: res.AbsoluteExpiry,
+				ValidatorHash:  tok.validatorHash,
+			})
+		}
 	}
 
 	stok := &sessionpb.SessionToken{}
@@ -337,75 +284,139 @@ func (s *EntSessionIssuer) ExtendSession(
 
 	sctx := &sessionpb.SessionContext{}
 	sctx.SetSessionToken(stok)
-	sctx.SetIssuedAt(timestamppb.New(row.CreatedAt.UTC()))
+	sctx.SetIssuedAt(timestamppb.New(res.IssuedAt.UTC()))
 	sctx.SetExpiresAt(timestamppb.New(newExpiry.UTC()))
 
 	return sctx, nil
 }
 
-// lookupSession fetches the session row for the given selector from the database,
-// checks revocation, and verifies the validator hash in constant time.
-// On a validator mismatch it fires a background revocation and always returns
-// ErrSessionNotFound so callers cannot distinguish "not found" from "forged token".
-// Expiry checks are left to the caller.
+type internalSession struct {
+	SessionID      uuid.UUID
+	UserID         uuid.UUID
+	Email          string
+	IssuedAt       time.Time
+	ExpiresAt      time.Time
+	AbsoluteExpiry time.Time
+	ValidatorHash  [32]byte
+}
+
+// lookupSession resolves a session token from either the cache or the database.
+// It verifies the validator hash in constant-time.
 func (s *EntSessionIssuer) lookupSession(
 	ctx context.Context,
-	selector []byte,
-	validatorHash [32]byte,
 	wireToken string,
-) (*ent.UserSession, error) {
-	// Query by selector only — validator is never sent to the database.
-	row, err := s.db.UserSession.Query().
-		Where(usersession.SelectorEQ(selector)).
-		Only(ctx)
-	if ent.IsNotFound(err) {
-		return nil, session.ErrSessionNotFound
-	}
+) (ResolvedSession, error) {
+	tok, err := parseWireToken(wireToken)
 	if err != nil {
-		return nil, err
-	}
-	if !row.RevokedAt.IsZero() {
-		return nil, session.ErrSessionNotFound
+		return ResolvedSession{}, err
 	}
 
-	// Constant-time comparison prevents timing-based oracle attacks.
-	if subtle.ConstantTimeCompare(row.ValidatorHash, validatorHash[:]) != 1 {
-		// Selector found but validator is wrong — possible stolen selector or
-		// brute-force attempt. Revoke the real session immediately.
-		go s.revokeByID(row.ID, wireToken)
-		return nil, session.ErrSessionNotFound
+	// cache lookup
+	cached, cacheHit := s.getCachedSession(ctx, tok.selector)
+
+	var res internalSession
+	if cacheHit {
+		// cache miss
+		ctx, dbSpan := tracing.StartSpan(ctx, "authn.session_db.lookup")
+		row, err := s.db.UserSession.Query().
+			Where(usersession.SelectorEQ(tok.selector)).
+			Only(ctx)
+		dbSpan.End()
+		if ent.IsNotFound(err) {
+			return ResolvedSession{}, session.ErrSessionNotFound
+		}
+		if err != nil {
+			return ResolvedSession{}, err
+		}
+		if !row.RevokedAt.IsZero() {
+			return ResolvedSession{}, session.ErrSessionNotFound
+		}
+
+		res = fromDB(row)
+		s.populateCache(ctx, tok.selector, res)
+	} else {
+		res = fromCache(cached)
 	}
 
-	return row, nil
+	// Constant-time validator verification
+	if subtle.ConstantTimeCompare(res.ValidatorHash[:], tok.validatorHash[:]) != 1 {
+		return ResolvedSession{}, session.ErrSessionNotFound
+	}
+
+	result := ResolvedSession{
+		SessionID:      res.SessionID,
+		UserID:         res.UserID,
+		Email:          res.Email,
+		IssuedAt:       res.IssuedAt,
+		ExpiresAt:      res.ExpiresAt,
+		AbsoluteExpiry: res.AbsoluteExpiry,
+	}
+
+	return result, nil
 }
 
-// revokeByID revokes a session by its primary key using a detached context.
-// This is a best-effort protective action triggered by a validator mismatch;
-// errors are discarded because the revocation itself is the security response.
-func (s *EntSessionIssuer) revokeByID(sessionID uuid.UUID, wireToken string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	err := s.db.UserSession.UpdateOneID(sessionID).
-		SetRevokedAt(time.Now()).
-		Exec(ctx)
-	if err == nil && s.sessionCache != nil {
-		errutil.Discard(s.sessionCache.Delete(ctx, wireToken))
+func (s *EntSessionIssuer) getCachedSession(
+	ctx context.Context,
+	selector []byte,
+) (*session.CachedSession, bool) {
+	if s.sessionCache == nil {
+		return nil, false
+	}
+
+	selectorB64 := base64.RawURLEncoding.EncodeToString(selector[:])
+
+	cached, ok, err := s.sessionCache.Get(ctx, selectorB64)
+	if err != nil {
+		log.LogUnexpected(ctx, "session cache get", err.Error())
+		return nil, false
+	}
+
+	return &cached, ok
+}
+
+func fromDB(row *ent.UserSession) internalSession {
+	return internalSession{
+		SessionID:      row.ID,
+		UserID:         row.UserID,
+		IssuedAt:       row.CreatedAt,
+		ExpiresAt:      row.ExpiresAt,
+		AbsoluteExpiry: row.AbsoluteExpiry,
+		ValidatorHash:  [32]byte(row.ValidatorHash),
 	}
 }
 
-// revokeBySelectorBytes revokes any active session matching the given selector
-// bytes using a detached context. Used when a cache-rejection signals a
-// possible token forgery or cache-poisoning attempt.
-func (s *EntSessionIssuer) revokeBySelectorBytes(selector []byte) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	errutil.Discard(s.db.UserSession.Update().
-		Where(
-			usersession.SelectorEQ(selector),
-			usersession.RevokedAtIsNil(),
-		).
-		SetRevokedAt(time.Now()).
-		Exec(ctx))
+func fromCache(c *session.CachedSession) internalSession {
+	return internalSession{
+		SessionID:      c.SessionID,
+		UserID:         c.UserID,
+		Email:          c.Email,
+		IssuedAt:       c.IssuedAt,
+		ExpiresAt:      c.ExpiresAt,
+		AbsoluteExpiry: c.AbsoluteExpiry,
+		ValidatorHash:  c.ValidatorHash,
+	}
+}
+
+func (s *EntSessionIssuer) populateCache(
+	ctx context.Context,
+	selector []byte,
+	sess internalSession,
+) {
+	email := s.primaryEmail(ctx, sess.UserID)
+
+	// Populate cache
+	if s.sessionCache != nil {
+		selectorB64 := base64.RawURLEncoding.EncodeToString(selector)
+		s.sessionCache.Set(ctx, selectorB64, session.CachedSession{
+			SessionID:      sess.SessionID,
+			UserID:         sess.UserID,
+			Email:          email,
+			IssuedAt:       sess.IssuedAt,
+			ExpiresAt:      sess.ExpiresAt,
+			AbsoluteExpiry: sess.AbsoluteExpiry,
+			ValidatorHash:  sess.ValidatorHash,
+		})
+	}
 }
 
 func (s *EntSessionIssuer) AuthenticatedResultFromResolved(

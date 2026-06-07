@@ -13,7 +13,6 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 	// Import uuid if needed or use a helper
 	opUserID := uuid.New()
 	original := SessionStore{
-		Attempts:        2,
 		Step:            StepStart,
 		Intent:          AuthIntentLinkAccount,
 		OperationUserID: &opUserID,
@@ -31,7 +30,7 @@ func TestSessionStore_JSON_roundTrip_nestedFlow(t *testing.T) {
 		t.Fatalf("unmarshal: %v", err)
 	}
 
-	if decoded.Attempts != 2 || decoded.Step != StepStart {
+	if decoded.Step != StepStart {
 		t.Fatalf("metadata mismatch: %+v", decoded)
 	}
 	if decoded.Intent != AuthIntentLinkAccount {
@@ -59,7 +58,6 @@ func TestSessionStore_JSON_roundTrip_mailDelivery(t *testing.T) {
 	}
 
 	original := SessionStore{
-		Attempts: 1,
 		Flow:     &EmailOTPFlow{Email: "user@example.com"},
 		Metadata: meta,
 	}

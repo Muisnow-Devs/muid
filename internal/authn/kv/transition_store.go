@@ -16,7 +16,7 @@ const transitionSessionTTL = 15 * time.Minute
 
 // KVAuthTransitionStore stores auth transitions in a KV backend.
 type KVAuthTransitionStore struct {
-	client kv.KVStore
+	client kv.AtomicKVStore
 }
 
 func encodeSession(s session.AuthSession) ([]byte, error) {
@@ -30,12 +30,16 @@ func decodeSession(data []byte) (session.AuthSession, error) {
 }
 
 // NewKVAuthTransitionStore returns a KV-backed transition store.
-func NewKVAuthTransitionStore(kvStore kv.KVStore) session.AuthTransitionStore {
+func NewKVAuthTransitionStore(kvStore kv.AtomicKVStore) session.AuthTransitionStore {
 	return &KVAuthTransitionStore{client: kvStore}
 }
 
 func (s *KVAuthTransitionStore) key(id string) string {
 	return "muid:auth:transition:" + id
+}
+
+func (s *KVAuthTransitionStore) attemptsKey(id string) string {
+	return "muid:auth:transition:" + id + ":attempts"
 }
 
 func (k *KVAuthTransitionStore) Create(
@@ -76,12 +80,12 @@ func (k *KVAuthTransitionStore) Create(
 }
 
 func (k *KVAuthTransitionStore) Delete(ctx context.Context, id uuid.UUID) error {
-	key := k.key(id.String())
-	err := k.client.Delete(ctx, key)
+	idStr := id.String()
+	k.client.Delete(ctx, k.attemptsKey(idStr))
+	err := k.client.Delete(ctx, k.key(idStr))
 	if errors.Is(err, kv.ErrKeyNotFound) {
 		return nil
 	}
-
 	return err
 }
 
@@ -144,4 +148,26 @@ func (k *KVAuthTransitionStore) Update(
 	}
 
 	return k.client.Set(ctx, key, data, ttl)
+}
+
+// IncrementAttempts atomically increments the failed-attempt counter for the
+// transition. The counter TTL is aligned to the remaining session lifetime so
+// it is cleaned up automatically alongside the session.
+func (k *KVAuthTransitionStore) IncrementAttempts(
+	ctx context.Context,
+	id uuid.UUID,
+) (int64, error) {
+	idStr := id.String()
+	ttl, err := k.client.TTL(ctx, k.key(idStr))
+	if err != nil || ttl <= 0 {
+		return 0, session.ErrSessionNotFound
+	}
+
+	attempts, err := k.client.Increment(ctx, k.attemptsKey(idStr))
+	if err != nil {
+		return 0, err
+	}
+	k.client.Expire(ctx, k.attemptsKey(idStr), ttl)
+
+	return attempts, nil
 }

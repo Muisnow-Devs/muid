@@ -4,4 +4,4 @@ package redis
 import "sanzi.io/muid/pkg/shared/kv"
 
 // KVStore is the key-value contract implemented by [NewRedisKVStore].
-type KVStore = kv.KVStore
+type KVStore = kv.AtomicKVStore

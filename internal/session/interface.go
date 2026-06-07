@@ -83,8 +83,7 @@ type SessionMetadata struct {
 }
 
 type SessionStore struct {
-	Attempts int      `json:"attempts"`
-	Step     AuthStep `json:"step"`
+	Step AuthStep `json:"step"`
 
 	Flow            SessionPayload `json:"-"`
 	Intent          AuthIntent     `json:"intent"`
@@ -104,4 +103,9 @@ type AuthTransitionStore interface {
 	Get(ctx context.Context, id uuid.UUID) (AuthSession, error)
 	Update(ctx context.Context, id uuid.UUID, store SessionStore) error
 	Delete(ctx context.Context, id uuid.UUID) error
+
+	// IncrementAttempts atomically increments the failed-attempt counter for
+	// the transition and returns the new count. The counter shares the
+	// session TTL and is removed when the session is deleted.
+	IncrementAttempts(ctx context.Context, id uuid.UUID) (int64, error)
 }

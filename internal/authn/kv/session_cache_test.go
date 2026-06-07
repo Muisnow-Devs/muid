@@ -1,7 +1,6 @@
 package kv
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -47,28 +46,39 @@ func TestKVSessionCacheTTLNotBeyondExpiry(t *testing.T) {
 	sid := uuid.MustParse("00000000-0000-7000-8000-000000000001")
 	uid := uuid.MustParse("00000000-0000-7000-8000-000000000002")
 	wire, sum := randomWireToken(t)
+	selB64, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := cache.Set(ctx, wire, session.CachedSession{
-		SessionID:     sid,
-		UserID:        uid,
-		ExpiresAt:     exp,
-		ValidatorHash: sum,
+	err = cache.Set(ctx, selB64, session.CachedSession{
+		SessionID:      sid,
+		UserID:         uid,
+		ExpiresAt:      exp,
+		AbsoluteExpiry: exp.Add(time.Hour),
+		ValidatorHash:  sum,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := cache.Get(ctx, wire)
+	got, ok, err := cache.Get(ctx, selB64)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected cache hit")
 	}
 	if got.UserID != uid {
 		t.Fatalf("user id: got %v", got.UserID)
 	}
 
-	_ = cache.Delete(ctx, wire)
-	if _, err := cache.Get(ctx, wire); err == nil {
-		t.Fatal("expected cache miss after delete")
+	err = cache.Delete(ctx, selB64)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok, err := cache.Get(ctx, selB64); ok || err != nil {
+		t.Fatalf("expected cache miss after delete, got ok=%v err=%v", ok, err)
 	}
 }
 
@@ -112,12 +122,17 @@ func TestKVSessionCacheSetTTLCapped(t *testing.T) {
 	ctx := context.Background()
 
 	wire, sum := randomWireToken(t)
+	selB64, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
 	exp := time.Now().Add(7 * 24 * time.Hour)
-	err := cache.Set(ctx, wire, session.CachedSession{
-		SessionID:     uuid.New(),
-		UserID:        uuid.New(),
-		ExpiresAt:     exp,
-		ValidatorHash: sum,
+	err = cache.Set(ctx, selB64, session.CachedSession{
+		SessionID:      uuid.New(),
+		UserID:         uuid.New(),
+		ExpiresAt:      exp,
+		AbsoluteExpiry: exp.Add(time.Hour),
+		ValidatorHash:  sum,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -136,21 +151,29 @@ func TestKVSessionCacheRoundTripsValidatorHash(t *testing.T) {
 	ctx := context.Background()
 
 	wire, sum := randomWireToken(t)
+	selB64, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
 	exp := time.Now().Add(time.Hour)
 
-	err := cache.Set(ctx, wire, session.CachedSession{
-		SessionID:     uuid.New(),
-		UserID:        uuid.New(),
-		ExpiresAt:     exp,
-		ValidatorHash: sum,
+	err = cache.Set(ctx, selB64, session.CachedSession{
+		SessionID:      uuid.New(),
+		UserID:         uuid.New(),
+		ExpiresAt:      exp,
+		AbsoluteExpiry: exp.Add(time.Hour),
+		ValidatorHash:  sum,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := cache.Get(ctx, wire)
+	got, ok, err := cache.Get(ctx, selB64)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("expected cache hit")
 	}
 	if got.ValidatorHash != sum {
 		t.Fatalf("validator hash: got %x want %x", got.ValidatorHash, sum)
@@ -172,48 +195,6 @@ func (c *ttlCaptureKV) Set(
 	return c.KVStore.Set(ctx, key, value, ttl)
 }
 
-func TestKVSessionCacheGetRejectsExpiredEntry(t *testing.T) {
-	t.Parallel()
-
-	store := mocked.NewMockKVStore()
-	cache := NewKVSessionCache(store)
-	ctx := context.Background()
-
-	wire, sum := randomWireToken(t)
-	selB64, _, err := session.ParseWireSessionToken(wire)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	sid := uuid.New()
-	uid := uuid.New()
-	expiredAt := time.Now().Add(-2 * time.Minute)
-
-	rec := sessionCacheRecord{
-		SessionID:     sid.String(),
-		UserID:        uid.String(),
-		ExpiresAt:     expiredAt.Unix(),
-		ValidatorHash: sum[:],
-	}
-	data, err := json.Marshal(rec)
-	if err != nil {
-		t.Fatal(err)
-	}
-	key := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
-	err = store.Set(ctx, key, data, time.Hour)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = cache.Get(ctx, wire)
-	if !errors.Is(err, session.ErrSessionExpired) {
-		t.Fatalf("Get expired: got %v want ErrSessionExpired", err)
-	}
-	if _, err := cache.Get(ctx, wire); !errors.Is(err, session.ErrSessionNotFound) {
-		t.Fatalf("expired entry should be deleted: got %v", err)
-	}
-}
-
 func TestKVSessionCacheGetRejectsMalformedJSON(t *testing.T) {
 	t.Parallel()
 
@@ -226,13 +207,24 @@ func TestKVSessionCacheGetRejectsMalformedJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
-	err = store.Set(ctx, key, []byte("{not-json"), time.Hour)
+
+	sid := uuid.New().String()
+	selKey := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
+	err = store.Set(ctx, selKey, []byte(sid), time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = cache.Get(ctx, wire)
+	idKey := (&KVSessionCache{client: store}).idCacheKey(sid)
+	err = store.Set(ctx, idKey, []byte("{not-json"), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, ok, err := cache.Get(ctx, selB64)
+	if ok {
+		t.Fatal("expected cache miss for malformed JSON")
+	}
 	if err == nil {
 		t.Fatal("expected error for malformed cache payload")
 	}
@@ -251,23 +243,33 @@ func TestKVSessionCacheGetRejectsInvalidUUIDFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	sidStr := uuid.New().String()
+	selKey := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
+	err = store.Set(ctx, selKey, []byte(sidStr), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	rec := sessionCacheRecord{
 		SessionID:     "not-a-uuid",
 		UserID:        uuid.New().String(),
 		ExpiresAt:     time.Now().Add(time.Hour).Unix(),
-		ValidatorHash: sum[:],
+		ValidatorHash: sum,
 	}
 	data, err := json.Marshal(rec)
 	if err != nil {
 		t.Fatal(err)
 	}
-	key := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
-	err = store.Set(ctx, key, data, time.Hour)
+	idKey := (&KVSessionCache{client: store}).idCacheKey(sidStr)
+	err = store.Set(ctx, idKey, data, time.Hour)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = cache.Get(ctx, wire)
+	_, ok, err := cache.Get(ctx, selB64)
+	if ok {
+		t.Fatal("expected cache miss for invalid session_id")
+	}
 	if err == nil {
 		t.Fatal("expected error for invalid session_id uuid")
 	}
@@ -281,80 +283,106 @@ func TestKVSessionCacheExpiredRejected(t *testing.T) {
 	ctx := context.Background()
 
 	wire, sum := randomWireToken(t)
-	err := cache.Set(ctx, wire, session.CachedSession{
-		SessionID:     uuid.New(),
-		UserID:        uuid.New(),
-		ExpiresAt:     time.Now().Add(-time.Minute),
-		ValidatorHash: sum,
+	selB64, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = cache.Set(ctx, selB64, session.CachedSession{
+		SessionID:      uuid.New(),
+		UserID:         uuid.New(),
+		ExpiresAt:      time.Now().Add(-time.Minute),
+		AbsoluteExpiry: time.Now().Add(time.Hour),
+		ValidatorHash:  sum,
 	})
 	if err != session.ErrSessionExpired {
 		t.Fatalf("Set with past expiry: got %v want ErrSessionExpired", err)
 	}
 }
 
-func TestKVSessionCacheGetWrongValidatorNotFound(t *testing.T) {
+func TestKVSessionCacheDeleteByID(t *testing.T) {
 	t.Parallel()
 
 	store := mocked.NewMockKVStore()
 	cache := NewKVSessionCache(store)
 	ctx := context.Background()
 
-	wireOK, sum := randomWireToken(t)
-	selB64, _, err := session.ParseWireSessionToken(wireOK)
+	exp := time.Now().Add(time.Hour)
+	sid := uuid.New()
+	uid := uuid.New()
+	wire, sum := randomWireToken(t)
+	selB64, _, err := session.ParseWireSessionToken(wire)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	exp := time.Now().Add(time.Hour)
-	err = cache.Set(ctx, wireOK, session.CachedSession{
-		SessionID:     uuid.New(),
-		UserID:        uuid.New(),
-		ExpiresAt:     exp,
-		ValidatorHash: sum,
+	err = cache.Set(ctx, selB64, session.CachedSession{
+		SessionID:      sid,
+		UserID:         uid,
+		ExpiresAt:      exp,
+		AbsoluteExpiry: exp.Add(time.Hour),
+		ValidatorHash:  sum,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wrongSec := make([]byte, session.ValidatorByteLength)
-	if _, err := rand.Read(wrongSec); err != nil {
+	// Verify cache hit
+	_, ok, err := cache.Get(ctx, selB64)
+	if err != nil || !ok {
+		t.Fatalf("expected cache hit, got ok=%v err=%v", ok, err)
+	}
+
+	// Delete by ID
+	err = cache.DeleteByID(ctx, sid.String())
+	if err != nil {
 		t.Fatal(err)
 	}
-	wireBad := selB64 + "." + base64.RawURLEncoding.EncodeToString(wrongSec)
 
-	_, err = cache.Get(ctx, wireBad)
-	if !errors.Is(err, session.ErrSessionCacheRejected) {
-		t.Fatalf("wrong validator: got %v", err)
+	// Verify cache miss (due to self-cleaning)
+	_, ok, err = cache.Get(ctx, selB64)
+	if err != nil || ok {
+		t.Fatalf("expected cache miss after delete by ID, got ok=%v err=%v", ok, err)
 	}
 
-	got, err := cache.Get(ctx, wireOK)
-	if err != nil {
-		t.Fatalf("valid token: %v", err)
-	}
-	if !bytes.Equal(got.ValidatorHash[:], sum[:]) {
-		t.Fatal("validator hash mismatch on valid read")
+	// Verify selector reference key is cleaned up in the raw store
+	selKey := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
+	_, err = store.Get(ctx, selKey)
+	if !errors.Is(err, kv.ErrKeyNotFound) {
+		t.Fatalf("expected selector key to be cleaned up in store, got err=%v", err)
 	}
 }
 
-func TestKVSessionCacheSetRejectsMismatchedValidatorSnapshot(t *testing.T) {
+func TestKVSessionCacheStaleReferenceCleanup(t *testing.T) {
 	t.Parallel()
 
 	store := mocked.NewMockKVStore()
 	cache := NewKVSessionCache(store)
 	ctx := context.Background()
 
-	wire, sum := randomWireToken(t)
-	var wrongSum [32]byte
-	copy(wrongSum[:], sum[:])
-	wrongSum[0] ^= 0xff
+	wire, _ := randomWireToken(t)
+	selB64, _, err := session.ParseWireSessionToken(wire)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	err := cache.Set(ctx, wire, session.CachedSession{
-		SessionID:     uuid.New(),
-		UserID:        uuid.New(),
-		ExpiresAt:     time.Now().Add(time.Hour),
-		ValidatorHash: wrongSum,
-	})
-	if err == nil {
-		t.Fatal("expected error when snapshot hash does not match wire token")
+	sidStr := uuid.New().String()
+	selKey := (&KVSessionCache{client: store}).selectorCacheKey(selB64)
+	err = store.Set(ctx, selKey, []byte(sidStr), time.Hour)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Do NOT set the ID key, leaving the selector reference stale
+
+	// Get should detect stale reference, delete it, and return miss
+	_, ok, err := cache.Get(ctx, selB64)
+	if ok || err != nil {
+		t.Fatalf("expected cache miss, got ok=%v err=%v", ok, err)
+	}
+
+	// Verify selector reference key has been deleted
+	_, err = store.Get(ctx, selKey)
+	if !errors.Is(err, kv.ErrKeyNotFound) {
+		t.Fatalf("expected selector key to be cleaned up, got err=%v", err)
 	}
 }

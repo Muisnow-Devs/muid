@@ -341,15 +341,6 @@ func (x *ContinueAuthSessionResponse) GetAuthSuccess() *session.AuthSuccess {
 	return nil
 }
 
-func (x *ContinueAuthSessionResponse) GetAuthFailure() *session.AuthFailure {
-	if x != nil {
-		if x, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthFailure); ok {
-			return x.AuthFailure
-		}
-	}
-	return nil
-}
-
 func (x *ContinueAuthSessionResponse) SetTransitionId(v string) {
 	x.xxx_hidden_TransitionId = v
 }
@@ -372,14 +363,6 @@ func (x *ContinueAuthSessionResponse) SetAuthSuccess(v *session.AuthSuccess) {
 		return
 	}
 	x.xxx_hidden_Result = &continueAuthSessionResponse_AuthSuccess{v}
-}
-
-func (x *ContinueAuthSessionResponse) SetAuthFailure(v *session.AuthFailure) {
-	if v == nil {
-		x.xxx_hidden_Result = nil
-		return
-	}
-	x.xxx_hidden_Result = &continueAuthSessionResponse_AuthFailure{v}
 }
 
 func (x *ContinueAuthSessionResponse) HasResult() bool {
@@ -405,14 +388,6 @@ func (x *ContinueAuthSessionResponse) HasAuthSuccess() bool {
 	return ok
 }
 
-func (x *ContinueAuthSessionResponse) HasAuthFailure() bool {
-	if x == nil {
-		return false
-	}
-	_, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthFailure)
-	return ok
-}
-
 func (x *ContinueAuthSessionResponse) ClearResult() {
 	x.xxx_hidden_Result = nil
 }
@@ -429,16 +404,9 @@ func (x *ContinueAuthSessionResponse) ClearAuthSuccess() {
 	}
 }
 
-func (x *ContinueAuthSessionResponse) ClearAuthFailure() {
-	if _, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthFailure); ok {
-		x.xxx_hidden_Result = nil
-	}
-}
-
 const ContinueAuthSessionResponse_Result_not_set_case case_ContinueAuthSessionResponse_Result = 0
 const ContinueAuthSessionResponse_ChallengeRequired_case case_ContinueAuthSessionResponse_Result = 3
 const ContinueAuthSessionResponse_AuthSuccess_case case_ContinueAuthSessionResponse_Result = 4
-const ContinueAuthSessionResponse_AuthFailure_case case_ContinueAuthSessionResponse_Result = 5
 
 func (x *ContinueAuthSessionResponse) WhichResult() case_ContinueAuthSessionResponse_Result {
 	if x == nil {
@@ -449,8 +417,6 @@ func (x *ContinueAuthSessionResponse) WhichResult() case_ContinueAuthSessionResp
 		return ContinueAuthSessionResponse_ChallengeRequired_case
 	case *continueAuthSessionResponse_AuthSuccess:
 		return ContinueAuthSessionResponse_AuthSuccess_case
-	case *continueAuthSessionResponse_AuthFailure:
-		return ContinueAuthSessionResponse_AuthFailure_case
 	default:
 		return ContinueAuthSessionResponse_Result_not_set_case
 	}
@@ -464,7 +430,6 @@ type ContinueAuthSessionResponse_builder struct {
 	// Fields of oneof xxx_hidden_Result:
 	ChallengeRequired *session.ChallengeRequired
 	AuthSuccess       *session.AuthSuccess
-	AuthFailure       *session.AuthFailure
 	// -- end of xxx_hidden_Result
 }
 
@@ -479,9 +444,6 @@ func (b0 ContinueAuthSessionResponse_builder) Build() *ContinueAuthSessionRespon
 	}
 	if b.AuthSuccess != nil {
 		x.xxx_hidden_Result = &continueAuthSessionResponse_AuthSuccess{b.AuthSuccess}
-	}
-	if b.AuthFailure != nil {
-		x.xxx_hidden_Result = &continueAuthSessionResponse_AuthFailure{b.AuthFailure}
 	}
 	return m0
 }
@@ -505,18 +467,12 @@ type continueAuthSessionResponse_ChallengeRequired struct {
 }
 
 type continueAuthSessionResponse_AuthSuccess struct {
-	AuthSuccess *session.AuthSuccess `protobuf:"bytes,4,opt,name=auth_success,json=authSuccess,proto3,oneof"`
-}
-
-type continueAuthSessionResponse_AuthFailure struct {
-	AuthFailure *session.AuthFailure `protobuf:"bytes,5,opt,name=auth_failure,json=authFailure,proto3,oneof"`
+	AuthSuccess *session.AuthSuccess `protobuf:"bytes,4,opt,name=auth_success,json=authSuccess,proto3,oneof"` // field 5 (auth_failure) removed: failures are now gRPC errors with AuthFailure as error detail
 }
 
 func (*continueAuthSessionResponse_ChallengeRequired) isContinueAuthSessionResponse_Result() {}
 
 func (*continueAuthSessionResponse_AuthSuccess) isContinueAuthSessionResponse_Result() {}
-
-func (*continueAuthSessionResponse_AuthFailure) isContinueAuthSessionResponse_Result() {}
 
 // Session token is passed via the authorization metadata header: "Session <token>".
 type GetAuthorizedSessionRequest struct {
@@ -1114,14 +1070,13 @@ const file_authn_v1_authn_proto_rawDesc = "" +
 	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\x81\x01\n" +
 	"\x1aContinueAuthSessionRequest\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x124\n" +
-	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xfc\x02\n" +
+	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xc7\x02\n" +
 	"\x1bContinueAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x127\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthStatusR\x06status\x12Y\n" +
 	"\x12challenge_required\x18\x03 \x01(\v2(.muid.authn.v1.session.ChallengeRequiredH\x00R\x11challengeRequired\x12G\n" +
-	"\fauth_success\x18\x04 \x01(\v2\".muid.authn.v1.session.AuthSuccessH\x00R\vauthSuccess\x12G\n" +
-	"\fauth_failure\x18\x05 \x01(\v2\".muid.authn.v1.session.AuthFailureH\x00R\vauthFailureB\b\n" +
-	"\x06result\"\x1d\n" +
+	"\fauth_success\x18\x04 \x01(\v2\".muid.authn.v1.session.AuthSuccessH\x00R\vauthSuccessB\b\n" +
+	"\x06resultJ\x04\b\x05\x10\x06R\fauth_failure\"\x1d\n" +
 	"\x1bGetAuthorizedSessionRequest\"z\n" +
 	"\x1cGetAuthorizedSessionResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12D\n" +
@@ -1174,10 +1129,9 @@ var file_authn_v1_authn_proto_goTypes = []any{
 	(basic.AuthStatus)(0),                     // 18: muid.authn.v1.basic.AuthStatus
 	(*session.ChallengeRequired)(nil),         // 19: muid.authn.v1.session.ChallengeRequired
 	(*session.AuthSuccess)(nil),               // 20: muid.authn.v1.session.AuthSuccess
-	(*session.AuthFailure)(nil),               // 21: muid.authn.v1.session.AuthFailure
-	(*session.AuthenticatedResult)(nil),       // 22: muid.authn.v1.session.AuthenticatedResult
-	(*session.AuthenticatedPrincipal)(nil),    // 23: muid.authn.v1.session.AuthenticatedPrincipal
-	(*session.SessionContext)(nil),            // 24: muid.authn.v1.session.SessionContext
+	(*session.AuthenticatedResult)(nil),       // 21: muid.authn.v1.session.AuthenticatedResult
+	(*session.AuthenticatedPrincipal)(nil),    // 22: muid.authn.v1.session.AuthenticatedPrincipal
+	(*session.SessionContext)(nil),            // 23: muid.authn.v1.session.SessionContext
 }
 var file_authn_v1_authn_proto_depIdxs = []int32{
 	14, // 0: muid.authn.v1.StartAuthSessionRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
@@ -1187,29 +1141,28 @@ var file_authn_v1_authn_proto_depIdxs = []int32{
 	18, // 4: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
 	19, // 5: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
 	20, // 6: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
-	21, // 7: muid.authn.v1.ContinueAuthSessionResponse.auth_failure:type_name -> muid.authn.v1.session.AuthFailure
-	22, // 8: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
-	23, // 9: muid.authn.v1.GetAuthenticatedPrincipalResponse.principal:type_name -> muid.authn.v1.session.AuthenticatedPrincipal
-	24, // 10: muid.authn.v1.ExtendSessionResponse.session_context:type_name -> muid.authn.v1.session.SessionContext
-	0,  // 11: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
-	2,  // 12: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
-	8,  // 13: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
-	4,  // 14: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetAuthorizedSessionRequest
-	6,  // 15: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:input_type -> muid.authn.v1.GetAuthenticatedPrincipalRequest
-	10, // 16: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
-	12, // 17: muid.authn.v1.AuthnService.ExtendSession:input_type -> muid.authn.v1.ExtendSessionRequest
-	1,  // 18: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
-	3,  // 19: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
-	9,  // 20: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
-	5,  // 21: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetAuthorizedSessionResponse
-	7,  // 22: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:output_type -> muid.authn.v1.GetAuthenticatedPrincipalResponse
-	11, // 23: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
-	13, // 24: muid.authn.v1.AuthnService.ExtendSession:output_type -> muid.authn.v1.ExtendSessionResponse
-	18, // [18:25] is the sub-list for method output_type
-	11, // [11:18] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	21, // 7: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
+	22, // 8: muid.authn.v1.GetAuthenticatedPrincipalResponse.principal:type_name -> muid.authn.v1.session.AuthenticatedPrincipal
+	23, // 9: muid.authn.v1.ExtendSessionResponse.session_context:type_name -> muid.authn.v1.session.SessionContext
+	0,  // 10: muid.authn.v1.AuthnService.StartAuthSession:input_type -> muid.authn.v1.StartAuthSessionRequest
+	2,  // 11: muid.authn.v1.AuthnService.ContinueAuthSession:input_type -> muid.authn.v1.ContinueAuthSessionRequest
+	8,  // 12: muid.authn.v1.AuthnService.RevokeFederatedIdentity:input_type -> muid.authn.v1.RevokeFederatedIdentityRequest
+	4,  // 13: muid.authn.v1.AuthnService.GetAuthorizedSession:input_type -> muid.authn.v1.GetAuthorizedSessionRequest
+	6,  // 14: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:input_type -> muid.authn.v1.GetAuthenticatedPrincipalRequest
+	10, // 15: muid.authn.v1.AuthnService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
+	12, // 16: muid.authn.v1.AuthnService.ExtendSession:input_type -> muid.authn.v1.ExtendSessionRequest
+	1,  // 17: muid.authn.v1.AuthnService.StartAuthSession:output_type -> muid.authn.v1.StartAuthSessionResponse
+	3,  // 18: muid.authn.v1.AuthnService.ContinueAuthSession:output_type -> muid.authn.v1.ContinueAuthSessionResponse
+	9,  // 19: muid.authn.v1.AuthnService.RevokeFederatedIdentity:output_type -> muid.authn.v1.RevokeFederatedIdentityResponse
+	5,  // 20: muid.authn.v1.AuthnService.GetAuthorizedSession:output_type -> muid.authn.v1.GetAuthorizedSessionResponse
+	7,  // 21: muid.authn.v1.AuthnService.GetAuthenticatedPrincipal:output_type -> muid.authn.v1.GetAuthenticatedPrincipalResponse
+	11, // 22: muid.authn.v1.AuthnService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
+	13, // 23: muid.authn.v1.AuthnService.ExtendSession:output_type -> muid.authn.v1.ExtendSessionResponse
+	17, // [17:24] is the sub-list for method output_type
+	10, // [10:17] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_authn_proto_init() }
@@ -1220,7 +1173,6 @@ func file_authn_v1_authn_proto_init() {
 	file_authn_v1_authn_proto_msgTypes[3].OneofWrappers = []any{
 		(*continueAuthSessionResponse_ChallengeRequired)(nil),
 		(*continueAuthSessionResponse_AuthSuccess)(nil),
-		(*continueAuthSessionResponse_AuthFailure)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -26,15 +26,14 @@ import (
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
-	"sanzi.io/muid/pkg/shared/authn"
 )
 
 // gRPC status messages used for structural failures in the auth session flow.
 // These are client-visible transport-level errors, not AuthFailure body strings.
 const (
-	msgTransitionNotFound  = "transition not found"
-	msgTransitionExpired   = "transition expired"
-	msgTooManyAttempts     = "too many failed attempts"
+	msgTransitionNotFound = "transition not found"
+	msgTransitionExpired  = "transition expired"
+	msgTooManyAttempts    = "too many failed attempts"
 )
 
 func (g *GRPCHandler) StartAuthSession(
@@ -283,27 +282,25 @@ func (g *GRPCHandler) verifyProof(
 	return step, nil
 }
 
-// handleFailureStep routes a FailureStep to the appropriate response.
+// handleFailureStep routes a FailureStep to the appropriate gRPC response.
 //
-// Two classes of failure exist:
+// Two classes of failure:
 //
-//  1. Structural failures (s.Err is set): the session or flow is fundamentally
-//     invalid (not found, expired). These become gRPC status errors so the
-//     client gets a standard code and the transport signals failure clearly.
-//     codes.NotFound    — transition does not exist or has expired
-//     codes.ResourceExhausted — attempt limit reached, transition deleted
+//  1. Structural (s.Err set): session not-found or expired — translated to
+//     codes.NotFound without an AuthFailure detail.
 //
-//  2. Application failures (s.Code is set, s.Err is nil): the credentials were
-//     wrong or a rate-limit fired, but the session is still alive.
-//     Retryable codes (ErrCodeAuthenticationFailed, ErrCodeRateLimited) consume
-//     an attempt slot and preserve the transition until the limit is reached.
-//     All other codes delete the transition immediately.
+//  2. Application (s.Failure set): auth credential wrong, rate-limited, bad
+//     input, etc. The AuthErrorCode enum drives both the gRPC status code and
+//     the error detail attached via authFailureStatus.
+//     Retryable codes (AUTHENTICATION_FAILED, RATE_LIMITED) count an attempt
+//     and preserve the transition until the limit is reached; all others delete
+//     the transition immediately.
 func (g *GRPCHandler) handleFailureStep(
 	ctx context.Context,
 	tid uuid.UUID,
 	s *method.FailureStep,
 ) (*pb.ContinueAuthSessionResponse, error) {
-	// 1. Structural failure — translate to a gRPC status code.
+	// 1. Structural failure — translate to a bare gRPC status code.
 	if s.Err != nil {
 		switch {
 		case errors.Is(s.Err, session.ErrSessionNotFound):
@@ -316,9 +313,10 @@ func (g *GRPCHandler) handleFailureStep(
 		}
 	}
 
-	// 2. Application failure — check retryability by error code.
-	switch s.Code {
-	case authn.ErrCodeAuthenticationFailed, authn.ErrCodeRateLimited:
+	// 2. Application failure — map AuthErrorCode to gRPC status.
+	switch s.Failure.GetErrorCode() {
+	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+		sessionpb.AuthErrorCode_AUTH_ERROR_CODE_RATE_LIMITED:
 		// Retryable — count the attempt before deciding to delete.
 		attempts, err := g.transitionStore.IncrementAttempts(ctx, tid)
 		if err != nil {
@@ -333,12 +331,30 @@ func (g *GRPCHandler) handleFailureStep(
 			return nil, status.Error(codes.ResourceExhausted, msgTooManyAttempts)
 		}
 		// Attempts remaining — preserve the transition so the client can retry.
-		return continueAuthFailure(tid, s.Message, s.Code), nil
+		return nil, authFailureStatus(codes.Unauthenticated, s.Failure)
+
+	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT:
+		g.transitionStore.Delete(ctx, tid)
+		return nil, authFailureStatus(codes.InvalidArgument, s.Failure)
+
+	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+		sessionpb.AuthErrorCode_AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED:
+		g.transitionStore.Delete(ctx, tid)
+		return nil, authFailureStatus(codes.FailedPrecondition, s.Failure)
+
+	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE,
+		sessionpb.AuthErrorCode_AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED:
+		g.transitionStore.Delete(ctx, tid)
+		return nil, authFailureStatus(codes.AlreadyExists, s.Failure)
+
+	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_LINK_UNAUTHORIZED:
+		g.transitionStore.Delete(ctx, tid)
+		return nil, authFailureStatus(codes.PermissionDenied, s.Failure)
 
 	default:
-		// Non-retryable application failure: invalid input, state corruption, …
 		g.transitionStore.Delete(ctx, tid)
-		return continueAuthFailure(tid, s.Message, s.Code), nil
+		log.LogUnexpected(ctx, "unhandled auth error code", s.Failure.GetReason())
+		return nil, grpcutils.GRPCInternalError()
 	}
 }
 
@@ -352,7 +368,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 ) (*pb.ContinueAuthSessionResponse, error) {
 	transitionData, err := g.transitionStore.Get(ctx, tid)
 	if err != nil {
-		return nil, status.Error(codes.NotFound, "transition not found")
+		return nil, status.Error(codes.NotFound, msgTransitionNotFound)
 	}
 	g.transitionStore.Delete(ctx, tid)
 
@@ -374,27 +390,27 @@ func (g *GRPCHandler) handleVerifiedStep(
 	}
 
 	// Determine the user ID — the only intent-driven branch in the flow.
-	userID, authFailure, err := g.resolveUserID(ctx, tid, transitionData, identityRecord, s)
+	userID, err := g.resolveUserID(ctx, tid, transitionData, identityRecord, s)
 	if err != nil {
+		if st, ok := status.FromError(err); ok && st.Code() != codes.OK {
+			return nil, err // already a gRPC status error (e.g. AlreadyExists, PermissionDenied)
+		}
 		log.LogUnexpected(ctx, "resolve user id", err.Error())
-		return nil, status.Error(codes.Internal, "internal error")
-	}
-	if authFailure != nil {
-		return authFailure, nil
+		return nil, grpcutils.GRPCInternalError()
 	}
 
 	// Link identity when it is not yet persisted.
 	if identityRecord == nil {
 		if _, err = store.LinkIdentity(ctx, userID, s.Identity.IdentityClaims); err != nil {
 			if errors.Is(err, identitystore.ErrCredentialAlreadyRegistered) {
-				return continueAuthFailure(
-					tid,
+				f := newAuthFailureProto(
+					sessionpb.AuthErrorCode_AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED,
 					"This passkey is already registered.",
-					authn.ErrCodePasskeyAlreadyRegistered,
-				), nil
+				)
+				return nil, authFailureStatus(codes.AlreadyExists, f)
 			}
 			log.LogUnexpected(ctx, "link identity", err.Error())
-			return nil, status.Error(codes.Internal, "internal error")
+			return nil, grpcutils.GRPCInternalError()
 		}
 	} else {
 		// Best-effort: update last-used timestamp on an existing identity.
@@ -423,11 +439,11 @@ func (g *GRPCHandler) resolveUserID(
 	transitionData session.AuthSession,
 	identityRecord *identitystore.Identity,
 	s *method.VerifiedStep,
-) (uuid.UUID, *pb.ContinueAuthSessionResponse, error) {
+) (uuid.UUID, error) {
 	switch transitionData.Store.Intent {
 	case session.AuthIntentLinkAccount:
 		if transitionData.Store.OperationUserID == nil {
-			return uuid.Nil, nil, errors.New("link_account transition missing operation user id")
+			return uuid.Nil, errors.New("link_account transition missing operation user id")
 		}
 		linkUserID := *transitionData.Store.OperationUserID
 
@@ -436,27 +452,27 @@ func (g *GRPCHandler) resolveUserID(
 			Subject:  s.Subject,
 		})
 		if err != nil {
-			return uuid.Nil, nil, err
+			return uuid.Nil, err
 		}
 		if decision == policy.LinkDecisionReject {
-			return uuid.Nil, continueAuthFailure(
-				tid,
+			f := newAuthFailureProto(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE,
 				"That identity is already in use.",
-				authn.ErrCodeEmailAlreadyInUse,
-			), nil
+			)
+			return uuid.Nil, authFailureStatus(codes.AlreadyExists, f)
 		}
-		return linkUserID, nil, nil
+		return linkUserID, nil
 
 	default: // AuthIntentLogin, AuthIntentReauth
 		if identityRecord != nil {
-			return identityRecord.UserID, nil, nil
+			return identityRecord.UserID, nil
 		}
 		// First-time login: resolve (find or create) the user account from claims.
 		res, err := g.resolver.ResolveUser(ctx, s.Identity.UserClaims)
 		if err != nil {
-			return uuid.Nil, nil, err
+			return uuid.Nil, err
 		}
-		return res.UserID, nil, nil
+		return res.UserID, nil
 	}
 }
 
@@ -514,7 +530,7 @@ func (g *GRPCHandler) combineStartResponse(
 	identifier string,
 ) (*pb.StartAuthSessionResponse, error) {
 	if stepFailure, ok := step.(*method.FailureStep); ok {
-		return nil, status.Error(codes.InvalidArgument, stepFailure.Message)
+		return nil, authFailureStatus(codes.InvalidArgument, stepFailure.Failure)
 	}
 
 	resp := &pb.StartAuthSessionResponse{}

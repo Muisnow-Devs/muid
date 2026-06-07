@@ -58,9 +58,11 @@ message ContinueAuthSessionResponse {
 
   oneof result {
     muid.authn.v1.session.ChallengeRequired challenge_required = 3;
-    muid.authn.v1.session.AuthSuccess auth_success = 4;
-    muid.authn.v1.session.AuthFailure auth_failure = 5;
+    muid.authn.v1.session.AuthSuccess       auth_success       = 4;
+    // field 5 (auth_failure) removed: failures are now gRPC errors with AuthFailure as error detail
   }
+  reserved 5;
+  reserved "auth_failure";
 }
 
 // Session token is passed via the authorization metadata header: "Session <token>".

@@ -9,11 +9,11 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"golang.org/x/oauth2"
+	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/authn/config"
 	identitystore "sanzi.io/muid/internal/identity/store"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/pkg/shared/authn"
 	"sanzi.io/muid/pkg/utils"
 )
 
@@ -130,23 +130,29 @@ func (m *OIDCMethod) Continue(
 	oidcFlow, ok := sess.Store.Flow.(*session.OIDCFlow)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidSessionState,
-			Message: "invalid oidc flow state",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+				"invalid oidc flow state",
+			),
 		}, nil
 	}
 
 	callback, ok := req.Payload.(OIDCCallbackPayload)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidInput,
-			Message: "expected OIDCCallbackPayload",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				"expected OIDCCallbackPayload",
+			),
 		}, nil
 	}
 
 	if oidcFlow.OAuthState != callback.State {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidSessionState,
-			Message: "OIDC oauth state mismatch",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+				"OIDC oauth state mismatch",
+			),
 		}, nil
 	}
 
@@ -157,24 +163,30 @@ func (m *OIDCMethod) Continue(
 	)
 	if err != nil {
 		return &FailureStep{
-			Code:    authn.ErrCodeAuthenticationFailed,
-			Message: "token exchange failed: " + err.Error(),
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+				"token exchange failed: "+err.Error(),
+			),
 		}, nil
 	}
 
 	rawIDToken, ok := token.Extra("id_token").(string)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeAuthenticationFailed,
-			Message: "missing id_token in token response",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+				"missing id_token in token response",
+			),
 		}, nil
 	}
 
 	idToken, err := m.verifier.Verify(ctx, rawIDToken)
 	if err != nil {
 		return &FailureStep{
-			Code:    authn.ErrCodeAuthenticationFailed,
-			Message: "id_token verification failed: " + err.Error(),
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+				"id_token verification failed: "+err.Error(),
+			),
 		}, nil
 	}
 
@@ -200,8 +212,10 @@ func (m *OIDCMethod) Continue(
 
 	if oidcClaims.Subject == "" {
 		return &FailureStep{
-			Code:    authn.ErrCodeAuthenticationFailed,
-			Message: "missing subject in OIDC claims",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+				"missing subject in OIDC claims",
+			),
 		}, nil
 	}
 

@@ -9,9 +9,9 @@ import (
 	"github.com/go-webauthn/webauthn/protocol"
 	"github.com/go-webauthn/webauthn/webauthn"
 	"github.com/google/uuid"
+	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	identitystore "sanzi.io/muid/internal/identity/store"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/pkg/shared/authn"
 )
 
 const (
@@ -99,8 +99,10 @@ func (m *PasskeyMethod) Start(
 	case session.AuthIntentLinkAccount:
 		if sessionStore.OperationUserID == nil {
 			return &FailureStep{
-				Code:    authn.ErrCodeInvalidSessionState,
-				Message: "session required for passkey registration",
+				Failure: newAuthFailure(
+					sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+					"session required for passkey registration",
+				),
 			}, nil
 		}
 		operationUserID := *sessionStore.OperationUserID
@@ -138,8 +140,10 @@ func (m *PasskeyMethod) Start(
 
 	default:
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidInput,
-			Message: "invalid auth intent for passkey method",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				"invalid auth intent for passkey method",
+			),
 		}, nil
 	}
 
@@ -172,8 +176,10 @@ func (m *PasskeyMethod) Continue(
 	pkFlow, ok := sess.Store.Flow.(*session.PasskeyFlow)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidSessionState,
-			Message: "invalid passkey flow state",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+				"invalid passkey flow state",
+			),
 		}, nil
 	}
 
@@ -184,8 +190,10 @@ func (m *PasskeyMethod) Continue(
 		return m.continueRegister(ctx, req, pkFlow)
 	default:
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidSessionState,
-			Message: "invalid auth intent for passkey method",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+				"invalid auth intent for passkey method",
+			),
 		}, nil
 	}
 }
@@ -198,8 +206,10 @@ func (m *PasskeyMethod) continueLogin(
 	payload, ok := req.Payload.(PasskeyAssertionPayload)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidInput,
-			Message: "expected PasskeyAssertionPayload",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				"expected PasskeyAssertionPayload",
+			),
 		}, nil
 	}
 
@@ -210,7 +220,12 @@ func (m *PasskeyMethod) continueLogin(
 
 	parsed, err := protocol.ParseCredentialRequestResponseBytes([]byte(rawJSON))
 	if err != nil {
-		return &FailureStep{Code: authn.ErrCodeInvalidInput, Message: err.Error()}, nil
+		return &FailureStep{
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				err.Error(),
+			),
+		}, nil
 	}
 
 	// The discoverable user handler calls back into the store — no DB in method.
@@ -220,7 +235,12 @@ func (m *PasskeyMethod) continueLogin(
 		parsed,
 	)
 	if err != nil {
-		return &FailureStep{Code: authn.ErrCodeAuthenticationFailed, Message: err.Error()}, nil
+		return &FailureStep{
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+				err.Error(),
+			),
+		}, nil
 	}
 
 	subject := base64.RawURLEncoding.EncodeToString(verifiedCredential.ID)
@@ -238,8 +258,10 @@ func (m *PasskeyMethod) continueRegister(
 	payload, ok := req.Payload.(PasskeyCreationPayload)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidInput,
-			Message: "expected PasskeyCreationPayload",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				"expected PasskeyCreationPayload",
+			),
 		}, nil
 	}
 
@@ -247,12 +269,22 @@ func (m *PasskeyMethod) continueRegister(
 		[]byte(payload.CredentialCreationResponseJSON),
 	)
 	if err != nil {
-		return &FailureStep{Code: authn.ErrCodeInvalidInput, Message: err.Error()}, nil
+		return &FailureStep{
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				err.Error(),
+			),
+		}, nil
 	}
 
 	uid, err := uuid.Parse(pkFlow.SubjectUserID)
 	if err != nil {
-		return &FailureStep{Code: authn.ErrCodeInvalidSessionState, Message: err.Error()}, nil
+		return &FailureStep{
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+				err.Error(),
+			),
+		}, nil
 	}
 
 	// Load ceremony user from store (no direct DB access in this method).
@@ -263,7 +295,12 @@ func (m *PasskeyMethod) continueRegister(
 
 	credential, err := m.webAuthn.CreateCredential(user, pkFlow.Session, parsed)
 	if err != nil {
-		return &FailureStep{Code: authn.ErrCodeAuthenticationFailed, Message: err.Error()}, nil
+		return &FailureStep{
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED,
+				err.Error(),
+			),
+		}, nil
 	}
 
 	deviceType := identitystore.DeviceTypeMultiDevice

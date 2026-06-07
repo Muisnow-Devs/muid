@@ -1,6 +1,9 @@
 package authngrpc
 
 import (
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/google/uuid"
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	basicpb "sanzi.io/muid/api/proto/authn/v1/basic"
@@ -49,6 +52,7 @@ func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
 	}
 }
 
+// continueAuthSuccess builds a successful ContinueAuthSessionResponse.
 func continueAuthSuccess(
 	tid uuid.UUID,
 	res *sessionpb.AuthenticatedResult,
@@ -63,14 +67,23 @@ func continueAuthSuccess(
 	return out
 }
 
-func continueAuthFailure(tid uuid.UUID, reason, code string) *pb.ContinueAuthSessionResponse {
-	fail := &sessionpb.AuthFailure{}
-	fail.SetReason(reason)
-	fail.SetErrorCode(code)
+// authFailureStatus builds a gRPC error for an application-level auth failure.
+// The AuthFailure proto is attached as a typed error detail so clients can
+// extract the structured AuthErrorCode via status.FromError(err).Details().
+func authFailureStatus(grpcCode codes.Code, f *sessionpb.AuthFailure) error {
+	st, detailErr := status.New(grpcCode, f.GetReason()).WithDetails(f)
+	if detailErr != nil {
+		// Fallback: should never happen for a well-formed proto message.
+		return status.Error(grpcCode, f.GetReason())
+	}
+	return st.Err()
+}
 
-	out := &pb.ContinueAuthSessionResponse{}
-	out.SetTransitionId(tid.String())
-	out.SetStatus(basicpb.AuthStatus_AUTH_STATUS_FAILED)
-	out.SetAuthFailure(fail)
-	return out
+// newAuthFailureProto is the handler-layer convenience builder for AuthFailure.
+// Each layer (method, handler) owns its own copy so neither depends on the other.
+func newAuthFailureProto(code sessionpb.AuthErrorCode, reason string) *sessionpb.AuthFailure {
+	f := &sessionpb.AuthFailure{}
+	f.SetErrorCode(code)
+	f.SetReason(reason)
+	return f
 }

@@ -70,6 +70,70 @@ func (x AuthLevel) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// AuthErrorCode identifies the specific reason for an authentication failure.
+// Values are stable and suitable for client-side branching logic.
+type AuthErrorCode int32
+
+const (
+	AuthErrorCode_AUTH_ERROR_CODE_UNSPECIFIED                AuthErrorCode = 0
+	AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED      AuthErrorCode = 1 // wrong credentials (OTP, passkey, …)
+	AuthErrorCode_AUTH_ERROR_CODE_RATE_LIMITED               AuthErrorCode = 2 // resend or attempt throttled
+	AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE      AuthErrorCode = 3 // unexpected flow state
+	AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT              AuthErrorCode = 4 // bad identifier, payload, …
+	AuthErrorCode_AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE       AuthErrorCode = 5 // link-account: email taken
+	AuthErrorCode_AUTH_ERROR_CODE_LINK_UNAUTHORIZED          AuthErrorCode = 6 // link-account: not authorised
+	AuthErrorCode_AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED  AuthErrorCode = 7 // OIDC: existing account needs manual link
+	AuthErrorCode_AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED AuthErrorCode = 8 // passkey credential already linked
+)
+
+// Enum value maps for AuthErrorCode.
+var (
+	AuthErrorCode_name = map[int32]string{
+		0: "AUTH_ERROR_CODE_UNSPECIFIED",
+		1: "AUTH_ERROR_CODE_AUTHENTICATION_FAILED",
+		2: "AUTH_ERROR_CODE_RATE_LIMITED",
+		3: "AUTH_ERROR_CODE_INVALID_SESSION_STATE",
+		4: "AUTH_ERROR_CODE_INVALID_INPUT",
+		5: "AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE",
+		6: "AUTH_ERROR_CODE_LINK_UNAUTHORIZED",
+		7: "AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED",
+		8: "AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED",
+	}
+	AuthErrorCode_value = map[string]int32{
+		"AUTH_ERROR_CODE_UNSPECIFIED":                0,
+		"AUTH_ERROR_CODE_AUTHENTICATION_FAILED":      1,
+		"AUTH_ERROR_CODE_RATE_LIMITED":               2,
+		"AUTH_ERROR_CODE_INVALID_SESSION_STATE":      3,
+		"AUTH_ERROR_CODE_INVALID_INPUT":              4,
+		"AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE":       5,
+		"AUTH_ERROR_CODE_LINK_UNAUTHORIZED":          6,
+		"AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED":  7,
+		"AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED": 8,
+	}
+)
+
+func (x AuthErrorCode) Enum() *AuthErrorCode {
+	p := new(AuthErrorCode)
+	*p = x
+	return p
+}
+
+func (x AuthErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AuthErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_authn_v1_session_proto_enumTypes[1].Descriptor()
+}
+
+func (AuthErrorCode) Type() protoreflect.EnumType {
+	return &file_authn_v1_session_proto_enumTypes[1]
+}
+
+func (x AuthErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
 type SessionToken struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Value string                 `protobuf:"bytes,1,opt,name=value,proto3"`
@@ -613,10 +677,12 @@ func (b0 AuthSuccess_builder) Build() *AuthSuccess {
 	return m0
 }
 
+// AuthFailure is returned as a gRPC error detail (see google.rpc.Status details)
+// so clients can extract the structured error code alongside the gRPC status code.
 type AuthFailure struct {
 	state                protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Reason    string                 `protobuf:"bytes,1,opt,name=reason,proto3"`
-	xxx_hidden_ErrorCode string                 `protobuf:"bytes,2,opt,name=error_code,json=errorCode,proto3"`
+	xxx_hidden_ErrorCode AuthErrorCode          `protobuf:"varint,2,opt,name=error_code,json=errorCode,proto3,enum=muid.authn.v1.session.AuthErrorCode"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
@@ -653,18 +719,18 @@ func (x *AuthFailure) GetReason() string {
 	return ""
 }
 
-func (x *AuthFailure) GetErrorCode() string {
+func (x *AuthFailure) GetErrorCode() AuthErrorCode {
 	if x != nil {
 		return x.xxx_hidden_ErrorCode
 	}
-	return ""
+	return AuthErrorCode_AUTH_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *AuthFailure) SetReason(v string) {
 	x.xxx_hidden_Reason = v
 }
 
-func (x *AuthFailure) SetErrorCode(v string) {
+func (x *AuthFailure) SetErrorCode(v AuthErrorCode) {
 	x.xxx_hidden_ErrorCode = v
 }
 
@@ -672,7 +738,7 @@ type AuthFailure_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Reason    string
-	ErrorCode string
+	ErrorCode AuthErrorCode
 }
 
 func (b0 AuthFailure_builder) Build() *AuthFailure {
@@ -712,48 +778,60 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\x11ChallengeRequired\x12D\n" +
 	"\tchallenge\x18\x01 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"Q\n" +
 	"\vAuthSuccess\x12B\n" +
-	"\x06result\x18\x01 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\x06result\"D\n" +
+	"\x06result\x18\x01 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\x06result\"j\n" +
 	"\vAuthFailure\x12\x16\n" +
-	"\x06reason\x18\x01 \x01(\tR\x06reason\x12\x1d\n" +
+	"\x06reason\x18\x01 \x01(\tR\x06reason\x12C\n" +
 	"\n" +
-	"error_code\x18\x02 \x01(\tR\terrorCode*g\n" +
+	"error_code\x18\x02 \x01(\x0e2$.muid.authn.v1.session.AuthErrorCodeR\terrorCode*g\n" +
 	"\tAuthLevel\x12\x1a\n" +
 	"\x16AUTH_LEVEL_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eAUTH_LEVEL_LOW\x10\x01\x12\x15\n" +
 	"\x11AUTH_LEVEL_MEDIUM\x10\x02\x12\x13\n" +
-	"\x0fAUTH_LEVEL_HIGH\x10\x03B\xd3\x01\n" +
+	"\x0fAUTH_LEVEL_HIGH\x10\x03*\xfb\x02\n" +
+	"\rAuthErrorCode\x12\x1f\n" +
+	"\x1bAUTH_ERROR_CODE_UNSPECIFIED\x10\x00\x12)\n" +
+	"%AUTH_ERROR_CODE_AUTHENTICATION_FAILED\x10\x01\x12 \n" +
+	"\x1cAUTH_ERROR_CODE_RATE_LIMITED\x10\x02\x12)\n" +
+	"%AUTH_ERROR_CODE_INVALID_SESSION_STATE\x10\x03\x12!\n" +
+	"\x1dAUTH_ERROR_CODE_INVALID_INPUT\x10\x04\x12(\n" +
+	"$AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE\x10\x05\x12%\n" +
+	"!AUTH_ERROR_CODE_LINK_UNAUTHORIZED\x10\x06\x12-\n" +
+	")AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED\x10\a\x12.\n" +
+	"*AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED\x10\bB\xd3\x01\n" +
 	"\x19com.muid.authn.v1.sessionB\fSessionProtoP\x01Z0sanzi.io/muid/api/proto/authn/v1/session;session\xa2\x02\x04MAVS\xaa\x02\x15Muid.Authn.V1.Session\xca\x02\x15Muid\\Authn\\V1\\Session\xe2\x02!Muid\\Authn\\V1\\Session\\GPBMetadata\xea\x02\x18Muid::Authn::V1::Sessionb\x06proto3"
 
-var file_authn_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_authn_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_authn_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_authn_v1_session_proto_goTypes = []any{
 	(AuthLevel)(0),                  // 0: muid.authn.v1.session.AuthLevel
-	(*SessionToken)(nil),            // 1: muid.authn.v1.session.SessionToken
-	(*SessionContext)(nil),          // 2: muid.authn.v1.session.SessionContext
-	(*AuthenticatedResult)(nil),     // 3: muid.authn.v1.session.AuthenticatedResult
-	(*AuthenticatedPrincipal)(nil),  // 4: muid.authn.v1.session.AuthenticatedPrincipal
-	(*ChallengeRequired)(nil),       // 5: muid.authn.v1.session.ChallengeRequired
-	(*AuthSuccess)(nil),             // 6: muid.authn.v1.session.AuthSuccess
-	(*AuthFailure)(nil),             // 7: muid.authn.v1.session.AuthFailure
-	(*timestamppb.Timestamp)(nil),   // 8: google.protobuf.Timestamp
-	(*challenge.AuthChallenge)(nil), // 9: muid.authn.v1.challenge.AuthChallenge
+	(AuthErrorCode)(0),              // 1: muid.authn.v1.session.AuthErrorCode
+	(*SessionToken)(nil),            // 2: muid.authn.v1.session.SessionToken
+	(*SessionContext)(nil),          // 3: muid.authn.v1.session.SessionContext
+	(*AuthenticatedResult)(nil),     // 4: muid.authn.v1.session.AuthenticatedResult
+	(*AuthenticatedPrincipal)(nil),  // 5: muid.authn.v1.session.AuthenticatedPrincipal
+	(*ChallengeRequired)(nil),       // 6: muid.authn.v1.session.ChallengeRequired
+	(*AuthSuccess)(nil),             // 7: muid.authn.v1.session.AuthSuccess
+	(*AuthFailure)(nil),             // 8: muid.authn.v1.session.AuthFailure
+	(*timestamppb.Timestamp)(nil),   // 9: google.protobuf.Timestamp
+	(*challenge.AuthChallenge)(nil), // 10: muid.authn.v1.challenge.AuthChallenge
 }
 var file_authn_v1_session_proto_depIdxs = []int32{
-	1,  // 0: muid.authn.v1.session.SessionContext.session_token:type_name -> muid.authn.v1.session.SessionToken
-	8,  // 1: muid.authn.v1.session.SessionContext.issued_at:type_name -> google.protobuf.Timestamp
-	8,  // 2: muid.authn.v1.session.SessionContext.expires_at:type_name -> google.protobuf.Timestamp
-	2,  // 3: muid.authn.v1.session.AuthenticatedResult.session_context:type_name -> muid.authn.v1.session.SessionContext
+	2,  // 0: muid.authn.v1.session.SessionContext.session_token:type_name -> muid.authn.v1.session.SessionToken
+	9,  // 1: muid.authn.v1.session.SessionContext.issued_at:type_name -> google.protobuf.Timestamp
+	9,  // 2: muid.authn.v1.session.SessionContext.expires_at:type_name -> google.protobuf.Timestamp
+	3,  // 3: muid.authn.v1.session.AuthenticatedResult.session_context:type_name -> muid.authn.v1.session.SessionContext
 	0,  // 4: muid.authn.v1.session.AuthenticatedResult.auth_level:type_name -> muid.authn.v1.session.AuthLevel
 	0,  // 5: muid.authn.v1.session.AuthenticatedPrincipal.auth_level:type_name -> muid.authn.v1.session.AuthLevel
-	8,  // 6: muid.authn.v1.session.AuthenticatedPrincipal.issued_at:type_name -> google.protobuf.Timestamp
-	8,  // 7: muid.authn.v1.session.AuthenticatedPrincipal.expires_at:type_name -> google.protobuf.Timestamp
-	9,  // 8: muid.authn.v1.session.ChallengeRequired.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	3,  // 9: muid.authn.v1.session.AuthSuccess.result:type_name -> muid.authn.v1.session.AuthenticatedResult
-	10, // [10:10] is the sub-list for method output_type
-	10, // [10:10] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	9,  // 6: muid.authn.v1.session.AuthenticatedPrincipal.issued_at:type_name -> google.protobuf.Timestamp
+	9,  // 7: muid.authn.v1.session.AuthenticatedPrincipal.expires_at:type_name -> google.protobuf.Timestamp
+	10, // 8: muid.authn.v1.session.ChallengeRequired.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	4,  // 9: muid.authn.v1.session.AuthSuccess.result:type_name -> muid.authn.v1.session.AuthenticatedResult
+	1,  // 10: muid.authn.v1.session.AuthFailure.error_code:type_name -> muid.authn.v1.session.AuthErrorCode
+	11, // [11:11] is the sub-list for method output_type
+	11, // [11:11] is the sub-list for method input_type
+	11, // [11:11] is the sub-list for extension type_name
+	11, // [11:11] is the sub-list for extension extendee
+	0,  // [0:11] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_session_proto_init() }
@@ -766,7 +844,7 @@ func file_authn_v1_session_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_session_proto_rawDesc), len(file_authn_v1_session_proto_rawDesc)),
-			NumEnums:      1,
+			NumEnums:      2,
 			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,

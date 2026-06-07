@@ -10,12 +10,12 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/api/proto/shared/v1/claims"
 	identitystore "sanzi.io/muid/internal/identity/store"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
-	"sanzi.io/muid/pkg/shared/authn"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 	"sanzi.io/muid/pkg/shared/tracing"
@@ -89,16 +89,20 @@ func (m *EmailOTPMethod) Start(
 	email := strings.TrimSpace(strings.ToLower(req.Identifier))
 	if email == "" {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidInput,
-			Message: "missing email identifier",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				"missing email identifier",
+			),
 		}, nil
 	}
 
 	addr, err := mail.ParseAddress(email)
 	if err != nil {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidInput,
-			Message: "invalid email address",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT,
+				"invalid email address",
+			),
 		}, nil
 	}
 
@@ -142,8 +146,10 @@ func (m *EmailOTPMethod) Continue(
 	emailFlow, ok := sess.Store.Flow.(*session.EmailOTPFlow)
 	if !ok {
 		return &FailureStep{
-			Code:    authn.ErrCodeInvalidSessionState,
-			Message: "invalid email flow state",
+			Failure: newAuthFailure(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE,
+				"invalid email flow state",
+			),
 		}, nil
 	}
 
@@ -151,7 +157,7 @@ func (m *EmailOTPMethod) Continue(
 	case EmailOTPCodePayload:
 		if err := m.otpStore.VerifyOTP(ctx, tid.String(), payload.Code); err != nil {
 			if errors.Is(err, otp.ErrOTPAuthFailed) {
-				return &FailureStep{Code: authn.ErrCodeAuthenticationFailed, Message: "invalid OTP code"}, nil
+				return &FailureStep{Failure: newAuthFailure(sessionpb.AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED, "invalid OTP code")}, nil
 			}
 			return nil, err
 		}
@@ -175,7 +181,7 @@ func (m *EmailOTPMethod) Continue(
 	case EmailOTPResendPayload:
 		if err := m.generateAndSendOTP(ctx, tid.String(), emailFlow.Email, sess.Store.Metadata); err != nil {
 			if errors.Is(err, otp.ErrOTPSendRateLimited) {
-				return &FailureStep{Code: authn.ErrCodeRateLimited, Message: "OTP send rate limited; try again later"}, nil
+				return &FailureStep{Failure: newAuthFailure(sessionpb.AuthErrorCode_AUTH_ERROR_CODE_RATE_LIMITED, "OTP send rate limited; try again later")}, nil
 			}
 			return nil, err
 		}
@@ -186,7 +192,7 @@ func (m *EmailOTPMethod) Continue(
 		}, nil
 
 	default:
-		return &FailureStep{Code: authn.ErrCodeInvalidInput, Message: "unsupported email proof payload"}, nil
+		return &FailureStep{Failure: newAuthFailure(sessionpb.AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT, "unsupported email proof payload")}, nil
 	}
 }
 

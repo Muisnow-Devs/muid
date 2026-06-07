@@ -53,7 +53,23 @@ message AuthSuccess {
   AuthenticatedResult result = 1;
 }
 
+// AuthErrorCode identifies the specific reason for an authentication failure.
+// Values are stable and suitable for client-side branching logic.
+enum AuthErrorCode {
+  AUTH_ERROR_CODE_UNSPECIFIED               = 0;
+  AUTH_ERROR_CODE_AUTHENTICATION_FAILED     = 1; // wrong credentials (OTP, passkey, …)
+  AUTH_ERROR_CODE_RATE_LIMITED              = 2; // resend or attempt throttled
+  AUTH_ERROR_CODE_INVALID_SESSION_STATE     = 3; // unexpected flow state
+  AUTH_ERROR_CODE_INVALID_INPUT             = 4; // bad identifier, payload, …
+  AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE      = 5; // link-account: email taken
+  AUTH_ERROR_CODE_LINK_UNAUTHORIZED         = 6; // link-account: not authorised
+  AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED = 7; // OIDC: existing account needs manual link
+  AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED = 8; // passkey credential already linked
+}
+
+// AuthFailure is returned as a gRPC error detail (see google.rpc.Status details)
+// so clients can extract the structured error code alongside the gRPC status code.
 message AuthFailure {
-  string reason = 1;
-  string error_code = 2;
+  string        reason     = 1; // human-readable explanation
+  AuthErrorCode error_code = 2; // machine-readable code
 }

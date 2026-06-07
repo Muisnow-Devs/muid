@@ -46,7 +46,12 @@ func NewKVOTPStore(
 	if ma < 1 {
 		ma = 1
 	}
-	return &kvOTPStore{client: kvStore, otpSecret: otpSecret, sendCooldown: sendCooldown, maxAttempts: ma}
+	return &kvOTPStore{
+		client:       kvStore,
+		otpSecret:    otpSecret,
+		sendCooldown: sendCooldown,
+		maxAttempts:  ma,
+	}
 }
 
 // key is the primary challenge key: stores otpInformation.

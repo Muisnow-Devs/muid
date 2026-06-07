@@ -13,11 +13,13 @@ enum AuthMethod {
 }
 
 enum AuthStatus {
-  AUTH_STATUS_UNSPECIFIED = 0;
-  AUTH_STATUS_PENDING = 1;
+  AUTH_STATUS_UNSPECIFIED        = 0;
+  AUTH_STATUS_PENDING            = 1;
   AUTH_STATUS_CHALLENGE_REQUIRED = 2;
-  AUTH_STATUS_AUTHENTICATED = 3;
-  AUTH_STATUS_FAILED = 4;
+  AUTH_STATUS_AUTHENTICATED      = 3;
+  // AUTH_STATUS_FAILED = 4 removed; failures are now gRPC errors
+  reserved 4;
+  reserved "AUTH_STATUS_FAILED";
 }
 
 enum AuthIntent {

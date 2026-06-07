@@ -12,6 +12,12 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
+	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
+	"sanzi.io/muid/internal/authn/ent/oidcgrant"
+	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authn/ent/oidcscope"
 	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
@@ -78,6 +84,12 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			oidccallbackuri.Table:       oidccallbackuri.ValidColumn,
+			oidcclient.Table:            oidcclient.ValidColumn,
+			oidcclientsecret.Table:      oidcclientsecret.ValidColumn,
+			oidcgrant.Table:             oidcgrant.ValidColumn,
+			oidcrefreshtoken.Table:      oidcrefreshtoken.ValidColumn,
+			oidcscope.Table:             oidcscope.ValidColumn,
 			useremail.Table:             useremail.ValidColumn,
 			userfederatedidentity.Table: userfederatedidentity.ValidColumn,
 			useridentity.Table:          useridentity.ValidColumn,

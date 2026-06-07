@@ -30,39 +30,17 @@ type UserRef struct {
 
 // UserRefEdges holds the relations/edges for other nodes in the graph.
 type UserRefEdges struct {
-	// OidcGrants holds the value of the oidc_grants edge.
-	OidcGrants []*OIDCGrant `json:"oidc_grants,omitempty"`
-	// OidcRefreshTokens holds the value of the oidc_refresh_tokens edge.
-	OidcRefreshTokens []*OIDCRefreshToken `json:"oidc_refresh_tokens,omitempty"`
 	// OrganizationMemberships holds the value of the organization_memberships edge.
 	OrganizationMemberships []*OrganizationMember `json:"organization_memberships,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
-}
-
-// OidcGrantsOrErr returns the OidcGrants value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserRefEdges) OidcGrantsOrErr() ([]*OIDCGrant, error) {
-	if e.loadedTypes[0] {
-		return e.OidcGrants, nil
-	}
-	return nil, &NotLoadedError{edge: "oidc_grants"}
-}
-
-// OidcRefreshTokensOrErr returns the OidcRefreshTokens value or an error if the edge
-// was not loaded in eager-loading.
-func (e UserRefEdges) OidcRefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
-	if e.loadedTypes[1] {
-		return e.OidcRefreshTokens, nil
-	}
-	return nil, &NotLoadedError{edge: "oidc_refresh_tokens"}
+	loadedTypes [1]bool
 }
 
 // OrganizationMembershipsOrErr returns the OrganizationMemberships value or an error if the edge
 // was not loaded in eager-loading.
 func (e UserRefEdges) OrganizationMembershipsOrErr() ([]*OrganizationMember, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[0] {
 		return e.OrganizationMemberships, nil
 	}
 	return nil, &NotLoadedError{edge: "organization_memberships"}
@@ -121,16 +99,6 @@ func (_m *UserRef) assignValues(columns []string, values []any) error {
 // This includes values selected through modifiers, order, etc.
 func (_m *UserRef) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
-}
-
-// QueryOidcGrants queries the "oidc_grants" edge of the UserRef entity.
-func (_m *UserRef) QueryOidcGrants() *OIDCGrantQuery {
-	return NewUserRefClient(_m.config).QueryOidcGrants(_m)
-}
-
-// QueryOidcRefreshTokens queries the "oidc_refresh_tokens" edge of the UserRef entity.
-func (_m *UserRef) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
-	return NewUserRefClient(_m.config).QueryOidcRefreshTokens(_m)
 }
 
 // QueryOrganizationMemberships queries the "organization_memberships" edge of the UserRef entity.

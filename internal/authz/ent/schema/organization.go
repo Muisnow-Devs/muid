@@ -32,7 +32,7 @@ func (Organization) Fields() []ent.Field {
 // Edges of the Organization.
 func (Organization) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("clients", OIDCClient.Type),
 		edge.To("members", OrganizationMember.Type),
+		edge.To("roles", OrganizationRole.Type),
 	}
 }

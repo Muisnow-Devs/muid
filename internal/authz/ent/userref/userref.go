@@ -18,28 +18,10 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeOidcGrants holds the string denoting the oidc_grants edge name in mutations.
-	EdgeOidcGrants = "oidc_grants"
-	// EdgeOidcRefreshTokens holds the string denoting the oidc_refresh_tokens edge name in mutations.
-	EdgeOidcRefreshTokens = "oidc_refresh_tokens"
 	// EdgeOrganizationMemberships holds the string denoting the organization_memberships edge name in mutations.
 	EdgeOrganizationMemberships = "organization_memberships"
 	// Table holds the table name of the userref in the database.
 	Table = "user_refs"
-	// OidcGrantsTable is the table that holds the oidc_grants relation/edge.
-	OidcGrantsTable = "oidc_grants"
-	// OidcGrantsInverseTable is the table name for the OIDCGrant entity.
-	// It exists in this package in order to avoid circular dependency with the "oidcgrant" package.
-	OidcGrantsInverseTable = "oidc_grants"
-	// OidcGrantsColumn is the table column denoting the oidc_grants relation/edge.
-	OidcGrantsColumn = "user_id"
-	// OidcRefreshTokensTable is the table that holds the oidc_refresh_tokens relation/edge.
-	OidcRefreshTokensTable = "oidc_refresh_tokens"
-	// OidcRefreshTokensInverseTable is the table name for the OIDCRefreshToken entity.
-	// It exists in this package in order to avoid circular dependency with the "oidcrefreshtoken" package.
-	OidcRefreshTokensInverseTable = "oidc_refresh_tokens"
-	// OidcRefreshTokensColumn is the table column denoting the oidc_refresh_tokens relation/edge.
-	OidcRefreshTokensColumn = "user_id"
 	// OrganizationMembershipsTable is the table that holds the organization_memberships relation/edge.
 	OrganizationMembershipsTable = "organization_members"
 	// OrganizationMembershipsInverseTable is the table name for the OrganizationMember entity.
@@ -93,34 +75,6 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByOidcGrantsCount orders the results by oidc_grants count.
-func ByOidcGrantsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newOidcGrantsStep(), opts...)
-	}
-}
-
-// ByOidcGrants orders the results by oidc_grants terms.
-func ByOidcGrants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newOidcGrantsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
-// ByOidcRefreshTokensCount orders the results by oidc_refresh_tokens count.
-func ByOidcRefreshTokensCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newOidcRefreshTokensStep(), opts...)
-	}
-}
-
-// ByOidcRefreshTokens orders the results by oidc_refresh_tokens terms.
-func ByOidcRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newOidcRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByOrganizationMembershipsCount orders the results by organization_memberships count.
 func ByOrganizationMembershipsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -133,20 +87,6 @@ func ByOrganizationMemberships(term sql.OrderTerm, terms ...sql.OrderTerm) Order
 	return func(s *sql.Selector) {
 		sqlgraph.OrderByNeighborTerms(s, newOrganizationMembershipsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
-}
-func newOidcGrantsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(OidcGrantsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, OidcGrantsTable, OidcGrantsColumn),
-	)
-}
-func newOidcRefreshTokensStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(OidcRefreshTokensInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
-	)
 }
 func newOrganizationMembershipsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(

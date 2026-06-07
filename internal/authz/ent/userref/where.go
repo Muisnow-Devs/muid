@@ -146,52 +146,6 @@ func UpdatedAtLTE(v time.Time) predicate.UserRef {
 	return predicate.UserRef(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasOidcGrants applies the HasEdge predicate on the "oidc_grants" edge.
-func HasOidcGrants() predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OidcGrantsTable, OidcGrantsColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOidcGrantsWith applies the HasEdge predicate on the "oidc_grants" edge with a given conditions (other predicates).
-func HasOidcGrantsWith(preds ...predicate.OIDCGrant) predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := newOidcGrantsStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
-// HasOidcRefreshTokens applies the HasEdge predicate on the "oidc_refresh_tokens" edge.
-func HasOidcRefreshTokens() predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := sqlgraph.NewStep(
-			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
-		)
-		sqlgraph.HasNeighbors(s, step)
-	})
-}
-
-// HasOidcRefreshTokensWith applies the HasEdge predicate on the "oidc_refresh_tokens" edge with a given conditions (other predicates).
-func HasOidcRefreshTokensWith(preds ...predicate.OIDCRefreshToken) predicate.UserRef {
-	return predicate.UserRef(func(s *sql.Selector) {
-		step := newOidcRefreshTokensStep()
-		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
-			for _, p := range preds {
-				p(s)
-			}
-		})
-	})
-}
-
 // HasOrganizationMemberships applies the HasEdge predicate on the "organization_memberships" edge.
 func HasOrganizationMemberships() predicate.UserRef {
 	return predicate.UserRef(func(s *sql.Selector) {

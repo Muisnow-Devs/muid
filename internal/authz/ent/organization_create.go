@@ -11,9 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
+	"sanzi.io/muid/internal/authz/ent/organizationrole"
 )
 
 // OrganizationCreate is the builder for creating a Organization entity.
@@ -91,21 +91,6 @@ func (_c *OrganizationCreate) SetNillableID(v *uuid.UUID) *OrganizationCreate {
 	return _c
 }
 
-// AddClientIDs adds the "clients" edge to the OIDCClient entity by IDs.
-func (_c *OrganizationCreate) AddClientIDs(ids ...uuid.UUID) *OrganizationCreate {
-	_c.mutation.AddClientIDs(ids...)
-	return _c
-}
-
-// AddClients adds the "clients" edges to the OIDCClient entity.
-func (_c *OrganizationCreate) AddClients(v ...*OIDCClient) *OrganizationCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddClientIDs(ids...)
-}
-
 // AddMemberIDs adds the "members" edge to the OrganizationMember entity by IDs.
 func (_c *OrganizationCreate) AddMemberIDs(ids ...uuid.UUID) *OrganizationCreate {
 	_c.mutation.AddMemberIDs(ids...)
@@ -119,6 +104,21 @@ func (_c *OrganizationCreate) AddMembers(v ...*OrganizationMember) *Organization
 		ids[i] = v[i].ID
 	}
 	return _c.AddMemberIDs(ids...)
+}
+
+// AddRoleIDs adds the "roles" edge to the OrganizationRole entity by IDs.
+func (_c *OrganizationCreate) AddRoleIDs(ids ...uuid.UUID) *OrganizationCreate {
+	_c.mutation.AddRoleIDs(ids...)
+	return _c
+}
+
+// AddRoles adds the "roles" edges to the OrganizationRole entity.
+func (_c *OrganizationCreate) AddRoles(v ...*OrganizationRole) *OrganizationCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddRoleIDs(ids...)
 }
 
 // Mutation returns the OrganizationMutation object of the builder.
@@ -254,22 +254,6 @@ func (_c *OrganizationCreate) createSpec() (*Organization, *sqlgraph.CreateSpec)
 		_spec.SetField(organization.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := _c.mutation.ClientsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organization.ClientsTable,
-			Columns: []string{organization.ClientsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcclient.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges = append(_spec.Edges, edge)
-	}
 	if nodes := _c.mutation.MembersIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
@@ -279,6 +263,22 @@ func (_c *OrganizationCreate) createSpec() (*Organization, *sqlgraph.CreateSpec)
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(organizationmember.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RolesIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   organization.RolesTable,
+			Columns: []string{organization.RolesColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationrole.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

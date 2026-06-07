@@ -9,6 +9,78 @@ import (
 	"sanzi.io/muid/internal/authn/ent"
 )
 
+// The OIDCCallbackURIFunc type is an adapter to allow the use of ordinary
+// function as OIDCCallbackURI mutator.
+type OIDCCallbackURIFunc func(context.Context, *ent.OIDCCallbackURIMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCCallbackURIFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCCallbackURIMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCCallbackURIMutation", m)
+}
+
+// The OIDCClientFunc type is an adapter to allow the use of ordinary
+// function as OIDCClient mutator.
+type OIDCClientFunc func(context.Context, *ent.OIDCClientMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCClientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCClientMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCClientMutation", m)
+}
+
+// The OIDCClientSecretFunc type is an adapter to allow the use of ordinary
+// function as OIDCClientSecret mutator.
+type OIDCClientSecretFunc func(context.Context, *ent.OIDCClientSecretMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCClientSecretFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCClientSecretMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCClientSecretMutation", m)
+}
+
+// The OIDCGrantFunc type is an adapter to allow the use of ordinary
+// function as OIDCGrant mutator.
+type OIDCGrantFunc func(context.Context, *ent.OIDCGrantMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCGrantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCGrantMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCGrantMutation", m)
+}
+
+// The OIDCRefreshTokenFunc type is an adapter to allow the use of ordinary
+// function as OIDCRefreshToken mutator.
+type OIDCRefreshTokenFunc func(context.Context, *ent.OIDCRefreshTokenMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCRefreshTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCRefreshTokenMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCRefreshTokenMutation", m)
+}
+
+// The OIDCScopeFunc type is an adapter to allow the use of ordinary
+// function as OIDCScope mutator.
+type OIDCScopeFunc func(context.Context, *ent.OIDCScopeMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCScopeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCScopeMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCScopeMutation", m)
+}
+
 // The UserEmailFunc type is an adapter to allow the use of ordinary
 // function as UserEmail mutator.
 type UserEmailFunc func(context.Context, *ent.UserEmailMutation) (ent.Value, error)

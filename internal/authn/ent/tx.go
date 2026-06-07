@@ -12,6 +12,18 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// OIDCCallbackURI is the client for interacting with the OIDCCallbackURI builders.
+	OIDCCallbackURI *OIDCCallbackURIClient
+	// OIDCClient is the client for interacting with the OIDCClient builders.
+	OIDCClient *OIDCClientClient
+	// OIDCClientSecret is the client for interacting with the OIDCClientSecret builders.
+	OIDCClientSecret *OIDCClientSecretClient
+	// OIDCGrant is the client for interacting with the OIDCGrant builders.
+	OIDCGrant *OIDCGrantClient
+	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
+	OIDCRefreshToken *OIDCRefreshTokenClient
+	// OIDCScope is the client for interacting with the OIDCScope builders.
+	OIDCScope *OIDCScopeClient
 	// UserEmail is the client for interacting with the UserEmail builders.
 	UserEmail *UserEmailClient
 	// UserFederatedIdentity is the client for interacting with the UserFederatedIdentity builders.
@@ -155,6 +167,12 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.OIDCCallbackURI = NewOIDCCallbackURIClient(tx.config)
+	tx.OIDCClient = NewOIDCClientClient(tx.config)
+	tx.OIDCClientSecret = NewOIDCClientSecretClient(tx.config)
+	tx.OIDCGrant = NewOIDCGrantClient(tx.config)
+	tx.OIDCRefreshToken = NewOIDCRefreshTokenClient(tx.config)
+	tx.OIDCScope = NewOIDCScopeClient(tx.config)
 	tx.UserEmail = NewUserEmailClient(tx.config)
 	tx.UserFederatedIdentity = NewUserFederatedIdentityClient(tx.config)
 	tx.UserIdentity = NewUserIdentityClient(tx.config)
@@ -170,7 +188,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: UserEmail.QueryXXX(), the query will be executed
+// applies a query, for example: OIDCCallbackURI.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

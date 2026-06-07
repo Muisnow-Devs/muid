@@ -12,8 +12,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidcgrant"
-	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 	"sanzi.io/muid/internal/authz/ent/userref"
@@ -38,36 +36,6 @@ func (_u *UserRefUpdate) SetUpdatedAt(v time.Time) *UserRefUpdate {
 	return _u
 }
 
-// AddOidcGrantIDs adds the "oidc_grants" edge to the OIDCGrant entity by IDs.
-func (_u *UserRefUpdate) AddOidcGrantIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.AddOidcGrantIDs(ids...)
-	return _u
-}
-
-// AddOidcGrants adds the "oidc_grants" edges to the OIDCGrant entity.
-func (_u *UserRefUpdate) AddOidcGrants(v ...*OIDCGrant) *UserRefUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddOidcGrantIDs(ids...)
-}
-
-// AddOidcRefreshTokenIDs adds the "oidc_refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
-func (_u *UserRefUpdate) AddOidcRefreshTokenIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.AddOidcRefreshTokenIDs(ids...)
-	return _u
-}
-
-// AddOidcRefreshTokens adds the "oidc_refresh_tokens" edges to the OIDCRefreshToken entity.
-func (_u *UserRefUpdate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddOidcRefreshTokenIDs(ids...)
-}
-
 // AddOrganizationMembershipIDs adds the "organization_memberships" edge to the OrganizationMember entity by IDs.
 func (_u *UserRefUpdate) AddOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefUpdate {
 	_u.mutation.AddOrganizationMembershipIDs(ids...)
@@ -86,48 +54,6 @@ func (_u *UserRefUpdate) AddOrganizationMemberships(v ...*OrganizationMember) *U
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdate) Mutation() *UserRefMutation {
 	return _u.mutation
-}
-
-// ClearOidcGrants clears all "oidc_grants" edges to the OIDCGrant entity.
-func (_u *UserRefUpdate) ClearOidcGrants() *UserRefUpdate {
-	_u.mutation.ClearOidcGrants()
-	return _u
-}
-
-// RemoveOidcGrantIDs removes the "oidc_grants" edge to OIDCGrant entities by IDs.
-func (_u *UserRefUpdate) RemoveOidcGrantIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.RemoveOidcGrantIDs(ids...)
-	return _u
-}
-
-// RemoveOidcGrants removes "oidc_grants" edges to OIDCGrant entities.
-func (_u *UserRefUpdate) RemoveOidcGrants(v ...*OIDCGrant) *UserRefUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveOidcGrantIDs(ids...)
-}
-
-// ClearOidcRefreshTokens clears all "oidc_refresh_tokens" edges to the OIDCRefreshToken entity.
-func (_u *UserRefUpdate) ClearOidcRefreshTokens() *UserRefUpdate {
-	_u.mutation.ClearOidcRefreshTokens()
-	return _u
-}
-
-// RemoveOidcRefreshTokenIDs removes the "oidc_refresh_tokens" edge to OIDCRefreshToken entities by IDs.
-func (_u *UserRefUpdate) RemoveOidcRefreshTokenIDs(ids ...uuid.UUID) *UserRefUpdate {
-	_u.mutation.RemoveOidcRefreshTokenIDs(ids...)
-	return _u
-}
-
-// RemoveOidcRefreshTokens removes "oidc_refresh_tokens" edges to OIDCRefreshToken entities.
-func (_u *UserRefUpdate) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveOidcRefreshTokenIDs(ids...)
 }
 
 // ClearOrganizationMemberships clears all "organization_memberships" edges to the OrganizationMember entity.
@@ -198,96 +124,6 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userref.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.OidcGrantsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcGrantsTable,
-			Columns: []string{userref.OidcGrantsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedOidcGrantsIDs(); len(nodes) > 0 && !_u.mutation.OidcGrantsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcGrantsTable,
-			Columns: []string{userref.OidcGrantsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.OidcGrantsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcGrantsTable,
-			Columns: []string{userref.OidcGrantsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.OidcRefreshTokensCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedOidcRefreshTokensIDs(); len(nodes) > 0 && !_u.mutation.OidcRefreshTokensCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.OidcRefreshTokensIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.OrganizationMembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -360,36 +196,6 @@ func (_u *UserRefUpdateOne) SetUpdatedAt(v time.Time) *UserRefUpdateOne {
 	return _u
 }
 
-// AddOidcGrantIDs adds the "oidc_grants" edge to the OIDCGrant entity by IDs.
-func (_u *UserRefUpdateOne) AddOidcGrantIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.AddOidcGrantIDs(ids...)
-	return _u
-}
-
-// AddOidcGrants adds the "oidc_grants" edges to the OIDCGrant entity.
-func (_u *UserRefUpdateOne) AddOidcGrants(v ...*OIDCGrant) *UserRefUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddOidcGrantIDs(ids...)
-}
-
-// AddOidcRefreshTokenIDs adds the "oidc_refresh_tokens" edge to the OIDCRefreshToken entity by IDs.
-func (_u *UserRefUpdateOne) AddOidcRefreshTokenIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.AddOidcRefreshTokenIDs(ids...)
-	return _u
-}
-
-// AddOidcRefreshTokens adds the "oidc_refresh_tokens" edges to the OIDCRefreshToken entity.
-func (_u *UserRefUpdateOne) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddOidcRefreshTokenIDs(ids...)
-}
-
 // AddOrganizationMembershipIDs adds the "organization_memberships" edge to the OrganizationMember entity by IDs.
 func (_u *UserRefUpdateOne) AddOrganizationMembershipIDs(ids ...uuid.UUID) *UserRefUpdateOne {
 	_u.mutation.AddOrganizationMembershipIDs(ids...)
@@ -408,48 +214,6 @@ func (_u *UserRefUpdateOne) AddOrganizationMemberships(v ...*OrganizationMember)
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdateOne) Mutation() *UserRefMutation {
 	return _u.mutation
-}
-
-// ClearOidcGrants clears all "oidc_grants" edges to the OIDCGrant entity.
-func (_u *UserRefUpdateOne) ClearOidcGrants() *UserRefUpdateOne {
-	_u.mutation.ClearOidcGrants()
-	return _u
-}
-
-// RemoveOidcGrantIDs removes the "oidc_grants" edge to OIDCGrant entities by IDs.
-func (_u *UserRefUpdateOne) RemoveOidcGrantIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.RemoveOidcGrantIDs(ids...)
-	return _u
-}
-
-// RemoveOidcGrants removes "oidc_grants" edges to OIDCGrant entities.
-func (_u *UserRefUpdateOne) RemoveOidcGrants(v ...*OIDCGrant) *UserRefUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveOidcGrantIDs(ids...)
-}
-
-// ClearOidcRefreshTokens clears all "oidc_refresh_tokens" edges to the OIDCRefreshToken entity.
-func (_u *UserRefUpdateOne) ClearOidcRefreshTokens() *UserRefUpdateOne {
-	_u.mutation.ClearOidcRefreshTokens()
-	return _u
-}
-
-// RemoveOidcRefreshTokenIDs removes the "oidc_refresh_tokens" edge to OIDCRefreshToken entities by IDs.
-func (_u *UserRefUpdateOne) RemoveOidcRefreshTokenIDs(ids ...uuid.UUID) *UserRefUpdateOne {
-	_u.mutation.RemoveOidcRefreshTokenIDs(ids...)
-	return _u
-}
-
-// RemoveOidcRefreshTokens removes "oidc_refresh_tokens" edges to OIDCRefreshToken entities.
-func (_u *UserRefUpdateOne) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemoveOidcRefreshTokenIDs(ids...)
 }
 
 // ClearOrganizationMemberships clears all "organization_memberships" edges to the OrganizationMember entity.
@@ -550,96 +314,6 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(userref.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.OidcGrantsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcGrantsTable,
-			Columns: []string{userref.OidcGrantsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedOidcGrantsIDs(); len(nodes) > 0 && !_u.mutation.OidcGrantsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcGrantsTable,
-			Columns: []string{userref.OidcGrantsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.OidcGrantsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcGrantsTable,
-			Columns: []string{userref.OidcGrantsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcgrant.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if _u.mutation.OidcRefreshTokensCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedOidcRefreshTokensIDs(); len(nodes) > 0 && !_u.mutation.OidcRefreshTokensCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.OidcRefreshTokensIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   userref.OidcRefreshTokensTable,
-			Columns: []string{userref.OidcRefreshTokensColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.OrganizationMembershipsCleared() {
 		edge := &sqlgraph.EdgeSpec{

@@ -13,9 +13,9 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidcclient"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
+	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
@@ -26,8 +26,8 @@ type OrganizationQuery struct {
 	order       []organization.OrderOption
 	inters      []Interceptor
 	predicates  []predicate.Organization
-	withClients *OIDCClientQuery
 	withMembers *OrganizationMemberQuery
+	withRoles   *OrganizationRoleQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -64,28 +64,6 @@ func (_q *OrganizationQuery) Order(o ...organization.OrderOption) *OrganizationQ
 	return _q
 }
 
-// QueryClients chains the current query on the "clients" edge.
-func (_q *OrganizationQuery) QueryClients() *OIDCClientQuery {
-	query := (&OIDCClientClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(organization.Table, organization.FieldID, selector),
-			sqlgraph.To(oidcclient.Table, oidcclient.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, organization.ClientsTable, organization.ClientsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
 // QueryMembers chains the current query on the "members" edge.
 func (_q *OrganizationQuery) QueryMembers() *OrganizationMemberQuery {
 	query := (&OrganizationMemberClient{config: _q.config}).Query()
@@ -101,6 +79,28 @@ func (_q *OrganizationQuery) QueryMembers() *OrganizationMemberQuery {
 			sqlgraph.From(organization.Table, organization.FieldID, selector),
 			sqlgraph.To(organizationmember.Table, organizationmember.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, organization.MembersTable, organization.MembersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryRoles chains the current query on the "roles" edge.
+func (_q *OrganizationQuery) QueryRoles() *OrganizationRoleQuery {
+	query := (&OrganizationRoleClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(organization.Table, organization.FieldID, selector),
+			sqlgraph.To(organizationrole.Table, organizationrole.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, organization.RolesTable, organization.RolesColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -300,23 +300,12 @@ func (_q *OrganizationQuery) Clone() *OrganizationQuery {
 		order:       append([]organization.OrderOption{}, _q.order...),
 		inters:      append([]Interceptor{}, _q.inters...),
 		predicates:  append([]predicate.Organization{}, _q.predicates...),
-		withClients: _q.withClients.Clone(),
 		withMembers: _q.withMembers.Clone(),
+		withRoles:   _q.withRoles.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
-}
-
-// WithClients tells the query-builder to eager-load the nodes that are connected to
-// the "clients" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrganizationQuery) WithClients(opts ...func(*OIDCClientQuery)) *OrganizationQuery {
-	query := (&OIDCClientClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withClients = query
-	return _q
 }
 
 // WithMembers tells the query-builder to eager-load the nodes that are connected to
@@ -327,6 +316,17 @@ func (_q *OrganizationQuery) WithMembers(opts ...func(*OrganizationMemberQuery))
 		opt(query)
 	}
 	_q.withMembers = query
+	return _q
+}
+
+// WithRoles tells the query-builder to eager-load the nodes that are connected to
+// the "roles" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *OrganizationQuery) WithRoles(opts ...func(*OrganizationRoleQuery)) *OrganizationQuery {
+	query := (&OrganizationRoleClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withRoles = query
 	return _q
 }
 
@@ -409,8 +409,8 @@ func (_q *OrganizationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 		nodes       = []*Organization{}
 		_spec       = _q.querySpec()
 		loadedTypes = [2]bool{
-			_q.withClients != nil,
 			_q.withMembers != nil,
+			_q.withRoles != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -431,13 +431,6 @@ func (_q *OrganizationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withClients; query != nil {
-		if err := _q.loadClients(ctx, query, nodes,
-			func(n *Organization) { n.Edges.Clients = []*OIDCClient{} },
-			func(n *Organization, e *OIDCClient) { n.Edges.Clients = append(n.Edges.Clients, e) }); err != nil {
-			return nil, err
-		}
-	}
 	if query := _q.withMembers; query != nil {
 		if err := _q.loadMembers(ctx, query, nodes,
 			func(n *Organization) { n.Edges.Members = []*OrganizationMember{} },
@@ -445,39 +438,16 @@ func (_q *OrganizationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]
 			return nil, err
 		}
 	}
+	if query := _q.withRoles; query != nil {
+		if err := _q.loadRoles(ctx, query, nodes,
+			func(n *Organization) { n.Edges.Roles = []*OrganizationRole{} },
+			func(n *Organization, e *OrganizationRole) { n.Edges.Roles = append(n.Edges.Roles, e) }); err != nil {
+			return nil, err
+		}
+	}
 	return nodes, nil
 }
 
-func (_q *OrganizationQuery) loadClients(ctx context.Context, query *OIDCClientQuery, nodes []*Organization, init func(*Organization), assign func(*Organization, *OIDCClient)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Organization)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(oidcclient.FieldOwnerOrganizationID)
-	}
-	query.Where(predicate.OIDCClient(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(organization.ClientsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.OwnerOrganizationID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "owner_organization_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 func (_q *OrganizationQuery) loadMembers(ctx context.Context, query *OrganizationMemberQuery, nodes []*Organization, init func(*Organization), assign func(*Organization, *OrganizationMember)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*Organization)
@@ -493,6 +463,36 @@ func (_q *OrganizationQuery) loadMembers(ctx context.Context, query *Organizatio
 	}
 	query.Where(predicate.OrganizationMember(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(organization.MembersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.OrganizationID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "organization_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *OrganizationQuery) loadRoles(ctx context.Context, query *OrganizationRoleQuery, nodes []*Organization, init func(*Organization), assign func(*Organization, *OrganizationRole)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*Organization)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(organizationrole.FieldOrganizationID)
+	}
+	query.Where(predicate.OrganizationRole(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(organization.RolesColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

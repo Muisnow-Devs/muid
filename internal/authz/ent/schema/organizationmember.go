@@ -24,7 +24,8 @@ func (OrganizationMember) Fields() []ent.Field {
 		field.UUID("organization_id", uuid.UUID{}).Immutable(),
 		field.UUID("user_id", uuid.UUID{}).Immutable(),
 
-		field.String("role").NotEmpty(),
+		// role_id references the OrganizationRole assigned to this member.
+		field.UUID("role_id", uuid.UUID{}),
 
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
@@ -35,6 +36,7 @@ func (OrganizationMember) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("organization_id", "user_id").Unique(),
 		index.Fields("user_id"),
+		index.Fields("role_id"),
 	}
 }
 
@@ -53,5 +55,10 @@ func (OrganizationMember) Edges() []ent.Edge {
 			Field("user_id").
 			Required().
 			Immutable(),
+		edge.From("role", OrganizationRole.Type).
+			Ref("members").
+			Unique().
+			Field("role_id").
+			Required(),
 	}
 }

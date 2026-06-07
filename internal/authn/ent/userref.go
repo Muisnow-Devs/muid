@@ -38,9 +38,13 @@ type UserRefEdges struct {
 	Identities []*UserIdentity `json:"identities,omitempty"`
 	// Emails holds the value of the emails edge.
 	Emails []*UserEmail `json:"emails,omitempty"`
+	// Grants holds the value of the grants edge.
+	Grants []*OIDCGrant `json:"grants,omitempty"`
+	// OidcRefreshTokens holds the value of the oidc_refresh_tokens edge.
+	OidcRefreshTokens []*OIDCRefreshToken `json:"oidc_refresh_tokens,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [5]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -68,6 +72,24 @@ func (e UserRefEdges) EmailsOrErr() ([]*UserEmail, error) {
 		return e.Emails, nil
 	}
 	return nil, &NotLoadedError{edge: "emails"}
+}
+
+// GrantsOrErr returns the Grants value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserRefEdges) GrantsOrErr() ([]*OIDCGrant, error) {
+	if e.loadedTypes[3] {
+		return e.Grants, nil
+	}
+	return nil, &NotLoadedError{edge: "grants"}
+}
+
+// OidcRefreshTokensOrErr returns the OidcRefreshTokens value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserRefEdges) OidcRefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
+	if e.loadedTypes[4] {
+		return e.OidcRefreshTokens, nil
+	}
+	return nil, &NotLoadedError{edge: "oidc_refresh_tokens"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -144,6 +166,16 @@ func (_m *UserRef) QueryIdentities() *UserIdentityQuery {
 // QueryEmails queries the "emails" edge of the UserRef entity.
 func (_m *UserRef) QueryEmails() *UserEmailQuery {
 	return NewUserRefClient(_m.config).QueryEmails(_m)
+}
+
+// QueryGrants queries the "grants" edge of the UserRef entity.
+func (_m *UserRef) QueryGrants() *OIDCGrantQuery {
+	return NewUserRefClient(_m.config).QueryGrants(_m)
+}
+
+// QueryOidcRefreshTokens queries the "oidc_refresh_tokens" edge of the UserRef entity.
+func (_m *UserRef) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
+	return NewUserRefClient(_m.config).QueryOidcRefreshTokens(_m)
 }
 
 // Update returns a builder for updating this UserRef.

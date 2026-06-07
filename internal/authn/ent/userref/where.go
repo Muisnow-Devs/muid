@@ -270,6 +270,52 @@ func HasEmailsWith(preds ...predicate.UserEmail) predicate.UserRef {
 	})
 }
 
+// HasGrants applies the HasEdge predicate on the "grants" edge.
+func HasGrants() predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, GrantsTable, GrantsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasGrantsWith applies the HasEdge predicate on the "grants" edge with a given conditions (other predicates).
+func HasGrantsWith(preds ...predicate.OIDCGrant) predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := newGrantsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasOidcRefreshTokens applies the HasEdge predicate on the "oidc_refresh_tokens" edge.
+func HasOidcRefreshTokens() predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOidcRefreshTokensWith applies the HasEdge predicate on the "oidc_refresh_tokens" edge with a given conditions (other predicates).
+func HasOidcRefreshTokensWith(preds ...predicate.OIDCRefreshToken) predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := newOidcRefreshTokensStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserRef) predicate.UserRef {
 	return predicate.UserRef(sql.AndPredicates(predicates...))

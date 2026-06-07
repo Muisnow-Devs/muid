@@ -13,8 +13,6 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/oidcgrant"
-	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 	"sanzi.io/muid/internal/authz/ent/userref"
@@ -27,8 +25,6 @@ type UserRefQuery struct {
 	order                       []userref.OrderOption
 	inters                      []Interceptor
 	predicates                  []predicate.UserRef
-	withOidcGrants              *OIDCGrantQuery
-	withOidcRefreshTokens       *OIDCRefreshTokenQuery
 	withOrganizationMemberships *OrganizationMemberQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -64,50 +60,6 @@ func (_q *UserRefQuery) Unique(unique bool) *UserRefQuery {
 func (_q *UserRefQuery) Order(o ...userref.OrderOption) *UserRefQuery {
 	_q.order = append(_q.order, o...)
 	return _q
-}
-
-// QueryOidcGrants chains the current query on the "oidc_grants" edge.
-func (_q *UserRefQuery) QueryOidcGrants() *OIDCGrantQuery {
-	query := (&OIDCGrantClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userref.Table, userref.FieldID, selector),
-			sqlgraph.To(oidcgrant.Table, oidcgrant.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcGrantsTable, userref.OidcGrantsColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryOidcRefreshTokens chains the current query on the "oidc_refresh_tokens" edge.
-func (_q *UserRefQuery) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
-	query := (&OIDCRefreshTokenClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(userref.Table, userref.FieldID, selector),
-			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcRefreshTokensTable, userref.OidcRefreshTokensColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
 }
 
 // QueryOrganizationMemberships chains the current query on the "organization_memberships" edge.
@@ -324,35 +276,11 @@ func (_q *UserRefQuery) Clone() *UserRefQuery {
 		order:                       append([]userref.OrderOption{}, _q.order...),
 		inters:                      append([]Interceptor{}, _q.inters...),
 		predicates:                  append([]predicate.UserRef{}, _q.predicates...),
-		withOidcGrants:              _q.withOidcGrants.Clone(),
-		withOidcRefreshTokens:       _q.withOidcRefreshTokens.Clone(),
 		withOrganizationMemberships: _q.withOrganizationMemberships.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
-}
-
-// WithOidcGrants tells the query-builder to eager-load the nodes that are connected to
-// the "oidc_grants" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserRefQuery) WithOidcGrants(opts ...func(*OIDCGrantQuery)) *UserRefQuery {
-	query := (&OIDCGrantClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withOidcGrants = query
-	return _q
-}
-
-// WithOidcRefreshTokens tells the query-builder to eager-load the nodes that are connected to
-// the "oidc_refresh_tokens" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *UserRefQuery) WithOidcRefreshTokens(opts ...func(*OIDCRefreshTokenQuery)) *UserRefQuery {
-	query := (&OIDCRefreshTokenClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withOidcRefreshTokens = query
-	return _q
 }
 
 // WithOrganizationMemberships tells the query-builder to eager-load the nodes that are connected to
@@ -444,9 +372,7 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	var (
 		nodes       = []*UserRef{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
-			_q.withOidcGrants != nil,
-			_q.withOidcRefreshTokens != nil,
+		loadedTypes = [1]bool{
 			_q.withOrganizationMemberships != nil,
 		}
 	)
@@ -468,22 +394,6 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withOidcGrants; query != nil {
-		if err := _q.loadOidcGrants(ctx, query, nodes,
-			func(n *UserRef) { n.Edges.OidcGrants = []*OIDCGrant{} },
-			func(n *UserRef, e *OIDCGrant) { n.Edges.OidcGrants = append(n.Edges.OidcGrants, e) }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withOidcRefreshTokens; query != nil {
-		if err := _q.loadOidcRefreshTokens(ctx, query, nodes,
-			func(n *UserRef) { n.Edges.OidcRefreshTokens = []*OIDCRefreshToken{} },
-			func(n *UserRef, e *OIDCRefreshToken) {
-				n.Edges.OidcRefreshTokens = append(n.Edges.OidcRefreshTokens, e)
-			}); err != nil {
-			return nil, err
-		}
-	}
 	if query := _q.withOrganizationMemberships; query != nil {
 		if err := _q.loadOrganizationMemberships(ctx, query, nodes,
 			func(n *UserRef) { n.Edges.OrganizationMemberships = []*OrganizationMember{} },
@@ -496,66 +406,6 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	return nodes, nil
 }
 
-func (_q *UserRefQuery) loadOidcGrants(ctx context.Context, query *OIDCGrantQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *OIDCGrant)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*UserRef)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(oidcgrant.FieldUserID)
-	}
-	query.Where(predicate.OIDCGrant(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(userref.OidcGrantsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.UserID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
-func (_q *UserRefQuery) loadOidcRefreshTokens(ctx context.Context, query *OIDCRefreshTokenQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *OIDCRefreshToken)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*UserRef)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(oidcrefreshtoken.FieldUserID)
-	}
-	query.Where(predicate.OIDCRefreshToken(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(userref.OidcRefreshTokensColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.UserID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
-	}
-	return nil
-}
 func (_q *UserRefQuery) loadOrganizationMemberships(ctx context.Context, query *OrganizationMemberQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *OrganizationMember)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[uuid.UUID]*UserRef)

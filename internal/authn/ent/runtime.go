@@ -6,6 +6,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
+	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
+	"sanzi.io/muid/internal/authn/ent/oidcgrant"
+	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
+	"sanzi.io/muid/internal/authn/ent/oidcscope"
 	"sanzi.io/muid/internal/authn/ent/schema"
 	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
@@ -19,6 +25,246 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	oidccallbackuriFields := schema.OIDCCallbackURI{}.Fields()
+	_ = oidccallbackuriFields
+	// oidccallbackuriDescURI is the schema descriptor for uri field.
+	oidccallbackuriDescURI := oidccallbackuriFields[2].Descriptor()
+	// oidccallbackuri.URIValidator is a validator for the "uri" field. It is called by the builders before save.
+	oidccallbackuri.URIValidator = func() func(string) error {
+		validators := oidccallbackuriDescURI.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(uri string) error {
+			for _, fn := range fns {
+				if err := fn(uri); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidccallbackuriDescCreatedAt is the schema descriptor for created_at field.
+	oidccallbackuriDescCreatedAt := oidccallbackuriFields[3].Descriptor()
+	// oidccallbackuri.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidccallbackuri.DefaultCreatedAt = oidccallbackuriDescCreatedAt.Default.(func() time.Time)
+	// oidccallbackuriDescUpdatedAt is the schema descriptor for updated_at field.
+	oidccallbackuriDescUpdatedAt := oidccallbackuriFields[4].Descriptor()
+	// oidccallbackuri.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	oidccallbackuri.DefaultUpdatedAt = oidccallbackuriDescUpdatedAt.Default.(func() time.Time)
+	// oidccallbackuri.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	oidccallbackuri.UpdateDefaultUpdatedAt = oidccallbackuriDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// oidccallbackuriDescID is the schema descriptor for id field.
+	oidccallbackuriDescID := oidccallbackuriFields[0].Descriptor()
+	// oidccallbackuri.DefaultID holds the default value on creation for the id field.
+	oidccallbackuri.DefaultID = oidccallbackuriDescID.Default.(func() uuid.UUID)
+	oidcclientFields := schema.OIDCClient{}.Fields()
+	_ = oidcclientFields
+	// oidcclientDescClientID is the schema descriptor for client_id field.
+	oidcclientDescClientID := oidcclientFields[1].Descriptor()
+	// oidcclient.ClientIDValidator is a validator for the "client_id" field. It is called by the builders before save.
+	oidcclient.ClientIDValidator = oidcclientDescClientID.Validators[0].(func(string) error)
+	// oidcclientDescClientName is the schema descriptor for client_name field.
+	oidcclientDescClientName := oidcclientFields[2].Descriptor()
+	// oidcclient.ClientNameValidator is a validator for the "client_name" field. It is called by the builders before save.
+	oidcclient.ClientNameValidator = func() func(string) error {
+		validators := oidcclientDescClientName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(client_name string) error {
+			for _, fn := range fns {
+				if err := fn(client_name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidcclientDescScopes is the schema descriptor for scopes field.
+	oidcclientDescScopes := oidcclientFields[4].Descriptor()
+	// oidcclient.DefaultScopes holds the default value on creation for the scopes field.
+	oidcclient.DefaultScopes = oidcclientDescScopes.Default.([]string)
+	// oidcclientDescCreatedAt is the schema descriptor for created_at field.
+	oidcclientDescCreatedAt := oidcclientFields[10].Descriptor()
+	// oidcclient.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidcclient.DefaultCreatedAt = oidcclientDescCreatedAt.Default.(func() time.Time)
+	// oidcclientDescUpdatedAt is the schema descriptor for updated_at field.
+	oidcclientDescUpdatedAt := oidcclientFields[11].Descriptor()
+	// oidcclient.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	oidcclient.DefaultUpdatedAt = oidcclientDescUpdatedAt.Default.(func() time.Time)
+	// oidcclient.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	oidcclient.UpdateDefaultUpdatedAt = oidcclientDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// oidcclientDescID is the schema descriptor for id field.
+	oidcclientDescID := oidcclientFields[0].Descriptor()
+	// oidcclient.DefaultID holds the default value on creation for the id field.
+	oidcclient.DefaultID = oidcclientDescID.Default.(func() uuid.UUID)
+	oidcclientsecretFields := schema.OIDCClientSecret{}.Fields()
+	_ = oidcclientsecretFields
+	// oidcclientsecretDescSecretHash is the schema descriptor for secret_hash field.
+	oidcclientsecretDescSecretHash := oidcclientsecretFields[2].Descriptor()
+	// oidcclientsecret.SecretHashValidator is a validator for the "secret_hash" field. It is called by the builders before save.
+	oidcclientsecret.SecretHashValidator = func() func([]byte) error {
+		validators := oidcclientsecretDescSecretHash.Validators
+		fns := [...]func([]byte) error{
+			validators[0].(func([]byte) error),
+			validators[1].(func([]byte) error),
+		}
+		return func(secret_hash []byte) error {
+			for _, fn := range fns {
+				if err := fn(secret_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidcclientsecretDescHint is the schema descriptor for hint field.
+	oidcclientsecretDescHint := oidcclientsecretFields[3].Descriptor()
+	// oidcclientsecret.HintValidator is a validator for the "hint" field. It is called by the builders before save.
+	oidcclientsecret.HintValidator = func() func(string) error {
+		validators := oidcclientsecretDescHint.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(hint string) error {
+			for _, fn := range fns {
+				if err := fn(hint); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidcclientsecretDescCreatedAt is the schema descriptor for created_at field.
+	oidcclientsecretDescCreatedAt := oidcclientsecretFields[5].Descriptor()
+	// oidcclientsecret.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidcclientsecret.DefaultCreatedAt = oidcclientsecretDescCreatedAt.Default.(func() time.Time)
+	// oidcclientsecretDescID is the schema descriptor for id field.
+	oidcclientsecretDescID := oidcclientsecretFields[0].Descriptor()
+	// oidcclientsecret.DefaultID holds the default value on creation for the id field.
+	oidcclientsecret.DefaultID = oidcclientsecretDescID.Default.(func() uuid.UUID)
+	oidcgrantFields := schema.OIDCGrant{}.Fields()
+	_ = oidcgrantFields
+	// oidcgrantDescScopes is the schema descriptor for scopes field.
+	oidcgrantDescScopes := oidcgrantFields[3].Descriptor()
+	// oidcgrant.DefaultScopes holds the default value on creation for the scopes field.
+	oidcgrant.DefaultScopes = oidcgrantDescScopes.Default.([]string)
+	// oidcgrantDescCreatedAt is the schema descriptor for created_at field.
+	oidcgrantDescCreatedAt := oidcgrantFields[6].Descriptor()
+	// oidcgrant.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidcgrant.DefaultCreatedAt = oidcgrantDescCreatedAt.Default.(func() time.Time)
+	// oidcgrantDescUpdatedAt is the schema descriptor for updated_at field.
+	oidcgrantDescUpdatedAt := oidcgrantFields[7].Descriptor()
+	// oidcgrant.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	oidcgrant.DefaultUpdatedAt = oidcgrantDescUpdatedAt.Default.(func() time.Time)
+	// oidcgrant.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	oidcgrant.UpdateDefaultUpdatedAt = oidcgrantDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// oidcgrantDescAuthorizedAt is the schema descriptor for authorized_at field.
+	oidcgrantDescAuthorizedAt := oidcgrantFields[8].Descriptor()
+	// oidcgrant.DefaultAuthorizedAt holds the default value on creation for the authorized_at field.
+	oidcgrant.DefaultAuthorizedAt = oidcgrantDescAuthorizedAt.Default.(func() time.Time)
+	// oidcgrantDescID is the schema descriptor for id field.
+	oidcgrantDescID := oidcgrantFields[0].Descriptor()
+	// oidcgrant.DefaultID holds the default value on creation for the id field.
+	oidcgrant.DefaultID = oidcgrantDescID.Default.(func() uuid.UUID)
+	oidcrefreshtokenFields := schema.OIDCRefreshToken{}.Fields()
+	_ = oidcrefreshtokenFields
+	// oidcrefreshtokenDescSelector is the schema descriptor for selector field.
+	oidcrefreshtokenDescSelector := oidcrefreshtokenFields[4].Descriptor()
+	// oidcrefreshtoken.SelectorValidator is a validator for the "selector" field. It is called by the builders before save.
+	oidcrefreshtoken.SelectorValidator = func() func(string) error {
+		validators := oidcrefreshtokenDescSelector.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(selector string) error {
+			for _, fn := range fns {
+				if err := fn(selector); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidcrefreshtokenDescValidationHash is the schema descriptor for validation_hash field.
+	oidcrefreshtokenDescValidationHash := oidcrefreshtokenFields[5].Descriptor()
+	// oidcrefreshtoken.ValidationHashValidator is a validator for the "validation_hash" field. It is called by the builders before save.
+	oidcrefreshtoken.ValidationHashValidator = func() func([]byte) error {
+		validators := oidcrefreshtokenDescValidationHash.Validators
+		fns := [...]func([]byte) error{
+			validators[0].(func([]byte) error),
+			validators[1].(func([]byte) error),
+		}
+		return func(validation_hash []byte) error {
+			for _, fn := range fns {
+				if err := fn(validation_hash); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidcrefreshtokenDescCreatedAt is the schema descriptor for created_at field.
+	oidcrefreshtokenDescCreatedAt := oidcrefreshtokenFields[8].Descriptor()
+	// oidcrefreshtoken.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidcrefreshtoken.DefaultCreatedAt = oidcrefreshtokenDescCreatedAt.Default.(func() time.Time)
+	// oidcrefreshtokenDescUpdatedAt is the schema descriptor for updated_at field.
+	oidcrefreshtokenDescUpdatedAt := oidcrefreshtokenFields[9].Descriptor()
+	// oidcrefreshtoken.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	oidcrefreshtoken.DefaultUpdatedAt = oidcrefreshtokenDescUpdatedAt.Default.(func() time.Time)
+	// oidcrefreshtoken.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	oidcrefreshtoken.UpdateDefaultUpdatedAt = oidcrefreshtokenDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// oidcrefreshtokenDescExpiresAt is the schema descriptor for expires_at field.
+	oidcrefreshtokenDescExpiresAt := oidcrefreshtokenFields[10].Descriptor()
+	// oidcrefreshtoken.DefaultExpiresAt holds the default value on creation for the expires_at field.
+	oidcrefreshtoken.DefaultExpiresAt = oidcrefreshtokenDescExpiresAt.Default.(func() time.Time)
+	// oidcrefreshtokenDescID is the schema descriptor for id field.
+	oidcrefreshtokenDescID := oidcrefreshtokenFields[0].Descriptor()
+	// oidcrefreshtoken.DefaultID holds the default value on creation for the id field.
+	oidcrefreshtoken.DefaultID = oidcrefreshtokenDescID.Default.(func() uuid.UUID)
+	oidcscopeFields := schema.OIDCScope{}.Fields()
+	_ = oidcscopeFields
+	// oidcscopeDescName is the schema descriptor for name field.
+	oidcscopeDescName := oidcscopeFields[1].Descriptor()
+	// oidcscope.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	oidcscope.NameValidator = func() func(string) error {
+		validators := oidcscopeDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// oidcscopeDescID is the schema descriptor for id field.
+	oidcscopeDescID := oidcscopeFields[0].Descriptor()
+	// oidcscope.IDValidator is a validator for the "id" field. It is called by the builders before save.
+	oidcscope.IDValidator = func() func(string) error {
+		validators := oidcscopeDescID.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(id string) error {
+			for _, fn := range fns {
+				if err := fn(id); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	useremailFields := schema.UserEmail{}.Fields()
 	_ = useremailFields
 	// useremailDescEmail is the schema descriptor for email field.

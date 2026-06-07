@@ -25,19 +25,12 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeClients holds the string denoting the clients edge name in mutations.
-	EdgeClients = "clients"
 	// EdgeMembers holds the string denoting the members edge name in mutations.
 	EdgeMembers = "members"
+	// EdgeRoles holds the string denoting the roles edge name in mutations.
+	EdgeRoles = "roles"
 	// Table holds the table name of the organization in the database.
 	Table = "organizations"
-	// ClientsTable is the table that holds the clients relation/edge.
-	ClientsTable = "oidc_clients"
-	// ClientsInverseTable is the table name for the OIDCClient entity.
-	// It exists in this package in order to avoid circular dependency with the "oidcclient" package.
-	ClientsInverseTable = "oidc_clients"
-	// ClientsColumn is the table column denoting the clients relation/edge.
-	ClientsColumn = "owner_organization_id"
 	// MembersTable is the table that holds the members relation/edge.
 	MembersTable = "organization_members"
 	// MembersInverseTable is the table name for the OrganizationMember entity.
@@ -45,6 +38,13 @@ const (
 	MembersInverseTable = "organization_members"
 	// MembersColumn is the table column denoting the members relation/edge.
 	MembersColumn = "organization_id"
+	// RolesTable is the table that holds the roles relation/edge.
+	RolesTable = "organization_roles"
+	// RolesInverseTable is the table name for the OrganizationRole entity.
+	// It exists in this package in order to avoid circular dependency with the "organizationrole" package.
+	RolesInverseTable = "organization_roles"
+	// RolesColumn is the table column denoting the roles relation/edge.
+	RolesColumn = "organization_id"
 )
 
 // Columns holds all SQL columns for organization fields.
@@ -117,20 +117,6 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByClientsCount orders the results by clients count.
-func ByClientsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newClientsStep(), opts...)
-	}
-}
-
-// ByClients orders the results by clients terms.
-func ByClients(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newClientsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByMembersCount orders the results by members count.
 func ByMembersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -144,17 +130,31 @@ func ByMembers(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newMembersStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newClientsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(ClientsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, ClientsTable, ClientsColumn),
-	)
+
+// ByRolesCount orders the results by roles count.
+func ByRolesCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newRolesStep(), opts...)
+	}
+}
+
+// ByRoles orders the results by roles terms.
+func ByRoles(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newRolesStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
 }
 func newMembersStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(MembersInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, MembersTable, MembersColumn),
+	)
+}
+func newRolesStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(RolesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, RolesTable, RolesColumn),
 	)
 }

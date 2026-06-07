@@ -13,6 +13,8 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/oidcgrant"
+	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/predicate"
 	"sanzi.io/muid/internal/authn/ent/useremail"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
@@ -23,13 +25,15 @@ import (
 // UserRefQuery is the builder for querying UserRef entities.
 type UserRefQuery struct {
 	config
-	ctx            *QueryContext
-	order          []userref.OrderOption
-	inters         []Interceptor
-	predicates     []predicate.UserRef
-	withSessions   *UserSessionQuery
-	withIdentities *UserIdentityQuery
-	withEmails     *UserEmailQuery
+	ctx                   *QueryContext
+	order                 []userref.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.UserRef
+	withSessions          *UserSessionQuery
+	withIdentities        *UserIdentityQuery
+	withEmails            *UserEmailQuery
+	withGrants            *OIDCGrantQuery
+	withOidcRefreshTokens *OIDCRefreshTokenQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -125,6 +129,50 @@ func (_q *UserRefQuery) QueryEmails() *UserEmailQuery {
 			sqlgraph.From(userref.Table, userref.FieldID, selector),
 			sqlgraph.To(useremail.Table, useremail.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userref.EmailsTable, userref.EmailsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryGrants chains the current query on the "grants" edge.
+func (_q *UserRefQuery) QueryGrants() *OIDCGrantQuery {
+	query := (&OIDCGrantClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, selector),
+			sqlgraph.To(oidcgrant.Table, oidcgrant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.GrantsTable, userref.GrantsColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOidcRefreshTokens chains the current query on the "oidc_refresh_tokens" edge.
+func (_q *UserRefQuery) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
+	query := (&OIDCRefreshTokenClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, selector),
+			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcRefreshTokensTable, userref.OidcRefreshTokensColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -319,14 +367,16 @@ func (_q *UserRefQuery) Clone() *UserRefQuery {
 		return nil
 	}
 	return &UserRefQuery{
-		config:         _q.config,
-		ctx:            _q.ctx.Clone(),
-		order:          append([]userref.OrderOption{}, _q.order...),
-		inters:         append([]Interceptor{}, _q.inters...),
-		predicates:     append([]predicate.UserRef{}, _q.predicates...),
-		withSessions:   _q.withSessions.Clone(),
-		withIdentities: _q.withIdentities.Clone(),
-		withEmails:     _q.withEmails.Clone(),
+		config:                _q.config,
+		ctx:                   _q.ctx.Clone(),
+		order:                 append([]userref.OrderOption{}, _q.order...),
+		inters:                append([]Interceptor{}, _q.inters...),
+		predicates:            append([]predicate.UserRef{}, _q.predicates...),
+		withSessions:          _q.withSessions.Clone(),
+		withIdentities:        _q.withIdentities.Clone(),
+		withEmails:            _q.withEmails.Clone(),
+		withGrants:            _q.withGrants.Clone(),
+		withOidcRefreshTokens: _q.withOidcRefreshTokens.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -363,6 +413,28 @@ func (_q *UserRefQuery) WithEmails(opts ...func(*UserEmailQuery)) *UserRefQuery 
 		opt(query)
 	}
 	_q.withEmails = query
+	return _q
+}
+
+// WithGrants tells the query-builder to eager-load the nodes that are connected to
+// the "grants" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserRefQuery) WithGrants(opts ...func(*OIDCGrantQuery)) *UserRefQuery {
+	query := (&OIDCGrantClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withGrants = query
+	return _q
+}
+
+// WithOidcRefreshTokens tells the query-builder to eager-load the nodes that are connected to
+// the "oidc_refresh_tokens" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserRefQuery) WithOidcRefreshTokens(opts ...func(*OIDCRefreshTokenQuery)) *UserRefQuery {
+	query := (&OIDCRefreshTokenClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOidcRefreshTokens = query
 	return _q
 }
 
@@ -444,10 +516,12 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	var (
 		nodes       = []*UserRef{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [5]bool{
 			_q.withSessions != nil,
 			_q.withIdentities != nil,
 			_q.withEmails != nil,
+			_q.withGrants != nil,
+			_q.withOidcRefreshTokens != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -486,6 +560,22 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 		if err := _q.loadEmails(ctx, query, nodes,
 			func(n *UserRef) { n.Edges.Emails = []*UserEmail{} },
 			func(n *UserRef, e *UserEmail) { n.Edges.Emails = append(n.Edges.Emails, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withGrants; query != nil {
+		if err := _q.loadGrants(ctx, query, nodes,
+			func(n *UserRef) { n.Edges.Grants = []*OIDCGrant{} },
+			func(n *UserRef, e *OIDCGrant) { n.Edges.Grants = append(n.Edges.Grants, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOidcRefreshTokens; query != nil {
+		if err := _q.loadOidcRefreshTokens(ctx, query, nodes,
+			func(n *UserRef) { n.Edges.OidcRefreshTokens = []*OIDCRefreshToken{} },
+			func(n *UserRef, e *OIDCRefreshToken) {
+				n.Edges.OidcRefreshTokens = append(n.Edges.OidcRefreshTokens, e)
+			}); err != nil {
 			return nil, err
 		}
 	}
@@ -567,6 +657,66 @@ func (_q *UserRefQuery) loadEmails(ctx context.Context, query *UserEmailQuery, n
 	}
 	query.Where(predicate.UserEmail(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(userref.EmailsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserRefQuery) loadGrants(ctx context.Context, query *OIDCGrantQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *OIDCGrant)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*UserRef)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(oidcgrant.FieldUserID)
+	}
+	query.Where(predicate.OIDCGrant(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userref.GrantsColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserRefQuery) loadOidcRefreshTokens(ctx context.Context, query *OIDCRefreshTokenQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *OIDCRefreshToken)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*UserRef)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(oidcrefreshtoken.FieldUserID)
+	}
+	query.Where(predicate.OIDCRefreshToken(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userref.OidcRefreshTokensColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

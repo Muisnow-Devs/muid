@@ -11,7 +11,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
+	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/predicate"
 )
 
@@ -28,16 +30,16 @@ func (_u *OrganizationMemberUpdate) Where(ps ...predicate.OrganizationMember) *O
 	return _u
 }
 
-// SetRole sets the "role" field.
-func (_u *OrganizationMemberUpdate) SetRole(v string) *OrganizationMemberUpdate {
-	_u.mutation.SetRole(v)
+// SetRoleID sets the "role_id" field.
+func (_u *OrganizationMemberUpdate) SetRoleID(v uuid.UUID) *OrganizationMemberUpdate {
+	_u.mutation.SetRoleID(v)
 	return _u
 }
 
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (_u *OrganizationMemberUpdate) SetNillableRole(v *string) *OrganizationMemberUpdate {
+// SetNillableRoleID sets the "role_id" field if the given value is not nil.
+func (_u *OrganizationMemberUpdate) SetNillableRoleID(v *uuid.UUID) *OrganizationMemberUpdate {
 	if v != nil {
-		_u.SetRole(*v)
+		_u.SetRoleID(*v)
 	}
 	return _u
 }
@@ -48,9 +50,20 @@ func (_u *OrganizationMemberUpdate) SetUpdatedAt(v time.Time) *OrganizationMembe
 	return _u
 }
 
+// SetRole sets the "role" edge to the OrganizationRole entity.
+func (_u *OrganizationMemberUpdate) SetRole(v *OrganizationRole) *OrganizationMemberUpdate {
+	return _u.SetRoleID(v.ID)
+}
+
 // Mutation returns the OrganizationMemberMutation object of the builder.
 func (_u *OrganizationMemberUpdate) Mutation() *OrganizationMemberMutation {
 	return _u.mutation
+}
+
+// ClearRole clears the "role" edge to the OrganizationRole entity.
+func (_u *OrganizationMemberUpdate) ClearRole() *OrganizationMemberUpdate {
+	_u.mutation.ClearRole()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -91,16 +104,14 @@ func (_u *OrganizationMemberUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *OrganizationMemberUpdate) check() error {
-	if v, ok := _u.mutation.Role(); ok {
-		if err := organizationmember.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "OrganizationMember.role": %w`, err)}
-		}
-	}
 	if _u.mutation.OrganizationCleared() && len(_u.mutation.OrganizationIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OrganizationMember.organization"`)
 	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OrganizationMember.user"`)
+	}
+	if _u.mutation.RoleCleared() && len(_u.mutation.RoleIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OrganizationMember.role"`)
 	}
 	return nil
 }
@@ -117,11 +128,37 @@ func (_u *OrganizationMemberUpdate) sqlSave(ctx context.Context) (_node int, err
 			}
 		}
 	}
-	if value, ok := _u.mutation.Role(); ok {
-		_spec.SetField(organizationmember.FieldRole, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(organizationmember.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RoleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   organizationmember.RoleTable,
+			Columns: []string{organizationmember.RoleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationrole.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RoleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   organizationmember.RoleTable,
+			Columns: []string{organizationmember.RoleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationrole.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -143,16 +180,16 @@ type OrganizationMemberUpdateOne struct {
 	mutation *OrganizationMemberMutation
 }
 
-// SetRole sets the "role" field.
-func (_u *OrganizationMemberUpdateOne) SetRole(v string) *OrganizationMemberUpdateOne {
-	_u.mutation.SetRole(v)
+// SetRoleID sets the "role_id" field.
+func (_u *OrganizationMemberUpdateOne) SetRoleID(v uuid.UUID) *OrganizationMemberUpdateOne {
+	_u.mutation.SetRoleID(v)
 	return _u
 }
 
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (_u *OrganizationMemberUpdateOne) SetNillableRole(v *string) *OrganizationMemberUpdateOne {
+// SetNillableRoleID sets the "role_id" field if the given value is not nil.
+func (_u *OrganizationMemberUpdateOne) SetNillableRoleID(v *uuid.UUID) *OrganizationMemberUpdateOne {
 	if v != nil {
-		_u.SetRole(*v)
+		_u.SetRoleID(*v)
 	}
 	return _u
 }
@@ -163,9 +200,20 @@ func (_u *OrganizationMemberUpdateOne) SetUpdatedAt(v time.Time) *OrganizationMe
 	return _u
 }
 
+// SetRole sets the "role" edge to the OrganizationRole entity.
+func (_u *OrganizationMemberUpdateOne) SetRole(v *OrganizationRole) *OrganizationMemberUpdateOne {
+	return _u.SetRoleID(v.ID)
+}
+
 // Mutation returns the OrganizationMemberMutation object of the builder.
 func (_u *OrganizationMemberUpdateOne) Mutation() *OrganizationMemberMutation {
 	return _u.mutation
+}
+
+// ClearRole clears the "role" edge to the OrganizationRole entity.
+func (_u *OrganizationMemberUpdateOne) ClearRole() *OrganizationMemberUpdateOne {
+	_u.mutation.ClearRole()
+	return _u
 }
 
 // Where appends a list predicates to the OrganizationMemberUpdate builder.
@@ -219,16 +267,14 @@ func (_u *OrganizationMemberUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_u *OrganizationMemberUpdateOne) check() error {
-	if v, ok := _u.mutation.Role(); ok {
-		if err := organizationmember.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "OrganizationMember.role": %w`, err)}
-		}
-	}
 	if _u.mutation.OrganizationCleared() && len(_u.mutation.OrganizationIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OrganizationMember.organization"`)
 	}
 	if _u.mutation.UserCleared() && len(_u.mutation.UserIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "OrganizationMember.user"`)
+	}
+	if _u.mutation.RoleCleared() && len(_u.mutation.RoleIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "OrganizationMember.role"`)
 	}
 	return nil
 }
@@ -262,11 +308,37 @@ func (_u *OrganizationMemberUpdateOne) sqlSave(ctx context.Context) (_node *Orga
 			}
 		}
 	}
-	if value, ok := _u.mutation.Role(); ok {
-		_spec.SetField(organizationmember.FieldRole, field.TypeString, value)
-	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(organizationmember.FieldUpdatedAt, field.TypeTime, value)
+	}
+	if _u.mutation.RoleCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   organizationmember.RoleTable,
+			Columns: []string{organizationmember.RoleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationrole.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RoleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   organizationmember.RoleTable,
+			Columns: []string{organizationmember.RoleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationrole.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &OrganizationMember{config: _u.config}
 	_spec.Assign = _node.assignValues

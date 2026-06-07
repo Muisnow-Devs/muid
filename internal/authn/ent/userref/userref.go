@@ -26,6 +26,10 @@ const (
 	EdgeIdentities = "identities"
 	// EdgeEmails holds the string denoting the emails edge name in mutations.
 	EdgeEmails = "emails"
+	// EdgeGrants holds the string denoting the grants edge name in mutations.
+	EdgeGrants = "grants"
+	// EdgeOidcRefreshTokens holds the string denoting the oidc_refresh_tokens edge name in mutations.
+	EdgeOidcRefreshTokens = "oidc_refresh_tokens"
 	// Table holds the table name of the userref in the database.
 	Table = "user_refs"
 	// SessionsTable is the table that holds the sessions relation/edge.
@@ -49,6 +53,20 @@ const (
 	EmailsInverseTable = "user_emails"
 	// EmailsColumn is the table column denoting the emails relation/edge.
 	EmailsColumn = "user_id"
+	// GrantsTable is the table that holds the grants relation/edge.
+	GrantsTable = "oidc_grants"
+	// GrantsInverseTable is the table name for the OIDCGrant entity.
+	// It exists in this package in order to avoid circular dependency with the "oidcgrant" package.
+	GrantsInverseTable = "oidc_grants"
+	// GrantsColumn is the table column denoting the grants relation/edge.
+	GrantsColumn = "user_id"
+	// OidcRefreshTokensTable is the table that holds the oidc_refresh_tokens relation/edge.
+	OidcRefreshTokensTable = "oidc_refresh_tokens"
+	// OidcRefreshTokensInverseTable is the table name for the OIDCRefreshToken entity.
+	// It exists in this package in order to avoid circular dependency with the "oidcrefreshtoken" package.
+	OidcRefreshTokensInverseTable = "oidc_refresh_tokens"
+	// OidcRefreshTokensColumn is the table column denoting the oidc_refresh_tokens relation/edge.
+	OidcRefreshTokensColumn = "user_id"
 )
 
 // Columns holds all SQL columns for userref fields.
@@ -142,6 +160,34 @@ func ByEmails(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newEmailsStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByGrantsCount orders the results by grants count.
+func ByGrantsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newGrantsStep(), opts...)
+	}
+}
+
+// ByGrants orders the results by grants terms.
+func ByGrants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newGrantsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
+// ByOidcRefreshTokensCount orders the results by oidc_refresh_tokens count.
+func ByOidcRefreshTokensCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOidcRefreshTokensStep(), opts...)
+	}
+}
+
+// ByOidcRefreshTokens orders the results by oidc_refresh_tokens terms.
+func ByOidcRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOidcRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newSessionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -161,5 +207,19 @@ func newEmailsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(EmailsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, EmailsTable, EmailsColumn),
+	)
+}
+func newGrantsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(GrantsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GrantsTable, GrantsColumn),
+	)
+}
+func newOidcRefreshTokensStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OidcRefreshTokensInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
 	)
 }

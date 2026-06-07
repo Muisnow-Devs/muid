@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
+	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -35,9 +36,9 @@ func (_c *OrganizationMemberCreate) SetUserID(v uuid.UUID) *OrganizationMemberCr
 	return _c
 }
 
-// SetRole sets the "role" field.
-func (_c *OrganizationMemberCreate) SetRole(v string) *OrganizationMemberCreate {
-	_c.mutation.SetRole(v)
+// SetRoleID sets the "role_id" field.
+func (_c *OrganizationMemberCreate) SetRoleID(v uuid.UUID) *OrganizationMemberCreate {
+	_c.mutation.SetRoleID(v)
 	return _c
 }
 
@@ -91,6 +92,11 @@ func (_c *OrganizationMemberCreate) SetOrganization(v *Organization) *Organizati
 // SetUser sets the "user" edge to the UserRef entity.
 func (_c *OrganizationMemberCreate) SetUser(v *UserRef) *OrganizationMemberCreate {
 	return _c.SetUserID(v.ID)
+}
+
+// SetRole sets the "role" edge to the OrganizationRole entity.
+func (_c *OrganizationMemberCreate) SetRole(v *OrganizationRole) *OrganizationMemberCreate {
+	return _c.SetRoleID(v.ID)
 }
 
 // Mutation returns the OrganizationMemberMutation object of the builder.
@@ -150,13 +156,8 @@ func (_c *OrganizationMemberCreate) check() error {
 	if _, ok := _c.mutation.UserID(); !ok {
 		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "OrganizationMember.user_id"`)}
 	}
-	if _, ok := _c.mutation.Role(); !ok {
-		return &ValidationError{Name: "role", err: errors.New(`ent: missing required field "OrganizationMember.role"`)}
-	}
-	if v, ok := _c.mutation.Role(); ok {
-		if err := organizationmember.RoleValidator(v); err != nil {
-			return &ValidationError{Name: "role", err: fmt.Errorf(`ent: validator failed for field "OrganizationMember.role": %w`, err)}
-		}
+	if _, ok := _c.mutation.RoleID(); !ok {
+		return &ValidationError{Name: "role_id", err: errors.New(`ent: missing required field "OrganizationMember.role_id"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "OrganizationMember.created_at"`)}
@@ -169,6 +170,9 @@ func (_c *OrganizationMemberCreate) check() error {
 	}
 	if len(_c.mutation.UserIDs()) == 0 {
 		return &ValidationError{Name: "user", err: errors.New(`ent: missing required edge "OrganizationMember.user"`)}
+	}
+	if len(_c.mutation.RoleIDs()) == 0 {
+		return &ValidationError{Name: "role", err: errors.New(`ent: missing required edge "OrganizationMember.role"`)}
 	}
 	return nil
 }
@@ -204,10 +208,6 @@ func (_c *OrganizationMemberCreate) createSpec() (*OrganizationMember, *sqlgraph
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
-	}
-	if value, ok := _c.mutation.Role(); ok {
-		_spec.SetField(organizationmember.FieldRole, field.TypeString, value)
-		_node.Role = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(organizationmember.FieldCreatedAt, field.TypeTime, value)
@@ -249,6 +249,23 @@ func (_c *OrganizationMemberCreate) createSpec() (*OrganizationMember, *sqlgraph
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.UserID = nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.RoleIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   organizationmember.RoleTable,
+			Columns: []string{organizationmember.RoleColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(organizationrole.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.RoleID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

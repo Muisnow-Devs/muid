@@ -12,13 +12,10 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"sanzi.io/muid/internal/authz/ent/oidccallbackuri"
-	"sanzi.io/muid/internal/authz/ent/oidcclient"
-	"sanzi.io/muid/internal/authz/ent/oidcclientsecret"
-	"sanzi.io/muid/internal/authz/ent/oidcgrant"
-	"sanzi.io/muid/internal/authz/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
+	"sanzi.io/muid/internal/authz/ent/organizationrole"
+	"sanzi.io/muid/internal/authz/ent/rolepermission"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -80,13 +77,10 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			oidccallbackuri.Table:    oidccallbackuri.ValidColumn,
-			oidcclient.Table:         oidcclient.ValidColumn,
-			oidcclientsecret.Table:   oidcclientsecret.ValidColumn,
-			oidcgrant.Table:          oidcgrant.ValidColumn,
-			oidcrefreshtoken.Table:   oidcrefreshtoken.ValidColumn,
 			organization.Table:       organization.ValidColumn,
 			organizationmember.Table: organizationmember.ValidColumn,
+			organizationrole.Table:   organizationrole.ValidColumn,
+			rolepermission.Table:     rolepermission.ValidColumn,
 			userref.Table:            userref.ValidColumn,
 		})
 	})

@@ -6,6 +6,24 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// OIDCCallbackURI is the predicate function for oidccallbackuri builders.
+type OIDCCallbackURI func(*sql.Selector)
+
+// OIDCClient is the predicate function for oidcclient builders.
+type OIDCClient func(*sql.Selector)
+
+// OIDCClientSecret is the predicate function for oidcclientsecret builders.
+type OIDCClientSecret func(*sql.Selector)
+
+// OIDCGrant is the predicate function for oidcgrant builders.
+type OIDCGrant func(*sql.Selector)
+
+// OIDCRefreshToken is the predicate function for oidcrefreshtoken builders.
+type OIDCRefreshToken func(*sql.Selector)
+
+// OIDCScope is the predicate function for oidcscope builders.
+type OIDCScope func(*sql.Selector)
+
 // UserEmail is the predicate function for useremail builders.
 type UserEmail func(*sql.Selector)
 

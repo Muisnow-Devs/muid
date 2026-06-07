@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
+	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -24,8 +25,8 @@ type OrganizationMember struct {
 	OrganizationID uuid.UUID `json:"organization_id,omitempty"`
 	// UserID holds the value of the "user_id" field.
 	UserID uuid.UUID `json:"user_id,omitempty"`
-	// Role holds the value of the "role" field.
-	Role string `json:"role,omitempty"`
+	// RoleID holds the value of the "role_id" field.
+	RoleID uuid.UUID `json:"role_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -42,9 +43,11 @@ type OrganizationMemberEdges struct {
 	Organization *Organization `json:"organization,omitempty"`
 	// User holds the value of the user edge.
 	User *UserRef `json:"user,omitempty"`
+	// Role holds the value of the role edge.
+	Role *OrganizationRole `json:"role,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [2]bool
+	loadedTypes [3]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -69,16 +72,25 @@ func (e OrganizationMemberEdges) UserOrErr() (*UserRef, error) {
 	return nil, &NotLoadedError{edge: "user"}
 }
 
+// RoleOrErr returns the Role value or an error if the edge
+// was not loaded in eager-loading, or loaded but was not found.
+func (e OrganizationMemberEdges) RoleOrErr() (*OrganizationRole, error) {
+	if e.Role != nil {
+		return e.Role, nil
+	} else if e.loadedTypes[2] {
+		return nil, &NotFoundError{label: organizationrole.Label}
+	}
+	return nil, &NotLoadedError{edge: "role"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*OrganizationMember) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case organizationmember.FieldRole:
-			values[i] = new(sql.NullString)
 		case organizationmember.FieldCreatedAt, organizationmember.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case organizationmember.FieldID, organizationmember.FieldOrganizationID, organizationmember.FieldUserID:
+		case organizationmember.FieldID, organizationmember.FieldOrganizationID, organizationmember.FieldUserID, organizationmember.FieldRoleID:
 			values[i] = new(uuid.UUID)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -113,11 +125,11 @@ func (_m *OrganizationMember) assignValues(columns []string, values []any) error
 			} else if value != nil {
 				_m.UserID = *value
 			}
-		case organizationmember.FieldRole:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field role", values[i])
-			} else if value.Valid {
-				_m.Role = value.String
+		case organizationmember.FieldRoleID:
+			if value, ok := values[i].(*uuid.UUID); !ok {
+				return fmt.Errorf("unexpected type %T for field role_id", values[i])
+			} else if value != nil {
+				_m.RoleID = *value
 			}
 		case organizationmember.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -154,6 +166,11 @@ func (_m *OrganizationMember) QueryUser() *UserRefQuery {
 	return NewOrganizationMemberClient(_m.config).QueryUser(_m)
 }
 
+// QueryRole queries the "role" edge of the OrganizationMember entity.
+func (_m *OrganizationMember) QueryRole() *OrganizationRoleQuery {
+	return NewOrganizationMemberClient(_m.config).QueryRole(_m)
+}
+
 // Update returns a builder for updating this OrganizationMember.
 // Note that you need to call OrganizationMember.Unwrap() before calling this method if this OrganizationMember
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -183,8 +200,8 @@ func (_m *OrganizationMember) String() string {
 	builder.WriteString("user_id=")
 	builder.WriteString(fmt.Sprintf("%v", _m.UserID))
 	builder.WriteString(", ")
-	builder.WriteString("role=")
-	builder.WriteString(_m.Role)
+	builder.WriteString("role_id=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RoleID))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))

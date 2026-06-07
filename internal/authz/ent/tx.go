@@ -12,20 +12,14 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// OIDCCallbackURI is the client for interacting with the OIDCCallbackURI builders.
-	OIDCCallbackURI *OIDCCallbackURIClient
-	// OIDCClient is the client for interacting with the OIDCClient builders.
-	OIDCClient *OIDCClientClient
-	// OIDCClientSecret is the client for interacting with the OIDCClientSecret builders.
-	OIDCClientSecret *OIDCClientSecretClient
-	// OIDCGrant is the client for interacting with the OIDCGrant builders.
-	OIDCGrant *OIDCGrantClient
-	// OIDCRefreshToken is the client for interacting with the OIDCRefreshToken builders.
-	OIDCRefreshToken *OIDCRefreshTokenClient
 	// Organization is the client for interacting with the Organization builders.
 	Organization *OrganizationClient
 	// OrganizationMember is the client for interacting with the OrganizationMember builders.
 	OrganizationMember *OrganizationMemberClient
+	// OrganizationRole is the client for interacting with the OrganizationRole builders.
+	OrganizationRole *OrganizationRoleClient
+	// RolePermission is the client for interacting with the RolePermission builders.
+	RolePermission *RolePermissionClient
 	// UserRef is the client for interacting with the UserRef builders.
 	UserRef *UserRefClient
 
@@ -159,13 +153,10 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.OIDCCallbackURI = NewOIDCCallbackURIClient(tx.config)
-	tx.OIDCClient = NewOIDCClientClient(tx.config)
-	tx.OIDCClientSecret = NewOIDCClientSecretClient(tx.config)
-	tx.OIDCGrant = NewOIDCGrantClient(tx.config)
-	tx.OIDCRefreshToken = NewOIDCRefreshTokenClient(tx.config)
 	tx.Organization = NewOrganizationClient(tx.config)
 	tx.OrganizationMember = NewOrganizationMemberClient(tx.config)
+	tx.OrganizationRole = NewOrganizationRoleClient(tx.config)
+	tx.RolePermission = NewRolePermissionClient(tx.config)
 	tx.UserRef = NewUserRefClient(tx.config)
 }
 
@@ -176,7 +167,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: OIDCCallbackURI.QueryXXX(), the query will be executed
+// applies a query, for example: Organization.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

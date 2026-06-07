@@ -9,66 +9,6 @@ import (
 	"sanzi.io/muid/internal/authz/ent"
 )
 
-// The OIDCCallbackURIFunc type is an adapter to allow the use of ordinary
-// function as OIDCCallbackURI mutator.
-type OIDCCallbackURIFunc func(context.Context, *ent.OIDCCallbackURIMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OIDCCallbackURIFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCCallbackURIMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCCallbackURIMutation", m)
-}
-
-// The OIDCClientFunc type is an adapter to allow the use of ordinary
-// function as OIDCClient mutator.
-type OIDCClientFunc func(context.Context, *ent.OIDCClientMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OIDCClientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCClientMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCClientMutation", m)
-}
-
-// The OIDCClientSecretFunc type is an adapter to allow the use of ordinary
-// function as OIDCClientSecret mutator.
-type OIDCClientSecretFunc func(context.Context, *ent.OIDCClientSecretMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OIDCClientSecretFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCClientSecretMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCClientSecretMutation", m)
-}
-
-// The OIDCGrantFunc type is an adapter to allow the use of ordinary
-// function as OIDCGrant mutator.
-type OIDCGrantFunc func(context.Context, *ent.OIDCGrantMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OIDCGrantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCGrantMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCGrantMutation", m)
-}
-
-// The OIDCRefreshTokenFunc type is an adapter to allow the use of ordinary
-// function as OIDCRefreshToken mutator.
-type OIDCRefreshTokenFunc func(context.Context, *ent.OIDCRefreshTokenMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f OIDCRefreshTokenFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.OIDCRefreshTokenMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCRefreshTokenMutation", m)
-}
-
 // The OrganizationFunc type is an adapter to allow the use of ordinary
 // function as Organization mutator.
 type OrganizationFunc func(context.Context, *ent.OrganizationMutation) (ent.Value, error)
@@ -91,6 +31,30 @@ func (f OrganizationMemberFunc) Mutate(ctx context.Context, m ent.Mutation) (ent
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrganizationMemberMutation", m)
+}
+
+// The OrganizationRoleFunc type is an adapter to allow the use of ordinary
+// function as OrganizationRole mutator.
+type OrganizationRoleFunc func(context.Context, *ent.OrganizationRoleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrganizationRoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OrganizationRoleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrganizationRoleMutation", m)
+}
+
+// The RolePermissionFunc type is an adapter to allow the use of ordinary
+// function as RolePermission mutator.
+type RolePermissionFunc func(context.Context, *ent.RolePermissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f RolePermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.RolePermissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RolePermissionMutation", m)
 }
 
 // The UserRefFunc type is an adapter to allow the use of ordinary

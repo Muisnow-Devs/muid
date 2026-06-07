@@ -36,31 +36,31 @@ type Organization struct {
 
 // OrganizationEdges holds the relations/edges for other nodes in the graph.
 type OrganizationEdges struct {
-	// Clients holds the value of the clients edge.
-	Clients []*OIDCClient `json:"clients,omitempty"`
 	// Members holds the value of the members edge.
 	Members []*OrganizationMember `json:"members,omitempty"`
+	// Roles holds the value of the roles edge.
+	Roles []*OrganizationRole `json:"roles,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 }
 
-// ClientsOrErr returns the Clients value or an error if the edge
-// was not loaded in eager-loading.
-func (e OrganizationEdges) ClientsOrErr() ([]*OIDCClient, error) {
-	if e.loadedTypes[0] {
-		return e.Clients, nil
-	}
-	return nil, &NotLoadedError{edge: "clients"}
-}
-
 // MembersOrErr returns the Members value or an error if the edge
 // was not loaded in eager-loading.
 func (e OrganizationEdges) MembersOrErr() ([]*OrganizationMember, error) {
-	if e.loadedTypes[1] {
+	if e.loadedTypes[0] {
 		return e.Members, nil
 	}
 	return nil, &NotLoadedError{edge: "members"}
+}
+
+// RolesOrErr returns the Roles value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrganizationEdges) RolesOrErr() ([]*OrganizationRole, error) {
+	if e.loadedTypes[1] {
+		return e.Roles, nil
+	}
+	return nil, &NotLoadedError{edge: "roles"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -138,14 +138,14 @@ func (_m *Organization) Value(name string) (ent.Value, error) {
 	return _m.selectValues.Get(name)
 }
 
-// QueryClients queries the "clients" edge of the Organization entity.
-func (_m *Organization) QueryClients() *OIDCClientQuery {
-	return NewOrganizationClient(_m.config).QueryClients(_m)
-}
-
 // QueryMembers queries the "members" edge of the Organization entity.
 func (_m *Organization) QueryMembers() *OrganizationMemberQuery {
 	return NewOrganizationClient(_m.config).QueryMembers(_m)
+}
+
+// QueryRoles queries the "roles" edge of the Organization entity.
+func (_m *Organization) QueryRoles() *OrganizationRoleQuery {
+	return NewOrganizationClient(_m.config).QueryRoles(_m)
 }
 
 // Update returns a builder for updating this Organization.

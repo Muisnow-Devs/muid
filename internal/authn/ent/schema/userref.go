@@ -33,5 +33,7 @@ func (UserRef) Edges() []ent.Edge {
 		edge.To("sessions", UserSession.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("identities", UserIdentity.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 		edge.To("emails", UserEmail.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("grants", OIDCGrant.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
+		edge.To("oidc_refresh_tokens", OIDCRefreshToken.Type).Annotations(entsql.OnDelete(entsql.Cascade)),
 	}
 }

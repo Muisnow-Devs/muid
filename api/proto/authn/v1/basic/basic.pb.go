@@ -175,13 +175,13 @@ const file_authn_v1_basic_proto_rawDesc = "" +
 	"\x15AUTH_METHOD_EMAIL_OTP\x10\x01\x12\x15\n" +
 	"\x11AUTH_METHOD_OAUTH\x10\x02\x12\x17\n" +
 	"\x13AUTH_METHOD_PASSKEY\x10\x03\x12\x1c\n" +
-	"\x18AUTH_METHOD_USERNAME_OTP\x10\x04*\x9f\x01\n" +
+	"\x18AUTH_METHOD_USERNAME_OTP\x10\x04*\x85\x01\n" +
 	"\n" +
 	"AuthStatus\x12\x1b\n" +
 	"\x17AUTH_STATUS_UNSPECIFIED\x10\x00\x12\x17\n" +
 	"\x13AUTH_STATUS_PENDING\x10\x01\x12\"\n" +
 	"\x1eAUTH_STATUS_CHALLENGE_REQUIRED\x10\x02\x12\x1d\n" +
-	"\x19AUTH_STATUS_AUTHENTICATED\x10\x03\"\x04\b\x04\x10\x04*\x12AUTH_STATUS_FAILED*~\n" +
+	"\x19AUTH_STATUS_AUTHENTICATED\x10\x03*~\n" +
 	"\n" +
 	"AuthIntent\x12\x1b\n" +
 	"\x17AUTH_INTENT_UNSPECIFIED\x10\x00\x12\x15\n" +

@@ -1070,13 +1070,13 @@ const file_authn_v1_authn_proto_rawDesc = "" +
 	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\x81\x01\n" +
 	"\x1aContinueAuthSessionRequest\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x124\n" +
-	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xc7\x02\n" +
+	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xb3\x02\n" +
 	"\x1bContinueAuthSessionResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x127\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthStatusR\x06status\x12Y\n" +
 	"\x12challenge_required\x18\x03 \x01(\v2(.muid.authn.v1.session.ChallengeRequiredH\x00R\x11challengeRequired\x12G\n" +
 	"\fauth_success\x18\x04 \x01(\v2\".muid.authn.v1.session.AuthSuccessH\x00R\vauthSuccessB\b\n" +
-	"\x06resultJ\x04\b\x05\x10\x06R\fauth_failure\"\x1d\n" +
+	"\x06result\"\x1d\n" +
 	"\x1bGetAuthorizedSessionRequest\"z\n" +
 	"\x1cGetAuthorizedSessionResponse\x12\x14\n" +
 	"\x05valid\x18\x01 \x01(\bR\x05valid\x12D\n" +

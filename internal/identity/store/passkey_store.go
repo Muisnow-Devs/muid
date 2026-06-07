@@ -64,7 +64,9 @@ func (s *EntPasskeyIdentityStore) FindUser(
 }
 
 // LinkIdentity atomically creates UserIdentity + UserPasskey.
-// Returns ErrCredentialAlreadyRegistered if the credential ID already exists.
+// Returns ErrIdentityAlreadyLinked if the credential ID violates the unique
+// constraint (covers both the normal duplicate case and the rare
+// concurrent-registration race, without a separate pre-flight EXISTS query).
 func (s *EntPasskeyIdentityStore) LinkIdentity(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -73,17 +75,6 @@ func (s *EntPasskeyIdentityStore) LinkIdentity(
 	pc, ok := claims.(PasskeyIdentityClaims)
 	if !ok {
 		return nil, fmt.Errorf("store/passkey: expected PasskeyIdentityClaims, got %T", claims)
-	}
-
-	// Duplicate-credential guard (returns a user-visible sentinel, not internal error).
-	exists, err := s.db.UserPasskey.Query().
-		Where(userpasskey.CredentialIDEQ(pc.CredentialID)).
-		Exist(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, ErrCredentialAlreadyRegistered
 	}
 
 	subject := base64.RawURLEncoding.EncodeToString(pc.CredentialID)
@@ -113,12 +104,16 @@ func (s *EntPasskeyIdentityStore) LinkIdentity(
 		}
 
 		if err = pkCreate.Exec(ctx); err != nil {
+			if ent.IsConstraintError(err) {
+				return nil, ErrIdentityAlreadyLinked
+			}
 			return nil, err
 		}
 
 		return identityFromRow(identityRow), nil
 	})
 }
+
 
 // UpdateLastUsed sets UserPasskey.last_used_at for all credentials under this identity.
 func (s *EntPasskeyIdentityStore) UpdateLastUsed(ctx context.Context, identityID uuid.UUID) error {

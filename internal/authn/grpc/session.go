@@ -342,8 +342,7 @@ func (g *GRPCHandler) handleFailureStep(
 		g.transitionStore.Delete(ctx, tid)
 		return nil, authFailureStatus(codes.FailedPrecondition, s.Failure)
 
-	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE,
-		sessionpb.AuthErrorCode_AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED:
+	case sessionpb.AuthErrorCode_AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED:
 		g.transitionStore.Delete(ctx, tid)
 		return nil, authFailureStatus(codes.AlreadyExists, s.Failure)
 
@@ -401,14 +400,15 @@ func (g *GRPCHandler) handleVerifiedStep(
 
 	// Link identity when it is not yet persisted.
 	if identityRecord == nil {
-		if _, err = store.LinkIdentity(ctx, userID, s.Identity.IdentityClaims); err != nil {
-			if errors.Is(err, identitystore.ErrCredentialAlreadyRegistered) {
-				f := newAuthFailureProto(
-					sessionpb.AuthErrorCode_AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED,
-					"This passkey is already registered.",
-				)
-				return nil, authFailureStatus(codes.AlreadyExists, f)
-			}
+		_, err := store.LinkIdentity(ctx, userID, s.Identity.IdentityClaims)
+		if errors.Is(err, identitystore.ErrIdentityAlreadyLinked) {
+			f := newAuthFailureProto(
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED,
+				"This identity is already linked to another account.",
+			)
+			return nil, authFailureStatus(codes.AlreadyExists, f)
+		}
+		if err != nil {
 			log.LogUnexpected(ctx, "link identity", err.Error())
 			return nil, grpcutils.GRPCInternalError()
 		}
@@ -456,7 +456,7 @@ func (g *GRPCHandler) resolveUserID(
 		}
 		if decision == policy.LinkDecisionReject {
 			f := newAuthFailureProto(
-				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE,
+				sessionpb.AuthErrorCode_AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED,
 				"That identity is already in use.",
 			)
 			return uuid.Nil, authFailureStatus(codes.AlreadyExists, f)

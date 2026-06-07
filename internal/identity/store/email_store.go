@@ -45,6 +45,7 @@ func (s *EntEmailIdentityStore) FindUser(
 
 // LinkIdentity atomically creates the UserIdentity and the UserEmail sub-table row.
 // is_primary is set to true only when the user has no existing active primary email.
+// Returns ErrIdentityAlreadyLinked if the email violates a unique constraint.
 func (s *EntEmailIdentityStore) LinkIdentity(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -62,6 +63,9 @@ func (s *EntEmailIdentityStore) LinkIdentity(
 			SetSubject(ec.Email).
 			Save(ctx)
 		if err != nil {
+			if ent.IsConstraintError(err) {
+				return nil, ErrIdentityAlreadyLinked
+			}
 			return nil, err
 		}
 
@@ -85,6 +89,9 @@ func (s *EntEmailIdentityStore) LinkIdentity(
 			SetIsPrimary(!hasPrimary).
 			Exec(ctx)
 		if err != nil {
+			if ent.IsConstraintError(err) {
+				return nil, ErrIdentityAlreadyLinked
+			}
 			return nil, err
 		}
 

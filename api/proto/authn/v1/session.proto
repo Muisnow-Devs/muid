@@ -61,10 +61,9 @@ enum AuthErrorCode {
   AUTH_ERROR_CODE_RATE_LIMITED = 2; // resend or attempt throttled
   AUTH_ERROR_CODE_INVALID_SESSION_STATE = 3; // unexpected flow state
   AUTH_ERROR_CODE_INVALID_INPUT = 4; // bad identifier, payload, …
-  AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE = 5; // link-account: email taken
+  AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED = 5; // link-account: identity already linked
   AUTH_ERROR_CODE_LINK_UNAUTHORIZED = 6; // link-account: not authorised
   AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED = 7; // OIDC: existing account needs manual link
-  AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED = 8; // passkey credential already linked
 }
 
 // AuthFailure is returned as a gRPC error detail (see google.rpc.Status details)

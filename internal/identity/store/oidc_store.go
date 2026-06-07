@@ -44,6 +44,7 @@ func (s *EntOIDCIdentityStore) FindUser(
 }
 
 // LinkIdentity atomically creates UserIdentity + UserFederatedIdentity.
+// Returns ErrIdentityAlreadyLinked if the provider+subject pair violates a unique constraint.
 func (s *EntOIDCIdentityStore) LinkIdentity(
 	ctx context.Context,
 	userID uuid.UUID,
@@ -61,6 +62,9 @@ func (s *EntOIDCIdentityStore) LinkIdentity(
 			SetSubject(oc.Subject).
 			Save(ctx)
 		if err != nil {
+			if ent.IsConstraintError(err) {
+				return nil, ErrIdentityAlreadyLinked
+			}
 			return nil, err
 		}
 
@@ -81,6 +85,9 @@ func (s *EntOIDCIdentityStore) LinkIdentity(
 		}
 
 		if err = fedCreate.Exec(ctx); err != nil {
+			if ent.IsConstraintError(err) {
+				return nil, ErrIdentityAlreadyLinked
+			}
 			return nil, err
 		}
 

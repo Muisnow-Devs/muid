@@ -75,15 +75,14 @@ func (x AuthLevel) Number() protoreflect.EnumNumber {
 type AuthErrorCode int32
 
 const (
-	AuthErrorCode_AUTH_ERROR_CODE_UNSPECIFIED                AuthErrorCode = 0
-	AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED      AuthErrorCode = 1 // wrong credentials (OTP, passkey, …)
-	AuthErrorCode_AUTH_ERROR_CODE_RATE_LIMITED               AuthErrorCode = 2 // resend or attempt throttled
-	AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE      AuthErrorCode = 3 // unexpected flow state
-	AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT              AuthErrorCode = 4 // bad identifier, payload, …
-	AuthErrorCode_AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE       AuthErrorCode = 5 // link-account: email taken
-	AuthErrorCode_AUTH_ERROR_CODE_LINK_UNAUTHORIZED          AuthErrorCode = 6 // link-account: not authorised
-	AuthErrorCode_AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED  AuthErrorCode = 7 // OIDC: existing account needs manual link
-	AuthErrorCode_AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED AuthErrorCode = 8 // passkey credential already linked
+	AuthErrorCode_AUTH_ERROR_CODE_UNSPECIFIED               AuthErrorCode = 0
+	AuthErrorCode_AUTH_ERROR_CODE_AUTHENTICATION_FAILED     AuthErrorCode = 1 // wrong credentials (OTP, passkey, …)
+	AuthErrorCode_AUTH_ERROR_CODE_RATE_LIMITED              AuthErrorCode = 2 // resend or attempt throttled
+	AuthErrorCode_AUTH_ERROR_CODE_INVALID_SESSION_STATE     AuthErrorCode = 3 // unexpected flow state
+	AuthErrorCode_AUTH_ERROR_CODE_INVALID_INPUT             AuthErrorCode = 4 // bad identifier, payload, …
+	AuthErrorCode_AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED   AuthErrorCode = 5 // link-account: identity already linked
+	AuthErrorCode_AUTH_ERROR_CODE_LINK_UNAUTHORIZED         AuthErrorCode = 6 // link-account: not authorised
+	AuthErrorCode_AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED AuthErrorCode = 7 // OIDC: existing account needs manual link
 )
 
 // Enum value maps for AuthErrorCode.
@@ -94,21 +93,19 @@ var (
 		2: "AUTH_ERROR_CODE_RATE_LIMITED",
 		3: "AUTH_ERROR_CODE_INVALID_SESSION_STATE",
 		4: "AUTH_ERROR_CODE_INVALID_INPUT",
-		5: "AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE",
+		5: "AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED",
 		6: "AUTH_ERROR_CODE_LINK_UNAUTHORIZED",
 		7: "AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED",
-		8: "AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED",
 	}
 	AuthErrorCode_value = map[string]int32{
-		"AUTH_ERROR_CODE_UNSPECIFIED":                0,
-		"AUTH_ERROR_CODE_AUTHENTICATION_FAILED":      1,
-		"AUTH_ERROR_CODE_RATE_LIMITED":               2,
-		"AUTH_ERROR_CODE_INVALID_SESSION_STATE":      3,
-		"AUTH_ERROR_CODE_INVALID_INPUT":              4,
-		"AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE":       5,
-		"AUTH_ERROR_CODE_LINK_UNAUTHORIZED":          6,
-		"AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED":  7,
-		"AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED": 8,
+		"AUTH_ERROR_CODE_UNSPECIFIED":               0,
+		"AUTH_ERROR_CODE_AUTHENTICATION_FAILED":     1,
+		"AUTH_ERROR_CODE_RATE_LIMITED":              2,
+		"AUTH_ERROR_CODE_INVALID_SESSION_STATE":     3,
+		"AUTH_ERROR_CODE_INVALID_INPUT":             4,
+		"AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED":   5,
+		"AUTH_ERROR_CODE_LINK_UNAUTHORIZED":         6,
+		"AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED": 7,
 	}
 )
 
@@ -787,17 +784,16 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\x16AUTH_LEVEL_UNSPECIFIED\x10\x00\x12\x12\n" +
 	"\x0eAUTH_LEVEL_LOW\x10\x01\x12\x15\n" +
 	"\x11AUTH_LEVEL_MEDIUM\x10\x02\x12\x13\n" +
-	"\x0fAUTH_LEVEL_HIGH\x10\x03*\xfb\x02\n" +
+	"\x0fAUTH_LEVEL_HIGH\x10\x03*\xce\x02\n" +
 	"\rAuthErrorCode\x12\x1f\n" +
 	"\x1bAUTH_ERROR_CODE_UNSPECIFIED\x10\x00\x12)\n" +
 	"%AUTH_ERROR_CODE_AUTHENTICATION_FAILED\x10\x01\x12 \n" +
 	"\x1cAUTH_ERROR_CODE_RATE_LIMITED\x10\x02\x12)\n" +
 	"%AUTH_ERROR_CODE_INVALID_SESSION_STATE\x10\x03\x12!\n" +
-	"\x1dAUTH_ERROR_CODE_INVALID_INPUT\x10\x04\x12(\n" +
-	"$AUTH_ERROR_CODE_EMAIL_ALREADY_IN_USE\x10\x05\x12%\n" +
+	"\x1dAUTH_ERROR_CODE_INVALID_INPUT\x10\x04\x12+\n" +
+	"'AUTH_ERROR_CODE_IDENTITY_ALREADY_LINKED\x10\x05\x12%\n" +
 	"!AUTH_ERROR_CODE_LINK_UNAUTHORIZED\x10\x06\x12-\n" +
-	")AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED\x10\a\x12.\n" +
-	"*AUTH_ERROR_CODE_PASSKEY_ALREADY_REGISTERED\x10\bB\xd3\x01\n" +
+	")AUTH_ERROR_CODE_OIDC_MANUAL_LINK_REQUIRED\x10\aB\xd3\x01\n" +
 	"\x19com.muid.authn.v1.sessionB\fSessionProtoP\x01Z0sanzi.io/muid/api/proto/authn/v1/session;session\xa2\x02\x04MAVS\xaa\x02\x15Muid.Authn.V1.Session\xca\x02\x15Muid\\Authn\\V1\\Session\xe2\x02!Muid\\Authn\\V1\\Session\\GPBMetadata\xea\x02\x18Muid::Authn::V1::Sessionb\x06proto3"
 
 var file_authn_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 2)

@@ -38,6 +38,11 @@ type Config struct {
 	// auth transition (same transition id) and for the same normalized email recipient
 	// across transitions. Zero disables send cooldown checks.
 	OTPSendCooldownSeconds int `envconfig:"OTP_SEND_COOLDOWN_SECONDS"                 default:"60"`
+	// MaxAuthAttempts is the maximum number of failed authentication attempts
+	// (wrong code, wrong passkey, etc.) allowed before the transition session is
+	// revoked. The same value is applied to the OTP challenge attempt counter so
+	// the two limits are always in sync. Must be ≥ 1; defaults to 3.
+	MaxAuthAttempts int `envconfig:"MAX_AUTH_ATTEMPTS" default:"3"`
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
 

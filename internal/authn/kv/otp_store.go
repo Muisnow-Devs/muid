@@ -16,7 +16,6 @@ import (
 )
 
 const otpLength = 6
-const maxAttempts = 3
 const keyBase = "muid:challenge:otp:"
 
 // otpInformation is stored in the KV under the challenge key.
@@ -31,15 +30,23 @@ type kvOTPStore struct {
 	client       kv.AtomicKVStore
 	otpSecret    []byte
 	sendCooldown time.Duration
+	maxAttempts  int64
 }
 
 // NewKVOTPStore returns a KV-backed OTP store.
+// maxAttempts is the maximum number of failed verification attempts before the
+// challenge is revoked; must be ≥ 1 (caller is responsible for validating).
 func NewKVOTPStore(
 	kvStore kv.AtomicKVStore,
 	otpSecret []byte,
 	sendCooldown time.Duration,
+	maxAttempts int,
 ) otp.OTPStore {
-	return &kvOTPStore{client: kvStore, otpSecret: otpSecret, sendCooldown: sendCooldown}
+	ma := int64(maxAttempts)
+	if ma < 1 {
+		ma = 1
+	}
+	return &kvOTPStore{client: kvStore, otpSecret: otpSecret, sendCooldown: sendCooldown, maxAttempts: ma}
 }
 
 // key is the primary challenge key: stores otpInformation.
@@ -233,7 +240,7 @@ func (store *kvOTPStore) VerifyOTP(
 	}
 	store.client.Expire(ctx, store.attemptsKey(transitionId), ttl)
 
-	if attempts >= maxAttempts {
+	if attempts >= store.maxAttempts {
 		store.RevokeOTP(ctx, transitionId)
 		return otp.ErrTooManyAttempts
 	}

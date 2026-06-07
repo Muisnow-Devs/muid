@@ -3,13 +3,14 @@ package method
 import (
 	"context"
 	"errors"
+	"net/mail"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"sanzi.io/muid/api/proto/event/v1/mail"
+	mailpb "sanzi.io/muid/api/proto/event/v1/mail"
 	"sanzi.io/muid/api/proto/shared/v1/claims"
 	identitystore "sanzi.io/muid/internal/identity/store"
 	"sanzi.io/muid/internal/otp"
@@ -93,7 +94,15 @@ func (m *EmailOTPMethod) Start(
 		}, nil
 	}
 
-	sessionStore.Flow = &session.EmailOTPFlow{Email: email}
+	addr, err := mail.ParseAddress(email)
+	if err != nil {
+		return &FailureStep{
+			Code:    authn.ErrCodeInvalidInput,
+			Message: "invalid email address",
+		}, nil
+	}
+
+	sessionStore.Flow = &session.EmailOTPFlow{Email: addr.Address}
 	sess, err := m.transitionStore.Create(ctx, m.Name(), sessionStore)
 	if err != nil {
 		return nil, err
@@ -122,16 +131,10 @@ func (m *EmailOTPMethod) Continue(
 	sess, err := m.transitionStore.Get(ctx, tid)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
-			return &FailureStep{
-				Code:    authn.ErrCodeTransitionNotFound,
-				Message: "transition not found",
-			}, nil
+			return &FailureStep{Err: session.ErrSessionNotFound}, nil
 		}
 		if errors.Is(err, session.ErrSessionExpired) {
-			return &FailureStep{
-				Code:    authn.ErrCodeTransitionExpired,
-				Message: "transition expired",
-			}, nil
+			return &FailureStep{Err: session.ErrSessionExpired}, nil
 		}
 		return nil, err
 	}
@@ -199,7 +202,7 @@ func (m *EmailOTPMethod) generateAndSendOTP(
 	}
 
 	now := time.Now()
-	msg := &mail.SendOTPEmailEvent{}
+	msg := &mailpb.SendOTPEmailEvent{}
 	msg.SetEmail(email)
 	msg.SetLocale(meta.Locale)
 	msg.SetTimezone(meta.Timezone)

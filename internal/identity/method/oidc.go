@@ -119,16 +119,10 @@ func (m *OIDCMethod) Continue(
 	sess, err := m.transitionStore.Get(ctx, tid)
 	if err != nil {
 		if errors.Is(err, session.ErrSessionNotFound) {
-			return &FailureStep{
-				Code:    authn.ErrCodeTransitionNotFound,
-				Message: "transition not found",
-			}, nil
+			return &FailureStep{Err: session.ErrSessionNotFound}, nil
 		}
 		if errors.Is(err, session.ErrSessionExpired) {
-			return &FailureStep{
-				Code:    authn.ErrCodeTransitionExpired,
-				Message: "transition expired",
-			}, nil
+			return &FailureStep{Err: session.ErrSessionExpired}, nil
 		}
 		return nil, err
 	}

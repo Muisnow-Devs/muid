@@ -1,0 +1,101 @@
+{
+    "name": "muid",
+    "dockerComposeFile": "docker-compose.yaml",
+    "service": "devcontainer",
+    "workspaceFolder": "/workspace",
+
+
+    // Editor customizations (Zed, VS Code / Cursor)
+    "customizations": {
+
+        // ── Zed ─────────────────────────────────────────────────────────────
+        "zed": {
+            "extensions": [
+                "go",       // Go language support (gopls)
+                "proto"     // Protocol Buffers syntax + buf linting
+            ],
+            "settings": {
+                // Format + organise imports on save via gopls
+                "languages": {
+                    "Go": {
+                        "language_servers": ["gopls"],
+                        "format_on_save": "on",
+                        "formatter": {
+                            "language_server": { "name": "gopls" }
+                        }
+                    }
+                },
+                "lsp": {
+                    "gopls": {
+                        "initialization_options": {
+                            "gofumpt": true,
+                            "ui.semanticTokens": true
+                        }
+                    }
+                },
+                // Match the 120-char ruler from .vscode/settings.json
+                "soft_wrap": "preferred_line_length",
+                "preferred_line_length": 120
+            }
+        },
+
+        // ── VS Code / Cursor ─────────────────────────────────────────────────
+        "vscode": {
+            "extensions": [
+                // Go
+                "golang.go",
+
+                // Protobuf / Buf
+                "bufbuild.vscode-buf",
+                "zxh404.vscode-proto3",
+
+                // Database
+                "cweijan.vscode-postgresql-client2",
+
+                // General quality of life
+                "EditorConfig.EditorConfig",
+                "usernamehw.errorlens",
+                "streetsidesoftware.code-spell-checker",
+                "eamodio.gitlens"
+            ],
+            "settings": {
+                // ── Go ──────────────────────────────────────────────────────────
+                "go.toolsManagement.autoUpdate": true,
+                "go.useLanguageServer": true,
+                "go.lintTool": "golangci-lint",
+                "go.lintOnSave": "workspace",
+                "go.formatTool": "goimports",
+                "[go]": {
+                    "editor.formatOnSave": true,
+                    "editor.codeActionsOnSave": {
+                        "source.organizeImports": "explicit"
+                    }
+                },
+                "gopls": {
+                    "ui.semanticTokens": true,
+                    "formatting.gofumpt": true
+                },
+
+                // ── Buf / Proto ──────────────────────────────────────────────────
+                "protobuf.externalLinter.enabled": true,
+                "protobuf.externalLinter.linter": "buf",
+                "protobuf.externalLinter.bufPath": "buf",
+
+                // ── Line length (keep in sync with .vscode/settings.json) ────────
+                "go-lines.lineLength": 120,
+
+                // ── Editor ───────────────────────────────────────────────────────
+                "editor.rulers": [120],
+                "files.trimTrailingWhitespace": true,
+                "files.insertFinalNewline": true
+            }
+        }
+    },
+
+    // Run after the container is created
+    "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+    // Runs as root (standard for the plain golang base image).
+    // If you want a non-root user, add a useradd step to the Dockerfile.
+    "remoteUser": "root"
+}

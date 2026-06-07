@@ -22,6 +22,7 @@ type GRPCHandler struct {
 	transitionStore session.AuthTransitionStore
 	pubSub          pubsub.PubSub
 	secureLink      string
+	maxAuthAttempts int64
 
 	policy          policy.LinkPolicy
 	resolver        resolver.UserResolver
@@ -31,11 +32,16 @@ type GRPCHandler struct {
 
 // NewGRPCHandler returns a GRPCHandler wired from the provided dependencies.
 func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
+	ma := int64(deps.MaxAuthAttempts)
+	if ma < 1 {
+		ma = 3
+	}
 	return &GRPCHandler{
 		db:              deps.DB,
 		transitionStore: deps.TransitionStore,
 		pubSub:          deps.PubSub,
 		secureLink:      deps.SecureLink,
+		maxAuthAttempts: ma,
 		policy:          deps.Policy,
 		resolver:        deps.Resolver,
 		issuer:          deps.Issuer,

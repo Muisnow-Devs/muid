@@ -1,0 +1,98 @@
+# ---------------------------------------------------------------------------
+# Dev-container compose file
+# The "devcontainer" service is the main workspace; the rest are infra
+# dependencies that mirror the production environment.
+# ---------------------------------------------------------------------------
+
+services:
+    # ── Main dev workspace ─────────────────────────────────────────────────
+    devcontainer:
+        build:
+            context: ..
+            dockerfile: .devcontainer/Dockerfile
+        volumes:
+            - ..:/workspace:cached
+            # Persist Go module cache across container rebuilds
+            - go-mod-cache:/root/go/pkg/mod
+            # Persist Go build cache
+            - go-build-cache:/root/.cache/go-build
+        # Keep container alive
+        command: sleep infinity
+        ports:
+            - 8080:8080
+            - 8081:8081
+            - 8082:8082
+        depends_on:
+            - postgres
+            - nats
+            - redis
+        env_file:
+            - path: ./.env
+              required: false
+        environment:
+            # Convenience: point services at the compose network hostnames.
+            # Override individual values via a local .env file.
+            AUTHN_DATABASE_URL: "postgres://muid:muid@postgres:5432/muid_authn?sslmode=disable"
+            PROFILE_DATABASE_URL: "postgres://muid:muid@postgres:5432/muid_profile?sslmode=disable"
+            REDIS_ADDR: "redis:6379"
+            AUTHN_NATS_URL: "nats://nats:4222"
+            AUTHN_PORT: "8080"
+            AUTHN_PROFILE_GRPC_ADDR: "localhost:8081"
+            PROFILE_NATS_URL: "nats://nats:4222"
+            PROFILE_PORT: "8081"
+            AUTHZ_PORT: "8082"
+            MAILER_NATS_URL: "nats://nats:4222"
+        networks:
+            - muid-dev
+
+    # ── PostgreSQL ─────────────────────────────────────────────────────────
+    postgres:
+        image: postgres:17-alpine
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: muid
+            POSTGRES_PASSWORD: muid
+            POSTGRES_DB: muid_authn
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            # Create the profile database on first start
+            - ./.init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+        # No host port binding — the devcontainer reaches postgres via the
+        # internal network hostname. If you need psql from the host, use
+        # `docker exec` or set up a separate port mapping manually.
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U muid"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - muid-dev
+
+    # ── NATS ───────────────────────────────────────────────────────────────
+    nats:
+        image: nats:2-alpine
+        restart: unless-stopped
+        # No host port binding — reachable as nats:4222 inside the network.
+        command: ["-js", "-m", "8222"]
+        networks:
+            - muid-dev
+
+    # ── Redis ──────────────────────────────────────────────────────────────
+    redis:
+        image: redis:7-alpine
+        restart: unless-stopped
+        # No host port binding — reachable as redis:6379 inside the network.
+        volumes:
+            - redis-data:/data
+        networks:
+            - muid-dev
+
+networks:
+    muid-dev:
+        driver: bridge
+
+volumes:
+    postgres-data:
+    redis-data:
+    go-mod-cache:
+    go-build-cache:

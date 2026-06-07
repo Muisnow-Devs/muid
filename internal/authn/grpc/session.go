@@ -29,6 +29,14 @@ import (
 	"sanzi.io/muid/pkg/shared/authn"
 )
 
+// gRPC status messages used for structural failures in the auth session flow.
+// These are client-visible transport-level errors, not AuthFailure body strings.
+const (
+	msgTransitionNotFound  = "transition not found"
+	msgTransitionExpired   = "transition expired"
+	msgTooManyAttempts     = "too many failed attempts"
+)
+
 func (g *GRPCHandler) StartAuthSession(
 	ctx context.Context,
 	req *pb.StartAuthSessionRequest,
@@ -174,8 +182,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 
 	switch s := step.(type) {
 	case *method.FailureStep:
-		g.transitionStore.Delete(ctx, tid)
-		return continueAuthFailure(tid, s.Message, s.Code), nil
+		return g.handleFailureStep(ctx, tid, s)
 
 	case method.ChallengeStep:
 		cr := &sessionpb.ChallengeRequired{}
@@ -274,6 +281,65 @@ func (g *GRPCHandler) verifyProof(
 		return nil, status.Error(codes.Internal, "failed to verify proof")
 	}
 	return step, nil
+}
+
+// handleFailureStep routes a FailureStep to the appropriate response.
+//
+// Two classes of failure exist:
+//
+//  1. Structural failures (s.Err is set): the session or flow is fundamentally
+//     invalid (not found, expired). These become gRPC status errors so the
+//     client gets a standard code and the transport signals failure clearly.
+//     codes.NotFound    — transition does not exist or has expired
+//     codes.ResourceExhausted — attempt limit reached, transition deleted
+//
+//  2. Application failures (s.Code is set, s.Err is nil): the credentials were
+//     wrong or a rate-limit fired, but the session is still alive.
+//     Retryable codes (ErrCodeAuthenticationFailed, ErrCodeRateLimited) consume
+//     an attempt slot and preserve the transition until the limit is reached.
+//     All other codes delete the transition immediately.
+func (g *GRPCHandler) handleFailureStep(
+	ctx context.Context,
+	tid uuid.UUID,
+	s *method.FailureStep,
+) (*pb.ContinueAuthSessionResponse, error) {
+	// 1. Structural failure — translate to a gRPC status code.
+	if s.Err != nil {
+		switch {
+		case errors.Is(s.Err, session.ErrSessionNotFound):
+			return nil, status.Error(codes.NotFound, msgTransitionNotFound)
+		case errors.Is(s.Err, session.ErrSessionExpired):
+			return nil, status.Error(codes.NotFound, msgTransitionExpired)
+		default:
+			log.LogUnexpected(ctx, "unexpected structural failure step", s.Err.Error())
+			return nil, grpcutils.GRPCInternalError()
+		}
+	}
+
+	// 2. Application failure — check retryability by error code.
+	switch s.Code {
+	case authn.ErrCodeAuthenticationFailed, authn.ErrCodeRateLimited:
+		// Retryable — count the attempt before deciding to delete.
+		attempts, err := g.transitionStore.IncrementAttempts(ctx, tid)
+		if err != nil {
+			if errors.Is(err, session.ErrSessionNotFound) {
+				return nil, status.Error(codes.NotFound, msgTransitionNotFound)
+			}
+			log.LogUnexpected(ctx, "increment transition attempts", err.Error())
+			return nil, grpcutils.GRPCInternalError()
+		}
+		if attempts >= g.maxAuthAttempts {
+			g.transitionStore.Delete(ctx, tid)
+			return nil, status.Error(codes.ResourceExhausted, msgTooManyAttempts)
+		}
+		// Attempts remaining — preserve the transition so the client can retry.
+		return continueAuthFailure(tid, s.Message, s.Code), nil
+
+	default:
+		// Non-retryable application failure: invalid input, state corruption, …
+		g.transitionStore.Delete(ctx, tid)
+		return continueAuthFailure(tid, s.Message, s.Code), nil
+	}
 }
 
 // handleVerifiedStep is the unified post-verification flow. All auth intents

@@ -17,6 +17,8 @@ type HandlerDependencies struct {
 	PubSub          pubsub.PubSub
 	SecureLink      string
 
+	MaxAuthAttempts int
+
 	Policy          policy.LinkPolicy
 	Resolver        resolver.UserResolver
 	Issuer          issuer.SessionIssuer

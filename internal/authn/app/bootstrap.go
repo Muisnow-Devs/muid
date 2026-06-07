@@ -37,7 +37,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	if cfg.OTPSendCooldownSeconds < 0 {
 		otpSendCooldown = 0
 	}
-	otpStore := authnkv.NewKVOTPStore(redisKV, otpSecret, otpSendCooldown)
+	otpStore := authnkv.NewKVOTPStore(redisKV, otpSecret, otpSendCooldown, cfg.MaxAuthAttempts)
 
 	pubSub, err := nats.NewNATSPubSub(cfg.NATSURL)
 	if err != nil {

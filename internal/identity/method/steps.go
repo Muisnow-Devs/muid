@@ -46,10 +46,8 @@ func (*VerifiedStep) StepKind() StepKind {
 
 // FailureStep reports a user-visible failure.
 type FailureStep struct {
-	Code    string
+	Err     error
 	Message string
-
-	Err error
 }
 
 func (*FailureStep) StepKind() StepKind {

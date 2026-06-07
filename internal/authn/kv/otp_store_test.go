@@ -12,7 +12,7 @@ import (
 
 func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 
 	session := "session-123"
@@ -36,7 +36,7 @@ func TestKVOTPStore_CreateAndVerify_Success(t *testing.T) {
 
 func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 
 	session := "session-123"
@@ -54,7 +54,7 @@ func TestKVOTPStore_Verify_IncorrectCode(t *testing.T) {
 
 func TestKVOTPStore_Verify_NotFound(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 
 	err := store.VerifyOTP(ctx, "non-existent", "123456")
@@ -65,7 +65,7 @@ func TestKVOTPStore_Verify_NotFound(t *testing.T) {
 
 func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 
 	session := "session-123"
@@ -104,7 +104,7 @@ func TestKVOTPStore_Security_BruteForceProtection(t *testing.T) {
 
 func TestKVOTPStore_Verify_Expired(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 
 	session := "session-123"
@@ -123,7 +123,7 @@ func TestKVOTPStore_Verify_Expired(t *testing.T) {
 
 func TestKVOTPStore_Revoke_Success(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 
 	session := "session-123"
@@ -145,7 +145,7 @@ func TestKVOTPStore_Revoke_Success(t *testing.T) {
 
 func TestKVOTPStore_SendCooldown_BlocksSecondCreate(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute, 3)
 	ctx := context.Background()
 	session := "session-123"
 
@@ -172,7 +172,7 @@ func TestKVOTPStore_SendCooldown_BlocksSecondCreate(t *testing.T) {
 
 func TestKVOTPStore_SendCooldown_AllowsAfterExpiry(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Hour)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Hour, 3)
 	ctx := context.Background()
 	session := "session-123"
 
@@ -189,7 +189,7 @@ func TestKVOTPStore_SendCooldown_AllowsAfterExpiry(t *testing.T) {
 
 func TestKVOTPStore_SendCooldown_BlocksDifferentTransitionSameEmail(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute, 3)
 	ctx := context.Background()
 	email := "user@example.com"
 
@@ -206,7 +206,7 @@ func TestKVOTPStore_SendCooldown_BlocksDifferentTransitionSameEmail(t *testing.T
 
 func TestKVOTPStore_SendCooldown_NormalizesEmailForCooldown(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute, 3)
 	ctx := context.Background()
 
 	_, err := store.CreateOTP(ctx, "transition-a", " User@Example.COM ", 5*time.Minute)
@@ -222,7 +222,7 @@ func TestKVOTPStore_SendCooldown_NormalizesEmailForCooldown(t *testing.T) {
 
 func TestKVOTPStore_CreateOTP_RevokesPreviousCodeOnResend(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), 0, 3)
 	ctx := context.Background()
 	session := "session-123"
 
@@ -252,7 +252,7 @@ func TestKVOTPStore_CreateOTP_RevokesPreviousCodeOnResend(t *testing.T) {
 
 func TestKVOTPStore_CreateOTP_RateLimitedDoesNotRevoke(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute, 3)
 	ctx := context.Background()
 	session := "session-123"
 
@@ -274,7 +274,7 @@ func TestKVOTPStore_CreateOTP_RateLimitedDoesNotRevoke(t *testing.T) {
 
 func TestKVOTPStore_SendCooldown_RecipientEmptySkipsCrossTransitionLimit(t *testing.T) {
 	mockKV := mocked.NewMockKVStore()
-	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute)
+	store := NewKVOTPStore(mockKV, []byte("super-secret"), time.Minute, 3)
 	ctx := context.Background()
 
 	_, err := store.CreateOTP(ctx, "transition-a", "", 5*time.Minute)

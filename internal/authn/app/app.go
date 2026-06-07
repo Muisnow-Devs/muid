@@ -31,6 +31,7 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 		TransitionStore: infra.TransitionStore,
 		PubSub:          infra.PubSub,
 		SecureLink:      infra.GlobalConfig.LoginAlertSecureLink,
+		MaxAuthAttempts: infra.GlobalConfig.MaxAuthAttempts,
 		Policy:          pol,
 		Resolver:        res,
 		Issuer:          iss,

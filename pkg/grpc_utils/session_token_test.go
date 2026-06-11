@@ -91,17 +91,27 @@ func TestSessionTokenInterceptor_badFormat(t *testing.T) {
 	ic := grpcutils.SessionTokenInterceptor()
 	info := &grpc.UnaryServerInfo{FullMethod: "/svc/Method"}
 
-	_, err := ic(
-		incomingCtxWithAuth(t, "Session bad.token"),
-		nil,
-		info,
-		func(context.Context, any) (any, error) {
-			t.Fatal("handler must not be called for malformed wire token")
-			return nil, nil
-		},
-	)
-	if status.Code(err) != codes.Unauthenticated {
-		t.Fatalf("got code %v, want Unauthenticated", status.Code(err))
+	// A JWT-shaped credential: session access tokens (and any other JWT) must
+	// never authenticate authn RPCs — only the opaque wire token format does.
+	jwtShaped := base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"alg":"RS256","typ":"muid-session+jwt"}`),
+	) + "." + base64.RawURLEncoding.EncodeToString(
+		[]byte(`{"sub":"user","token_use":"session"}`),
+	) + "." + base64.RawURLEncoding.EncodeToString([]byte("signature"))
+
+	for _, token := range []string{"bad.token", jwtShaped} {
+		_, err := ic(
+			incomingCtxWithAuth(t, "Session "+token),
+			nil,
+			info,
+			func(context.Context, any) (any, error) {
+				t.Fatalf("handler must not be called for malformed wire token: %q", token)
+				return nil, nil
+			},
+		)
+		if status.Code(err) != codes.Unauthenticated {
+			t.Fatalf("token %q: got code %v, want Unauthenticated", token, status.Code(err))
+		}
 	}
 }
 

@@ -26,6 +26,8 @@ const (
 	AuthnService_GetAuthenticatedPrincipal_FullMethodName = "/muid.authn.v1.AuthnService/GetAuthenticatedPrincipal"
 	AuthnService_RevokeSession_FullMethodName             = "/muid.authn.v1.AuthnService/RevokeSession"
 	AuthnService_ExtendSession_FullMethodName             = "/muid.authn.v1.AuthnService/ExtendSession"
+	AuthnService_IssueAccessToken_FullMethodName          = "/muid.authn.v1.AuthnService/IssueAccessToken"
+	AuthnService_GetPublicKeys_FullMethodName             = "/muid.authn.v1.AuthnService/GetPublicKeys"
 )
 
 // AuthnServiceClient is the client API for AuthnService service.
@@ -37,13 +39,26 @@ type AuthnServiceClient interface {
 	ContinueAuthSession(ctx context.Context, in *ContinueAuthSessionRequest, opts ...grpc.CallOption) (*ContinueAuthSessionResponse, error)
 	// / user related APIs, for user to manage their sessions.
 	RevokeFederatedIdentity(ctx context.Context, in *RevokeFederatedIdentityRequest, opts ...grpc.CallOption) (*RevokeFederatedIdentityResponse, error)
+	// Validates the opaque session token only; JWT access tokens are verified by
+	// callers locally via JWKS (GetPublicKeys) and are never resolvable here.
 	GetAuthorizedSession(ctx context.Context, in *GetAuthorizedSessionRequest, opts ...grpc.CallOption) (*GetAuthorizedSessionResponse, error)
 	// Resolves a session into an authenticated principal for downstream services.
+	// Accepts the opaque session token only, never JWT access tokens.
 	GetAuthenticatedPrincipal(ctx context.Context, in *GetAuthenticatedPrincipalRequest, opts ...grpc.CallOption) (*GetAuthenticatedPrincipalResponse, error)
 	// user session management APIs
 	RevokeSession(ctx context.Context, in *RevokeSessionRequest, opts ...grpc.CallOption) (*RevokeSessionResponse, error)
-	// Extends the session token expiry up to the absolute 90-day cap.
+	// Extends the session token expiry up to the absolute 90-day cap. The
+	// response also carries a fresh access token when the feature is configured.
 	ExtendSession(ctx context.Context, in *ExtendSessionRequest, opts ...grpc.CallOption) (*ExtendSessionResponse, error)
+	// Exchanges a valid session token (refresh-token role) for a fresh
+	// short-lived JWT access token. Unavailable when the access-token feature
+	// is not configured.
+	IssueAccessToken(ctx context.Context, in *IssueAccessTokenRequest, opts ...grpc.CallOption) (*IssueAccessTokenResponse, error)
+	// / OIDC/JWK infrastructure APIs.
+	// Serves the JWT signing public keys (JWKS source) for session access tokens
+	// and OIDC provider tokens. No authentication required; a gateway maps
+	// GET /.well-known/jwks.json onto this RPC.
+	GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error)
 }
 
 type authnServiceClient struct {
@@ -124,6 +139,26 @@ func (c *authnServiceClient) ExtendSession(ctx context.Context, in *ExtendSessio
 	return out, nil
 }
 
+func (c *authnServiceClient) IssueAccessToken(ctx context.Context, in *IssueAccessTokenRequest, opts ...grpc.CallOption) (*IssueAccessTokenResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IssueAccessTokenResponse)
+	err := c.cc.Invoke(ctx, AuthnService_IssueAccessToken_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authnServiceClient) GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetPublicKeysResponse)
+	err := c.cc.Invoke(ctx, AuthnService_GetPublicKeys_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthnServiceServer is the server API for AuthnService service.
 // All implementations must embed UnimplementedAuthnServiceServer
 // for forward compatibility.
@@ -133,13 +168,26 @@ type AuthnServiceServer interface {
 	ContinueAuthSession(context.Context, *ContinueAuthSessionRequest) (*ContinueAuthSessionResponse, error)
 	// / user related APIs, for user to manage their sessions.
 	RevokeFederatedIdentity(context.Context, *RevokeFederatedIdentityRequest) (*RevokeFederatedIdentityResponse, error)
+	// Validates the opaque session token only; JWT access tokens are verified by
+	// callers locally via JWKS (GetPublicKeys) and are never resolvable here.
 	GetAuthorizedSession(context.Context, *GetAuthorizedSessionRequest) (*GetAuthorizedSessionResponse, error)
 	// Resolves a session into an authenticated principal for downstream services.
+	// Accepts the opaque session token only, never JWT access tokens.
 	GetAuthenticatedPrincipal(context.Context, *GetAuthenticatedPrincipalRequest) (*GetAuthenticatedPrincipalResponse, error)
 	// user session management APIs
 	RevokeSession(context.Context, *RevokeSessionRequest) (*RevokeSessionResponse, error)
-	// Extends the session token expiry up to the absolute 90-day cap.
+	// Extends the session token expiry up to the absolute 90-day cap. The
+	// response also carries a fresh access token when the feature is configured.
 	ExtendSession(context.Context, *ExtendSessionRequest) (*ExtendSessionResponse, error)
+	// Exchanges a valid session token (refresh-token role) for a fresh
+	// short-lived JWT access token. Unavailable when the access-token feature
+	// is not configured.
+	IssueAccessToken(context.Context, *IssueAccessTokenRequest) (*IssueAccessTokenResponse, error)
+	// / OIDC/JWK infrastructure APIs.
+	// Serves the JWT signing public keys (JWKS source) for session access tokens
+	// and OIDC provider tokens. No authentication required; a gateway maps
+	// GET /.well-known/jwks.json onto this RPC.
+	GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error)
 	mustEmbedUnimplementedAuthnServiceServer()
 }
 
@@ -170,6 +218,12 @@ func (UnimplementedAuthnServiceServer) RevokeSession(context.Context, *RevokeSes
 }
 func (UnimplementedAuthnServiceServer) ExtendSession(context.Context, *ExtendSessionRequest) (*ExtendSessionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ExtendSession not implemented")
+}
+func (UnimplementedAuthnServiceServer) IssueAccessToken(context.Context, *IssueAccessTokenRequest) (*IssueAccessTokenResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method IssueAccessToken not implemented")
+}
+func (UnimplementedAuthnServiceServer) GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetPublicKeys not implemented")
 }
 func (UnimplementedAuthnServiceServer) mustEmbedUnimplementedAuthnServiceServer() {}
 func (UnimplementedAuthnServiceServer) testEmbeddedByValue()                      {}
@@ -318,6 +372,42 @@ func _AuthnService_ExtendSession_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthnService_IssueAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IssueAccessTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthnServiceServer).IssueAccessToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthnService_IssueAccessToken_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthnServiceServer).IssueAccessToken(ctx, req.(*IssueAccessTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthnService_GetPublicKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPublicKeysRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthnServiceServer).GetPublicKeys(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthnService_GetPublicKeys_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthnServiceServer).GetPublicKeys(ctx, req.(*GetPublicKeysRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthnService_ServiceDesc is the grpc.ServiceDesc for AuthnService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -352,6 +442,14 @@ var AuthnService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ExtendSession",
 			Handler:    _AuthnService_ExtendSession_Handler,
+		},
+		{
+			MethodName: "IssueAccessToken",
+			Handler:    _AuthnService_IssueAccessToken_Handler,
+		},
+		{
+			MethodName: "GetPublicKeys",
+			Handler:    _AuthnService_GetPublicKeys_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -1,4 +1,4 @@
-package authzgrpc
+package authngrpc
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"sanzi.io/muid/api/proto/authz/v1/certification"
+	"sanzi.io/muid/api/proto/authn/v1/certification"
 	"sanzi.io/muid/internal/signature"
 )
 

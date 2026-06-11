@@ -36,6 +36,9 @@ func (g *GRPCHandler) ExtendSession(
 		return nil, grpcutils.GRPCInternalError()
 	}
 
+	resolved, _ := ResolvedSessionFromContext(ctx)
+	g.attachAccessToken(ctx, sctx, resolved.UserID, resolved.Email)
+
 	out := &pb.ExtendSessionResponse{}
 	out.SetSessionContext(sctx)
 	return out, nil

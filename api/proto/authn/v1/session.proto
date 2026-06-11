@@ -15,6 +15,9 @@ enum AuthLevel {
   AUTH_LEVEL_HIGH = 3;
 }
 
+// SessionToken is the long-lived opaque token (refresh-token role). It is the
+// only credential AuthnService RPCs accept for authentication; it can be
+// exchanged for a short-lived AccessToken via IssueAccessToken.
 message SessionToken {
   string value = 1 [(buf.validate.field).string = {
     pattern: "^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$"
@@ -22,11 +25,26 @@ message SessionToken {
   }];
 }
 
+// AccessToken is a short-lived (max 5 minutes) RS256 JWT for CDN / gateway
+// fast-path verification. Callers verify it locally against the JWKS served
+// by AuthnService.GetPublicKeys; it is NEVER accepted as authentication by
+// any AuthnService RPC and is distinct from OIDC provider access tokens
+// (header typ "muid-session+jwt", claim token_use "session").
+message AccessToken {
+  string value = 1; // compact JWS
+  google.protobuf.Timestamp issued_at = 2;
+  google.protobuf.Timestamp expires_at = 3;
+}
+
 message SessionContext {
   muid.authn.v1.session.SessionToken session_token = 1;
 
   google.protobuf.Timestamp issued_at = 2;
   google.protobuf.Timestamp expires_at = 3;
+
+  // Short-lived JWT issued alongside the session token. Present only when the
+  // access-token feature is configured on authn; absent otherwise.
+  AccessToken access_token = 4;
 }
 
 message AuthenticatedResult {

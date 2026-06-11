@@ -8,12 +8,14 @@ import (
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	basicpb "sanzi.io/muid/api/proto/authn/v1/basic"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
+	"sanzi.io/muid/internal/authn/accesstoken"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/identity/policy"
 	"sanzi.io/muid/internal/identity/resolver"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -31,6 +33,9 @@ type GRPCHandler struct {
 	resolver        resolver.UserResolver
 	issuer          issuer.SessionIssuer
 	identityManager *identity.IdentityManager
+
+	accessTokens *accesstoken.Minter
+	signing      signature.SignatureManager
 }
 
 // NewGRPCHandler returns a GRPCHandler wired from the provided dependencies.
@@ -49,6 +54,8 @@ func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
 		resolver:        deps.Resolver,
 		issuer:          deps.Issuer,
 		identityManager: deps.IdentityManager,
+		accessTokens:    deps.AccessTokens,
+		signing:         deps.SignatureManager,
 	}
 }
 

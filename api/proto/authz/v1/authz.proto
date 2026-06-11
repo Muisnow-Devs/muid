@@ -2,25 +2,15 @@ syntax = "proto3";
 
 package muid.authz.v1;
 
-import "authz/v1/certification.proto";
 import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
 
 service AuthzService {
-  /// OIDC/JWK infrastructure APIs.
-  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
-
   /// Internal service-to-service organization checks (callers pass user_id
   /// in the request body; no end-user metadata is required).
   rpc CheckOrganizationMembership(CheckOrganizationMembershipRequest) returns (CheckOrganizationMembershipResponse);
   rpc CheckOrganizationPermission(CheckOrganizationPermissionRequest) returns (CheckOrganizationPermissionResponse);
-}
-
-message GetPublicKeysRequest {}
-
-message GetPublicKeysResponse {
-  repeated muid.authz.v1.certification.PublicKey public_keys = 1;
 }
 
 message CheckOrganizationMembershipRequest {

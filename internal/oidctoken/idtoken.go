@@ -85,5 +85,5 @@ func (s *Signer) CreateIDToken(ctx context.Context, claims IDTokenClaims) (strin
 		payload.AuthTime = claims.AuthTime.Unix()
 	}
 
-	return s.signClaims(ctx, payload)
+	return s.signClaims(ctx, payload, tokenTypeJWT)
 }

@@ -389,7 +389,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 	}
 
 	// Determine the user ID — the only intent-driven branch in the flow.
-	userID, err := g.resolveUserID(ctx, tid, transitionData, identityRecord, s)
+	userID, err := g.resolveUserID(ctx, transitionData, identityRecord, s)
 	if err != nil {
 		if st, ok := status.FromError(err); ok && st.Code() != codes.OK {
 			return nil, err // already a gRPC status error (e.g. AlreadyExists, PermissionDenied)
@@ -426,6 +426,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 	if err != nil {
 		return nil, err
 	}
+	g.attachAccessToken(ctx, authResult.GetSessionContext(), userID, "")
 
 	g.dispatchAuthNotification(ctx, transitionData.Store.Intent, userID, s.Provider, reqMeta)
 	return continueAuthSuccess(tid, authResult), nil
@@ -435,7 +436,6 @@ func (g *GRPCHandler) handleVerifiedStep(
 // enforcing policy for link-account requests.
 func (g *GRPCHandler) resolveUserID(
 	ctx context.Context,
-	tid uuid.UUID,
 	transitionData session.AuthSession,
 	identityRecord *identitystore.Identity,
 	s *method.VerifiedStep,

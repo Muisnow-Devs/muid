@@ -30,8 +30,10 @@ func (g *GRPCHandler) resolveSessionFromContext(
 	return resolved, true, nil
 }
 
-// GetAuthorizedSession validates the session token sent via the authorization
-// metadata header ("Session <token>") and returns the resolved session.
+// GetAuthorizedSession validates the opaque session token sent via the
+// authorization metadata header ("Session <token>") and returns the resolved
+// session. JWT access tokens are never resolvable here — callers verify those
+// locally via the JWKS served by GetPublicKeys.
 // Returns valid=false instead of an error when the session is expired or not
 // found — this is the contract used by the gateway to check session validity.
 func (g *GRPCHandler) GetAuthorizedSession(
@@ -53,8 +55,9 @@ func (g *GRPCHandler) GetAuthorizedSession(
 	return out, nil
 }
 
-// GetAuthenticatedPrincipal resolves the session token sent via the authorization
-// metadata header into an authenticated principal for downstream services.
+// GetAuthenticatedPrincipal resolves the opaque session token sent via the
+// authorization metadata header into an authenticated principal for downstream
+// services. JWT access tokens are not accepted.
 // Returns valid=false instead of an error when the session is expired or not found.
 func (g *GRPCHandler) GetAuthenticatedPrincipal(
 	ctx context.Context,

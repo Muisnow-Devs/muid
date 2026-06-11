@@ -62,6 +62,12 @@ func (v *Verifier) VerifyAccessToken(
 	if strings.TrimSpace(kid) == "" {
 		return AccessTokenClaims{}, ErrInvalidToken
 	}
+	// Explicit typing (RFC 8725): rejects session access tokens
+	// (typ "muid-session+jwt") signed with the same keys.
+	typ, _ := token.Header["typ"].(string)
+	if typ != tokenTypeJWT {
+		return AccessTokenClaims{}, ErrInvalidToken
+	}
 
 	sigBytes, err := base64.RawURLEncoding.DecodeString(parts[2])
 	if err != nil {

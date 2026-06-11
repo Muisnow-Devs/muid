@@ -12,7 +12,6 @@ import (
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/rolepermission"
-	"sanzi.io/muid/internal/signature"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
@@ -20,39 +19,17 @@ import (
 type GRPCHandler struct {
 	pb.UnimplementedAuthzServiceServer
 
-	signing signature.SignatureManager
-	db      *authzent.Client
+	db *authzent.Client
 }
 
 type HandlerConfig struct {
-	SignatureManager signature.SignatureManager
-	DB               *authzent.Client
+	DB *authzent.Client
 }
 
 func NewGRPCHandler(config HandlerConfig) pb.AuthzServiceServer {
 	return &GRPCHandler{
-		signing: config.SignatureManager,
-		db:      config.DB,
+		db: config.DB,
 	}
-}
-
-func (g *GRPCHandler) GetPublicKeys(
-	ctx context.Context,
-	_ *pb.GetPublicKeysRequest,
-) (*pb.GetPublicKeysResponse, error) {
-	if g.signing == nil {
-		return nil, status.Error(codes.Unavailable, "signature manager unavailable")
-	}
-
-	keys, err := g.signing.PublicKeys(ctx)
-	if err != nil {
-		log.LogUnexpected(ctx, "authz public keys", err.Error())
-		return nil, grpcutils.GRPCInternalError()
-	}
-
-	out := &pb.GetPublicKeysResponse{}
-	out.SetPublicKeys(keys)
-	return out, nil
 }
 
 func (g *GRPCHandler) CheckOrganizationMembership(

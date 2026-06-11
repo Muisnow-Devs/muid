@@ -85,6 +85,9 @@ func AuthnSessionPrincipalInterceptor(iss issuer.SessionIssuer) grpc.UnaryServer
 		pb.AuthnService_RevokeFederatedIdentity_FullMethodName: required,
 		pb.AuthnService_RevokeSession_FullMethodName:           required,
 		pb.AuthnService_ExtendSession_FullMethodName:           required,
+		// The access-token exchange authenticates via the opaque session
+		// token only; the JWT it returns is never accepted back by authn.
+		pb.AuthnService_IssueAccessToken_FullMethodName: required,
 
 		// OIDC provider surface. Authorize is the only optional-session
 		// route; token-style RPCs authenticate the client in-message and

@@ -131,6 +131,9 @@ func (x AuthErrorCode) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
+// SessionToken is the long-lived opaque token (refresh-token role). It is the
+// only credential AuthnService RPCs accept for authentication; it can be
+// exchanged for a short-lived AccessToken via IssueAccessToken.
 type SessionToken struct {
 	state            protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Value string                 `protobuf:"bytes,1,opt,name=value,proto3"`
@@ -188,18 +191,131 @@ func (b0 SessionToken_builder) Build() *SessionToken {
 	return m0
 }
 
+// AccessToken is a short-lived (max 5 minutes) RS256 JWT for CDN / gateway
+// fast-path verification. Callers verify it locally against the JWKS served
+// by AuthnService.GetPublicKeys; it is NEVER accepted as authentication by
+// any AuthnService RPC and is distinct from OIDC provider access tokens
+// (header typ "muid-session+jwt", claim token_use "session").
+type AccessToken struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Value     string                 `protobuf:"bytes,1,opt,name=value,proto3"`
+	xxx_hidden_IssuedAt  *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=issued_at,json=issuedAt,proto3"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *AccessToken) Reset() {
+	*x = AccessToken{}
+	mi := &file_authn_v1_session_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccessToken) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccessToken) ProtoMessage() {}
+
+func (x *AccessToken) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *AccessToken) GetValue() string {
+	if x != nil {
+		return x.xxx_hidden_Value
+	}
+	return ""
+}
+
+func (x *AccessToken) GetIssuedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_IssuedAt
+	}
+	return nil
+}
+
+func (x *AccessToken) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ExpiresAt
+	}
+	return nil
+}
+
+func (x *AccessToken) SetValue(v string) {
+	x.xxx_hidden_Value = v
+}
+
+func (x *AccessToken) SetIssuedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_IssuedAt = v
+}
+
+func (x *AccessToken) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *AccessToken) HasIssuedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_IssuedAt != nil
+}
+
+func (x *AccessToken) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *AccessToken) ClearIssuedAt() {
+	x.xxx_hidden_IssuedAt = nil
+}
+
+func (x *AccessToken) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+type AccessToken_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Value     string
+	IssuedAt  *timestamppb.Timestamp
+	ExpiresAt *timestamppb.Timestamp
+}
+
+func (b0 AccessToken_builder) Build() *AccessToken {
+	m0 := &AccessToken{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Value = b.Value
+	x.xxx_hidden_IssuedAt = b.IssuedAt
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	return m0
+}
+
 type SessionContext struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_SessionToken *SessionToken          `protobuf:"bytes,1,opt,name=session_token,json=sessionToken,proto3"`
 	xxx_hidden_IssuedAt     *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=issued_at,json=issuedAt,proto3"`
 	xxx_hidden_ExpiresAt    *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=expires_at,json=expiresAt,proto3"`
+	xxx_hidden_AccessToken  *AccessToken           `protobuf:"bytes,4,opt,name=access_token,json=accessToken,proto3"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
 
 func (x *SessionContext) Reset() {
 	*x = SessionContext{}
-	mi := &file_authn_v1_session_proto_msgTypes[1]
+	mi := &file_authn_v1_session_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -211,7 +327,7 @@ func (x *SessionContext) String() string {
 func (*SessionContext) ProtoMessage() {}
 
 func (x *SessionContext) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[1]
+	mi := &file_authn_v1_session_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,6 +359,13 @@ func (x *SessionContext) GetExpiresAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *SessionContext) GetAccessToken() *AccessToken {
+	if x != nil {
+		return x.xxx_hidden_AccessToken
+	}
+	return nil
+}
+
 func (x *SessionContext) SetSessionToken(v *SessionToken) {
 	x.xxx_hidden_SessionToken = v
 }
@@ -253,6 +376,10 @@ func (x *SessionContext) SetIssuedAt(v *timestamppb.Timestamp) {
 
 func (x *SessionContext) SetExpiresAt(v *timestamppb.Timestamp) {
 	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *SessionContext) SetAccessToken(v *AccessToken) {
+	x.xxx_hidden_AccessToken = v
 }
 
 func (x *SessionContext) HasSessionToken() bool {
@@ -276,6 +403,13 @@ func (x *SessionContext) HasExpiresAt() bool {
 	return x.xxx_hidden_ExpiresAt != nil
 }
 
+func (x *SessionContext) HasAccessToken() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_AccessToken != nil
+}
+
 func (x *SessionContext) ClearSessionToken() {
 	x.xxx_hidden_SessionToken = nil
 }
@@ -288,12 +422,19 @@ func (x *SessionContext) ClearExpiresAt() {
 	x.xxx_hidden_ExpiresAt = nil
 }
 
+func (x *SessionContext) ClearAccessToken() {
+	x.xxx_hidden_AccessToken = nil
+}
+
 type SessionContext_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	SessionToken *SessionToken
 	IssuedAt     *timestamppb.Timestamp
 	ExpiresAt    *timestamppb.Timestamp
+	// Short-lived JWT issued alongside the session token. Present only when the
+	// access-token feature is configured on authn; absent otherwise.
+	AccessToken *AccessToken
 }
 
 func (b0 SessionContext_builder) Build() *SessionContext {
@@ -303,6 +444,7 @@ func (b0 SessionContext_builder) Build() *SessionContext {
 	x.xxx_hidden_SessionToken = b.SessionToken
 	x.xxx_hidden_IssuedAt = b.IssuedAt
 	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	x.xxx_hidden_AccessToken = b.AccessToken
 	return m0
 }
 
@@ -317,7 +459,7 @@ type AuthenticatedResult struct {
 
 func (x *AuthenticatedResult) Reset() {
 	*x = AuthenticatedResult{}
-	mi := &file_authn_v1_session_proto_msgTypes[2]
+	mi := &file_authn_v1_session_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -329,7 +471,7 @@ func (x *AuthenticatedResult) String() string {
 func (*AuthenticatedResult) ProtoMessage() {}
 
 func (x *AuthenticatedResult) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[2]
+	mi := &file_authn_v1_session_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -415,7 +557,7 @@ type AuthenticatedPrincipal struct {
 
 func (x *AuthenticatedPrincipal) Reset() {
 	*x = AuthenticatedPrincipal{}
-	mi := &file_authn_v1_session_proto_msgTypes[3]
+	mi := &file_authn_v1_session_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -427,7 +569,7 @@ func (x *AuthenticatedPrincipal) String() string {
 func (*AuthenticatedPrincipal) ProtoMessage() {}
 
 func (x *AuthenticatedPrincipal) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[3]
+	mi := &file_authn_v1_session_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +689,7 @@ type ChallengeRequired struct {
 
 func (x *ChallengeRequired) Reset() {
 	*x = ChallengeRequired{}
-	mi := &file_authn_v1_session_proto_msgTypes[4]
+	mi := &file_authn_v1_session_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -559,7 +701,7 @@ func (x *ChallengeRequired) String() string {
 func (*ChallengeRequired) ProtoMessage() {}
 
 func (x *ChallengeRequired) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[4]
+	mi := &file_authn_v1_session_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -615,7 +757,7 @@ type AuthSuccess struct {
 
 func (x *AuthSuccess) Reset() {
 	*x = AuthSuccess{}
-	mi := &file_authn_v1_session_proto_msgTypes[5]
+	mi := &file_authn_v1_session_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -627,7 +769,7 @@ func (x *AuthSuccess) String() string {
 func (*AuthSuccess) ProtoMessage() {}
 
 func (x *AuthSuccess) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[5]
+	mi := &file_authn_v1_session_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -686,7 +828,7 @@ type AuthFailure struct {
 
 func (x *AuthFailure) Reset() {
 	*x = AuthFailure{}
-	mi := &file_authn_v1_session_proto_msgTypes[6]
+	mi := &file_authn_v1_session_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -698,7 +840,7 @@ func (x *AuthFailure) String() string {
 func (*AuthFailure) ProtoMessage() {}
 
 func (x *AuthFailure) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_proto_msgTypes[6]
+	mi := &file_authn_v1_session_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -753,12 +895,18 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\n" +
 	"\x16authn/v1/session.proto\x12\x15muid.authn.v1.session\x1a\x18authn/v1/challenge.proto\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"V\n" +
 	"\fSessionToken\x12F\n" +
-	"\x05value\x18\x01 \x01(\tB0\xbaH-r+2&^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$\x98\x01BR\x05value\"\xce\x01\n" +
+	"\x05value\x18\x01 \x01(\tB0\xbaH-r+2&^[A-Za-z0-9_-]{22}\\.[A-Za-z0-9_-]{43}$\x98\x01BR\x05value\"\x97\x01\n" +
+	"\vAccessToken\x12\x14\n" +
+	"\x05value\x18\x01 \x01(\tR\x05value\x127\n" +
+	"\tissued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x95\x02\n" +
 	"\x0eSessionContext\x12H\n" +
 	"\rsession_token\x18\x01 \x01(\v2#.muid.authn.v1.session.SessionTokenR\fsessionToken\x127\n" +
 	"\tissued_at\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
 	"\n" +
-	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\xbf\x01\n" +
+	"expires_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\x12E\n" +
+	"\faccess_token\x18\x04 \x01(\v2\".muid.authn.v1.session.AccessTokenR\vaccessToken\"\xbf\x01\n" +
 	"\x13AuthenticatedResult\x12\x17\n" +
 	"\auser_id\x18\x01 \x01(\tR\x06userId\x12N\n" +
 	"\x0fsession_context\x18\x02 \x01(\v2%.muid.authn.v1.session.SessionContextR\x0esessionContext\x12?\n" +
@@ -797,37 +945,41 @@ const file_authn_v1_session_proto_rawDesc = "" +
 	"\x19com.muid.authn.v1.sessionB\fSessionProtoP\x01Z0sanzi.io/muid/api/proto/authn/v1/session;session\xa2\x02\x04MAVS\xaa\x02\x15Muid.Authn.V1.Session\xca\x02\x15Muid\\Authn\\V1\\Session\xe2\x02!Muid\\Authn\\V1\\Session\\GPBMetadata\xea\x02\x18Muid::Authn::V1::Sessionb\x06proto3"
 
 var file_authn_v1_session_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_authn_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_authn_v1_session_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_authn_v1_session_proto_goTypes = []any{
 	(AuthLevel)(0),                  // 0: muid.authn.v1.session.AuthLevel
 	(AuthErrorCode)(0),              // 1: muid.authn.v1.session.AuthErrorCode
 	(*SessionToken)(nil),            // 2: muid.authn.v1.session.SessionToken
-	(*SessionContext)(nil),          // 3: muid.authn.v1.session.SessionContext
-	(*AuthenticatedResult)(nil),     // 4: muid.authn.v1.session.AuthenticatedResult
-	(*AuthenticatedPrincipal)(nil),  // 5: muid.authn.v1.session.AuthenticatedPrincipal
-	(*ChallengeRequired)(nil),       // 6: muid.authn.v1.session.ChallengeRequired
-	(*AuthSuccess)(nil),             // 7: muid.authn.v1.session.AuthSuccess
-	(*AuthFailure)(nil),             // 8: muid.authn.v1.session.AuthFailure
-	(*timestamppb.Timestamp)(nil),   // 9: google.protobuf.Timestamp
-	(*challenge.AuthChallenge)(nil), // 10: muid.authn.v1.challenge.AuthChallenge
+	(*AccessToken)(nil),             // 3: muid.authn.v1.session.AccessToken
+	(*SessionContext)(nil),          // 4: muid.authn.v1.session.SessionContext
+	(*AuthenticatedResult)(nil),     // 5: muid.authn.v1.session.AuthenticatedResult
+	(*AuthenticatedPrincipal)(nil),  // 6: muid.authn.v1.session.AuthenticatedPrincipal
+	(*ChallengeRequired)(nil),       // 7: muid.authn.v1.session.ChallengeRequired
+	(*AuthSuccess)(nil),             // 8: muid.authn.v1.session.AuthSuccess
+	(*AuthFailure)(nil),             // 9: muid.authn.v1.session.AuthFailure
+	(*timestamppb.Timestamp)(nil),   // 10: google.protobuf.Timestamp
+	(*challenge.AuthChallenge)(nil), // 11: muid.authn.v1.challenge.AuthChallenge
 }
 var file_authn_v1_session_proto_depIdxs = []int32{
-	2,  // 0: muid.authn.v1.session.SessionContext.session_token:type_name -> muid.authn.v1.session.SessionToken
-	9,  // 1: muid.authn.v1.session.SessionContext.issued_at:type_name -> google.protobuf.Timestamp
-	9,  // 2: muid.authn.v1.session.SessionContext.expires_at:type_name -> google.protobuf.Timestamp
-	3,  // 3: muid.authn.v1.session.AuthenticatedResult.session_context:type_name -> muid.authn.v1.session.SessionContext
-	0,  // 4: muid.authn.v1.session.AuthenticatedResult.auth_level:type_name -> muid.authn.v1.session.AuthLevel
-	0,  // 5: muid.authn.v1.session.AuthenticatedPrincipal.auth_level:type_name -> muid.authn.v1.session.AuthLevel
-	9,  // 6: muid.authn.v1.session.AuthenticatedPrincipal.issued_at:type_name -> google.protobuf.Timestamp
-	9,  // 7: muid.authn.v1.session.AuthenticatedPrincipal.expires_at:type_name -> google.protobuf.Timestamp
-	10, // 8: muid.authn.v1.session.ChallengeRequired.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	4,  // 9: muid.authn.v1.session.AuthSuccess.result:type_name -> muid.authn.v1.session.AuthenticatedResult
-	1,  // 10: muid.authn.v1.session.AuthFailure.error_code:type_name -> muid.authn.v1.session.AuthErrorCode
-	11, // [11:11] is the sub-list for method output_type
-	11, // [11:11] is the sub-list for method input_type
-	11, // [11:11] is the sub-list for extension type_name
-	11, // [11:11] is the sub-list for extension extendee
-	0,  // [0:11] is the sub-list for field type_name
+	10, // 0: muid.authn.v1.session.AccessToken.issued_at:type_name -> google.protobuf.Timestamp
+	10, // 1: muid.authn.v1.session.AccessToken.expires_at:type_name -> google.protobuf.Timestamp
+	2,  // 2: muid.authn.v1.session.SessionContext.session_token:type_name -> muid.authn.v1.session.SessionToken
+	10, // 3: muid.authn.v1.session.SessionContext.issued_at:type_name -> google.protobuf.Timestamp
+	10, // 4: muid.authn.v1.session.SessionContext.expires_at:type_name -> google.protobuf.Timestamp
+	3,  // 5: muid.authn.v1.session.SessionContext.access_token:type_name -> muid.authn.v1.session.AccessToken
+	4,  // 6: muid.authn.v1.session.AuthenticatedResult.session_context:type_name -> muid.authn.v1.session.SessionContext
+	0,  // 7: muid.authn.v1.session.AuthenticatedResult.auth_level:type_name -> muid.authn.v1.session.AuthLevel
+	0,  // 8: muid.authn.v1.session.AuthenticatedPrincipal.auth_level:type_name -> muid.authn.v1.session.AuthLevel
+	10, // 9: muid.authn.v1.session.AuthenticatedPrincipal.issued_at:type_name -> google.protobuf.Timestamp
+	10, // 10: muid.authn.v1.session.AuthenticatedPrincipal.expires_at:type_name -> google.protobuf.Timestamp
+	11, // 11: muid.authn.v1.session.ChallengeRequired.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	5,  // 12: muid.authn.v1.session.AuthSuccess.result:type_name -> muid.authn.v1.session.AuthenticatedResult
+	1,  // 13: muid.authn.v1.session.AuthFailure.error_code:type_name -> muid.authn.v1.session.AuthErrorCode
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_session_proto_init() }
@@ -841,7 +993,7 @@ func file_authn_v1_session_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_session_proto_rawDesc), len(file_authn_v1_session_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

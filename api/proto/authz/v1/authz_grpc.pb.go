@@ -19,7 +19,6 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthzService_GetPublicKeys_FullMethodName               = "/muid.authz.v1.AuthzService/GetPublicKeys"
 	AuthzService_CheckOrganizationMembership_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationMembership"
 	AuthzService_CheckOrganizationPermission_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationPermission"
 )
@@ -28,8 +27,6 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthzServiceClient interface {
-	// / OIDC/JWK infrastructure APIs.
-	GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error)
 	// / Internal service-to-service organization checks (callers pass user_id
 	// / in the request body; no end-user metadata is required).
 	CheckOrganizationMembership(ctx context.Context, in *CheckOrganizationMembershipRequest, opts ...grpc.CallOption) (*CheckOrganizationMembershipResponse, error)
@@ -42,16 +39,6 @@ type authzServiceClient struct {
 
 func NewAuthzServiceClient(cc grpc.ClientConnInterface) AuthzServiceClient {
 	return &authzServiceClient{cc}
-}
-
-func (c *authzServiceClient) GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetPublicKeysResponse)
-	err := c.cc.Invoke(ctx, AuthzService_GetPublicKeys_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *authzServiceClient) CheckOrganizationMembership(ctx context.Context, in *CheckOrganizationMembershipRequest, opts ...grpc.CallOption) (*CheckOrganizationMembershipResponse, error) {
@@ -78,8 +65,6 @@ func (c *authzServiceClient) CheckOrganizationPermission(ctx context.Context, in
 // All implementations must embed UnimplementedAuthzServiceServer
 // for forward compatibility.
 type AuthzServiceServer interface {
-	// / OIDC/JWK infrastructure APIs.
-	GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error)
 	// / Internal service-to-service organization checks (callers pass user_id
 	// / in the request body; no end-user metadata is required).
 	CheckOrganizationMembership(context.Context, *CheckOrganizationMembershipRequest) (*CheckOrganizationMembershipResponse, error)
@@ -94,9 +79,6 @@ type AuthzServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAuthzServiceServer struct{}
 
-func (UnimplementedAuthzServiceServer) GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetPublicKeys not implemented")
-}
 func (UnimplementedAuthzServiceServer) CheckOrganizationMembership(context.Context, *CheckOrganizationMembershipRequest) (*CheckOrganizationMembershipResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckOrganizationMembership not implemented")
 }
@@ -122,24 +104,6 @@ func RegisterAuthzServiceServer(s grpc.ServiceRegistrar, srv AuthzServiceServer)
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AuthzService_ServiceDesc, srv)
-}
-
-func _AuthzService_GetPublicKeys_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetPublicKeysRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).GetPublicKeys(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthzService_GetPublicKeys_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).GetPublicKeys(ctx, req.(*GetPublicKeysRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthzService_CheckOrganizationMembership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -185,10 +149,6 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "muid.authz.v1.AuthzService",
 	HandlerType: (*AuthzServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "GetPublicKeys",
-			Handler:    _AuthzService_GetPublicKeys_Handler,
-		},
 		{
 			MethodName: "CheckOrganizationMembership",
 			Handler:    _AuthzService_CheckOrganizationMembership_Handler,

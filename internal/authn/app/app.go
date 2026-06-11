@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"sanzi.io/muid/internal/authn/accesstoken"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	"sanzi.io/muid/internal/authn/oidc"
 	oidcpolicy "sanzi.io/muid/internal/authn/oidc/policy"
@@ -31,15 +32,17 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 	iss := issuer.NewEntSessionIssuer(infra.entClient, infra.SessionCache)
 
 	handler := authngrpc.NewGRPCHandler(authngrpc.HandlerDependencies{
-		DB:              infra.entClient,
-		TransitionStore: infra.TransitionStore,
-		PubSub:          infra.PubSub,
-		SecureLink:      infra.GlobalConfig.LoginAlertSecureLink,
-		MaxAuthAttempts: infra.GlobalConfig.MaxAuthAttempts,
-		Policy:          pol,
-		Resolver:        res,
-		Issuer:          iss,
-		IdentityManager: infra.IdentityManager,
+		DB:               infra.entClient,
+		TransitionStore:  infra.TransitionStore,
+		PubSub:           infra.PubSub,
+		SecureLink:       infra.GlobalConfig.LoginAlertSecureLink,
+		MaxAuthAttempts:  infra.GlobalConfig.MaxAuthAttempts,
+		Policy:           pol,
+		Resolver:         res,
+		Issuer:           iss,
+		IdentityManager:  infra.IdentityManager,
+		AccessTokens:     newSessionAccessTokenMinter(infra),
+		SignatureManager: infra.SignatureManager,
 	})
 	oidcProvider := newOIDCProvider(infra)
 	service, err := NewAuthnGRPC(
@@ -61,13 +64,14 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 }
 
 // newOIDCProvider assembles the OIDC provider domain layer; nil when the OP
-// surface is not configured (handlers then answer Unavailable).
+// surface is not configured (handlers then answer Unavailable). The
+// SignatureManager alone is not enough: it is also wired when only session
+// access tokens are enabled.
 func newOIDCProvider(infra *InfraDependencies) *oidc.Provider {
-	if infra.SignatureManager == nil {
+	cfg := infra.GlobalConfig
+	if !cfg.OIDCProviderEnabled() || infra.SignatureManager == nil {
 		return nil
 	}
-
-	cfg := infra.GlobalConfig
 	evaluator := oidcpolicy.NewEvaluator(
 		oidcpolicy.GRPCMembership{Client: infra.AuthzCli},
 		oidcpolicy.EntAllowlist{DB: infra.entClient},
@@ -93,12 +97,28 @@ func newOIDCProvider(infra *InfraDependencies) *oidc.Provider {
 // newOIDCAdmin assembles the client-administration domain layer; nil when
 // the OP surface is not configured.
 func newOIDCAdmin(infra *InfraDependencies) *oidc.Admin {
-	if infra.SignatureManager == nil {
+	if !infra.GlobalConfig.OIDCProviderEnabled() || infra.SignatureManager == nil {
 		return nil
 	}
 	return oidc.NewAdmin(
 		infra.entClient,
 		oidcpolicy.GRPCMembership{Client: infra.AuthzCli},
+	)
+}
+
+// newSessionAccessTokenMinter assembles the session access token minter; nil
+// when the feature is not configured (IssueAccessToken then answers
+// Unavailable and login responses omit the access token).
+func newSessionAccessTokenMinter(infra *InfraDependencies) *accesstoken.Minter {
+	cfg := infra.GlobalConfig
+	if !cfg.SessionAccessTokenEnabled() || infra.SignatureManager == nil {
+		return nil
+	}
+	return accesstoken.NewMinter(
+		oidctoken.NewSigner(infra.SignatureManager, cfg.SessionAccessTokenIssuer),
+		infra.ProfileCli,
+		infra.ProfileCallTimeoutSeconds,
+		time.Duration(cfg.SessionAccessTokenTTLSeconds)*time.Second,
 	)
 }
 

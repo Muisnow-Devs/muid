@@ -89,14 +89,24 @@ type Config struct {
 	OIDCDeviceVerificationURI     string `envconfig:"OIDC_DEVICE_VERIFICATION_URI"      default:""`
 	OIDCDevicePollIntervalSeconds int    `envconfig:"OIDC_DEVICE_POLL_INTERVAL_SECONDS" default:"5"`
 
-	// SignatureSecretName must reference the SAME secret authz rotates; authn
-	// runs the SignatureManager in read-only follower mode and only refreshes
-	// its key cache (authz remains the sole rotator).
-	SignatureSecretName           string `envconfig:"SIGNATURE_SECRET_NAME"            default:""`
-	SignaturePreviousGenerations  int    `envconfig:"SIGNATURE_PREVIOUS_GENERATIONS"   default:"1"`
-	SignatureRefreshPeriodMinutes int    `envconfig:"SIGNATURE_REFRESH_PERIOD_MINUTES" default:"15"`
-	SecretManagerGCPProjectID     string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"    default:""`
-	SecretManagerGCPCredentials   string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS"   default:""`
+	// SignatureSecretName names the GCP secret holding the JWT signing keys.
+	// Authn is the sole owner and rotator; the public keys are served via
+	// AuthnService.GetPublicKeys (JWKS source). Required when either the OIDC
+	// provider or session access tokens are enabled.
+	SignatureSecretName          string `envconfig:"SIGNATURE_SECRET_NAME"           default:""`
+	SignatureKeyBits             int    `envconfig:"SIGNATURE_KEY_BITS"              default:"2048"`
+	SignaturePreviousGenerations int    `envconfig:"SIGNATURE_PREVIOUS_GENERATIONS"  default:"1"`
+	SignatureRotationPeriodHours int    `envconfig:"SIGNATURE_ROTATION_PERIOD_HOURS" default:"720"`
+	SecretManagerGCPProjectID    string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"   default:""`
+	SecretManagerGCPCredentials  string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS"  default:""`
+
+	// --- Session access tokens ---
+	// SessionAccessTokenIssuer enables short-lived JWT access tokens for
+	// sessions when set (iss claim). Requires SignatureSecretName. Independent
+	// of OIDCIssuer; both features share the one SignatureManager.
+	SessionAccessTokenIssuer string `envconfig:"SESSION_ACCESS_TOKEN_ISSUER" default:""`
+	// SessionAccessTokenTTLSeconds is clamped to [1, 300] (5 minutes max).
+	SessionAccessTokenTTLSeconds int `envconfig:"SESSION_ACCESS_TOKEN_TTL_SECONDS" default:"300"`
 
 	// AuthzGRPCAddr is the authz gRPC authority (host:port) used for
 	// organization membership/permission checks. The outbound client reuses
@@ -107,6 +117,17 @@ type Config struct {
 // OIDCProviderEnabled reports whether the OIDC provider surface is configured.
 func (c Config) OIDCProviderEnabled() bool {
 	return strings.TrimSpace(c.OIDCIssuer) != ""
+}
+
+// SessionAccessTokenEnabled reports whether short-lived session access tokens
+// are configured.
+func (c Config) SessionAccessTokenEnabled() bool {
+	return strings.TrimSpace(c.SessionAccessTokenIssuer) != ""
+}
+
+// SignatureConfigured reports whether the JWT signing key secret is configured.
+func (c Config) SignatureConfigured() bool {
+	return strings.TrimSpace(c.SignatureSecretName) != ""
 }
 
 // InfraDependencies holds the runtime dependencies for the authn app.
@@ -124,9 +145,13 @@ type InfraDependencies struct {
 	ProfileCallTimeoutSeconds time.Duration
 	IdentityManager           *identity.IdentityManager
 
-	// OIDC provider dependencies; nil/zero when the OP is not configured.
+	// SignatureManager owns and rotates the JWT signing keys; set whenever
+	// AUTHN_SIGNATURE_SECRET_NAME is configured (OIDC provider and/or session
+	// access tokens).
 	SignatureManager signature.SignatureManager
-	AuthzCli         authzpb.AuthzServiceClient
+
+	// OIDC provider dependencies; nil/zero when the OP is not configured.
+	AuthzCli authzpb.AuthzServiceClient
 	OIDCCodes        *oidcstore.KVCodeStore
 	OIDCPendings     *oidcstore.KVPendingStore
 	OIDCDevices      *oidcstore.KVDeviceStore

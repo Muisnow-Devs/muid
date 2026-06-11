@@ -138,8 +138,19 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		profileConn:               profileConn,
 	}
 
-	err = wireOIDCProviderInfra(ctx, cfg, redisKV, deps)
+	err = wireSignatureManager(ctx, cfg, deps)
 	if err != nil {
+		identityMgr.Close()
+		errutil.Close(profileConn)
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		errutil.CloseIf(redisKV)
+		return nil, fmt.Errorf("signature manager: %w", err)
+	}
+
+	err = wireOIDCProviderInfra(cfg, redisKV, deps)
+	if err != nil {
+		errutil.CloseIf(deps.SignatureManager)
 		identityMgr.Close()
 		errutil.Close(profileConn)
 		errutil.Close(entClient)
@@ -151,21 +162,64 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	return deps, nil
 }
 
-// wireOIDCProviderInfra adds the OIDC provider dependencies (follower
-// SignatureManager, authz client, KV protocol stores) when AUTHN_OIDC_ISSUER
-// is set. Without an issuer the OP surface stays disabled and the service
-// boots as before.
+// wireSignatureManager opens the owner-mode SignatureManager (authn rotates
+// the signing keys and serves them via GetPublicKeys) whenever
+// AUTHN_SIGNATURE_SECRET_NAME is set. The OIDC provider and session access
+// tokens both require it.
+func wireSignatureManager(ctx context.Context, cfg Config, deps *InfraDependencies) error {
+	if !cfg.SignatureConfigured() {
+		if cfg.OIDCProviderEnabled() {
+			return fmt.Errorf("AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_OIDC_ISSUER is set")
+		}
+		if cfg.SessionAccessTokenEnabled() {
+			return fmt.Errorf("AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_SESSION_ACCESS_TOKEN_ISSUER is set")
+		}
+		return nil
+	}
+
+	secretStore, err := gcpsecretmanager.NewGCPSecretManager(ctx, gcpsecretmanager.GCPConfig{
+		ProjectID:       cfg.SecretManagerGCPProjectID,
+		CredentialsFile: cfg.SecretManagerGCPCredentials,
+	})
+	if err != nil {
+		return fmt.Errorf("secret manager: %w", err)
+	}
+
+	signatureManager, err := signature.NewSignatureManager(secretStore, signature.ManagerConfig{
+		SecretName:          cfg.SignatureSecretName,
+		KeyBits:             cfg.SignatureKeyBits,
+		PreviousGenerations: cfg.SignaturePreviousGenerations,
+		RotationPeriod:      signatureRotationPeriod(cfg),
+	})
+	if err != nil {
+		errutil.CloseIf(secretStore)
+		return err
+	}
+
+	deps.SignatureManager = signatureManager
+	return nil
+}
+
+// signatureRotationPeriod maps the configured rotation hours onto the
+// rotation ticker; non-positive disables the rotation job.
+func signatureRotationPeriod(cfg Config) time.Duration {
+	if cfg.SignatureRotationPeriodHours <= 0 {
+		return -1
+	}
+	return time.Duration(cfg.SignatureRotationPeriodHours) * time.Hour
+}
+
+// wireOIDCProviderInfra adds the OP-specific dependencies (authz client, KV
+// protocol stores) when AUTHN_OIDC_ISSUER is set. The SignatureManager is
+// wired separately by wireSignatureManager. Without an issuer the OP surface
+// stays disabled and the service boots as before.
 func wireOIDCProviderInfra(
-	ctx context.Context,
 	cfg Config,
 	redisKV kv.AtomicKVStore,
 	deps *InfraDependencies,
 ) error {
 	if !cfg.OIDCProviderEnabled() {
 		return nil
-	}
-	if strings.TrimSpace(cfg.SignatureSecretName) == "" {
-		return fmt.Errorf("AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_OIDC_ISSUER is set")
 	}
 	authzAddr := strings.TrimSpace(cfg.AuthzGRPCAddr)
 	if authzAddr == "" {
@@ -177,43 +231,12 @@ func wireOIDCProviderInfra(
 		return fmt.Errorf("authz grpc dial: %w", err)
 	}
 
-	secretStore, err := gcpsecretmanager.NewGCPSecretManager(ctx, gcpsecretmanager.GCPConfig{
-		ProjectID:       cfg.SecretManagerGCPProjectID,
-		CredentialsFile: cfg.SecretManagerGCPCredentials,
-	})
-	if err != nil {
-		errutil.Close(authzConn)
-		return fmt.Errorf("secret manager: %w", err)
-	}
-
-	signatureManager, err := signature.NewSignatureManager(secretStore, signature.ManagerConfig{
-		SecretName:          cfg.SignatureSecretName,
-		PreviousGenerations: cfg.SignaturePreviousGenerations,
-		RotationPeriod:      signatureRefreshPeriod(cfg),
-		ReadOnly:            true,
-	})
-	if err != nil {
-		errutil.CloseIf(secretStore)
-		errutil.Close(authzConn)
-		return fmt.Errorf("signature manager: %w", err)
-	}
-
-	deps.SignatureManager = signatureManager
 	deps.AuthzCli = authzpb.NewAuthzServiceClient(authzConn)
 	deps.OIDCCodes = oidcstore.NewKVCodeStore(redisKV)
 	deps.OIDCPendings = oidcstore.NewKVPendingStore(redisKV)
 	deps.OIDCDevices = oidcstore.NewKVDeviceStore(redisKV)
 	deps.authzConn = authzConn
 	return nil
-}
-
-// signatureRefreshPeriod maps the configured refresh minutes onto the
-// follower-mode ticker; non-positive disables the refresh job.
-func signatureRefreshPeriod(cfg Config) time.Duration {
-	if cfg.SignatureRefreshPeriodMinutes <= 0 {
-		return -1
-	}
-	return time.Duration(cfg.SignatureRefreshPeriodMinutes) * time.Minute
 }
 
 // authzGRPCResilience reuses the Profile outbound resilience settings with a

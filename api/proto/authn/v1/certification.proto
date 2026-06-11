@@ -1,11 +1,11 @@
 syntax = "proto3";
 
-package muid.authz.v1.certification;
+package muid.authn.v1.certification;
 
 import "buf/validate/validate.proto";
 import "google/protobuf/timestamp.proto";
 
-option go_package = "sanzi.io/muid/api/proto/authz/v1/certification;certification";
+option go_package = "sanzi.io/muid/api/proto/authn/v1/certification;certification";
 
 message PublicKey {
   string kid = 1 [(buf.validate.field).string.uuid = true]; // key id

@@ -1,5 +1,6 @@
-// Package oidctoken mints and validates the JWTs issued by the muid OIDC
-// provider (access tokens and ID tokens), backed by signature.SignatureManager.
+// Package oidctoken mints and validates the JWTs issued by authn (OIDC
+// provider access/ID tokens and session access tokens), backed by
+// signature.SignatureManager.
 package oidctoken
 
 import (
@@ -73,14 +74,15 @@ func (s *Signer) CreateAccessToken(ctx context.Context, claims AccessTokenClaims
 		return "", errors.Join(signature.ErrSignFailed, err)
 	}
 
-	return s.signClaims(ctx, payload)
+	return s.signClaims(ctx, payload, tokenTypeJWT)
 }
 
-// signClaims signs payload as an RS256 JWT. The token is signed twice: the
-// first pass learns the active key id so it can be embedded in the header.
-func (s *Signer) signClaims(ctx context.Context, payload jwt.Claims) (string, error) {
+// signClaims signs payload as an RS256 JWT with the given header typ. The
+// token is signed twice: the first pass learns the active key id so it can be
+// embedded in the header.
+func (s *Signer) signClaims(ctx context.Context, payload jwt.Claims, typ string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, payload)
-	token.Header["typ"] = tokenTypeJWT
+	token.Header["typ"] = typ
 
 	signingInput, err := token.SigningString()
 	if err != nil {

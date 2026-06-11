@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        (unknown)
-// source: authz/v1/certification.proto
+// source: authn/v1/certification.proto
 
 package certification
 
@@ -41,7 +41,7 @@ type PublicKey struct {
 
 func (x *PublicKey) Reset() {
 	*x = PublicKey{}
-	mi := &file_authz_v1_certification_proto_msgTypes[0]
+	mi := &file_authn_v1_certification_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -53,7 +53,7 @@ func (x *PublicKey) String() string {
 func (*PublicKey) ProtoMessage() {}
 
 func (x *PublicKey) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_certification_proto_msgTypes[0]
+	mi := &file_authn_v1_certification_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,11 +243,11 @@ func (b0 PublicKey_builder) Build() *PublicKey {
 	return m0
 }
 
-var File_authz_v1_certification_proto protoreflect.FileDescriptor
+var File_authn_v1_certification_proto protoreflect.FileDescriptor
 
-const file_authz_v1_certification_proto_rawDesc = "" +
+const file_authn_v1_certification_proto_rawDesc = "" +
 	"\n" +
-	"\x1cauthz/v1/certification.proto\x12\x1bmuid.authz.v1.certification\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9b\x02\n" +
+	"\x1cauthn/v1/certification.proto\x12\x1bmuid.authn.v1.certification\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\x9b\x02\n" +
 	"\tPublicKey\x12\x1a\n" +
 	"\x03kid\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x03kid\x12\x10\n" +
 	"\x03kty\x18\x02 \x01(\tR\x03kty\x12\x10\n" +
@@ -262,16 +262,16 @@ const file_authz_v1_certification_proto_rawDesc = "" +
 	"\n" +
 	"not_before\x18\x1e \x01(\v2\x1a.google.protobuf.TimestampR\tnotBefore\x127\n" +
 	"\tnot_after\x18\x1f \x01(\v2\x1a.google.protobuf.TimestampR\bnotAfterB\x83\x02\n" +
-	"\x1fcom.muid.authz.v1.certificationB\x12CertificationProtoP\x01Z<sanzi.io/muid/api/proto/authz/v1/certification;certification\xa2\x02\x04MAVC\xaa\x02\x1bMuid.Authz.V1.Certification\xca\x02\x1bMuid\\Authz\\V1\\Certification\xe2\x02'Muid\\Authz\\V1\\Certification\\GPBMetadata\xea\x02\x1eMuid::Authz::V1::Certificationb\x06proto3"
+	"\x1fcom.muid.authn.v1.certificationB\x12CertificationProtoP\x01Z<sanzi.io/muid/api/proto/authn/v1/certification;certification\xa2\x02\x04MAVC\xaa\x02\x1bMuid.Authn.V1.Certification\xca\x02\x1bMuid\\Authn\\V1\\Certification\xe2\x02'Muid\\Authn\\V1\\Certification\\GPBMetadata\xea\x02\x1eMuid::Authn::V1::Certificationb\x06proto3"
 
-var file_authz_v1_certification_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_authz_v1_certification_proto_goTypes = []any{
-	(*PublicKey)(nil),             // 0: muid.authz.v1.certification.PublicKey
+var file_authn_v1_certification_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_authn_v1_certification_proto_goTypes = []any{
+	(*PublicKey)(nil),             // 0: muid.authn.v1.certification.PublicKey
 	(*timestamppb.Timestamp)(nil), // 1: google.protobuf.Timestamp
 }
-var file_authz_v1_certification_proto_depIdxs = []int32{
-	1, // 0: muid.authz.v1.certification.PublicKey.not_before:type_name -> google.protobuf.Timestamp
-	1, // 1: muid.authz.v1.certification.PublicKey.not_after:type_name -> google.protobuf.Timestamp
+var file_authn_v1_certification_proto_depIdxs = []int32{
+	1, // 0: muid.authn.v1.certification.PublicKey.not_before:type_name -> google.protobuf.Timestamp
+	1, // 1: muid.authn.v1.certification.PublicKey.not_after:type_name -> google.protobuf.Timestamp
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -279,26 +279,26 @@ var file_authz_v1_certification_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_authz_v1_certification_proto_init() }
-func file_authz_v1_certification_proto_init() {
-	if File_authz_v1_certification_proto != nil {
+func init() { file_authn_v1_certification_proto_init() }
+func file_authn_v1_certification_proto_init() {
+	if File_authn_v1_certification_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authz_v1_certification_proto_rawDesc), len(file_authz_v1_certification_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_certification_proto_rawDesc), len(file_authn_v1_certification_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_authz_v1_certification_proto_goTypes,
-		DependencyIndexes: file_authz_v1_certification_proto_depIdxs,
-		MessageInfos:      file_authz_v1_certification_proto_msgTypes,
+		GoTypes:           file_authn_v1_certification_proto_goTypes,
+		DependencyIndexes: file_authn_v1_certification_proto_depIdxs,
+		MessageInfos:      file_authn_v1_certification_proto_msgTypes,
 	}.Build()
-	File_authz_v1_certification_proto = out.File
-	file_authz_v1_certification_proto_goTypes = nil
-	file_authz_v1_certification_proto_depIdxs = nil
+	File_authn_v1_certification_proto = out.File
+	file_authn_v1_certification_proto_goTypes = nil
+	file_authn_v1_certification_proto_depIdxs = nil
 }

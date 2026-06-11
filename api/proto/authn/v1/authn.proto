@@ -3,6 +3,7 @@ syntax = "proto3";
 package muid.authn.v1;
 
 import "authn/v1/basic.proto";
+import "authn/v1/certification.proto";
 import "authn/v1/challenge.proto";
 import "authn/v1/proof.proto";
 import "authn/v1/session.proto";
@@ -17,14 +18,28 @@ service AuthnService {
 
   /// user related APIs, for user to manage their sessions.
   rpc RevokeFederatedIdentity(RevokeFederatedIdentityRequest) returns (RevokeFederatedIdentityResponse);
+  // Validates the opaque session token only; JWT access tokens are verified by
+  // callers locally via JWKS (GetPublicKeys) and are never resolvable here.
   rpc GetAuthorizedSession(GetAuthorizedSessionRequest) returns (GetAuthorizedSessionResponse);
   // Resolves a session into an authenticated principal for downstream services.
+  // Accepts the opaque session token only, never JWT access tokens.
   rpc GetAuthenticatedPrincipal(GetAuthenticatedPrincipalRequest) returns (GetAuthenticatedPrincipalResponse);
 
   // user session management APIs
   rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
-  // Extends the session token expiry up to the absolute 90-day cap.
+  // Extends the session token expiry up to the absolute 90-day cap. The
+  // response also carries a fresh access token when the feature is configured.
   rpc ExtendSession(ExtendSessionRequest) returns (ExtendSessionResponse);
+  // Exchanges a valid session token (refresh-token role) for a fresh
+  // short-lived JWT access token. Unavailable when the access-token feature
+  // is not configured.
+  rpc IssueAccessToken(IssueAccessTokenRequest) returns (IssueAccessTokenResponse);
+
+  /// OIDC/JWK infrastructure APIs.
+  // Serves the JWT signing public keys (JWKS source) for session access tokens
+  // and OIDC provider tokens. No authentication required; a gateway maps
+  // GET /.well-known/jwks.json onto this RPC.
+  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
 }
 
 message StartAuthSessionRequest {
@@ -103,4 +118,17 @@ message ExtendSessionRequest {}
 
 message ExtendSessionResponse {
   muid.authn.v1.session.SessionContext session_context = 1;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message IssueAccessTokenRequest {}
+
+message IssueAccessTokenResponse {
+  muid.authn.v1.session.AccessToken access_token = 1;
+}
+
+message GetPublicKeysRequest {}
+
+message GetPublicKeysResponse {
+  repeated muid.authn.v1.certification.PublicKey public_keys = 1;
 }

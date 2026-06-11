@@ -12,6 +12,9 @@ type OIDCCallbackURI func(*sql.Selector)
 // OIDCClient is the predicate function for oidcclient builders.
 type OIDCClient func(*sql.Selector)
 
+// OIDCClientAccessGrant is the predicate function for oidcclientaccessgrant builders.
+type OIDCClientAccessGrant func(*sql.Selector)
+
 // OIDCClientSecret is the predicate function for oidcclientsecret builders.
 type OIDCClientSecret func(*sql.Selector)
 

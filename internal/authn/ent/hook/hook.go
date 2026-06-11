@@ -33,6 +33,18 @@ func (f OIDCClientFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, 
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCClientMutation", m)
 }
 
+// The OIDCClientAccessGrantFunc type is an adapter to allow the use of ordinary
+// function as OIDCClientAccessGrant mutator.
+type OIDCClientAccessGrantFunc func(context.Context, *ent.OIDCClientAccessGrantMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OIDCClientAccessGrantFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OIDCClientAccessGrantMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OIDCClientAccessGrantMutation", m)
+}
+
 // The OIDCClientSecretFunc type is an adapter to allow the use of ordinary
 // function as OIDCClientSecret mutator.
 type OIDCClientSecretFunc func(context.Context, *ent.OIDCClientSecretMutation) (ent.Value, error)

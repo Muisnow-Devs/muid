@@ -20,12 +20,8 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	AuthzService_GetPublicKeys_FullMethodName               = "/muid.authz.v1.AuthzService/GetPublicKeys"
-	AuthzService_OIDCListGrantedConsents_FullMethodName     = "/muid.authz.v1.AuthzService/OIDCListGrantedConsents"
-	AuthzService_OIDCGrantConsent_FullMethodName            = "/muid.authz.v1.AuthzService/OIDCGrantConsent"
-	AuthzService_OIDCRevokeConsent_FullMethodName           = "/muid.authz.v1.AuthzService/OIDCRevokeConsent"
-	AuthzService_OIDCIntrospectToken_FullMethodName         = "/muid.authz.v1.AuthzService/OIDCIntrospectToken"
-	AuthzService_OIDCRevokeRefreshToken_FullMethodName      = "/muid.authz.v1.AuthzService/OIDCRevokeRefreshToken"
-	AuthzService_OIDCRotateAndGetAccessToken_FullMethodName = "/muid.authz.v1.AuthzService/OIDCRotateAndGetAccessToken"
+	AuthzService_CheckOrganizationMembership_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationMembership"
+	AuthzService_CheckOrganizationPermission_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationPermission"
 )
 
 // AuthzServiceClient is the client API for AuthzService service.
@@ -34,14 +30,10 @@ const (
 type AuthzServiceClient interface {
 	// / OIDC/JWK infrastructure APIs.
 	GetPublicKeys(ctx context.Context, in *GetPublicKeysRequest, opts ...grpc.CallOption) (*GetPublicKeysResponse, error)
-	// / OIDC user consent APIs (requires x-authn-user-id metadata).
-	OIDCListGrantedConsents(ctx context.Context, in *OIDCListGrantedConsentsRequest, opts ...grpc.CallOption) (*OIDCListGrantedConsentsResponse, error)
-	OIDCGrantConsent(ctx context.Context, in *OIDCGrantConsentRequest, opts ...grpc.CallOption) (*OIDCGrantConsentResponse, error)
-	OIDCRevokeConsent(ctx context.Context, in *OIDCRevokeConsentRequest, opts ...grpc.CallOption) (*OIDCRevokeConsentResponse, error)
-	// / OIDC token management APIs.
-	OIDCIntrospectToken(ctx context.Context, in *OIDCIntrospectTokenRequest, opts ...grpc.CallOption) (*OIDCIntrospectTokenResponse, error)
-	OIDCRevokeRefreshToken(ctx context.Context, in *OIDCRevokeRefreshTokenRequest, opts ...grpc.CallOption) (*OIDCRevokeRefreshTokenResponse, error)
-	OIDCRotateAndGetAccessToken(ctx context.Context, in *OIDCRotateAndGetAccessTokenRequest, opts ...grpc.CallOption) (*OIDCRotateAndGetAccessTokenResponse, error)
+	// / Internal service-to-service organization checks (callers pass user_id
+	// / in the request body; no end-user metadata is required).
+	CheckOrganizationMembership(ctx context.Context, in *CheckOrganizationMembershipRequest, opts ...grpc.CallOption) (*CheckOrganizationMembershipResponse, error)
+	CheckOrganizationPermission(ctx context.Context, in *CheckOrganizationPermissionRequest, opts ...grpc.CallOption) (*CheckOrganizationPermissionResponse, error)
 }
 
 type authzServiceClient struct {
@@ -62,60 +54,20 @@ func (c *authzServiceClient) GetPublicKeys(ctx context.Context, in *GetPublicKey
 	return out, nil
 }
 
-func (c *authzServiceClient) OIDCListGrantedConsents(ctx context.Context, in *OIDCListGrantedConsentsRequest, opts ...grpc.CallOption) (*OIDCListGrantedConsentsResponse, error) {
+func (c *authzServiceClient) CheckOrganizationMembership(ctx context.Context, in *CheckOrganizationMembershipRequest, opts ...grpc.CallOption) (*CheckOrganizationMembershipResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCListGrantedConsentsResponse)
-	err := c.cc.Invoke(ctx, AuthzService_OIDCListGrantedConsents_FullMethodName, in, out, cOpts...)
+	out := new(CheckOrganizationMembershipResponse)
+	err := c.cc.Invoke(ctx, AuthzService_CheckOrganizationMembership_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *authzServiceClient) OIDCGrantConsent(ctx context.Context, in *OIDCGrantConsentRequest, opts ...grpc.CallOption) (*OIDCGrantConsentResponse, error) {
+func (c *authzServiceClient) CheckOrganizationPermission(ctx context.Context, in *CheckOrganizationPermissionRequest, opts ...grpc.CallOption) (*CheckOrganizationPermissionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCGrantConsentResponse)
-	err := c.cc.Invoke(ctx, AuthzService_OIDCGrantConsent_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authzServiceClient) OIDCRevokeConsent(ctx context.Context, in *OIDCRevokeConsentRequest, opts ...grpc.CallOption) (*OIDCRevokeConsentResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCRevokeConsentResponse)
-	err := c.cc.Invoke(ctx, AuthzService_OIDCRevokeConsent_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authzServiceClient) OIDCIntrospectToken(ctx context.Context, in *OIDCIntrospectTokenRequest, opts ...grpc.CallOption) (*OIDCIntrospectTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCIntrospectTokenResponse)
-	err := c.cc.Invoke(ctx, AuthzService_OIDCIntrospectToken_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authzServiceClient) OIDCRevokeRefreshToken(ctx context.Context, in *OIDCRevokeRefreshTokenRequest, opts ...grpc.CallOption) (*OIDCRevokeRefreshTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCRevokeRefreshTokenResponse)
-	err := c.cc.Invoke(ctx, AuthzService_OIDCRevokeRefreshToken_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *authzServiceClient) OIDCRotateAndGetAccessToken(ctx context.Context, in *OIDCRotateAndGetAccessTokenRequest, opts ...grpc.CallOption) (*OIDCRotateAndGetAccessTokenResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(OIDCRotateAndGetAccessTokenResponse)
-	err := c.cc.Invoke(ctx, AuthzService_OIDCRotateAndGetAccessToken_FullMethodName, in, out, cOpts...)
+	out := new(CheckOrganizationPermissionResponse)
+	err := c.cc.Invoke(ctx, AuthzService_CheckOrganizationPermission_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -128,14 +80,10 @@ func (c *authzServiceClient) OIDCRotateAndGetAccessToken(ctx context.Context, in
 type AuthzServiceServer interface {
 	// / OIDC/JWK infrastructure APIs.
 	GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error)
-	// / OIDC user consent APIs (requires x-authn-user-id metadata).
-	OIDCListGrantedConsents(context.Context, *OIDCListGrantedConsentsRequest) (*OIDCListGrantedConsentsResponse, error)
-	OIDCGrantConsent(context.Context, *OIDCGrantConsentRequest) (*OIDCGrantConsentResponse, error)
-	OIDCRevokeConsent(context.Context, *OIDCRevokeConsentRequest) (*OIDCRevokeConsentResponse, error)
-	// / OIDC token management APIs.
-	OIDCIntrospectToken(context.Context, *OIDCIntrospectTokenRequest) (*OIDCIntrospectTokenResponse, error)
-	OIDCRevokeRefreshToken(context.Context, *OIDCRevokeRefreshTokenRequest) (*OIDCRevokeRefreshTokenResponse, error)
-	OIDCRotateAndGetAccessToken(context.Context, *OIDCRotateAndGetAccessTokenRequest) (*OIDCRotateAndGetAccessTokenResponse, error)
+	// / Internal service-to-service organization checks (callers pass user_id
+	// / in the request body; no end-user metadata is required).
+	CheckOrganizationMembership(context.Context, *CheckOrganizationMembershipRequest) (*CheckOrganizationMembershipResponse, error)
+	CheckOrganizationPermission(context.Context, *CheckOrganizationPermissionRequest) (*CheckOrganizationPermissionResponse, error)
 	mustEmbedUnimplementedAuthzServiceServer()
 }
 
@@ -149,23 +97,11 @@ type UnimplementedAuthzServiceServer struct{}
 func (UnimplementedAuthzServiceServer) GetPublicKeys(context.Context, *GetPublicKeysRequest) (*GetPublicKeysResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetPublicKeys not implemented")
 }
-func (UnimplementedAuthzServiceServer) OIDCListGrantedConsents(context.Context, *OIDCListGrantedConsentsRequest) (*OIDCListGrantedConsentsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCListGrantedConsents not implemented")
+func (UnimplementedAuthzServiceServer) CheckOrganizationMembership(context.Context, *CheckOrganizationMembershipRequest) (*CheckOrganizationMembershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckOrganizationMembership not implemented")
 }
-func (UnimplementedAuthzServiceServer) OIDCGrantConsent(context.Context, *OIDCGrantConsentRequest) (*OIDCGrantConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCGrantConsent not implemented")
-}
-func (UnimplementedAuthzServiceServer) OIDCRevokeConsent(context.Context, *OIDCRevokeConsentRequest) (*OIDCRevokeConsentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRevokeConsent not implemented")
-}
-func (UnimplementedAuthzServiceServer) OIDCIntrospectToken(context.Context, *OIDCIntrospectTokenRequest) (*OIDCIntrospectTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCIntrospectToken not implemented")
-}
-func (UnimplementedAuthzServiceServer) OIDCRevokeRefreshToken(context.Context, *OIDCRevokeRefreshTokenRequest) (*OIDCRevokeRefreshTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRevokeRefreshToken not implemented")
-}
-func (UnimplementedAuthzServiceServer) OIDCRotateAndGetAccessToken(context.Context, *OIDCRotateAndGetAccessTokenRequest) (*OIDCRotateAndGetAccessTokenResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method OIDCRotateAndGetAccessToken not implemented")
+func (UnimplementedAuthzServiceServer) CheckOrganizationPermission(context.Context, *CheckOrganizationPermissionRequest) (*CheckOrganizationPermissionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckOrganizationPermission not implemented")
 }
 func (UnimplementedAuthzServiceServer) mustEmbedUnimplementedAuthzServiceServer() {}
 func (UnimplementedAuthzServiceServer) testEmbeddedByValue()                      {}
@@ -206,110 +142,38 @@ func _AuthzService_GetPublicKeys_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthzService_OIDCListGrantedConsents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCListGrantedConsentsRequest)
+func _AuthzService_CheckOrganizationMembership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckOrganizationMembershipRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthzServiceServer).OIDCListGrantedConsents(ctx, in)
+		return srv.(AuthzServiceServer).CheckOrganizationMembership(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthzService_OIDCListGrantedConsents_FullMethodName,
+		FullMethod: AuthzService_CheckOrganizationMembership_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).OIDCListGrantedConsents(ctx, req.(*OIDCListGrantedConsentsRequest))
+		return srv.(AuthzServiceServer).CheckOrganizationMembership(ctx, req.(*CheckOrganizationMembershipRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AuthzService_OIDCGrantConsent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCGrantConsentRequest)
+func _AuthzService_CheckOrganizationPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckOrganizationPermissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AuthzServiceServer).OIDCGrantConsent(ctx, in)
+		return srv.(AuthzServiceServer).CheckOrganizationPermission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AuthzService_OIDCGrantConsent_FullMethodName,
+		FullMethod: AuthzService_CheckOrganizationPermission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).OIDCGrantConsent(ctx, req.(*OIDCGrantConsentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthzService_OIDCRevokeConsent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCRevokeConsentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).OIDCRevokeConsent(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthzService_OIDCRevokeConsent_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).OIDCRevokeConsent(ctx, req.(*OIDCRevokeConsentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthzService_OIDCIntrospectToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCIntrospectTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).OIDCIntrospectToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthzService_OIDCIntrospectToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).OIDCIntrospectToken(ctx, req.(*OIDCIntrospectTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthzService_OIDCRevokeRefreshToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCRevokeRefreshTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).OIDCRevokeRefreshToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthzService_OIDCRevokeRefreshToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).OIDCRevokeRefreshToken(ctx, req.(*OIDCRevokeRefreshTokenRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _AuthzService_OIDCRotateAndGetAccessToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(OIDCRotateAndGetAccessTokenRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AuthzServiceServer).OIDCRotateAndGetAccessToken(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: AuthzService_OIDCRotateAndGetAccessToken_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AuthzServiceServer).OIDCRotateAndGetAccessToken(ctx, req.(*OIDCRotateAndGetAccessTokenRequest))
+		return srv.(AuthzServiceServer).CheckOrganizationPermission(ctx, req.(*CheckOrganizationPermissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -326,28 +190,12 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _AuthzService_GetPublicKeys_Handler,
 		},
 		{
-			MethodName: "OIDCListGrantedConsents",
-			Handler:    _AuthzService_OIDCListGrantedConsents_Handler,
+			MethodName: "CheckOrganizationMembership",
+			Handler:    _AuthzService_CheckOrganizationMembership_Handler,
 		},
 		{
-			MethodName: "OIDCGrantConsent",
-			Handler:    _AuthzService_OIDCGrantConsent_Handler,
-		},
-		{
-			MethodName: "OIDCRevokeConsent",
-			Handler:    _AuthzService_OIDCRevokeConsent_Handler,
-		},
-		{
-			MethodName: "OIDCIntrospectToken",
-			Handler:    _AuthzService_OIDCIntrospectToken_Handler,
-		},
-		{
-			MethodName: "OIDCRevokeRefreshToken",
-			Handler:    _AuthzService_OIDCRevokeRefreshToken_Handler,
-		},
-		{
-			MethodName: "OIDCRotateAndGetAccessToken",
-			Handler:    _AuthzService_OIDCRotateAndGetAccessToken_Handler,
+			MethodName: "CheckOrganizationPermission",
+			Handler:    _AuthzService_CheckOrganizationPermission_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

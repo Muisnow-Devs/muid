@@ -23,4 +23,6 @@ var (
 	ErrRevokeFailed = errors.New("signature: revoke failed")
 	// ErrUnsupportedAlgorithm indicates the requested signature algorithm is not supported.
 	ErrUnsupportedAlgorithm = errors.New("signature: unsupported algorithm")
+	// ErrReadOnly indicates a mutating operation was attempted on a read-only manager.
+	ErrReadOnly = errors.New("signature: manager is read-only")
 )

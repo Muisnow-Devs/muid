@@ -27,6 +27,8 @@ type OIDCClient struct {
 	OwnerOrganizationID uuid.UUID `json:"owner_organization_id,omitempty"`
 	// Allowed scopes for the client.
 	Scopes []string `json:"scopes,omitempty"`
+	// Enabled OAuth grant types: authorization_code, refresh_token, device_code.
+	GrantTypes []string `json:"grant_types,omitempty"`
 	// TokenEndpointAuthMethod holds the value of the "token_endpoint_auth_method" field.
 	TokenEndpointAuthMethod oidcclient.TokenEndpointAuthMethod `json:"token_endpoint_auth_method,omitempty"`
 	// ApplicationType holds the value of the "application_type" field.
@@ -59,9 +61,11 @@ type OIDCClientEdges struct {
 	Grants []*OIDCGrant `json:"grants,omitempty"`
 	// RefreshTokens holds the value of the refresh_tokens edge.
 	RefreshTokens []*OIDCRefreshToken `json:"refresh_tokens,omitempty"`
+	// AccessGrants holds the value of the access_grants edge.
+	AccessGrants []*OIDCClientAccessGrant `json:"access_grants,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [4]bool
+	loadedTypes [5]bool
 }
 
 // CallbackUrlsOrErr returns the CallbackUrls value or an error if the edge
@@ -100,12 +104,21 @@ func (e OIDCClientEdges) RefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
 	return nil, &NotLoadedError{edge: "refresh_tokens"}
 }
 
+// AccessGrantsOrErr returns the AccessGrants value or an error if the edge
+// was not loaded in eager-loading.
+func (e OIDCClientEdges) AccessGrantsOrErr() ([]*OIDCClientAccessGrant, error) {
+	if e.loadedTypes[4] {
+		return e.AccessGrants, nil
+	}
+	return nil, &NotLoadedError{edge: "access_grants"}
+}
+
 // scanValues returns the types for scanning values from sql.Rows.
 func (*OIDCClient) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case oidcclient.FieldScopes:
+		case oidcclient.FieldScopes, oidcclient.FieldGrantTypes:
 			values[i] = new([]byte)
 		case oidcclient.FieldClientID, oidcclient.FieldClientName, oidcclient.FieldTokenEndpointAuthMethod, oidcclient.FieldApplicationType, oidcclient.FieldAccessPolicy, oidcclient.FieldVerificationStatus, oidcclient.FieldPublishStatus:
 			values[i] = new(sql.NullString)
@@ -158,6 +171,14 @@ func (_m *OIDCClient) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.Scopes); err != nil {
 					return fmt.Errorf("unmarshal field scopes: %w", err)
+				}
+			}
+		case oidcclient.FieldGrantTypes:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field grant_types", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.GrantTypes); err != nil {
+					return fmt.Errorf("unmarshal field grant_types: %w", err)
 				}
 			}
 		case oidcclient.FieldTokenEndpointAuthMethod:
@@ -242,6 +263,11 @@ func (_m *OIDCClient) QueryRefreshTokens() *OIDCRefreshTokenQuery {
 	return NewOIDCClientClient(_m.config).QueryRefreshTokens(_m)
 }
 
+// QueryAccessGrants queries the "access_grants" edge of the OIDCClient entity.
+func (_m *OIDCClient) QueryAccessGrants() *OIDCClientAccessGrantQuery {
+	return NewOIDCClientClient(_m.config).QueryAccessGrants(_m)
+}
+
 // Update returns a builder for updating this OIDCClient.
 // Note that you need to call OIDCClient.Unwrap() before calling this method if this OIDCClient
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -276,6 +302,9 @@ func (_m *OIDCClient) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("scopes=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Scopes))
+	builder.WriteString(", ")
+	builder.WriteString("grant_types=")
+	builder.WriteString(fmt.Sprintf("%v", _m.GrantTypes))
 	builder.WriteString(", ")
 	builder.WriteString("token_endpoint_auth_method=")
 	builder.WriteString(fmt.Sprintf("%v", _m.TokenEndpointAuthMethod))

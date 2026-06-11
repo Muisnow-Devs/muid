@@ -17,7 +17,10 @@ import (
 	gsm "sanzi.io/muid/pkg/shared/secretmanager"
 )
 
-const defaultRotationPeriod = 30 * 24 * time.Hour
+const (
+	defaultRotationPeriod = 30 * 24 * time.Hour
+	defaultRefreshPeriod  = 15 * time.Minute
+)
 
 type secretBackedManager struct {
 	secrets SecretManager
@@ -50,7 +53,11 @@ func NewSignatureManager(secrets SecretManager, cfg ManagerConfig) (SignatureMan
 		cfg.PreviousGenerations = 1
 	}
 	if cfg.RotationPeriod == 0 {
-		cfg.RotationPeriod = defaultRotationPeriod
+		if cfg.ReadOnly {
+			cfg.RotationPeriod = defaultRefreshPeriod
+		} else {
+			cfg.RotationPeriod = defaultRotationPeriod
+		}
 	}
 
 	return &secretBackedManager{
@@ -154,6 +161,10 @@ func (m *secretBackedManager) PublicKeys(ctx context.Context) ([]*certification.
 }
 
 func (m *secretBackedManager) RotateSecret(ctx context.Context) (KeyMetadata, error) {
+	if m.cfg.ReadOnly {
+		return KeyMetadata{}, ErrReadOnly
+	}
+
 	payload, err := generatePrivateKeyPEM(m.cfg.KeyBits)
 	if err != nil {
 		return KeyMetadata{}, err
@@ -181,6 +192,10 @@ func (m *secretBackedManager) RotateSecret(ctx context.Context) (KeyMetadata, er
 }
 
 func (m *secretBackedManager) RevokeSecret(ctx context.Context, keyID string) error {
+	if m.cfg.ReadOnly {
+		return ErrReadOnly
+	}
+
 	version, err := m.versionForKeyID(ctx, keyID)
 	if err != nil {
 		return errors.Join(ErrRevokeFailed, err)
@@ -219,18 +234,53 @@ func (m *secretBackedManager) Close() error {
 }
 
 func (m *secretBackedManager) runRotationJob(ctx context.Context) {
+	step := func(ctx context.Context) error {
+		_, err := m.RotateSecret(ctx)
+		return err
+	}
+	failureMessage := "signature rotate secret"
+	if m.cfg.ReadOnly {
+		step = m.refreshCurrent
+		failureMessage = "signature refresh secret"
+	}
+
 	job := rotationJob{
 		period:    m.cfg.RotationPeriod,
 		newTicker: m.newRotationTicker,
-		rotate: func(ctx context.Context) error {
-			_, err := m.RotateSecret(ctx)
-			return err
-		},
+		rotate:    step,
 		logFailure: func(ctx context.Context, err error) {
-			log.LogUnexpected(ctx, "signature rotate secret", err.Error())
+			log.LogUnexpected(ctx, failureMessage, err.Error())
 		},
 	}
 	job.run(ctx)
+}
+
+// refreshCurrent re-resolves the latest secret version, bypassing the
+// current-version cache short-circuit, so follower managers observe
+// rotations performed by the owning service.
+func (m *secretBackedManager) refreshCurrent(ctx context.Context) error {
+	payload, version, err := m.secrets.GetSecret(
+		ctx,
+		gsm.SecretRef{Name: m.cfg.SecretName, Version: "latest"},
+	)
+	if err != nil {
+		return errors.Join(ErrSecretUnavailable, err)
+	}
+
+	m.mu.Lock()
+	cached := m.cacheByVersion[version]
+	m.mu.Unlock()
+	if cached == nil {
+		_, err = m.cachePayload(version, payload)
+		if err != nil {
+			return err
+		}
+	}
+
+	m.mu.Lock()
+	m.currentVersion = version
+	m.mu.Unlock()
+	return nil
 }
 
 func (m *secretBackedManager) currentKey(ctx context.Context) (*cachedKey, error) {

@@ -44,6 +44,7 @@ var (
 		{Name: "client_name", Type: field.TypeString, Size: 64},
 		{Name: "owner_organization_id", Type: field.TypeUUID},
 		{Name: "scopes", Type: field.TypeJSON},
+		{Name: "grant_types", Type: field.TypeJSON},
 		{Name: "token_endpoint_auth_method", Type: field.TypeEnum, Enums: []string{"none", "client_secret_basic", "client_secret_post", "private_key_jwt"}, Default: "none"},
 		{Name: "application_type", Type: field.TypeEnum, Enums: []string{"web", "native"}, Default: "web"},
 		{Name: "access_policy", Type: field.TypeEnum, Enums: []string{"public", "organization", "private"}, Default: "private"},
@@ -68,6 +69,46 @@ var (
 				Name:    "oidcclient_owner_organization_id",
 				Unique:  false,
 				Columns: []*schema.Column{OidcClientsColumns[3]},
+			},
+		},
+	}
+	// OidcClientAccessGrantsColumns holds the columns for the "oidc_client_access_grants" table.
+	OidcClientAccessGrantsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "granted_by", Type: field.TypeUUID, Nullable: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "client_ref_id", Type: field.TypeUUID},
+		{Name: "user_id", Type: field.TypeUUID},
+	}
+	// OidcClientAccessGrantsTable holds the schema information for the "oidc_client_access_grants" table.
+	OidcClientAccessGrantsTable = &schema.Table{
+		Name:       "oidc_client_access_grants",
+		Columns:    OidcClientAccessGrantsColumns,
+		PrimaryKey: []*schema.Column{OidcClientAccessGrantsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "oidc_client_access_grants_oidc_clients_access_grants",
+				Columns:    []*schema.Column{OidcClientAccessGrantsColumns[3]},
+				RefColumns: []*schema.Column{OidcClientsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+			{
+				Symbol:     "oidc_client_access_grants_user_refs_oidc_access_grants",
+				Columns:    []*schema.Column{OidcClientAccessGrantsColumns[4]},
+				RefColumns: []*schema.Column{UserRefsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "oidcclientaccessgrant_client_ref_id_user_id",
+				Unique:  true,
+				Columns: []*schema.Column{OidcClientAccessGrantsColumns[3], OidcClientAccessGrantsColumns[4]},
+			},
+			{
+				Name:    "oidcclientaccessgrant_user_id",
+				Unique:  false,
+				Columns: []*schema.Column{OidcClientAccessGrantsColumns[4]},
 			},
 		},
 	}
@@ -487,6 +528,7 @@ var (
 	Tables = []*schema.Table{
 		OidcCallbackUrIsTable,
 		OidcClientsTable,
+		OidcClientAccessGrantsTable,
 		OidcClientSecretsTable,
 		OidcGrantsTable,
 		OidcRefreshTokensTable,
@@ -502,6 +544,8 @@ var (
 
 func init() {
 	OidcCallbackUrIsTable.ForeignKeys[0].RefTable = OidcClientsTable
+	OidcClientAccessGrantsTable.ForeignKeys[0].RefTable = OidcClientsTable
+	OidcClientAccessGrantsTable.ForeignKeys[1].RefTable = UserRefsTable
 	OidcClientSecretsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[0].RefTable = OidcClientsTable
 	OidcGrantsTable.ForeignKeys[1].RefTable = UserRefsTable

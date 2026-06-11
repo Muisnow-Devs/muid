@@ -2,11 +2,15 @@ package app
 
 import (
 	"context"
+	"time"
 
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
+	"sanzi.io/muid/internal/authn/oidc"
+	oidcpolicy "sanzi.io/muid/internal/authn/oidc/policy"
 	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/identity/policy"
 	"sanzi.io/muid/internal/identity/resolver"
+	"sanzi.io/muid/internal/oidctoken"
 	"sanzi.io/muid/pkg/errutil"
 )
 
@@ -37,7 +41,15 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 		Issuer:          iss,
 		IdentityManager: infra.IdentityManager,
 	})
-	service, err := NewAuthnGRPC(infra.GlobalConfig, handler, iss, nil)
+	oidcProvider := newOIDCProvider(infra)
+	service, err := NewAuthnGRPC(
+		infra.GlobalConfig,
+		handler,
+		authngrpc.NewOIDCHandler(oidcProvider),
+		authngrpc.NewOIDCAdminHandler(newOIDCAdmin(infra)),
+		iss,
+		nil,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +60,55 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 	}, nil
 }
 
+// newOIDCProvider assembles the OIDC provider domain layer; nil when the OP
+// surface is not configured (handlers then answer Unavailable).
+func newOIDCProvider(infra *InfraDependencies) *oidc.Provider {
+	if infra.SignatureManager == nil {
+		return nil
+	}
+
+	cfg := infra.GlobalConfig
+	evaluator := oidcpolicy.NewEvaluator(
+		oidcpolicy.GRPCMembership{Client: infra.AuthzCli},
+		oidcpolicy.EntAllowlist{DB: infra.entClient},
+	)
+	return oidc.NewProvider(
+		infra.entClient,
+		infra.OIDCCodes,
+		infra.OIDCPendings,
+		infra.OIDCDevices,
+		evaluator,
+		oidctoken.NewSigner(infra.SignatureManager, cfg.OIDCIssuer),
+		oidctoken.NewVerifier(infra.SignatureManager, cfg.OIDCIssuer),
+		infra.ProfileCli,
+		oidc.Config{
+			Issuer:                cfg.OIDCIssuer,
+			AccessTokenTTL:        time.Duration(cfg.OIDCAccessTokenTTLSeconds) * time.Second,
+			DeviceVerificationURI: cfg.OIDCDeviceVerificationURI,
+			DevicePollInterval:    time.Duration(cfg.OIDCDevicePollIntervalSeconds) * time.Second,
+		},
+	)
+}
+
+// newOIDCAdmin assembles the client-administration domain layer; nil when
+// the OP surface is not configured.
+func newOIDCAdmin(infra *InfraDependencies) *oidc.Admin {
+	if infra.SignatureManager == nil {
+		return nil
+	}
+	return oidc.NewAdmin(
+		infra.entClient,
+		oidcpolicy.GRPCMembership{Client: infra.AuthzCli},
+	)
+}
+
 func (app *AuthnApp) Start(ctx context.Context) error {
+	if app.dependencyInjector.SignatureManager != nil {
+		err := app.dependencyInjector.SignatureManager.Start(ctx)
+		if err != nil {
+			return err
+		}
+	}
 	return app.server.Start(ctx)
 }
 

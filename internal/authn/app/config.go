@@ -3,17 +3,21 @@ package app
 import (
 	"errors"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/go-webauthn/webauthn/webauthn"
 	"google.golang.org/grpc"
 
+	authzpb "sanzi.io/muid/api/proto/authz/v1"
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	authnconfig "sanzi.io/muid/internal/authn/config"
 	authnent "sanzi.io/muid/internal/authn/ent"
+	oidcstore "sanzi.io/muid/internal/authn/oidc/store"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/shared/kv"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
@@ -75,6 +79,34 @@ type Config struct {
 	ProfileGRPCCBConsecutiveFailures int  `envconfig:"PROFILE_GRPC_CB_CONSECUTIVE_FAILURES"   default:"5"`
 	ProfileGRPCCBOpenSeconds         int  `envconfig:"PROFILE_GRPC_CB_OPEN_SECONDS"           default:"30"`
 	ProfileGRPCCBHalfOpenMaxRequests int  `envconfig:"PROFILE_GRPC_CB_HALF_OPEN_MAX_REQUESTS" default:"3"`
+
+	// --- OIDC provider (OP) ---
+	// OIDCIssuer enables the OIDC provider when set (e.g. https://id.example.com).
+	// When set, SignatureSecretName and AuthzGRPCAddr become required.
+	// Distinct from OIDC_CLIENTS_JSON, which configures upstream federated IdPs.
+	OIDCIssuer                    string `envconfig:"OIDC_ISSUER"                       default:""`
+	OIDCAccessTokenTTLSeconds     int    `envconfig:"OIDC_ACCESS_TOKEN_TTL_SECONDS"     default:"3600"`
+	OIDCDeviceVerificationURI     string `envconfig:"OIDC_DEVICE_VERIFICATION_URI"      default:""`
+	OIDCDevicePollIntervalSeconds int    `envconfig:"OIDC_DEVICE_POLL_INTERVAL_SECONDS" default:"5"`
+
+	// SignatureSecretName must reference the SAME secret authz rotates; authn
+	// runs the SignatureManager in read-only follower mode and only refreshes
+	// its key cache (authz remains the sole rotator).
+	SignatureSecretName           string `envconfig:"SIGNATURE_SECRET_NAME"            default:""`
+	SignaturePreviousGenerations  int    `envconfig:"SIGNATURE_PREVIOUS_GENERATIONS"   default:"1"`
+	SignatureRefreshPeriodMinutes int    `envconfig:"SIGNATURE_REFRESH_PERIOD_MINUTES" default:"15"`
+	SecretManagerGCPProjectID     string `envconfig:"SECRET_MANAGER_GCP_PROJECT_ID"    default:""`
+	SecretManagerGCPCredentials   string `envconfig:"SECRET_MANAGER_GCP_CREDENTIALS"   default:""`
+
+	// AuthzGRPCAddr is the authz gRPC authority (host:port) used for
+	// organization membership/permission checks. The outbound client reuses
+	// the Profile resilience settings above.
+	AuthzGRPCAddr string `envconfig:"AUTHZ_GRPC_ADDR" default:""`
+}
+
+// OIDCProviderEnabled reports whether the OIDC provider surface is configured.
+func (c Config) OIDCProviderEnabled() bool {
+	return strings.TrimSpace(c.OIDCIssuer) != ""
 }
 
 // InfraDependencies holds the runtime dependencies for the authn app.
@@ -92,8 +124,16 @@ type InfraDependencies struct {
 	ProfileCallTimeoutSeconds time.Duration
 	IdentityManager           *identity.IdentityManager
 
+	// OIDC provider dependencies; nil/zero when the OP is not configured.
+	SignatureManager signature.SignatureManager
+	AuthzCli         authzpb.AuthzServiceClient
+	OIDCCodes        *oidcstore.KVCodeStore
+	OIDCPendings     *oidcstore.KVPendingStore
+	OIDCDevices      *oidcstore.KVDeviceStore
+
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn
+	authzConn   *grpc.ClientConn
 }
 
 // Close releases the owned dependencies.
@@ -104,6 +144,18 @@ func (d *InfraDependencies) Close() error {
 	}
 	if d.profileConn != nil {
 		err := d.profileConn.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if d.authzConn != nil {
+		err := d.authzConn.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if d.SignatureManager != nil {
+		err := d.SignatureManager.Close()
 		if err != nil {
 			errs = append(errs, err)
 		}

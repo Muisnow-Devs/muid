@@ -27,6 +27,8 @@ type AuthnGRPC struct {
 func NewAuthnGRPC(
 	config Config,
 	handler pb.AuthnServiceServer,
+	oidcHandler pb.OIDCServiceServer,
+	oidcAdminHandler pb.OIDCClientAdminServiceServer,
 	iss issuer.SessionIssuer,
 	tracer tracing.Tracer,
 ) (*AuthnGRPC, error) {
@@ -62,6 +64,8 @@ func NewAuthnGRPC(
 		),
 	)
 	pb.RegisterAuthnServiceServer(grpcServer, handler)
+	pb.RegisterOIDCServiceServer(grpcServer, oidcHandler)
+	pb.RegisterOIDCClientAdminServiceServer(grpcServer, oidcAdminHandler)
 
 	return &AuthnGRPC{
 		grpcServer: grpcServer,

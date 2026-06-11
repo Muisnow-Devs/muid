@@ -1,0 +1,458 @@
+syntax = "proto3";
+
+package muid.authn.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
+
+// OIDCService is the OpenID Connect provider surface. It is gRPC-only by
+// design: a gateway maps the spec HTTP endpoints onto these RPCs
+// mechanically:
+//
+//   GET  /.well-known/openid-configuration -> GetProviderMetadata
+//   GET  /authorize                        -> Authorize (after login UI)
+//   POST /token                            -> ExchangeToken
+//   POST /device_authorization             -> StartDeviceAuthorization
+//   POST /introspect                       -> IntrospectToken
+//   POST /revoke                           -> RevokeToken
+//   GET  /userinfo                         -> GetUserInfo
+//
+// Gateway contract:
+//   - HTTP Basic credentials and form-encoded client_secret_post are both
+//     normalized into the client_id/client_secret request fields.
+//   - The space-delimited "scope" parameter is split into repeated scopes
+//     on requests and joined back on responses.
+//   - OAuth protocol errors are returned as OAuthError response data, never
+//     as gRPC errors. Map error == "invalid_client" to HTTP 401, everything
+//     else to HTTP 400 (token-style endpoints) or a redirect back to the
+//     client with error/state query params (authorization endpoint).
+//   - protovalidate violations surface as gRPC InvalidArgument; token-style
+//     endpoints map that to {"error": "invalid_request"}.
+//   - gRPC InvalidArgument from Authorize (unknown client_id / unregistered
+//     redirect_uri) MUST be rendered as an error page, never a redirect.
+service OIDCService {
+  /// Discovery.
+  rpc GetProviderMetadata(GetProviderMetadataRequest) returns (GetProviderMetadataResponse);
+
+  /// Authorization endpoint (authorization_code + PKCE).
+  // Session token is optional via the authorization metadata header:
+  // "Session <token>". Without one the response is LoginRequired.
+  rpc Authorize(AuthorizeRequest) returns (AuthorizeResponse);
+  // Session token is required via the authorization metadata header.
+  rpc DecideConsent(DecideConsentRequest) returns (DecideConsentResponse);
+
+  /// Token endpoint. Single RPC: the gateway switches on grant_type.
+  rpc ExchangeToken(ExchangeTokenRequest) returns (ExchangeTokenResponse);
+
+  /// Device authorization grant (RFC 8628).
+  rpc StartDeviceAuthorization(StartDeviceAuthorizationRequest) returns (StartDeviceAuthorizationResponse);
+  // Session token required. Backs the user-facing verification page.
+  rpc GetDeviceAuthorizationInfo(GetDeviceAuthorizationInfoRequest) returns (GetDeviceAuthorizationInfoResponse);
+  // Session token required.
+  rpc DecideDeviceAuthorization(DecideDeviceAuthorizationRequest) returns (DecideDeviceAuthorizationResponse);
+
+  /// Token introspection (RFC 7662) and revocation (RFC 7009).
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+  rpc RevokeToken(RevokeTokenRequest) returns (RevokeTokenResponse);
+
+  /// OIDC userinfo.
+  rpc GetUserInfo(GetUserInfoRequest) returns (GetUserInfoResponse);
+
+  /// User consent management. Session token required for both.
+  rpc ListGrantedConsents(ListGrantedConsentsRequest) returns (ListGrantedConsentsResponse);
+  rpc RevokeConsent(RevokeConsentRequest) returns (RevokeConsentResponse);
+}
+
+// OAuthError carries an OAuth 2.0 protocol error as response data so the
+// gateway can emit the spec-compliant JSON body or redirect parameters.
+message OAuthError {
+  // RFC 6749 / 7009 / 7662 / 8628 / OIDC core error code: invalid_request,
+  // invalid_client, invalid_grant, unauthorized_client,
+  // unsupported_grant_type, invalid_scope, access_denied,
+  // authorization_pending, slow_down, expired_token, invalid_token,
+  // login_required, consent_required.
+  string error = 1;
+  string error_description = 2;
+}
+
+// OIDCVerificationStatus mirrors the trust state of a client shown on
+// consent screens.
+enum OIDCVerificationStatus {
+  OIDC_VERIFICATION_STATUS_UNSPECIFIED = 0;
+  OIDC_VERIFICATION_STATUS_UNVERIFIED = 1;
+  OIDC_VERIFICATION_STATUS_PENDING = 2;
+  OIDC_VERIFICATION_STATUS_VERIFIED = 3;
+  OIDC_VERIFICATION_STATUS_OFFICIAL = 4;
+  OIDC_VERIFICATION_STATUS_REJECTED = 5;
+}
+
+enum OIDCConsentDecision {
+  OIDC_CONSENT_DECISION_UNSPECIFIED = 0;
+  OIDC_CONSENT_DECISION_APPROVE = 1;
+  OIDC_CONSENT_DECISION_DENY = 2;
+}
+
+// ScopeDescription is the localized presentation of one requested scope.
+message ScopeDescription {
+  string scope = 1;
+  string name = 2;
+  // i18n description map keyed by BCP-47 language tag (e.g. "en", "zh-TW").
+  map<string, string> description = 3;
+}
+
+message GetProviderMetadataRequest {}
+
+// Field names intentionally match the OIDC discovery document so the gateway
+// can serialize the response verbatim.
+message GetProviderMetadataResponse {
+  string issuer = 1;
+  string authorization_endpoint = 2;
+  string token_endpoint = 3;
+  string device_authorization_endpoint = 4;
+  string userinfo_endpoint = 5;
+  string jwks_uri = 6;
+
+  repeated string scopes_supported = 7;
+  repeated string response_types_supported = 8;
+  repeated string grant_types_supported = 9;
+  repeated string code_challenge_methods_supported = 10;
+  repeated string token_endpoint_auth_methods_supported = 11;
+  repeated string id_token_signing_alg_values_supported = 12;
+  repeated string subject_types_supported = 13;
+}
+
+message AuthorizeRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string redirect_uri = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+  // Only "code" is supported.
+  string response_type = 3 [(buf.validate.field).string.max_len = 64];
+  repeated string scopes = 4 [(buf.validate.field).repeated = {
+    max_items: 32
+    items: {
+      string: {max_len: 128}
+    }
+  }];
+  // Opaque client value, echoed back unmodified.
+  string state = 5 [(buf.validate.field).string.max_len = 2048];
+  string nonce = 6 [(buf.validate.field).string.max_len = 512];
+  // PKCE (RFC 7636). Required for public clients; only S256 is accepted.
+  string code_challenge = 7 [(buf.validate.field).string.max_len = 128];
+  string code_challenge_method = 8 [(buf.validate.field).string.max_len = 16];
+  // Supported values: "none", "consent". Other values are ignored.
+  optional string prompt = 9 [(buf.validate.field).string.max_len = 32];
+}
+
+// AuthorizationGranted carries everything the gateway needs to redirect the
+// user agent back to the client.
+message AuthorizationGranted {
+  string code = 1;
+  string state = 2;
+  string redirect_uri = 3;
+}
+
+// LoginRequired asks the gateway to send the user through the first-party
+// login flow (AuthnService) and retry Authorize afterwards.
+message LoginRequired {}
+
+// ConsentRequired asks the gateway to render the consent screen, then call
+// DecideConsent with authorization_id.
+message ConsentRequired {
+  string authorization_id = 1 [(buf.validate.field).string.uuid = true];
+  string client_name = 2;
+  OIDCVerificationStatus verification_status = 3;
+  repeated ScopeDescription scopes = 4;
+}
+
+message AuthorizeResponse {
+  oneof result {
+    AuthorizationGranted granted = 1;
+    LoginRequired login_required = 2;
+    ConsentRequired consent_required = 3;
+    OAuthError error = 4;
+  }
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message DecideConsentRequest {
+  string authorization_id = 1 [(buf.validate.field).string.uuid = true];
+  OIDCConsentDecision decision = 2;
+}
+
+// ConsentDenied carries the stored redirect target so the gateway can send
+// the user agent back to the client with the error and original state.
+message ConsentDenied {
+  OAuthError error = 1;
+  string redirect_uri = 2;
+  string state = 3;
+}
+
+message DecideConsentResponse {
+  oneof result {
+    AuthorizationGranted granted = 1;
+    // Set on DENY (access_denied) and on policy rejections discovered at
+    // decision time.
+    ConsentDenied denied = 2;
+  }
+}
+
+message AuthorizationCodeGrant {
+  string code = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 512
+  }];
+  string redirect_uri = 2 [(buf.validate.field).string.max_len = 2048];
+  // PKCE verifier; required when the code was issued with a code_challenge.
+  string code_verifier = 3 [(buf.validate.field).string.max_len = 128];
+}
+
+message RefreshTokenGrant {
+  string refresh_token = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 512
+  }];
+  // Optional scope narrowing; must be a subset of the original grant.
+  repeated string scopes = 2 [(buf.validate.field).repeated = {
+    max_items: 32
+    items: {
+      string: {max_len: 128}
+    }
+  }];
+}
+
+message DeviceCodeGrant {
+  string device_code = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 512
+  }];
+}
+
+message ExchangeTokenRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Absent for public clients (token_endpoint_auth_method "none").
+  optional string client_secret = 2 [(buf.validate.field).string.max_len = 512];
+
+  oneof grant {
+    AuthorizationCodeGrant authorization_code = 3;
+    RefreshTokenGrant refresh_token = 4;
+    DeviceCodeGrant device_code = 5;
+  }
+}
+
+message TokenSuccess {
+  string access_token = 1;
+  // Always "Bearer".
+  string token_type = 2;
+  int64 expires_in = 3;
+  string refresh_token = 4;
+  string id_token = 5;
+  repeated string scopes = 6;
+}
+
+message ExchangeTokenResponse {
+  oneof result {
+    TokenSuccess success = 1;
+    OAuthError error = 2;
+  }
+}
+
+message StartDeviceAuthorizationRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  optional string client_secret = 2 [(buf.validate.field).string.max_len = 512];
+  repeated string scopes = 3 [(buf.validate.field).repeated = {
+    max_items: 32
+    items: {
+      string: {max_len: 128}
+    }
+  }];
+}
+
+message DeviceAuthorizationSuccess {
+  string device_code = 1;
+  string user_code = 2;
+  string verification_uri = 3;
+  string verification_uri_complete = 4;
+  int64 expires_in = 5;
+  // Minimum seconds between ExchangeToken polls.
+  int64 interval = 6;
+}
+
+message StartDeviceAuthorizationResponse {
+  oneof result {
+    DeviceAuthorizationSuccess success = 1;
+    OAuthError error = 2;
+  }
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message GetDeviceAuthorizationInfoRequest {
+  string user_code = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+}
+
+// Unknown or expired user codes return gRPC NotFound.
+message GetDeviceAuthorizationInfoResponse {
+  string client_id = 1;
+  string client_name = 2;
+  OIDCVerificationStatus verification_status = 3;
+  repeated ScopeDescription scopes = 4;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message DecideDeviceAuthorizationRequest {
+  string user_code = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 32
+  }];
+  OIDCConsentDecision decision = 2;
+}
+
+message DeviceDecisionRecorded {}
+
+message DecideDeviceAuthorizationResponse {
+  oneof result {
+    DeviceDecisionRecorded recorded = 1;
+    // access_denied when the access policy rejects the approving user.
+    OAuthError error = 2;
+  }
+}
+
+message IntrospectTokenRequest {
+  string token = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+  optional string token_type_hint = 2 [(buf.validate.field).string.max_len = 32];
+  // Introspection requires confidential-client authentication.
+  string client_id = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  optional string client_secret = 4 [(buf.validate.field).string.max_len = 512];
+}
+
+message IntrospectionResult {
+  bool active = 1;
+
+  // The remaining fields are only set when active is true.
+  repeated string scopes = 2;
+  string client_id = 3;
+  // "access_token" or "refresh_token".
+  string token_type = 4;
+  string sub = 5;
+  repeated string aud = 6;
+  string iss = 7;
+  google.protobuf.Timestamp issued_at = 8;
+  google.protobuf.Timestamp expires_at = 9;
+}
+
+message IntrospectTokenResponse {
+  oneof result {
+    IntrospectionResult introspection = 1;
+    // invalid_client only; unknown tokens are reported as active=false.
+    OAuthError error = 2;
+  }
+}
+
+message RevokeTokenRequest {
+  string token = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+  optional string token_type_hint = 2 [(buf.validate.field).string.max_len = 32];
+  string client_id = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  optional string client_secret = 4 [(buf.validate.field).string.max_len = 512];
+}
+
+message RevocationSuccess {}
+
+// Per RFC 7009 revoking an unknown token is still a success. Access tokens
+// are stateless JWTs: revoking one is a documented no-op; revoke the refresh
+// token (which revokes its whole rotation family) instead.
+message RevokeTokenResponse {
+  oneof result {
+    RevocationSuccess success = 1;
+    OAuthError error = 2;
+  }
+}
+
+// The gateway extracts the Bearer token from the Authorization header into
+// access_token (the "Session" scheme is reserved for first-party sessions).
+message GetUserInfoRequest {
+  string access_token = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 4096
+  }];
+}
+
+// Claims are sourced from the profile service (the system of record for
+// user data); authn only falls back to its own verified-email store when
+// profile is unavailable.
+message UserInfo {
+  string sub = 1;
+  // Set when the "profile" scope was granted.
+  optional string name = 2;
+  optional string picture = 3;
+  optional string preferred_username = 6;
+  optional string locale = 7;
+  // IANA time zone name (OIDC zoneinfo claim).
+  optional string zoneinfo = 8;
+  // Set when the "email" scope was granted.
+  optional string email = 4;
+  optional bool email_verified = 5;
+}
+
+message GetUserInfoResponse {
+  oneof result {
+    UserInfo user_info = 1;
+    // invalid_token or insufficient_scope (RFC 6750).
+    OAuthError error = 2;
+  }
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message ListGrantedConsentsRequest {}
+
+message AuthorizedClient {
+  string client_id = 1;
+  string client_name = 2;
+
+  repeated string scopes = 3;
+
+  google.protobuf.Timestamp authorized_at = 4;
+  google.protobuf.Timestamp last_used_at = 5;
+}
+
+message ListGrantedConsentsResponse {
+  repeated AuthorizedClient clients = 1;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message RevokeConsentRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message RevokeConsentResponse {
+  bool success = 1;
+}

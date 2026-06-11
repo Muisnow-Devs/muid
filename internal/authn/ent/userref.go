@@ -42,9 +42,11 @@ type UserRefEdges struct {
 	Grants []*OIDCGrant `json:"grants,omitempty"`
 	// OidcRefreshTokens holds the value of the oidc_refresh_tokens edge.
 	OidcRefreshTokens []*OIDCRefreshToken `json:"oidc_refresh_tokens,omitempty"`
+	// OidcAccessGrants holds the value of the oidc_access_grants edge.
+	OidcAccessGrants []*OIDCClientAccessGrant `json:"oidc_access_grants,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [5]bool
+	loadedTypes [6]bool
 }
 
 // SessionsOrErr returns the Sessions value or an error if the edge
@@ -90,6 +92,15 @@ func (e UserRefEdges) OidcRefreshTokensOrErr() ([]*OIDCRefreshToken, error) {
 		return e.OidcRefreshTokens, nil
 	}
 	return nil, &NotLoadedError{edge: "oidc_refresh_tokens"}
+}
+
+// OidcAccessGrantsOrErr returns the OidcAccessGrants value or an error if the edge
+// was not loaded in eager-loading.
+func (e UserRefEdges) OidcAccessGrantsOrErr() ([]*OIDCClientAccessGrant, error) {
+	if e.loadedTypes[5] {
+		return e.OidcAccessGrants, nil
+	}
+	return nil, &NotLoadedError{edge: "oidc_access_grants"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -176,6 +187,11 @@ func (_m *UserRef) QueryGrants() *OIDCGrantQuery {
 // QueryOidcRefreshTokens queries the "oidc_refresh_tokens" edge of the UserRef entity.
 func (_m *UserRef) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
 	return NewUserRefClient(_m.config).QueryOidcRefreshTokens(_m)
+}
+
+// QueryOidcAccessGrants queries the "oidc_access_grants" edge of the UserRef entity.
+func (_m *UserRef) QueryOidcAccessGrants() *OIDCClientAccessGrantQuery {
+	return NewUserRefClient(_m.config).QueryOidcAccessGrants(_m)
 }
 
 // Update returns a builder for updating this UserRef.

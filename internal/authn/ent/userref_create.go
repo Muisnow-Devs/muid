@@ -11,6 +11,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/useremail"
@@ -147,6 +148,21 @@ func (_c *UserRefCreate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefCr
 		ids[i] = v[i].ID
 	}
 	return _c.AddOidcRefreshTokenIDs(ids...)
+}
+
+// AddOidcAccessGrantIDs adds the "oidc_access_grants" edge to the OIDCClientAccessGrant entity by IDs.
+func (_c *UserRefCreate) AddOidcAccessGrantIDs(ids ...uuid.UUID) *UserRefCreate {
+	_c.mutation.AddOidcAccessGrantIDs(ids...)
+	return _c
+}
+
+// AddOidcAccessGrants adds the "oidc_access_grants" edges to the OIDCClientAccessGrant entity.
+func (_c *UserRefCreate) AddOidcAccessGrants(v ...*OIDCClientAccessGrant) *UserRefCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddOidcAccessGrantIDs(ids...)
 }
 
 // Mutation returns the UserRefMutation object of the builder.
@@ -322,6 +338,22 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.OidcAccessGrantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

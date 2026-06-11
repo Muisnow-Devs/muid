@@ -11,9 +11,9 @@ import (
 	"sanzi.io/muid/pkg/shared"
 )
 
-// TODO: Add organization specific clients in the future, with a reference to the organization and additional fields as needed.
-
 // OIDCClient holds the schema definition for the OIDCClient entity.
+// Clients belong to an authz Organization (owner_organization_id, by ID —
+// the entity lives in the authz service).
 type OIDCClient struct {
 	ent.Schema
 }
@@ -28,6 +28,10 @@ func (OIDCClient) Fields() []ent.Field {
 		field.UUID("owner_organization_id", uuid.UUID{}),
 
 		field.Strings("scopes").Default([]string{}).Comment("Allowed scopes for the client."),
+
+		field.Strings("grant_types").
+			Default([]string{"authorization_code", "refresh_token"}).
+			Comment("Enabled OAuth grant types: authorization_code, refresh_token, device_code."),
 
 		field.Enum("token_endpoint_auth_method").
 			Values(
@@ -73,5 +77,6 @@ func (OIDCClient) Edges() []ent.Edge {
 		edge.To("secrets", OIDCClientSecret.Type),
 		edge.To("grants", OIDCGrant.Type),
 		edge.To("refresh_tokens", OIDCRefreshToken.Type),
+		edge.To("access_grants", OIDCClientAccessGrant.Type),
 	}
 }

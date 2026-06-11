@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
-	authzgrpc "sanzi.io/muid/internal/authz/grpc"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/tracing"
@@ -49,7 +48,6 @@ func NewAuthzGRPC(
 			grpcutils.TraceMetadataInterceptor,
 			grpcutils.TracerContextInterceptor(tracer),
 			protovalidate.UnaryServerInterceptor(pvValidator),
-			authzgrpc.AuthzRequestContextInterceptor(),
 			grpcutils.LoggingInterceptor(),
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
 			recovery.UnaryServerInterceptor(

@@ -14,6 +14,7 @@ type AuthzApp struct {
 func NewAuthzApp(ctx context.Context, infra *InfraDependencies) (*AuthzApp, error) {
 	handler := authzgrpc.NewGRPCHandler(authzgrpc.HandlerConfig{
 		SignatureManager: infra.SignatureManager,
+		DB:               infra.entClient,
 	})
 	service, err := NewAuthzGRPC(infra.GlobalConfig, handler, nil)
 	if err != nil {

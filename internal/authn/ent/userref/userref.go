@@ -30,6 +30,8 @@ const (
 	EdgeGrants = "grants"
 	// EdgeOidcRefreshTokens holds the string denoting the oidc_refresh_tokens edge name in mutations.
 	EdgeOidcRefreshTokens = "oidc_refresh_tokens"
+	// EdgeOidcAccessGrants holds the string denoting the oidc_access_grants edge name in mutations.
+	EdgeOidcAccessGrants = "oidc_access_grants"
 	// Table holds the table name of the userref in the database.
 	Table = "user_refs"
 	// SessionsTable is the table that holds the sessions relation/edge.
@@ -67,6 +69,13 @@ const (
 	OidcRefreshTokensInverseTable = "oidc_refresh_tokens"
 	// OidcRefreshTokensColumn is the table column denoting the oidc_refresh_tokens relation/edge.
 	OidcRefreshTokensColumn = "user_id"
+	// OidcAccessGrantsTable is the table that holds the oidc_access_grants relation/edge.
+	OidcAccessGrantsTable = "oidc_client_access_grants"
+	// OidcAccessGrantsInverseTable is the table name for the OIDCClientAccessGrant entity.
+	// It exists in this package in order to avoid circular dependency with the "oidcclientaccessgrant" package.
+	OidcAccessGrantsInverseTable = "oidc_client_access_grants"
+	// OidcAccessGrantsColumn is the table column denoting the oidc_access_grants relation/edge.
+	OidcAccessGrantsColumn = "user_id"
 )
 
 // Columns holds all SQL columns for userref fields.
@@ -188,6 +197,20 @@ func ByOidcRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption
 		sqlgraph.OrderByNeighborTerms(s, newOidcRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByOidcAccessGrantsCount orders the results by oidc_access_grants count.
+func ByOidcAccessGrantsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOidcAccessGrantsStep(), opts...)
+	}
+}
+
+// ByOidcAccessGrants orders the results by oidc_access_grants terms.
+func ByOidcAccessGrants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOidcAccessGrantsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newSessionsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -221,5 +244,12 @@ func newOidcRefreshTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OidcRefreshTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, OidcRefreshTokensTable, OidcRefreshTokensColumn),
+	)
+}
+func newOidcAccessGrantsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OidcAccessGrantsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OidcAccessGrantsTable, OidcAccessGrantsColumn),
 	)
 }

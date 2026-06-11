@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/predicate"
@@ -34,6 +35,7 @@ type UserRefQuery struct {
 	withEmails            *UserEmailQuery
 	withGrants            *OIDCGrantQuery
 	withOidcRefreshTokens *OIDCRefreshTokenQuery
+	withOidcAccessGrants  *OIDCClientAccessGrantQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -173,6 +175,28 @@ func (_q *UserRefQuery) QueryOidcRefreshTokens() *OIDCRefreshTokenQuery {
 			sqlgraph.From(userref.Table, userref.FieldID, selector),
 			sqlgraph.To(oidcrefreshtoken.Table, oidcrefreshtoken.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcRefreshTokensTable, userref.OidcRefreshTokensColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryOidcAccessGrants chains the current query on the "oidc_access_grants" edge.
+func (_q *UserRefQuery) QueryOidcAccessGrants() *OIDCClientAccessGrantQuery {
+	query := (&OIDCClientAccessGrantClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, selector),
+			sqlgraph.To(oidcclientaccessgrant.Table, oidcclientaccessgrant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcAccessGrantsTable, userref.OidcAccessGrantsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -377,6 +401,7 @@ func (_q *UserRefQuery) Clone() *UserRefQuery {
 		withEmails:            _q.withEmails.Clone(),
 		withGrants:            _q.withGrants.Clone(),
 		withOidcRefreshTokens: _q.withOidcRefreshTokens.Clone(),
+		withOidcAccessGrants:  _q.withOidcAccessGrants.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -435,6 +460,17 @@ func (_q *UserRefQuery) WithOidcRefreshTokens(opts ...func(*OIDCRefreshTokenQuer
 		opt(query)
 	}
 	_q.withOidcRefreshTokens = query
+	return _q
+}
+
+// WithOidcAccessGrants tells the query-builder to eager-load the nodes that are connected to
+// the "oidc_access_grants" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *UserRefQuery) WithOidcAccessGrants(opts ...func(*OIDCClientAccessGrantQuery)) *UserRefQuery {
+	query := (&OIDCClientAccessGrantClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withOidcAccessGrants = query
 	return _q
 }
 
@@ -516,12 +552,13 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 	var (
 		nodes       = []*UserRef{}
 		_spec       = _q.querySpec()
-		loadedTypes = [5]bool{
+		loadedTypes = [6]bool{
 			_q.withSessions != nil,
 			_q.withIdentities != nil,
 			_q.withEmails != nil,
 			_q.withGrants != nil,
 			_q.withOidcRefreshTokens != nil,
+			_q.withOidcAccessGrants != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -575,6 +612,15 @@ func (_q *UserRefQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*User
 			func(n *UserRef) { n.Edges.OidcRefreshTokens = []*OIDCRefreshToken{} },
 			func(n *UserRef, e *OIDCRefreshToken) {
 				n.Edges.OidcRefreshTokens = append(n.Edges.OidcRefreshTokens, e)
+			}); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withOidcAccessGrants; query != nil {
+		if err := _q.loadOidcAccessGrants(ctx, query, nodes,
+			func(n *UserRef) { n.Edges.OidcAccessGrants = []*OIDCClientAccessGrant{} },
+			func(n *UserRef, e *OIDCClientAccessGrant) {
+				n.Edges.OidcAccessGrants = append(n.Edges.OidcAccessGrants, e)
 			}); err != nil {
 			return nil, err
 		}
@@ -717,6 +763,36 @@ func (_q *UserRefQuery) loadOidcRefreshTokens(ctx context.Context, query *OIDCRe
 	}
 	query.Where(predicate.OIDCRefreshToken(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(userref.OidcRefreshTokensColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.UserID
+		node, ok := nodeids[fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "user_id" returned %v for node %v`, fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
+}
+func (_q *UserRefQuery) loadOidcAccessGrants(ctx context.Context, query *OIDCClientAccessGrantQuery, nodes []*UserRef, init func(*UserRef), assign func(*UserRef, *OIDCClientAccessGrant)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[uuid.UUID]*UserRef)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(oidcclientaccessgrant.FieldUserID)
+	}
+	query.Where(predicate.OIDCClientAccessGrant(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(userref.OidcAccessGrantsColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {

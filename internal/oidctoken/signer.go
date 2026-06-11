@@ -1,4 +1,6 @@
-package token
+// Package oidctoken mints and validates the JWTs issued by the muid OIDC
+// provider (access tokens and ID tokens), backed by signature.SignatureManager.
+package oidctoken
 
 import (
 	"context"
@@ -26,6 +28,7 @@ type AccessTokenClaims struct {
 	ClientID  string
 	Scopes    []string
 	Audience  []string
+	JTI       uuid.UUID
 	IssuedAt  time.Time
 	ExpiresAt time.Time
 }
@@ -41,6 +44,13 @@ func NewSigner(signing signature.SignatureManager, issuer string) *Signer {
 		signing: signing,
 		issuer:  strings.TrimSpace(issuer),
 	}
+}
+
+func (s *Signer) Issuer() string {
+	if s == nil {
+		return ""
+	}
+	return s.issuer
 }
 
 func (s *Signer) CreateAccessToken(ctx context.Context, claims AccessTokenClaims) (string, error) {
@@ -63,6 +73,12 @@ func (s *Signer) CreateAccessToken(ctx context.Context, claims AccessTokenClaims
 		return "", errors.Join(signature.ErrSignFailed, err)
 	}
 
+	return s.signClaims(ctx, payload)
+}
+
+// signClaims signs payload as an RS256 JWT. The token is signed twice: the
+// first pass learns the active key id so it can be embedded in the header.
+func (s *Signer) signClaims(ctx context.Context, payload jwt.Claims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, payload)
 	token.Header["typ"] = tokenTypeJWT
 
@@ -101,7 +117,7 @@ func jwtPayload(issuer string, claims AccessTokenClaims) (accessTokenJWTClaims, 
 
 	payload := accessTokenJWTClaims{
 		ClientID: strings.TrimSpace(claims.ClientID),
-		Scope:    strings.Join(trimScopes(claims.Scopes), " "),
+		Scope:    strings.Join(trimValues(claims.Scopes), " "),
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   claims.UserID.String(),
 			Issuer:    issuer,
@@ -109,14 +125,17 @@ func jwtPayload(issuer string, claims AccessTokenClaims) (accessTokenJWTClaims, 
 			ExpiresAt: jwt.NewNumericDate(claims.ExpiresAt),
 		},
 	}
-	audience := trimScopes(claims.Audience)
+	if claims.JTI != uuid.Nil {
+		payload.ID = claims.JTI.String()
+	}
+	audience := trimValues(claims.Audience)
 	if len(audience) > 0 {
 		payload.Audience = jwt.ClaimStrings(audience)
 	}
 	return payload, nil
 }
 
-func trimScopes(in []string) []string {
+func trimValues(in []string) []string {
 	out := make([]string, 0, len(in))
 	for _, value := range in {
 		value = strings.TrimSpace(value)

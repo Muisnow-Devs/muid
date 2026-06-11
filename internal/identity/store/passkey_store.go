@@ -114,7 +114,6 @@ func (s *EntPasskeyIdentityStore) LinkIdentity(
 	})
 }
 
-
 // UpdateLastUsed sets UserPasskey.last_used_at for all credentials under this identity.
 func (s *EntPasskeyIdentityStore) UpdateLastUsed(ctx context.Context, identityID uuid.UUID) error {
 	return s.db.UserPasskey.Update().

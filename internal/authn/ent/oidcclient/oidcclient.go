@@ -24,6 +24,8 @@ const (
 	FieldOwnerOrganizationID = "owner_organization_id"
 	// FieldScopes holds the string denoting the scopes field in the database.
 	FieldScopes = "scopes"
+	// FieldGrantTypes holds the string denoting the grant_types field in the database.
+	FieldGrantTypes = "grant_types"
 	// FieldTokenEndpointAuthMethod holds the string denoting the token_endpoint_auth_method field in the database.
 	FieldTokenEndpointAuthMethod = "token_endpoint_auth_method"
 	// FieldApplicationType holds the string denoting the application_type field in the database.
@@ -48,6 +50,8 @@ const (
 	EdgeGrants = "grants"
 	// EdgeRefreshTokens holds the string denoting the refresh_tokens edge name in mutations.
 	EdgeRefreshTokens = "refresh_tokens"
+	// EdgeAccessGrants holds the string denoting the access_grants edge name in mutations.
+	EdgeAccessGrants = "access_grants"
 	// Table holds the table name of the oidcclient in the database.
 	Table = "oidc_clients"
 	// CallbackUrlsTable is the table that holds the callback_urls relation/edge.
@@ -78,6 +82,13 @@ const (
 	RefreshTokensInverseTable = "oidc_refresh_tokens"
 	// RefreshTokensColumn is the table column denoting the refresh_tokens relation/edge.
 	RefreshTokensColumn = "client_ref_id"
+	// AccessGrantsTable is the table that holds the access_grants relation/edge.
+	AccessGrantsTable = "oidc_client_access_grants"
+	// AccessGrantsInverseTable is the table name for the OIDCClientAccessGrant entity.
+	// It exists in this package in order to avoid circular dependency with the "oidcclientaccessgrant" package.
+	AccessGrantsInverseTable = "oidc_client_access_grants"
+	// AccessGrantsColumn is the table column denoting the access_grants relation/edge.
+	AccessGrantsColumn = "client_ref_id"
 )
 
 // Columns holds all SQL columns for oidcclient fields.
@@ -87,6 +98,7 @@ var Columns = []string{
 	FieldClientName,
 	FieldOwnerOrganizationID,
 	FieldScopes,
+	FieldGrantTypes,
 	FieldTokenEndpointAuthMethod,
 	FieldApplicationType,
 	FieldAccessPolicy,
@@ -114,6 +126,8 @@ var (
 	ClientNameValidator func(string) error
 	// DefaultScopes holds the default value on creation for the "scopes" field.
 	DefaultScopes []string
+	// DefaultGrantTypes holds the default value on creation for the "grant_types" field.
+	DefaultGrantTypes []string
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -380,6 +394,20 @@ func ByRefreshTokens(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newRefreshTokensStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByAccessGrantsCount orders the results by access_grants count.
+func ByAccessGrantsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newAccessGrantsStep(), opts...)
+	}
+}
+
+// ByAccessGrants orders the results by access_grants terms.
+func ByAccessGrants(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newAccessGrantsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
 func newCallbackUrlsStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -406,5 +434,12 @@ func newRefreshTokensStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(RefreshTokensInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, RefreshTokensTable, RefreshTokensColumn),
+	)
+}
+func newAccessGrantsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(AccessGrantsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, AccessGrantsTable, AccessGrantsColumn),
 	)
 }

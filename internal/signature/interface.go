@@ -48,5 +48,10 @@ type ManagerConfig struct {
 	PreviousGenerations int
 	// RotationPeriod controls background private key rotation.
 	// Zero uses the manager default; negative disables the background job.
+	// In read-only mode the same period drives cache refresh instead of rotation.
 	RotationPeriod time.Duration
+	// ReadOnly makes the manager a follower: it signs and validates with keys
+	// loaded from the SecretManager but never rotates or revokes them. Start
+	// runs a periodic cache refresh so rotations done elsewhere are picked up.
+	ReadOnly bool
 }

@@ -489,6 +489,132 @@ func waitForRotateCount(t *testing.T, store *countingSecretManager, want int) {
 	}
 }
 
+func TestSignatureManagerReadOnlyRejectsMutations(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	store := gcpsecretmanager.NewFakeSecretManager("test-project")
+	seeder, err := NewSignatureManager(store, ManagerConfig{SecretName: "oidc-signing-key"})
+	if err != nil {
+		t.Fatalf("New seeder: %v", err)
+	}
+	metadata, err := seeder.RotateSecret(ctx)
+	if err != nil {
+		t.Fatalf("Seed RotateSecret: %v", err)
+	}
+
+	follower, err := NewSignatureManager(store, ManagerConfig{
+		SecretName: "oidc-signing-key",
+		ReadOnly:   true,
+	})
+	if err != nil {
+		t.Fatalf("NewSignatureManager follower: %v", err)
+	}
+	if got := follower.(*secretBackedManager).cfg.RotationPeriod; got != defaultRefreshPeriod {
+		t.Fatalf("follower refresh period = %v, want %v", got, defaultRefreshPeriod)
+	}
+
+	_, err = follower.RotateSecret(ctx)
+	if !errors.Is(err, ErrReadOnly) {
+		t.Fatalf("RotateSecret err = %v, want ErrReadOnly", err)
+	}
+	err = follower.RevokeSecret(ctx, metadata.KeyID)
+	if !errors.Is(err, ErrReadOnly) {
+		t.Fatalf("RevokeSecret err = %v, want ErrReadOnly", err)
+	}
+
+	sig, err := follower.Sign(ctx, []byte("payload"))
+	if err != nil {
+		t.Fatalf("Sign: %v", err)
+	}
+	if sig.KeyID != metadata.KeyID {
+		t.Fatalf("Sign key id = %q, want %q", sig.KeyID, metadata.KeyID)
+	}
+}
+
+func TestSignatureManagerReadOnlyRefreshPicksUpRotation(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	inner := gcpsecretmanager.NewFakeSecretManager("test-project")
+	rotator, err := NewSignatureManager(inner, ManagerConfig{SecretName: "oidc-signing-key"})
+	if err != nil {
+		t.Fatalf("New rotator: %v", err)
+	}
+	first, err := rotator.RotateSecret(ctx)
+	if err != nil {
+		t.Fatalf("RotateSecret first: %v", err)
+	}
+
+	followerIface, err := NewSignatureManager(
+		&countingSecretManager{inner: inner},
+		ManagerConfig{
+			SecretName:          "oidc-signing-key",
+			PreviousGenerations: 1,
+			RotationPeriod:      time.Hour,
+			ReadOnly:            true,
+		},
+	)
+	if err != nil {
+		t.Fatalf("NewSignatureManager follower: %v", err)
+	}
+	follower := followerIface.(*secretBackedManager)
+	ticker := newManualRotationTicker()
+	ready := make(chan struct{})
+	follower.newRotationTicker = func(time.Duration) rotationTicker {
+		close(ready)
+		return ticker
+	}
+
+	err = follower.Start(ctx)
+	if err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	<-ready
+
+	oldSig, err := follower.Sign(ctx, []byte("payload"))
+	if err != nil {
+		t.Fatalf("Sign before rotation: %v", err)
+	}
+	if oldSig.KeyID != first.KeyID {
+		t.Fatalf("Sign key id = %q, want %q", oldSig.KeyID, first.KeyID)
+	}
+
+	second, err := rotator.RotateSecret(ctx)
+	if err != nil {
+		t.Fatalf("RotateSecret second: %v", err)
+	}
+
+	ticker.Tick()
+	deadline := time.After(time.Second)
+	for {
+		sig, signErr := follower.Sign(ctx, []byte("payload"))
+		if signErr != nil {
+			t.Fatalf("Sign after refresh: %v", signErr)
+		}
+		if sig.KeyID == second.KeyID {
+			break
+		}
+
+		select {
+		case <-deadline:
+			t.Fatalf("Sign key id = %q, want %q after refresh", sig.KeyID, second.KeyID)
+		default:
+			time.Sleep(time.Millisecond)
+		}
+	}
+
+	valid, err := follower.Verify(ctx, []byte("payload"), oldSig)
+	if err != nil {
+		t.Fatalf("Verify old generation: %v", err)
+	}
+	if !valid {
+		t.Fatal("Verify old generation = false, want true")
+	}
+}
+
 func TestSignatureManagerRevokeUnknownKey(t *testing.T) {
 	t.Parallel()
 

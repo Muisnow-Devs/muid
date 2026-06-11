@@ -18,6 +18,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
@@ -39,6 +40,8 @@ type Client struct {
 	OIDCCallbackURI *OIDCCallbackURIClient
 	// OIDCClient is the client for interacting with the OIDCClient builders.
 	OIDCClient *OIDCClientClient
+	// OIDCClientAccessGrant is the client for interacting with the OIDCClientAccessGrant builders.
+	OIDCClientAccessGrant *OIDCClientAccessGrantClient
 	// OIDCClientSecret is the client for interacting with the OIDCClientSecret builders.
 	OIDCClientSecret *OIDCClientSecretClient
 	// OIDCGrant is the client for interacting with the OIDCGrant builders.
@@ -72,6 +75,7 @@ func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.OIDCCallbackURI = NewOIDCCallbackURIClient(c.config)
 	c.OIDCClient = NewOIDCClientClient(c.config)
+	c.OIDCClientAccessGrant = NewOIDCClientAccessGrantClient(c.config)
 	c.OIDCClientSecret = NewOIDCClientSecretClient(c.config)
 	c.OIDCGrant = NewOIDCGrantClient(c.config)
 	c.OIDCRefreshToken = NewOIDCRefreshTokenClient(c.config)
@@ -176,6 +180,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		config:                cfg,
 		OIDCCallbackURI:       NewOIDCCallbackURIClient(cfg),
 		OIDCClient:            NewOIDCClientClient(cfg),
+		OIDCClientAccessGrant: NewOIDCClientAccessGrantClient(cfg),
 		OIDCClientSecret:      NewOIDCClientSecretClient(cfg),
 		OIDCGrant:             NewOIDCGrantClient(cfg),
 		OIDCRefreshToken:      NewOIDCRefreshTokenClient(cfg),
@@ -207,6 +212,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		config:                cfg,
 		OIDCCallbackURI:       NewOIDCCallbackURIClient(cfg),
 		OIDCClient:            NewOIDCClientClient(cfg),
+		OIDCClientAccessGrant: NewOIDCClientAccessGrantClient(cfg),
 		OIDCClientSecret:      NewOIDCClientSecretClient(cfg),
 		OIDCGrant:             NewOIDCGrantClient(cfg),
 		OIDCRefreshToken:      NewOIDCRefreshTokenClient(cfg),
@@ -246,9 +252,10 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
-		c.OIDCCallbackURI, c.OIDCClient, c.OIDCClientSecret, c.OIDCGrant,
-		c.OIDCRefreshToken, c.OIDCScope, c.UserEmail, c.UserFederatedIdentity,
-		c.UserIdentity, c.UserPasskey, c.UserRef, c.UserSession,
+		c.OIDCCallbackURI, c.OIDCClient, c.OIDCClientAccessGrant, c.OIDCClientSecret,
+		c.OIDCGrant, c.OIDCRefreshToken, c.OIDCScope, c.UserEmail,
+		c.UserFederatedIdentity, c.UserIdentity, c.UserPasskey, c.UserRef,
+		c.UserSession,
 	} {
 		n.Use(hooks...)
 	}
@@ -258,9 +265,10 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
-		c.OIDCCallbackURI, c.OIDCClient, c.OIDCClientSecret, c.OIDCGrant,
-		c.OIDCRefreshToken, c.OIDCScope, c.UserEmail, c.UserFederatedIdentity,
-		c.UserIdentity, c.UserPasskey, c.UserRef, c.UserSession,
+		c.OIDCCallbackURI, c.OIDCClient, c.OIDCClientAccessGrant, c.OIDCClientSecret,
+		c.OIDCGrant, c.OIDCRefreshToken, c.OIDCScope, c.UserEmail,
+		c.UserFederatedIdentity, c.UserIdentity, c.UserPasskey, c.UserRef,
+		c.UserSession,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -273,6 +281,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.OIDCCallbackURI.mutate(ctx, m)
 	case *OIDCClientMutation:
 		return c.OIDCClient.mutate(ctx, m)
+	case *OIDCClientAccessGrantMutation:
+		return c.OIDCClientAccessGrant.mutate(ctx, m)
 	case *OIDCClientSecretMutation:
 		return c.OIDCClientSecret.mutate(ctx, m)
 	case *OIDCGrantMutation:
@@ -619,6 +629,22 @@ func (c *OIDCClientClient) QueryRefreshTokens(_m *OIDCClient) *OIDCRefreshTokenQ
 	return query
 }
 
+// QueryAccessGrants queries the access_grants edge of a OIDCClient.
+func (c *OIDCClientClient) QueryAccessGrants(_m *OIDCClient) *OIDCClientAccessGrantQuery {
+	query := (&OIDCClientAccessGrantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclient.Table, oidcclient.FieldID, id),
+			sqlgraph.To(oidcclientaccessgrant.Table, oidcclientaccessgrant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, oidcclient.AccessGrantsTable, oidcclient.AccessGrantsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OIDCClientClient) Hooks() []Hook {
 	return c.hooks.OIDCClient
@@ -641,6 +667,171 @@ func (c *OIDCClientClient) mutate(ctx context.Context, m *OIDCClientMutation) (V
 		return (&OIDCClientDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("ent: unknown OIDCClient mutation op: %q", m.Op())
+	}
+}
+
+// OIDCClientAccessGrantClient is a client for the OIDCClientAccessGrant schema.
+type OIDCClientAccessGrantClient struct {
+	config
+}
+
+// NewOIDCClientAccessGrantClient returns a client for the OIDCClientAccessGrant from the given config.
+func NewOIDCClientAccessGrantClient(c config) *OIDCClientAccessGrantClient {
+	return &OIDCClientAccessGrantClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `oidcclientaccessgrant.Hooks(f(g(h())))`.
+func (c *OIDCClientAccessGrantClient) Use(hooks ...Hook) {
+	c.hooks.OIDCClientAccessGrant = append(c.hooks.OIDCClientAccessGrant, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `oidcclientaccessgrant.Intercept(f(g(h())))`.
+func (c *OIDCClientAccessGrantClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OIDCClientAccessGrant = append(c.inters.OIDCClientAccessGrant, interceptors...)
+}
+
+// Create returns a builder for creating a OIDCClientAccessGrant entity.
+func (c *OIDCClientAccessGrantClient) Create() *OIDCClientAccessGrantCreate {
+	mutation := newOIDCClientAccessGrantMutation(c.config, OpCreate)
+	return &OIDCClientAccessGrantCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OIDCClientAccessGrant entities.
+func (c *OIDCClientAccessGrantClient) CreateBulk(builders ...*OIDCClientAccessGrantCreate) *OIDCClientAccessGrantCreateBulk {
+	return &OIDCClientAccessGrantCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OIDCClientAccessGrantClient) MapCreateBulk(slice any, setFunc func(*OIDCClientAccessGrantCreate, int)) *OIDCClientAccessGrantCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OIDCClientAccessGrantCreateBulk{err: fmt.Errorf("calling to OIDCClientAccessGrantClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OIDCClientAccessGrantCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OIDCClientAccessGrantCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OIDCClientAccessGrant.
+func (c *OIDCClientAccessGrantClient) Update() *OIDCClientAccessGrantUpdate {
+	mutation := newOIDCClientAccessGrantMutation(c.config, OpUpdate)
+	return &OIDCClientAccessGrantUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OIDCClientAccessGrantClient) UpdateOne(_m *OIDCClientAccessGrant) *OIDCClientAccessGrantUpdateOne {
+	mutation := newOIDCClientAccessGrantMutation(c.config, OpUpdateOne, withOIDCClientAccessGrant(_m))
+	return &OIDCClientAccessGrantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OIDCClientAccessGrantClient) UpdateOneID(id uuid.UUID) *OIDCClientAccessGrantUpdateOne {
+	mutation := newOIDCClientAccessGrantMutation(c.config, OpUpdateOne, withOIDCClientAccessGrantID(id))
+	return &OIDCClientAccessGrantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OIDCClientAccessGrant.
+func (c *OIDCClientAccessGrantClient) Delete() *OIDCClientAccessGrantDelete {
+	mutation := newOIDCClientAccessGrantMutation(c.config, OpDelete)
+	return &OIDCClientAccessGrantDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OIDCClientAccessGrantClient) DeleteOne(_m *OIDCClientAccessGrant) *OIDCClientAccessGrantDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OIDCClientAccessGrantClient) DeleteOneID(id uuid.UUID) *OIDCClientAccessGrantDeleteOne {
+	builder := c.Delete().Where(oidcclientaccessgrant.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OIDCClientAccessGrantDeleteOne{builder}
+}
+
+// Query returns a query builder for OIDCClientAccessGrant.
+func (c *OIDCClientAccessGrantClient) Query() *OIDCClientAccessGrantQuery {
+	return &OIDCClientAccessGrantQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOIDCClientAccessGrant},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OIDCClientAccessGrant entity by its id.
+func (c *OIDCClientAccessGrantClient) Get(ctx context.Context, id uuid.UUID) (*OIDCClientAccessGrant, error) {
+	return c.Query().Where(oidcclientaccessgrant.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OIDCClientAccessGrantClient) GetX(ctx context.Context, id uuid.UUID) *OIDCClientAccessGrant {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryClient queries the client edge of a OIDCClientAccessGrant.
+func (c *OIDCClientAccessGrantClient) QueryClient(_m *OIDCClientAccessGrant) *OIDCClientQuery {
+	query := (&OIDCClientClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclientaccessgrant.Table, oidcclientaccessgrant.FieldID, id),
+			sqlgraph.To(oidcclient.Table, oidcclient.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oidcclientaccessgrant.ClientTable, oidcclientaccessgrant.ClientColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryUser queries the user edge of a OIDCClientAccessGrant.
+func (c *OIDCClientAccessGrantClient) QueryUser(_m *OIDCClientAccessGrant) *UserRefQuery {
+	query := (&UserRefClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(oidcclientaccessgrant.Table, oidcclientaccessgrant.FieldID, id),
+			sqlgraph.To(userref.Table, userref.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, oidcclientaccessgrant.UserTable, oidcclientaccessgrant.UserColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OIDCClientAccessGrantClient) Hooks() []Hook {
+	return c.hooks.OIDCClientAccessGrant
+}
+
+// Interceptors returns the client interceptors.
+func (c *OIDCClientAccessGrantClient) Interceptors() []Interceptor {
+	return c.inters.OIDCClientAccessGrant
+}
+
+func (c *OIDCClientAccessGrantClient) mutate(ctx context.Context, m *OIDCClientAccessGrantMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OIDCClientAccessGrantCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OIDCClientAccessGrantUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OIDCClientAccessGrantUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OIDCClientAccessGrantDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OIDCClientAccessGrant mutation op: %q", m.Op())
 	}
 }
 
@@ -2136,6 +2327,22 @@ func (c *UserRefClient) QueryOidcRefreshTokens(_m *UserRef) *OIDCRefreshTokenQue
 	return query
 }
 
+// QueryOidcAccessGrants queries the oidc_access_grants edge of a UserRef.
+func (c *UserRefClient) QueryOidcAccessGrants(_m *UserRef) *OIDCClientAccessGrantQuery {
+	query := (&OIDCClientAccessGrantClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(userref.Table, userref.FieldID, id),
+			sqlgraph.To(oidcclientaccessgrant.Table, oidcclientaccessgrant.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, userref.OidcAccessGrantsTable, userref.OidcAccessGrantsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *UserRefClient) Hooks() []Hook {
 	return c.hooks.UserRef
@@ -2313,13 +2520,13 @@ func (c *UserSessionClient) mutate(ctx context.Context, m *UserSessionMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		OIDCCallbackURI, OIDCClient, OIDCClientSecret, OIDCGrant, OIDCRefreshToken,
-		OIDCScope, UserEmail, UserFederatedIdentity, UserIdentity, UserPasskey,
-		UserRef, UserSession []ent.Hook
+		OIDCCallbackURI, OIDCClient, OIDCClientAccessGrant, OIDCClientSecret, OIDCGrant,
+		OIDCRefreshToken, OIDCScope, UserEmail, UserFederatedIdentity, UserIdentity,
+		UserPasskey, UserRef, UserSession []ent.Hook
 	}
 	inters struct {
-		OIDCCallbackURI, OIDCClient, OIDCClientSecret, OIDCGrant, OIDCRefreshToken,
-		OIDCScope, UserEmail, UserFederatedIdentity, UserIdentity, UserPasskey,
-		UserRef, UserSession []ent.Interceptor
+		OIDCCallbackURI, OIDCClient, OIDCClientAccessGrant, OIDCClientSecret, OIDCGrant,
+		OIDCRefreshToken, OIDCScope, UserEmail, UserFederatedIdentity, UserIdentity,
+		UserPasskey, UserRef, UserSession []ent.Interceptor
 	}
 )

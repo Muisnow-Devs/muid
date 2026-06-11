@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
 	"sanzi.io/muid/internal/authn/ent/predicate"
@@ -135,6 +136,21 @@ func (_u *UserRefUpdate) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRefUp
 	return _u.AddOidcRefreshTokenIDs(ids...)
 }
 
+// AddOidcAccessGrantIDs adds the "oidc_access_grants" edge to the OIDCClientAccessGrant entity by IDs.
+func (_u *UserRefUpdate) AddOidcAccessGrantIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.AddOidcAccessGrantIDs(ids...)
+	return _u
+}
+
+// AddOidcAccessGrants adds the "oidc_access_grants" edges to the OIDCClientAccessGrant entity.
+func (_u *UserRefUpdate) AddOidcAccessGrants(v ...*OIDCClientAccessGrant) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOidcAccessGrantIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdate) Mutation() *UserRefMutation {
 	return _u.mutation
@@ -243,6 +259,27 @@ func (_u *UserRefUpdate) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRe
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOidcRefreshTokenIDs(ids...)
+}
+
+// ClearOidcAccessGrants clears all "oidc_access_grants" edges to the OIDCClientAccessGrant entity.
+func (_u *UserRefUpdate) ClearOidcAccessGrants() *UserRefUpdate {
+	_u.mutation.ClearOidcAccessGrants()
+	return _u
+}
+
+// RemoveOidcAccessGrantIDs removes the "oidc_access_grants" edge to OIDCClientAccessGrant entities by IDs.
+func (_u *UserRefUpdate) RemoveOidcAccessGrantIDs(ids ...uuid.UUID) *UserRefUpdate {
+	_u.mutation.RemoveOidcAccessGrantIDs(ids...)
+	return _u
+}
+
+// RemoveOidcAccessGrants removes "oidc_access_grants" edges to OIDCClientAccessGrant entities.
+func (_u *UserRefUpdate) RemoveOidcAccessGrants(v ...*OIDCClientAccessGrant) *UserRefUpdate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOidcAccessGrantIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -524,6 +561,51 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.OidcAccessGrantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOidcAccessGrantsIDs(); len(nodes) > 0 && !_u.mutation.OidcAccessGrantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OidcAccessGrantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{userref.Label}
@@ -645,6 +727,21 @@ func (_u *UserRefUpdateOne) AddOidcRefreshTokens(v ...*OIDCRefreshToken) *UserRe
 	return _u.AddOidcRefreshTokenIDs(ids...)
 }
 
+// AddOidcAccessGrantIDs adds the "oidc_access_grants" edge to the OIDCClientAccessGrant entity by IDs.
+func (_u *UserRefUpdateOne) AddOidcAccessGrantIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.AddOidcAccessGrantIDs(ids...)
+	return _u
+}
+
+// AddOidcAccessGrants adds the "oidc_access_grants" edges to the OIDCClientAccessGrant entity.
+func (_u *UserRefUpdateOne) AddOidcAccessGrants(v ...*OIDCClientAccessGrant) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.AddOidcAccessGrantIDs(ids...)
+}
+
 // Mutation returns the UserRefMutation object of the builder.
 func (_u *UserRefUpdateOne) Mutation() *UserRefMutation {
 	return _u.mutation
@@ -753,6 +850,27 @@ func (_u *UserRefUpdateOne) RemoveOidcRefreshTokens(v ...*OIDCRefreshToken) *Use
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveOidcRefreshTokenIDs(ids...)
+}
+
+// ClearOidcAccessGrants clears all "oidc_access_grants" edges to the OIDCClientAccessGrant entity.
+func (_u *UserRefUpdateOne) ClearOidcAccessGrants() *UserRefUpdateOne {
+	_u.mutation.ClearOidcAccessGrants()
+	return _u
+}
+
+// RemoveOidcAccessGrantIDs removes the "oidc_access_grants" edge to OIDCClientAccessGrant entities by IDs.
+func (_u *UserRefUpdateOne) RemoveOidcAccessGrantIDs(ids ...uuid.UUID) *UserRefUpdateOne {
+	_u.mutation.RemoveOidcAccessGrantIDs(ids...)
+	return _u
+}
+
+// RemoveOidcAccessGrants removes "oidc_access_grants" edges to OIDCClientAccessGrant entities.
+func (_u *UserRefUpdateOne) RemoveOidcAccessGrants(v ...*OIDCClientAccessGrant) *UserRefUpdateOne {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _u.RemoveOidcAccessGrantIDs(ids...)
 }
 
 // Where appends a list predicates to the UserRefUpdate builder.
@@ -1057,6 +1175,51 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.OidcAccessGrantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.RemovedOidcAccessGrantsIDs(); len(nodes) > 0 && !_u.mutation.OidcAccessGrantsCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.OidcAccessGrantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   userref.OidcAccessGrantsTable,
+			Columns: []string{userref.OidcAccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

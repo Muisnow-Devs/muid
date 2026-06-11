@@ -1,0 +1,308 @@
+syntax = "proto3";
+
+package muid.authn.v1;
+
+import "authn/v1/oidc.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
+
+// OIDCClientAdminService manages an organization's OIDC clients.
+//
+// Every RPC requires a first-party session via the authorization metadata
+// header ("Session <token>") and the caller must hold the
+// "oidc_client:manage" permission in the client's owning organization
+// (checked through the authz service). Missing permission returns gRPC
+// PermissionDenied.
+service OIDCClientAdminService {
+  rpc CreateOIDCClient(CreateOIDCClientRequest) returns (CreateOIDCClientResponse);
+  rpc UpdateOIDCClient(UpdateOIDCClientRequest) returns (UpdateOIDCClientResponse);
+  rpc SetOIDCClientPublishStatus(SetOIDCClientPublishStatusRequest) returns (SetOIDCClientPublishStatusResponse);
+  rpc GetOIDCClient(GetOIDCClientRequest) returns (GetOIDCClientResponse);
+  rpc ListOIDCClients(ListOIDCClientsRequest) returns (ListOIDCClientsResponse);
+
+  /// Redirect URI management.
+  rpc AddOIDCClientRedirectURI(AddOIDCClientRedirectURIRequest) returns (AddOIDCClientRedirectURIResponse);
+  rpc RemoveOIDCClientRedirectURI(RemoveOIDCClientRedirectURIRequest) returns (RemoveOIDCClientRedirectURIResponse);
+
+  /// Client secret management.
+  rpc CreateOIDCClientSecret(CreateOIDCClientSecretRequest) returns (CreateOIDCClientSecretResponse);
+  rpc ListOIDCClientSecrets(ListOIDCClientSecretsRequest) returns (ListOIDCClientSecretsResponse);
+  rpc RevokeOIDCClientSecret(RevokeOIDCClientSecretRequest) returns (RevokeOIDCClientSecretResponse);
+
+  /// Private-access allowlist management (access_policy "private").
+  rpc AddOIDCClientAccessGrant(AddOIDCClientAccessGrantRequest) returns (AddOIDCClientAccessGrantResponse);
+  rpc RemoveOIDCClientAccessGrant(RemoveOIDCClientAccessGrantRequest) returns (RemoveOIDCClientAccessGrantResponse);
+  rpc ListOIDCClientAccessGrants(ListOIDCClientAccessGrantsRequest) returns (ListOIDCClientAccessGrantsResponse);
+}
+
+enum OIDCTokenEndpointAuthMethod {
+  OIDC_TOKEN_ENDPOINT_AUTH_METHOD_UNSPECIFIED = 0;
+  OIDC_TOKEN_ENDPOINT_AUTH_METHOD_NONE = 1;
+  OIDC_TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_BASIC = 2;
+  OIDC_TOKEN_ENDPOINT_AUTH_METHOD_CLIENT_SECRET_POST = 3;
+  // Accepted at registration time but rejected during authentication until
+  // implemented.
+  OIDC_TOKEN_ENDPOINT_AUTH_METHOD_PRIVATE_KEY_JWT = 4;
+}
+
+enum OIDCApplicationType {
+  OIDC_APPLICATION_TYPE_UNSPECIFIED = 0;
+  OIDC_APPLICATION_TYPE_WEB = 1;
+  OIDC_APPLICATION_TYPE_NATIVE = 2;
+}
+
+enum OIDCAccessPolicy {
+  OIDC_ACCESS_POLICY_UNSPECIFIED = 0;
+  // Anyone may authenticate.
+  OIDC_ACCESS_POLICY_PUBLIC = 1;
+  // Only members of the owning organization may authenticate.
+  OIDC_ACCESS_POLICY_ORGANIZATION = 2;
+  // Only users on the client's access-grant allowlist may authenticate.
+  OIDC_ACCESS_POLICY_PRIVATE = 3;
+}
+
+enum OIDCPublishStatus {
+  OIDC_PUBLISH_STATUS_UNSPECIFIED = 0;
+  OIDC_PUBLISH_STATUS_DRAFT = 1;
+  OIDC_PUBLISH_STATUS_TESTING = 2;
+  OIDC_PUBLISH_STATUS_PUBLISHED = 3;
+  OIDC_PUBLISH_STATUS_DISABLED = 4;
+}
+
+enum OIDCGrantType {
+  OIDC_GRANT_TYPE_UNSPECIFIED = 0;
+  OIDC_GRANT_TYPE_AUTHORIZATION_CODE = 1;
+  OIDC_GRANT_TYPE_REFRESH_TOKEN = 2;
+  OIDC_GRANT_TYPE_DEVICE_CODE = 3;
+}
+
+message OIDCClientInfo {
+  string client_id = 1;
+  string client_name = 2;
+  string owner_organization_id = 3 [(buf.validate.field).string.uuid = true];
+
+  repeated string scopes = 4;
+  repeated OIDCGrantType grant_types = 5;
+  repeated string redirect_uris = 6;
+
+  OIDCTokenEndpointAuthMethod token_endpoint_auth_method = 7;
+  OIDCApplicationType application_type = 8;
+  OIDCAccessPolicy access_policy = 9;
+  OIDCVerificationStatus verification_status = 10;
+  OIDCPublishStatus publish_status = 11;
+
+  google.protobuf.Timestamp created_at = 12;
+  google.protobuf.Timestamp updated_at = 13;
+}
+
+message CreateOIDCClientRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string client_name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  OIDCApplicationType application_type = 3;
+  OIDCAccessPolicy access_policy = 4;
+  // Forced to NONE when the application type is NATIVE or the requested
+  // method is unspecified.
+  OIDCTokenEndpointAuthMethod token_endpoint_auth_method = 5;
+  repeated string scopes = 6 [(buf.validate.field).repeated = {
+    max_items: 32
+    items: {
+      string: {max_len: 128}
+    }
+  }];
+  repeated string redirect_uris = 7 [(buf.validate.field).repeated = {
+    max_items: 16
+    items: {
+      string: {max_len: 2048}
+    }
+  }];
+  repeated OIDCGrantType grant_types = 8;
+}
+
+message CreateOIDCClientResponse {
+  OIDCClientInfo client = 1;
+}
+
+// Unset fields are left unchanged.
+message UpdateOIDCClientRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  optional string client_name = 2 [(buf.validate.field).string.max_len = 64];
+  OIDCAccessPolicy access_policy = 3;
+  OIDCScopesUpdate scopes = 4;
+  OIDCGrantTypesUpdate grant_types = 5;
+}
+
+message OIDCScopesUpdate {
+  repeated string scopes = 1 [(buf.validate.field).repeated = {
+    max_items: 32
+    items: {
+      string: {max_len: 128}
+    }
+  }];
+}
+
+message OIDCGrantTypesUpdate {
+  repeated OIDCGrantType grant_types = 1;
+}
+
+message UpdateOIDCClientResponse {
+  OIDCClientInfo client = 1;
+}
+
+message SetOIDCClientPublishStatusRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  OIDCPublishStatus publish_status = 2;
+}
+
+message SetOIDCClientPublishStatusResponse {
+  OIDCClientInfo client = 1;
+}
+
+message GetOIDCClientRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message GetOIDCClientResponse {
+  OIDCClientInfo client = 1;
+}
+
+message ListOIDCClientsRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message ListOIDCClientsResponse {
+  repeated OIDCClientInfo clients = 1;
+}
+
+message AddOIDCClientRedirectURIRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string uri = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+}
+
+message AddOIDCClientRedirectURIResponse {
+  bool success = 1;
+}
+
+message RemoveOIDCClientRedirectURIRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string uri = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 2048
+  }];
+}
+
+message RemoveOIDCClientRedirectURIResponse {
+  bool success = 1;
+}
+
+message CreateOIDCClientSecretRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  optional google.protobuf.Timestamp expires_at = 2;
+}
+
+message CreateOIDCClientSecretResponse {
+  string secret_id = 1 [(buf.validate.field).string.uuid = true];
+  // The plaintext secret. Returned exactly once; only a hash is stored.
+  string client_secret = 2;
+  string hint = 3;
+  google.protobuf.Timestamp created_at = 4;
+  optional google.protobuf.Timestamp expires_at = 5;
+}
+
+message ListOIDCClientSecretsRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message OIDCClientSecretInfo {
+  string secret_id = 1 [(buf.validate.field).string.uuid = true];
+  string hint = 2;
+  google.protobuf.Timestamp created_at = 3;
+  optional google.protobuf.Timestamp expires_at = 4;
+  optional google.protobuf.Timestamp revoked_at = 5;
+  optional google.protobuf.Timestamp last_used_at = 6;
+}
+
+message ListOIDCClientSecretsResponse {
+  repeated OIDCClientSecretInfo secrets = 1;
+}
+
+message RevokeOIDCClientSecretRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string secret_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message RevokeOIDCClientSecretResponse {
+  bool success = 1;
+}
+
+message AddOIDCClientAccessGrantRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message AddOIDCClientAccessGrantResponse {
+  bool success = 1;
+}
+
+message RemoveOIDCClientAccessGrantRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message RemoveOIDCClientAccessGrantResponse {
+  bool success = 1;
+}
+
+message ListOIDCClientAccessGrantsRequest {
+  string client_id = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+}
+
+message OIDCClientAccessGrantInfo {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  optional string granted_by = 2 [(buf.validate.field).string.uuid = true];
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message ListOIDCClientAccessGrantsResponse {
+  repeated OIDCClientAccessGrantInfo grants = 1;
+}

@@ -12,15 +12,20 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"google.golang.org/grpc"
 
+	authzpb "sanzi.io/muid/api/proto/authz/v1"
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/redis"
+	gcpsecretmanager "sanzi.io/muid/infra/secretmanager"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	authnkv "sanzi.io/muid/internal/authn/kv"
+	oidcstore "sanzi.io/muid/internal/authn/oidc/store"
 	"sanzi.io/muid/internal/identity"
+	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/shared/kv"
 )
 
 // NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and WebAuthn.
@@ -118,7 +123,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		return nil, fmt.Errorf("identity manager: %w", err)
 	}
 
-	return &InfraDependencies{
+	deps := &InfraDependencies{
 		GlobalConfig:              cfg,
 		Redis:                     redisKV,
 		OTPStore:                  otpStore,
@@ -131,7 +136,92 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		IdentityManager:           identityMgr,
 		entClient:                 entClient,
 		profileConn:               profileConn,
-	}, nil
+	}
+
+	err = wireOIDCProviderInfra(ctx, cfg, redisKV, deps)
+	if err != nil {
+		identityMgr.Close()
+		errutil.Close(profileConn)
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		errutil.CloseIf(redisKV)
+		return nil, fmt.Errorf("oidc provider: %w", err)
+	}
+
+	return deps, nil
+}
+
+// wireOIDCProviderInfra adds the OIDC provider dependencies (follower
+// SignatureManager, authz client, KV protocol stores) when AUTHN_OIDC_ISSUER
+// is set. Without an issuer the OP surface stays disabled and the service
+// boots as before.
+func wireOIDCProviderInfra(
+	ctx context.Context,
+	cfg Config,
+	redisKV kv.AtomicKVStore,
+	deps *InfraDependencies,
+) error {
+	if !cfg.OIDCProviderEnabled() {
+		return nil
+	}
+	if strings.TrimSpace(cfg.SignatureSecretName) == "" {
+		return fmt.Errorf("AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_OIDC_ISSUER is set")
+	}
+	authzAddr := strings.TrimSpace(cfg.AuthzGRPCAddr)
+	if authzAddr == "" {
+		return fmt.Errorf("AUTHN_AUTHZ_GRPC_ADDR is required when AUTHN_OIDC_ISSUER is set")
+	}
+
+	authzConn, err := grpcutils.DialInsecureClient(authzAddr, authzGRPCResilience(cfg))
+	if err != nil {
+		return fmt.Errorf("authz grpc dial: %w", err)
+	}
+
+	secretStore, err := gcpsecretmanager.NewGCPSecretManager(ctx, gcpsecretmanager.GCPConfig{
+		ProjectID:       cfg.SecretManagerGCPProjectID,
+		CredentialsFile: cfg.SecretManagerGCPCredentials,
+	})
+	if err != nil {
+		errutil.Close(authzConn)
+		return fmt.Errorf("secret manager: %w", err)
+	}
+
+	signatureManager, err := signature.NewSignatureManager(secretStore, signature.ManagerConfig{
+		SecretName:          cfg.SignatureSecretName,
+		PreviousGenerations: cfg.SignaturePreviousGenerations,
+		RotationPeriod:      signatureRefreshPeriod(cfg),
+		ReadOnly:            true,
+	})
+	if err != nil {
+		errutil.CloseIf(secretStore)
+		errutil.Close(authzConn)
+		return fmt.Errorf("signature manager: %w", err)
+	}
+
+	deps.SignatureManager = signatureManager
+	deps.AuthzCli = authzpb.NewAuthzServiceClient(authzConn)
+	deps.OIDCCodes = oidcstore.NewKVCodeStore(redisKV)
+	deps.OIDCPendings = oidcstore.NewKVPendingStore(redisKV)
+	deps.OIDCDevices = oidcstore.NewKVDeviceStore(redisKV)
+	deps.authzConn = authzConn
+	return nil
+}
+
+// signatureRefreshPeriod maps the configured refresh minutes onto the
+// follower-mode ticker; non-positive disables the refresh job.
+func signatureRefreshPeriod(cfg Config) time.Duration {
+	if cfg.SignatureRefreshPeriodMinutes <= 0 {
+		return -1
+	}
+	return time.Duration(cfg.SignatureRefreshPeriodMinutes) * time.Minute
+}
+
+// authzGRPCResilience reuses the Profile outbound resilience settings with a
+// dedicated circuit-breaker name.
+func authzGRPCResilience(cfg Config) grpcutils.ClientResilienceConfig {
+	out := profileGRPCResilience(cfg)
+	out.CircuitBreaker.Name = "authn-authz"
+	return out
 }
 
 func profileGRPCResilience(cfg Config) grpcutils.ClientResilienceConfig {

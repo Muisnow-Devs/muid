@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
@@ -87,12 +88,16 @@ func init() {
 	oidcclientDescScopes := oidcclientFields[4].Descriptor()
 	// oidcclient.DefaultScopes holds the default value on creation for the scopes field.
 	oidcclient.DefaultScopes = oidcclientDescScopes.Default.([]string)
+	// oidcclientDescGrantTypes is the schema descriptor for grant_types field.
+	oidcclientDescGrantTypes := oidcclientFields[5].Descriptor()
+	// oidcclient.DefaultGrantTypes holds the default value on creation for the grant_types field.
+	oidcclient.DefaultGrantTypes = oidcclientDescGrantTypes.Default.([]string)
 	// oidcclientDescCreatedAt is the schema descriptor for created_at field.
-	oidcclientDescCreatedAt := oidcclientFields[10].Descriptor()
+	oidcclientDescCreatedAt := oidcclientFields[11].Descriptor()
 	// oidcclient.DefaultCreatedAt holds the default value on creation for the created_at field.
 	oidcclient.DefaultCreatedAt = oidcclientDescCreatedAt.Default.(func() time.Time)
 	// oidcclientDescUpdatedAt is the schema descriptor for updated_at field.
-	oidcclientDescUpdatedAt := oidcclientFields[11].Descriptor()
+	oidcclientDescUpdatedAt := oidcclientFields[12].Descriptor()
 	// oidcclient.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	oidcclient.DefaultUpdatedAt = oidcclientDescUpdatedAt.Default.(func() time.Time)
 	// oidcclient.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -101,6 +106,16 @@ func init() {
 	oidcclientDescID := oidcclientFields[0].Descriptor()
 	// oidcclient.DefaultID holds the default value on creation for the id field.
 	oidcclient.DefaultID = oidcclientDescID.Default.(func() uuid.UUID)
+	oidcclientaccessgrantFields := schema.OIDCClientAccessGrant{}.Fields()
+	_ = oidcclientaccessgrantFields
+	// oidcclientaccessgrantDescCreatedAt is the schema descriptor for created_at field.
+	oidcclientaccessgrantDescCreatedAt := oidcclientaccessgrantFields[4].Descriptor()
+	// oidcclientaccessgrant.DefaultCreatedAt holds the default value on creation for the created_at field.
+	oidcclientaccessgrant.DefaultCreatedAt = oidcclientaccessgrantDescCreatedAt.Default.(func() time.Time)
+	// oidcclientaccessgrantDescID is the schema descriptor for id field.
+	oidcclientaccessgrantDescID := oidcclientaccessgrantFields[0].Descriptor()
+	// oidcclientaccessgrant.DefaultID holds the default value on creation for the id field.
+	oidcclientaccessgrant.DefaultID = oidcclientaccessgrantDescID.Default.(func() uuid.UUID)
 	oidcclientsecretFields := schema.OIDCClientSecret{}.Fields()
 	_ = oidcclientsecretFields
 	// oidcclientsecretDescSecretHash is the schema descriptor for secret_hash field.

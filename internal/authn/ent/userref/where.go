@@ -316,6 +316,29 @@ func HasOidcRefreshTokensWith(preds ...predicate.OIDCRefreshToken) predicate.Use
 	})
 }
 
+// HasOidcAccessGrants applies the HasEdge predicate on the "oidc_access_grants" edge.
+func HasOidcAccessGrants() predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OidcAccessGrantsTable, OidcAccessGrantsColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOidcAccessGrantsWith applies the HasEdge predicate on the "oidc_access_grants" edge with a given conditions (other predicates).
+func HasOidcAccessGrantsWith(preds ...predicate.OIDCClientAccessGrant) predicate.UserRef {
+	return predicate.UserRef(func(s *sql.Selector) {
+		step := newOidcAccessGrantsStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
 // And groups predicates with the AND operator between them.
 func And(predicates ...predicate.UserRef) predicate.UserRef {
 	return predicate.UserRef(sql.AndPredicates(predicates...))

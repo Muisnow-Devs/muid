@@ -57,6 +57,21 @@ func enrichSessionPrincipal(iss issuer.SessionIssuer) grpcutils.RequestContextFu
 	}
 }
 
+// enrichOptionalSessionPrincipal resolves the session like
+// enrichSessionPrincipal but tolerates a missing token: anonymous callers
+// continue without a resolved session (used by OIDC Authorize, where the
+// provider answers LoginRequired instead).
+func enrichOptionalSessionPrincipal(iss issuer.SessionIssuer) grpcutils.RequestContextFunc {
+	required := enrichSessionPrincipal(iss)
+	return func(ctx context.Context, fullMethod string, req any) (context.Context, error) {
+		_, ok := grpcutils.WireSessionTokenFromContext(ctx)
+		if !ok {
+			return ctx, nil
+		}
+		return required(ctx, fullMethod, req)
+	}
+}
+
 // AuthnSessionPrincipalInterceptor resolves the session token (stored by
 // [grpcutils.SessionTokenInterceptor] from the authorization header) for routes
 // that require a fully authenticated principal. Resolved session is available via
@@ -65,9 +80,26 @@ func enrichSessionPrincipal(iss issuer.SessionIssuer) grpcutils.RequestContextFu
 // Must run after [grpcutils.SessionTokenInterceptor] and
 // [AuthnRequestContextInterceptor] in the chain.
 func AuthnSessionPrincipalInterceptor(iss issuer.SessionIssuer) grpc.UnaryServerInterceptor {
-	return grpcutils.UnaryRequestContextInterceptor(map[string]grpcutils.RequestContextFunc{
-		pb.AuthnService_RevokeFederatedIdentity_FullMethodName: enrichSessionPrincipal(iss),
-		pb.AuthnService_RevokeSession_FullMethodName:           enrichSessionPrincipal(iss),
-		pb.AuthnService_ExtendSession_FullMethodName:           enrichSessionPrincipal(iss),
-	})
+	required := enrichSessionPrincipal(iss)
+	routes := map[string]grpcutils.RequestContextFunc{
+		pb.AuthnService_RevokeFederatedIdentity_FullMethodName: required,
+		pb.AuthnService_RevokeSession_FullMethodName:           required,
+		pb.AuthnService_ExtendSession_FullMethodName:           required,
+
+		// OIDC provider surface. Authorize is the only optional-session
+		// route; token-style RPCs authenticate the client in-message and
+		// stay anonymous here.
+		pb.OIDCService_Authorize_FullMethodName: enrichOptionalSessionPrincipal(
+			iss,
+		),
+		pb.OIDCService_DecideConsent_FullMethodName:              required,
+		pb.OIDCService_GetDeviceAuthorizationInfo_FullMethodName: required,
+		pb.OIDCService_DecideDeviceAuthorization_FullMethodName:  required,
+		pb.OIDCService_ListGrantedConsents_FullMethodName:        required,
+		pb.OIDCService_RevokeConsent_FullMethodName:              required,
+	}
+	for _, method := range pb.OIDCClientAdminService_ServiceDesc.Methods {
+		routes["/"+pb.OIDCClientAdminService_ServiceDesc.ServiceName+"/"+method.MethodName] = required
+	}
+	return grpcutils.UnaryRequestContextInterceptor(routes)
 }

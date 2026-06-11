@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
@@ -86,6 +87,7 @@ func checkColumn(t, c string) error {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
 			oidccallbackuri.Table:       oidccallbackuri.ValidColumn,
 			oidcclient.Table:            oidcclient.ValidColumn,
+			oidcclientaccessgrant.Table: oidcclientaccessgrant.ValidColumn,
 			oidcclientsecret.Table:      oidcclientsecret.ValidColumn,
 			oidcgrant.Table:             oidcgrant.ValidColumn,
 			oidcrefreshtoken.Table:      oidcrefreshtoken.ValidColumn,

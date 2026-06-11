@@ -16,6 +16,8 @@ type Tx struct {
 	OIDCCallbackURI *OIDCCallbackURIClient
 	// OIDCClient is the client for interacting with the OIDCClient builders.
 	OIDCClient *OIDCClientClient
+	// OIDCClientAccessGrant is the client for interacting with the OIDCClientAccessGrant builders.
+	OIDCClientAccessGrant *OIDCClientAccessGrantClient
 	// OIDCClientSecret is the client for interacting with the OIDCClientSecret builders.
 	OIDCClientSecret *OIDCClientSecretClient
 	// OIDCGrant is the client for interacting with the OIDCGrant builders.
@@ -169,6 +171,7 @@ func (tx *Tx) Client() *Client {
 func (tx *Tx) init() {
 	tx.OIDCCallbackURI = NewOIDCCallbackURIClient(tx.config)
 	tx.OIDCClient = NewOIDCClientClient(tx.config)
+	tx.OIDCClientAccessGrant = NewOIDCClientAccessGrantClient(tx.config)
 	tx.OIDCClientSecret = NewOIDCClientSecretClient(tx.config)
 	tx.OIDCGrant = NewOIDCGrantClient(tx.config)
 	tx.OIDCRefreshToken = NewOIDCRefreshTokenClient(tx.config)

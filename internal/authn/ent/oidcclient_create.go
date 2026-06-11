@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
@@ -46,6 +47,12 @@ func (_c *OIDCClientCreate) SetOwnerOrganizationID(v uuid.UUID) *OIDCClientCreat
 // SetScopes sets the "scopes" field.
 func (_c *OIDCClientCreate) SetScopes(v []string) *OIDCClientCreate {
 	_c.mutation.SetScopes(v)
+	return _c
+}
+
+// SetGrantTypes sets the "grant_types" field.
+func (_c *OIDCClientCreate) SetGrantTypes(v []string) *OIDCClientCreate {
+	_c.mutation.SetGrantTypes(v)
 	return _c
 }
 
@@ -235,6 +242,21 @@ func (_c *OIDCClientCreate) AddRefreshTokens(v ...*OIDCRefreshToken) *OIDCClient
 	return _c.AddRefreshTokenIDs(ids...)
 }
 
+// AddAccessGrantIDs adds the "access_grants" edge to the OIDCClientAccessGrant entity by IDs.
+func (_c *OIDCClientCreate) AddAccessGrantIDs(ids ...uuid.UUID) *OIDCClientCreate {
+	_c.mutation.AddAccessGrantIDs(ids...)
+	return _c
+}
+
+// AddAccessGrants adds the "access_grants" edges to the OIDCClientAccessGrant entity.
+func (_c *OIDCClientCreate) AddAccessGrants(v ...*OIDCClientAccessGrant) *OIDCClientCreate {
+	ids := make([]uuid.UUID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
+	}
+	return _c.AddAccessGrantIDs(ids...)
+}
+
 // Mutation returns the OIDCClientMutation object of the builder.
 func (_c *OIDCClientCreate) Mutation() *OIDCClientMutation {
 	return _c.mutation
@@ -273,6 +295,10 @@ func (_c *OIDCClientCreate) defaults() {
 	if _, ok := _c.mutation.Scopes(); !ok {
 		v := oidcclient.DefaultScopes
 		_c.mutation.SetScopes(v)
+	}
+	if _, ok := _c.mutation.GrantTypes(); !ok {
+		v := oidcclient.DefaultGrantTypes
+		_c.mutation.SetGrantTypes(v)
 	}
 	if _, ok := _c.mutation.TokenEndpointAuthMethod(); !ok {
 		v := oidcclient.DefaultTokenEndpointAuthMethod
@@ -331,6 +357,9 @@ func (_c *OIDCClientCreate) check() error {
 	}
 	if _, ok := _c.mutation.Scopes(); !ok {
 		return &ValidationError{Name: "scopes", err: errors.New(`ent: missing required field "OIDCClient.scopes"`)}
+	}
+	if _, ok := _c.mutation.GrantTypes(); !ok {
+		return &ValidationError{Name: "grant_types", err: errors.New(`ent: missing required field "OIDCClient.grant_types"`)}
 	}
 	if _, ok := _c.mutation.TokenEndpointAuthMethod(); !ok {
 		return &ValidationError{Name: "token_endpoint_auth_method", err: errors.New(`ent: missing required field "OIDCClient.token_endpoint_auth_method"`)}
@@ -429,6 +458,10 @@ func (_c *OIDCClientCreate) createSpec() (*OIDCClient, *sqlgraph.CreateSpec) {
 		_spec.SetField(oidcclient.FieldScopes, field.TypeJSON, value)
 		_node.Scopes = value
 	}
+	if value, ok := _c.mutation.GrantTypes(); ok {
+		_spec.SetField(oidcclient.FieldGrantTypes, field.TypeJSON, value)
+		_node.GrantTypes = value
+	}
 	if value, ok := _c.mutation.TokenEndpointAuthMethod(); ok {
 		_spec.SetField(oidcclient.FieldTokenEndpointAuthMethod, field.TypeEnum, value)
 		_node.TokenEndpointAuthMethod = value
@@ -518,6 +551,22 @@ func (_c *OIDCClientCreate) createSpec() (*OIDCClient, *sqlgraph.CreateSpec) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(oidcrefreshtoken.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.AccessGrantsIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   oidcclient.AccessGrantsTable,
+			Columns: []string{oidcclient.AccessGrantsColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(oidcclientaccessgrant.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

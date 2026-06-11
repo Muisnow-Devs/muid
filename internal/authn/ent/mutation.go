@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
+	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcclientsecret"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
@@ -38,6 +39,7 @@ const (
 	// Node types.
 	TypeOIDCCallbackURI       = "OIDCCallbackURI"
 	TypeOIDCClient            = "OIDCClient"
+	TypeOIDCClientAccessGrant = "OIDCClientAccessGrant"
 	TypeOIDCClientSecret      = "OIDCClientSecret"
 	TypeOIDCGrant             = "OIDCGrant"
 	TypeOIDCRefreshToken      = "OIDCRefreshToken"
@@ -622,6 +624,8 @@ type OIDCClientMutation struct {
 	owner_organization_id      *uuid.UUID
 	scopes                     *[]string
 	appendscopes               []string
+	grant_types                *[]string
+	appendgrant_types          []string
 	token_endpoint_auth_method *oidcclient.TokenEndpointAuthMethod
 	application_type           *oidcclient.ApplicationType
 	access_policy              *oidcclient.AccessPolicy
@@ -643,6 +647,9 @@ type OIDCClientMutation struct {
 	refresh_tokens             map[uuid.UUID]struct{}
 	removedrefresh_tokens      map[uuid.UUID]struct{}
 	clearedrefresh_tokens      bool
+	access_grants              map[uuid.UUID]struct{}
+	removedaccess_grants       map[uuid.UUID]struct{}
+	clearedaccess_grants       bool
 	done                       bool
 	oldValue                   func(context.Context) (*OIDCClient, error)
 	predicates                 []predicate.OIDCClient
@@ -909,6 +916,57 @@ func (m *OIDCClientMutation) AppendedScopes() ([]string, bool) {
 func (m *OIDCClientMutation) ResetScopes() {
 	m.scopes = nil
 	m.appendscopes = nil
+}
+
+// SetGrantTypes sets the "grant_types" field.
+func (m *OIDCClientMutation) SetGrantTypes(s []string) {
+	m.grant_types = &s
+	m.appendgrant_types = nil
+}
+
+// GrantTypes returns the value of the "grant_types" field in the mutation.
+func (m *OIDCClientMutation) GrantTypes() (r []string, exists bool) {
+	v := m.grant_types
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGrantTypes returns the old "grant_types" field's value of the OIDCClient entity.
+// If the OIDCClient object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientMutation) OldGrantTypes(ctx context.Context) (v []string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGrantTypes is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGrantTypes requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGrantTypes: %w", err)
+	}
+	return oldValue.GrantTypes, nil
+}
+
+// AppendGrantTypes adds s to the "grant_types" field.
+func (m *OIDCClientMutation) AppendGrantTypes(s []string) {
+	m.appendgrant_types = append(m.appendgrant_types, s...)
+}
+
+// AppendedGrantTypes returns the list of values that were appended to the "grant_types" field in this mutation.
+func (m *OIDCClientMutation) AppendedGrantTypes() ([]string, bool) {
+	if len(m.appendgrant_types) == 0 {
+		return nil, false
+	}
+	return m.appendgrant_types, true
+}
+
+// ResetGrantTypes resets all changes to the "grant_types" field.
+func (m *OIDCClientMutation) ResetGrantTypes() {
+	m.grant_types = nil
+	m.appendgrant_types = nil
 }
 
 // SetTokenEndpointAuthMethod sets the "token_endpoint_auth_method" field.
@@ -1428,6 +1486,60 @@ func (m *OIDCClientMutation) ResetRefreshTokens() {
 	m.removedrefresh_tokens = nil
 }
 
+// AddAccessGrantIDs adds the "access_grants" edge to the OIDCClientAccessGrant entity by ids.
+func (m *OIDCClientMutation) AddAccessGrantIDs(ids ...uuid.UUID) {
+	if m.access_grants == nil {
+		m.access_grants = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.access_grants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearAccessGrants clears the "access_grants" edge to the OIDCClientAccessGrant entity.
+func (m *OIDCClientMutation) ClearAccessGrants() {
+	m.clearedaccess_grants = true
+}
+
+// AccessGrantsCleared reports if the "access_grants" edge to the OIDCClientAccessGrant entity was cleared.
+func (m *OIDCClientMutation) AccessGrantsCleared() bool {
+	return m.clearedaccess_grants
+}
+
+// RemoveAccessGrantIDs removes the "access_grants" edge to the OIDCClientAccessGrant entity by IDs.
+func (m *OIDCClientMutation) RemoveAccessGrantIDs(ids ...uuid.UUID) {
+	if m.removedaccess_grants == nil {
+		m.removedaccess_grants = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.access_grants, ids[i])
+		m.removedaccess_grants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedAccessGrants returns the removed IDs of the "access_grants" edge to the OIDCClientAccessGrant entity.
+func (m *OIDCClientMutation) RemovedAccessGrantsIDs() (ids []uuid.UUID) {
+	for id := range m.removedaccess_grants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// AccessGrantsIDs returns the "access_grants" edge IDs in the mutation.
+func (m *OIDCClientMutation) AccessGrantsIDs() (ids []uuid.UUID) {
+	for id := range m.access_grants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetAccessGrants resets all changes to the "access_grants" edge.
+func (m *OIDCClientMutation) ResetAccessGrants() {
+	m.access_grants = nil
+	m.clearedaccess_grants = false
+	m.removedaccess_grants = nil
+}
+
 // Where appends a list predicates to the OIDCClientMutation builder.
 func (m *OIDCClientMutation) Where(ps ...predicate.OIDCClient) {
 	m.predicates = append(m.predicates, ps...)
@@ -1462,7 +1574,7 @@ func (m *OIDCClientMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OIDCClientMutation) Fields() []string {
-	fields := make([]string, 0, 12)
+	fields := make([]string, 0, 13)
 	if m.client_id != nil {
 		fields = append(fields, oidcclient.FieldClientID)
 	}
@@ -1474,6 +1586,9 @@ func (m *OIDCClientMutation) Fields() []string {
 	}
 	if m.scopes != nil {
 		fields = append(fields, oidcclient.FieldScopes)
+	}
+	if m.grant_types != nil {
+		fields = append(fields, oidcclient.FieldGrantTypes)
 	}
 	if m.token_endpoint_auth_method != nil {
 		fields = append(fields, oidcclient.FieldTokenEndpointAuthMethod)
@@ -1515,6 +1630,8 @@ func (m *OIDCClientMutation) Field(name string) (ent.Value, bool) {
 		return m.OwnerOrganizationID()
 	case oidcclient.FieldScopes:
 		return m.Scopes()
+	case oidcclient.FieldGrantTypes:
+		return m.GrantTypes()
 	case oidcclient.FieldTokenEndpointAuthMethod:
 		return m.TokenEndpointAuthMethod()
 	case oidcclient.FieldApplicationType:
@@ -1548,6 +1665,8 @@ func (m *OIDCClientMutation) OldField(ctx context.Context, name string) (ent.Val
 		return m.OldOwnerOrganizationID(ctx)
 	case oidcclient.FieldScopes:
 		return m.OldScopes(ctx)
+	case oidcclient.FieldGrantTypes:
+		return m.OldGrantTypes(ctx)
 	case oidcclient.FieldTokenEndpointAuthMethod:
 		return m.OldTokenEndpointAuthMethod(ctx)
 	case oidcclient.FieldApplicationType:
@@ -1600,6 +1719,13 @@ func (m *OIDCClientMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetScopes(v)
+		return nil
+	case oidcclient.FieldGrantTypes:
+		v, ok := value.([]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGrantTypes(v)
 		return nil
 	case oidcclient.FieldTokenEndpointAuthMethod:
 		v, ok := value.(oidcclient.TokenEndpointAuthMethod)
@@ -1727,6 +1853,9 @@ func (m *OIDCClientMutation) ResetField(name string) error {
 	case oidcclient.FieldScopes:
 		m.ResetScopes()
 		return nil
+	case oidcclient.FieldGrantTypes:
+		m.ResetGrantTypes()
+		return nil
 	case oidcclient.FieldTokenEndpointAuthMethod:
 		m.ResetTokenEndpointAuthMethod()
 		return nil
@@ -1757,7 +1886,7 @@ func (m *OIDCClientMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OIDCClientMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.callback_urls != nil {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1769,6 +1898,9 @@ func (m *OIDCClientMutation) AddedEdges() []string {
 	}
 	if m.refresh_tokens != nil {
 		edges = append(edges, oidcclient.EdgeRefreshTokens)
+	}
+	if m.access_grants != nil {
+		edges = append(edges, oidcclient.EdgeAccessGrants)
 	}
 	return edges
 }
@@ -1801,13 +1933,19 @@ func (m *OIDCClientMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oidcclient.EdgeAccessGrants:
+		ids := make([]ent.Value, 0, len(m.access_grants))
+		for id := range m.access_grants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OIDCClientMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedcallback_urls != nil {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1819,6 +1957,9 @@ func (m *OIDCClientMutation) RemovedEdges() []string {
 	}
 	if m.removedrefresh_tokens != nil {
 		edges = append(edges, oidcclient.EdgeRefreshTokens)
+	}
+	if m.removedaccess_grants != nil {
+		edges = append(edges, oidcclient.EdgeAccessGrants)
 	}
 	return edges
 }
@@ -1851,13 +1992,19 @@ func (m *OIDCClientMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case oidcclient.EdgeAccessGrants:
+		ids := make([]ent.Value, 0, len(m.removedaccess_grants))
+		for id := range m.removedaccess_grants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OIDCClientMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedcallback_urls {
 		edges = append(edges, oidcclient.EdgeCallbackUrls)
 	}
@@ -1869,6 +2016,9 @@ func (m *OIDCClientMutation) ClearedEdges() []string {
 	}
 	if m.clearedrefresh_tokens {
 		edges = append(edges, oidcclient.EdgeRefreshTokens)
+	}
+	if m.clearedaccess_grants {
+		edges = append(edges, oidcclient.EdgeAccessGrants)
 	}
 	return edges
 }
@@ -1885,6 +2035,8 @@ func (m *OIDCClientMutation) EdgeCleared(name string) bool {
 		return m.clearedgrants
 	case oidcclient.EdgeRefreshTokens:
 		return m.clearedrefresh_tokens
+	case oidcclient.EdgeAccessGrants:
+		return m.clearedaccess_grants
 	}
 	return false
 }
@@ -1913,8 +2065,640 @@ func (m *OIDCClientMutation) ResetEdge(name string) error {
 	case oidcclient.EdgeRefreshTokens:
 		m.ResetRefreshTokens()
 		return nil
+	case oidcclient.EdgeAccessGrants:
+		m.ResetAccessGrants()
+		return nil
 	}
 	return fmt.Errorf("unknown OIDCClient edge %s", name)
+}
+
+// OIDCClientAccessGrantMutation represents an operation that mutates the OIDCClientAccessGrant nodes in the graph.
+type OIDCClientAccessGrantMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	granted_by    *uuid.UUID
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	client        *uuid.UUID
+	clearedclient bool
+	user          *uuid.UUID
+	cleareduser   bool
+	done          bool
+	oldValue      func(context.Context) (*OIDCClientAccessGrant, error)
+	predicates    []predicate.OIDCClientAccessGrant
+}
+
+var _ ent.Mutation = (*OIDCClientAccessGrantMutation)(nil)
+
+// oidcclientaccessgrantOption allows management of the mutation configuration using functional options.
+type oidcclientaccessgrantOption func(*OIDCClientAccessGrantMutation)
+
+// newOIDCClientAccessGrantMutation creates new mutation for the OIDCClientAccessGrant entity.
+func newOIDCClientAccessGrantMutation(c config, op Op, opts ...oidcclientaccessgrantOption) *OIDCClientAccessGrantMutation {
+	m := &OIDCClientAccessGrantMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeOIDCClientAccessGrant,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withOIDCClientAccessGrantID sets the ID field of the mutation.
+func withOIDCClientAccessGrantID(id uuid.UUID) oidcclientaccessgrantOption {
+	return func(m *OIDCClientAccessGrantMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *OIDCClientAccessGrant
+		)
+		m.oldValue = func(ctx context.Context) (*OIDCClientAccessGrant, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().OIDCClientAccessGrant.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withOIDCClientAccessGrant sets the old OIDCClientAccessGrant of the mutation.
+func withOIDCClientAccessGrant(node *OIDCClientAccessGrant) oidcclientaccessgrantOption {
+	return func(m *OIDCClientAccessGrantMutation) {
+		m.oldValue = func(context.Context) (*OIDCClientAccessGrant, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m OIDCClientAccessGrantMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m OIDCClientAccessGrantMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of OIDCClientAccessGrant entities.
+func (m *OIDCClientAccessGrantMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *OIDCClientAccessGrantMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *OIDCClientAccessGrantMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().OIDCClientAccessGrant.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetClientRefID sets the "client_ref_id" field.
+func (m *OIDCClientAccessGrantMutation) SetClientRefID(u uuid.UUID) {
+	m.client = &u
+}
+
+// ClientRefID returns the value of the "client_ref_id" field in the mutation.
+func (m *OIDCClientAccessGrantMutation) ClientRefID() (r uuid.UUID, exists bool) {
+	v := m.client
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldClientRefID returns the old "client_ref_id" field's value of the OIDCClientAccessGrant entity.
+// If the OIDCClientAccessGrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientAccessGrantMutation) OldClientRefID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldClientRefID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldClientRefID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldClientRefID: %w", err)
+	}
+	return oldValue.ClientRefID, nil
+}
+
+// ResetClientRefID resets all changes to the "client_ref_id" field.
+func (m *OIDCClientAccessGrantMutation) ResetClientRefID() {
+	m.client = nil
+}
+
+// SetUserID sets the "user_id" field.
+func (m *OIDCClientAccessGrantMutation) SetUserID(u uuid.UUID) {
+	m.user = &u
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *OIDCClientAccessGrantMutation) UserID() (r uuid.UUID, exists bool) {
+	v := m.user
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the OIDCClientAccessGrant entity.
+// If the OIDCClientAccessGrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientAccessGrantMutation) OldUserID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *OIDCClientAccessGrantMutation) ResetUserID() {
+	m.user = nil
+}
+
+// SetGrantedBy sets the "granted_by" field.
+func (m *OIDCClientAccessGrantMutation) SetGrantedBy(u uuid.UUID) {
+	m.granted_by = &u
+}
+
+// GrantedBy returns the value of the "granted_by" field in the mutation.
+func (m *OIDCClientAccessGrantMutation) GrantedBy() (r uuid.UUID, exists bool) {
+	v := m.granted_by
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGrantedBy returns the old "granted_by" field's value of the OIDCClientAccessGrant entity.
+// If the OIDCClientAccessGrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientAccessGrantMutation) OldGrantedBy(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGrantedBy is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGrantedBy requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGrantedBy: %w", err)
+	}
+	return oldValue.GrantedBy, nil
+}
+
+// ClearGrantedBy clears the value of the "granted_by" field.
+func (m *OIDCClientAccessGrantMutation) ClearGrantedBy() {
+	m.granted_by = nil
+	m.clearedFields[oidcclientaccessgrant.FieldGrantedBy] = struct{}{}
+}
+
+// GrantedByCleared returns if the "granted_by" field was cleared in this mutation.
+func (m *OIDCClientAccessGrantMutation) GrantedByCleared() bool {
+	_, ok := m.clearedFields[oidcclientaccessgrant.FieldGrantedBy]
+	return ok
+}
+
+// ResetGrantedBy resets all changes to the "granted_by" field.
+func (m *OIDCClientAccessGrantMutation) ResetGrantedBy() {
+	m.granted_by = nil
+	delete(m.clearedFields, oidcclientaccessgrant.FieldGrantedBy)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *OIDCClientAccessGrantMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *OIDCClientAccessGrantMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the OIDCClientAccessGrant entity.
+// If the OIDCClientAccessGrant object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OIDCClientAccessGrantMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *OIDCClientAccessGrantMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetClientID sets the "client" edge to the OIDCClient entity by id.
+func (m *OIDCClientAccessGrantMutation) SetClientID(id uuid.UUID) {
+	m.client = &id
+}
+
+// ClearClient clears the "client" edge to the OIDCClient entity.
+func (m *OIDCClientAccessGrantMutation) ClearClient() {
+	m.clearedclient = true
+	m.clearedFields[oidcclientaccessgrant.FieldClientRefID] = struct{}{}
+}
+
+// ClientCleared reports if the "client" edge to the OIDCClient entity was cleared.
+func (m *OIDCClientAccessGrantMutation) ClientCleared() bool {
+	return m.clearedclient
+}
+
+// ClientID returns the "client" edge ID in the mutation.
+func (m *OIDCClientAccessGrantMutation) ClientID() (id uuid.UUID, exists bool) {
+	if m.client != nil {
+		return *m.client, true
+	}
+	return
+}
+
+// ClientIDs returns the "client" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// ClientID instead. It exists only for internal usage by the builders.
+func (m *OIDCClientAccessGrantMutation) ClientIDs() (ids []uuid.UUID) {
+	if id := m.client; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetClient resets all changes to the "client" edge.
+func (m *OIDCClientAccessGrantMutation) ResetClient() {
+	m.client = nil
+	m.clearedclient = false
+}
+
+// ClearUser clears the "user" edge to the UserRef entity.
+func (m *OIDCClientAccessGrantMutation) ClearUser() {
+	m.cleareduser = true
+	m.clearedFields[oidcclientaccessgrant.FieldUserID] = struct{}{}
+}
+
+// UserCleared reports if the "user" edge to the UserRef entity was cleared.
+func (m *OIDCClientAccessGrantMutation) UserCleared() bool {
+	return m.cleareduser
+}
+
+// UserIDs returns the "user" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// UserID instead. It exists only for internal usage by the builders.
+func (m *OIDCClientAccessGrantMutation) UserIDs() (ids []uuid.UUID) {
+	if id := m.user; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetUser resets all changes to the "user" edge.
+func (m *OIDCClientAccessGrantMutation) ResetUser() {
+	m.user = nil
+	m.cleareduser = false
+}
+
+// Where appends a list predicates to the OIDCClientAccessGrantMutation builder.
+func (m *OIDCClientAccessGrantMutation) Where(ps ...predicate.OIDCClientAccessGrant) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the OIDCClientAccessGrantMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *OIDCClientAccessGrantMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.OIDCClientAccessGrant, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *OIDCClientAccessGrantMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *OIDCClientAccessGrantMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (OIDCClientAccessGrant).
+func (m *OIDCClientAccessGrantMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *OIDCClientAccessGrantMutation) Fields() []string {
+	fields := make([]string, 0, 4)
+	if m.client != nil {
+		fields = append(fields, oidcclientaccessgrant.FieldClientRefID)
+	}
+	if m.user != nil {
+		fields = append(fields, oidcclientaccessgrant.FieldUserID)
+	}
+	if m.granted_by != nil {
+		fields = append(fields, oidcclientaccessgrant.FieldGrantedBy)
+	}
+	if m.created_at != nil {
+		fields = append(fields, oidcclientaccessgrant.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *OIDCClientAccessGrantMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case oidcclientaccessgrant.FieldClientRefID:
+		return m.ClientRefID()
+	case oidcclientaccessgrant.FieldUserID:
+		return m.UserID()
+	case oidcclientaccessgrant.FieldGrantedBy:
+		return m.GrantedBy()
+	case oidcclientaccessgrant.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *OIDCClientAccessGrantMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case oidcclientaccessgrant.FieldClientRefID:
+		return m.OldClientRefID(ctx)
+	case oidcclientaccessgrant.FieldUserID:
+		return m.OldUserID(ctx)
+	case oidcclientaccessgrant.FieldGrantedBy:
+		return m.OldGrantedBy(ctx)
+	case oidcclientaccessgrant.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown OIDCClientAccessGrant field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OIDCClientAccessGrantMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case oidcclientaccessgrant.FieldClientRefID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetClientRefID(v)
+		return nil
+	case oidcclientaccessgrant.FieldUserID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
+		return nil
+	case oidcclientaccessgrant.FieldGrantedBy:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGrantedBy(v)
+		return nil
+	case oidcclientaccessgrant.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown OIDCClientAccessGrant field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *OIDCClientAccessGrantMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *OIDCClientAccessGrantMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *OIDCClientAccessGrantMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown OIDCClientAccessGrant numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *OIDCClientAccessGrantMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(oidcclientaccessgrant.FieldGrantedBy) {
+		fields = append(fields, oidcclientaccessgrant.FieldGrantedBy)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *OIDCClientAccessGrantMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *OIDCClientAccessGrantMutation) ClearField(name string) error {
+	switch name {
+	case oidcclientaccessgrant.FieldGrantedBy:
+		m.ClearGrantedBy()
+		return nil
+	}
+	return fmt.Errorf("unknown OIDCClientAccessGrant nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *OIDCClientAccessGrantMutation) ResetField(name string) error {
+	switch name {
+	case oidcclientaccessgrant.FieldClientRefID:
+		m.ResetClientRefID()
+		return nil
+	case oidcclientaccessgrant.FieldUserID:
+		m.ResetUserID()
+		return nil
+	case oidcclientaccessgrant.FieldGrantedBy:
+		m.ResetGrantedBy()
+		return nil
+	case oidcclientaccessgrant.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown OIDCClientAccessGrant field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *OIDCClientAccessGrantMutation) AddedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.client != nil {
+		edges = append(edges, oidcclientaccessgrant.EdgeClient)
+	}
+	if m.user != nil {
+		edges = append(edges, oidcclientaccessgrant.EdgeUser)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *OIDCClientAccessGrantMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case oidcclientaccessgrant.EdgeClient:
+		if id := m.client; id != nil {
+			return []ent.Value{*id}
+		}
+	case oidcclientaccessgrant.EdgeUser:
+		if id := m.user; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *OIDCClientAccessGrantMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 2)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *OIDCClientAccessGrantMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *OIDCClientAccessGrantMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 2)
+	if m.clearedclient {
+		edges = append(edges, oidcclientaccessgrant.EdgeClient)
+	}
+	if m.cleareduser {
+		edges = append(edges, oidcclientaccessgrant.EdgeUser)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *OIDCClientAccessGrantMutation) EdgeCleared(name string) bool {
+	switch name {
+	case oidcclientaccessgrant.EdgeClient:
+		return m.clearedclient
+	case oidcclientaccessgrant.EdgeUser:
+		return m.cleareduser
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *OIDCClientAccessGrantMutation) ClearEdge(name string) error {
+	switch name {
+	case oidcclientaccessgrant.EdgeClient:
+		m.ClearClient()
+		return nil
+	case oidcclientaccessgrant.EdgeUser:
+		m.ClearUser()
+		return nil
+	}
+	return fmt.Errorf("unknown OIDCClientAccessGrant unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *OIDCClientAccessGrantMutation) ResetEdge(name string) error {
+	switch name {
+	case oidcclientaccessgrant.EdgeClient:
+		m.ResetClient()
+		return nil
+	case oidcclientaccessgrant.EdgeUser:
+		m.ResetUser()
+		return nil
+	}
+	return fmt.Errorf("unknown OIDCClientAccessGrant edge %s", name)
 }
 
 // OIDCClientSecretMutation represents an operation that mutates the OIDCClientSecret nodes in the graph.
@@ -9318,6 +10102,9 @@ type UserRefMutation struct {
 	oidc_refresh_tokens        map[uuid.UUID]struct{}
 	removedoidc_refresh_tokens map[uuid.UUID]struct{}
 	clearedoidc_refresh_tokens bool
+	oidc_access_grants         map[uuid.UUID]struct{}
+	removedoidc_access_grants  map[uuid.UUID]struct{}
+	clearedoidc_access_grants  bool
 	done                       bool
 	oldValue                   func(context.Context) (*UserRef, error)
 	predicates                 []predicate.UserRef
@@ -9818,6 +10605,60 @@ func (m *UserRefMutation) ResetOidcRefreshTokens() {
 	m.removedoidc_refresh_tokens = nil
 }
 
+// AddOidcAccessGrantIDs adds the "oidc_access_grants" edge to the OIDCClientAccessGrant entity by ids.
+func (m *UserRefMutation) AddOidcAccessGrantIDs(ids ...uuid.UUID) {
+	if m.oidc_access_grants == nil {
+		m.oidc_access_grants = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.oidc_access_grants[ids[i]] = struct{}{}
+	}
+}
+
+// ClearOidcAccessGrants clears the "oidc_access_grants" edge to the OIDCClientAccessGrant entity.
+func (m *UserRefMutation) ClearOidcAccessGrants() {
+	m.clearedoidc_access_grants = true
+}
+
+// OidcAccessGrantsCleared reports if the "oidc_access_grants" edge to the OIDCClientAccessGrant entity was cleared.
+func (m *UserRefMutation) OidcAccessGrantsCleared() bool {
+	return m.clearedoidc_access_grants
+}
+
+// RemoveOidcAccessGrantIDs removes the "oidc_access_grants" edge to the OIDCClientAccessGrant entity by IDs.
+func (m *UserRefMutation) RemoveOidcAccessGrantIDs(ids ...uuid.UUID) {
+	if m.removedoidc_access_grants == nil {
+		m.removedoidc_access_grants = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.oidc_access_grants, ids[i])
+		m.removedoidc_access_grants[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedOidcAccessGrants returns the removed IDs of the "oidc_access_grants" edge to the OIDCClientAccessGrant entity.
+func (m *UserRefMutation) RemovedOidcAccessGrantsIDs() (ids []uuid.UUID) {
+	for id := range m.removedoidc_access_grants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// OidcAccessGrantsIDs returns the "oidc_access_grants" edge IDs in the mutation.
+func (m *UserRefMutation) OidcAccessGrantsIDs() (ids []uuid.UUID) {
+	for id := range m.oidc_access_grants {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetOidcAccessGrants resets all changes to the "oidc_access_grants" edge.
+func (m *UserRefMutation) ResetOidcAccessGrants() {
+	m.oidc_access_grants = nil
+	m.clearedoidc_access_grants = false
+	m.removedoidc_access_grants = nil
+}
+
 // Where appends a list predicates to the UserRefMutation builder.
 func (m *UserRefMutation) Where(ps ...predicate.UserRef) {
 	m.predicates = append(m.predicates, ps...)
@@ -9994,7 +10835,7 @@ func (m *UserRefMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *UserRefMutation) AddedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.sessions != nil {
 		edges = append(edges, userref.EdgeSessions)
 	}
@@ -10009,6 +10850,9 @@ func (m *UserRefMutation) AddedEdges() []string {
 	}
 	if m.oidc_refresh_tokens != nil {
 		edges = append(edges, userref.EdgeOidcRefreshTokens)
+	}
+	if m.oidc_access_grants != nil {
+		edges = append(edges, userref.EdgeOidcAccessGrants)
 	}
 	return edges
 }
@@ -10047,13 +10891,19 @@ func (m *UserRefMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case userref.EdgeOidcAccessGrants:
+		ids := make([]ent.Value, 0, len(m.oidc_access_grants))
+		for id := range m.oidc_access_grants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *UserRefMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.removedsessions != nil {
 		edges = append(edges, userref.EdgeSessions)
 	}
@@ -10068,6 +10918,9 @@ func (m *UserRefMutation) RemovedEdges() []string {
 	}
 	if m.removedoidc_refresh_tokens != nil {
 		edges = append(edges, userref.EdgeOidcRefreshTokens)
+	}
+	if m.removedoidc_access_grants != nil {
+		edges = append(edges, userref.EdgeOidcAccessGrants)
 	}
 	return edges
 }
@@ -10106,13 +10959,19 @@ func (m *UserRefMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case userref.EdgeOidcAccessGrants:
+		ids := make([]ent.Value, 0, len(m.removedoidc_access_grants))
+		for id := range m.removedoidc_access_grants {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *UserRefMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 5)
+	edges := make([]string, 0, 6)
 	if m.clearedsessions {
 		edges = append(edges, userref.EdgeSessions)
 	}
@@ -10127,6 +10986,9 @@ func (m *UserRefMutation) ClearedEdges() []string {
 	}
 	if m.clearedoidc_refresh_tokens {
 		edges = append(edges, userref.EdgeOidcRefreshTokens)
+	}
+	if m.clearedoidc_access_grants {
+		edges = append(edges, userref.EdgeOidcAccessGrants)
 	}
 	return edges
 }
@@ -10145,6 +11007,8 @@ func (m *UserRefMutation) EdgeCleared(name string) bool {
 		return m.clearedgrants
 	case userref.EdgeOidcRefreshTokens:
 		return m.clearedoidc_refresh_tokens
+	case userref.EdgeOidcAccessGrants:
+		return m.clearedoidc_access_grants
 	}
 	return false
 }
@@ -10175,6 +11039,9 @@ func (m *UserRefMutation) ResetEdge(name string) error {
 		return nil
 	case userref.EdgeOidcRefreshTokens:
 		m.ResetOidcRefreshTokens()
+		return nil
+	case userref.EdgeOidcAccessGrants:
+		m.ResetOidcAccessGrants()
 		return nil
 	}
 	return fmt.Errorf("unknown UserRef edge %s", name)

@@ -12,14 +12,16 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// CasbinRule is the client for interacting with the CasbinRule builders.
+	CasbinRule *CasbinRuleClient
 	// Organization is the client for interacting with the Organization builders.
 	Organization *OrganizationClient
 	// OrganizationMember is the client for interacting with the OrganizationMember builders.
 	OrganizationMember *OrganizationMemberClient
 	// OrganizationRole is the client for interacting with the OrganizationRole builders.
 	OrganizationRole *OrganizationRoleClient
-	// RolePermission is the client for interacting with the RolePermission builders.
-	RolePermission *RolePermissionClient
+	// PolicyRevision is the client for interacting with the PolicyRevision builders.
+	PolicyRevision *PolicyRevisionClient
 	// UserRef is the client for interacting with the UserRef builders.
 	UserRef *UserRefClient
 
@@ -153,10 +155,11 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.CasbinRule = NewCasbinRuleClient(tx.config)
 	tx.Organization = NewOrganizationClient(tx.config)
 	tx.OrganizationMember = NewOrganizationMemberClient(tx.config)
 	tx.OrganizationRole = NewOrganizationRoleClient(tx.config)
-	tx.RolePermission = NewRolePermissionClient(tx.config)
+	tx.PolicyRevision = NewPolicyRevisionClient(tx.config)
 	tx.UserRef = NewUserRefClient(tx.config)
 }
 
@@ -167,7 +170,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: Organization.QueryXXX(), the query will be executed
+// applies a query, for example: CasbinRule.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

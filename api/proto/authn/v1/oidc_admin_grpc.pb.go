@@ -42,7 +42,7 @@ const (
 //
 // Every RPC requires a first-party session via the authorization metadata
 // header ("Session <token>") and the caller must hold the
-// "oidc_client:manage" permission in the client's owning organization
+// "authn/oidc_client.manage" permission in the client's owning organization
 // (checked through the authz service). Missing permission returns gRPC
 // PermissionDenied.
 type OIDCClientAdminServiceClient interface {
@@ -210,7 +210,7 @@ func (c *oIDCClientAdminServiceClient) ListOIDCClientAccessGrants(ctx context.Co
 //
 // Every RPC requires a first-party session via the authorization metadata
 // header ("Session <token>") and the caller must hold the
-// "oidc_client:manage" permission in the client's owning organization
+// "authn/oidc_client.manage" permission in the client's owning organization
 // (checked through the authz service). Missing permission returns gRPC
 // PermissionDenied.
 type OIDCClientAdminServiceServer interface {

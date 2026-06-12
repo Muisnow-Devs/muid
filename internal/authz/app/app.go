@@ -12,10 +12,14 @@ type AuthzApp struct {
 }
 
 func NewAuthzApp(ctx context.Context, infra *InfraDependencies) (*AuthzApp, error) {
-	handler := authzgrpc.NewGRPCHandler(authzgrpc.HandlerConfig{
-		DB: infra.entClient,
-	})
-	service, err := NewAuthzGRPC(infra.GlobalConfig, handler, nil)
+	handlerCfg := authzgrpc.HandlerConfig{Manager: infra.PolicyManager}
+	handlers := Handlers{
+		Service:  authzgrpc.NewGRPCHandler(handlerCfg),
+		User:     authzgrpc.NewUserHandler(handlerCfg),
+		OrgAdmin: authzgrpc.NewOrgAdminHandler(handlerCfg),
+		Admin:    authzgrpc.NewAdminHandler(handlerCfg),
+	}
+	service, err := NewAuthzGRPC(infra.GlobalConfig, handlers, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -27,6 +31,11 @@ func NewAuthzApp(ctx context.Context, infra *InfraDependencies) (*AuthzApp, erro
 }
 
 func (app *AuthzApp) Start(ctx context.Context) error {
+	// Keep replicas' in-memory policies coherent across mutations.
+	err := app.dependencyInjector.PolicyManager.StartReplicaSync(ctx)
+	if err != nil {
+		return err
+	}
 	return app.server.Start(ctx)
 }
 

@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	AuthzService_CheckOrganizationMembership_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationMembership"
 	AuthzService_CheckOrganizationPermission_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationPermission"
+	AuthzService_ListNamespacePolicies_FullMethodName       = "/muid.authz.v1.AuthzService/ListNamespacePolicies"
+	AuthzService_ListUserOrganizationRoles_FullMethodName   = "/muid.authz.v1.AuthzService/ListUserOrganizationRoles"
 )
 
 // AuthzServiceClient is the client API for AuthzService service.
@@ -28,9 +30,15 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AuthzServiceClient interface {
 	// / Internal service-to-service organization checks (callers pass user_id
-	// / in the request body; no end-user metadata is required).
+	// / in the request body; no end-user metadata is required). Served on the
+	// / internal listener only.
 	CheckOrganizationMembership(ctx context.Context, in *CheckOrganizationMembershipRequest, opts ...grpc.CallOption) (*CheckOrganizationMembershipResponse, error)
 	CheckOrganizationPermission(ctx context.Context, in *CheckOrganizationPermissionRequest, opts ...grpc.CallOption) (*CheckOrganizationPermissionResponse, error)
+	// / Relation loading for per-service local enforcers (pkg/authzclient):
+	// / the policy rules of one service namespace plus the wildcard role
+	// / hierarchy, and a user's direct roles in one organization.
+	ListNamespacePolicies(ctx context.Context, in *ListNamespacePoliciesRequest, opts ...grpc.CallOption) (*ListNamespacePoliciesResponse, error)
+	ListUserOrganizationRoles(ctx context.Context, in *ListUserOrganizationRolesRequest, opts ...grpc.CallOption) (*ListUserOrganizationRolesResponse, error)
 }
 
 type authzServiceClient struct {
@@ -61,14 +69,40 @@ func (c *authzServiceClient) CheckOrganizationPermission(ctx context.Context, in
 	return out, nil
 }
 
+func (c *authzServiceClient) ListNamespacePolicies(ctx context.Context, in *ListNamespacePoliciesRequest, opts ...grpc.CallOption) (*ListNamespacePoliciesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNamespacePoliciesResponse)
+	err := c.cc.Invoke(ctx, AuthzService_ListNamespacePolicies_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authzServiceClient) ListUserOrganizationRoles(ctx context.Context, in *ListUserOrganizationRolesRequest, opts ...grpc.CallOption) (*ListUserOrganizationRolesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListUserOrganizationRolesResponse)
+	err := c.cc.Invoke(ctx, AuthzService_ListUserOrganizationRoles_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthzServiceServer is the server API for AuthzService service.
 // All implementations must embed UnimplementedAuthzServiceServer
 // for forward compatibility.
 type AuthzServiceServer interface {
 	// / Internal service-to-service organization checks (callers pass user_id
-	// / in the request body; no end-user metadata is required).
+	// / in the request body; no end-user metadata is required). Served on the
+	// / internal listener only.
 	CheckOrganizationMembership(context.Context, *CheckOrganizationMembershipRequest) (*CheckOrganizationMembershipResponse, error)
 	CheckOrganizationPermission(context.Context, *CheckOrganizationPermissionRequest) (*CheckOrganizationPermissionResponse, error)
+	// / Relation loading for per-service local enforcers (pkg/authzclient):
+	// / the policy rules of one service namespace plus the wildcard role
+	// / hierarchy, and a user's direct roles in one organization.
+	ListNamespacePolicies(context.Context, *ListNamespacePoliciesRequest) (*ListNamespacePoliciesResponse, error)
+	ListUserOrganizationRoles(context.Context, *ListUserOrganizationRolesRequest) (*ListUserOrganizationRolesResponse, error)
 	mustEmbedUnimplementedAuthzServiceServer()
 }
 
@@ -84,6 +118,12 @@ func (UnimplementedAuthzServiceServer) CheckOrganizationMembership(context.Conte
 }
 func (UnimplementedAuthzServiceServer) CheckOrganizationPermission(context.Context, *CheckOrganizationPermissionRequest) (*CheckOrganizationPermissionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckOrganizationPermission not implemented")
+}
+func (UnimplementedAuthzServiceServer) ListNamespacePolicies(context.Context, *ListNamespacePoliciesRequest) (*ListNamespacePoliciesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNamespacePolicies not implemented")
+}
+func (UnimplementedAuthzServiceServer) ListUserOrganizationRoles(context.Context, *ListUserOrganizationRolesRequest) (*ListUserOrganizationRolesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListUserOrganizationRoles not implemented")
 }
 func (UnimplementedAuthzServiceServer) mustEmbedUnimplementedAuthzServiceServer() {}
 func (UnimplementedAuthzServiceServer) testEmbeddedByValue()                      {}
@@ -142,6 +182,42 @@ func _AuthzService_CheckOrganizationPermission_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthzService_ListNamespacePolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNamespacePoliciesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).ListNamespacePolicies(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthzService_ListNamespacePolicies_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).ListNamespacePolicies(ctx, req.(*ListNamespacePoliciesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthzService_ListUserOrganizationRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListUserOrganizationRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).ListUserOrganizationRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthzService_ListUserOrganizationRoles_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).ListUserOrganizationRoles(ctx, req.(*ListUserOrganizationRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AuthzService_ServiceDesc is the grpc.ServiceDesc for AuthzService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -156,6 +232,14 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckOrganizationPermission",
 			Handler:    _AuthzService_CheckOrganizationPermission_Handler,
+		},
+		{
+			MethodName: "ListNamespacePolicies",
+			Handler:    _AuthzService_ListNamespacePolicies_Handler,
+		},
+		{
+			MethodName: "ListUserOrganizationRoles",
+			Handler:    _AuthzService_ListUserOrganizationRoles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

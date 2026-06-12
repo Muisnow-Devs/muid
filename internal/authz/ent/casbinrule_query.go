@@ -12,92 +12,68 @@ import (
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
-	"sanzi.io/muid/internal/authz/ent/organizationrole"
+	"sanzi.io/muid/internal/authz/ent/casbinrule"
 	"sanzi.io/muid/internal/authz/ent/predicate"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
 )
 
-// RolePermissionQuery is the builder for querying RolePermission entities.
-type RolePermissionQuery struct {
+// CasbinRuleQuery is the builder for querying CasbinRule entities.
+type CasbinRuleQuery struct {
 	config
 	ctx        *QueryContext
-	order      []rolepermission.OrderOption
+	order      []casbinrule.OrderOption
 	inters     []Interceptor
-	predicates []predicate.RolePermission
-	withRole   *OrganizationRoleQuery
+	predicates []predicate.CasbinRule
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
 }
 
-// Where adds a new predicate for the RolePermissionQuery builder.
-func (_q *RolePermissionQuery) Where(ps ...predicate.RolePermission) *RolePermissionQuery {
+// Where adds a new predicate for the CasbinRuleQuery builder.
+func (_q *CasbinRuleQuery) Where(ps ...predicate.CasbinRule) *CasbinRuleQuery {
 	_q.predicates = append(_q.predicates, ps...)
 	return _q
 }
 
 // Limit the number of records to be returned by this query.
-func (_q *RolePermissionQuery) Limit(limit int) *RolePermissionQuery {
+func (_q *CasbinRuleQuery) Limit(limit int) *CasbinRuleQuery {
 	_q.ctx.Limit = &limit
 	return _q
 }
 
 // Offset to start from.
-func (_q *RolePermissionQuery) Offset(offset int) *RolePermissionQuery {
+func (_q *CasbinRuleQuery) Offset(offset int) *CasbinRuleQuery {
 	_q.ctx.Offset = &offset
 	return _q
 }
 
 // Unique configures the query builder to filter duplicate records on query.
 // By default, unique is set to true, and can be disabled using this method.
-func (_q *RolePermissionQuery) Unique(unique bool) *RolePermissionQuery {
+func (_q *CasbinRuleQuery) Unique(unique bool) *CasbinRuleQuery {
 	_q.ctx.Unique = &unique
 	return _q
 }
 
 // Order specifies how the records should be ordered.
-func (_q *RolePermissionQuery) Order(o ...rolepermission.OrderOption) *RolePermissionQuery {
+func (_q *CasbinRuleQuery) Order(o ...casbinrule.OrderOption) *CasbinRuleQuery {
 	_q.order = append(_q.order, o...)
 	return _q
 }
 
-// QueryRole chains the current query on the "role" edge.
-func (_q *RolePermissionQuery) QueryRole() *OrganizationRoleQuery {
-	query := (&OrganizationRoleClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(rolepermission.Table, rolepermission.FieldID, selector),
-			sqlgraph.To(organizationrole.Table, organizationrole.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, rolepermission.RoleTable, rolepermission.RoleColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// First returns the first RolePermission entity from the query.
-// Returns a *NotFoundError when no RolePermission was found.
-func (_q *RolePermissionQuery) First(ctx context.Context) (*RolePermission, error) {
+// First returns the first CasbinRule entity from the query.
+// Returns a *NotFoundError when no CasbinRule was found.
+func (_q *CasbinRuleQuery) First(ctx context.Context) (*CasbinRule, error) {
 	nodes, err := _q.Limit(1).All(setContextOp(ctx, _q.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
 	if len(nodes) == 0 {
-		return nil, &NotFoundError{rolepermission.Label}
+		return nil, &NotFoundError{casbinrule.Label}
 	}
 	return nodes[0], nil
 }
 
 // FirstX is like First, but panics if an error occurs.
-func (_q *RolePermissionQuery) FirstX(ctx context.Context) *RolePermission {
+func (_q *CasbinRuleQuery) FirstX(ctx context.Context) *CasbinRule {
 	node, err := _q.First(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -105,22 +81,22 @@ func (_q *RolePermissionQuery) FirstX(ctx context.Context) *RolePermission {
 	return node
 }
 
-// FirstID returns the first RolePermission ID from the query.
-// Returns a *NotFoundError when no RolePermission ID was found.
-func (_q *RolePermissionQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
+// FirstID returns the first CasbinRule ID from the query.
+// Returns a *NotFoundError when no CasbinRule ID was found.
+func (_q *CasbinRuleQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(1).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
-		err = &NotFoundError{rolepermission.Label}
+		err = &NotFoundError{casbinrule.Label}
 		return
 	}
 	return ids[0], nil
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (_q *RolePermissionQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (_q *CasbinRuleQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -128,10 +104,10 @@ func (_q *RolePermissionQuery) FirstIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// Only returns a single RolePermission entity found by the query, ensuring it only returns one.
-// Returns a *NotSingularError when more than one RolePermission entity is found.
-// Returns a *NotFoundError when no RolePermission entities are found.
-func (_q *RolePermissionQuery) Only(ctx context.Context) (*RolePermission, error) {
+// Only returns a single CasbinRule entity found by the query, ensuring it only returns one.
+// Returns a *NotSingularError when more than one CasbinRule entity is found.
+// Returns a *NotFoundError when no CasbinRule entities are found.
+func (_q *CasbinRuleQuery) Only(ctx context.Context) (*CasbinRule, error) {
 	nodes, err := _q.Limit(2).All(setContextOp(ctx, _q.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
@@ -140,14 +116,14 @@ func (_q *RolePermissionQuery) Only(ctx context.Context) (*RolePermission, error
 	case 1:
 		return nodes[0], nil
 	case 0:
-		return nil, &NotFoundError{rolepermission.Label}
+		return nil, &NotFoundError{casbinrule.Label}
 	default:
-		return nil, &NotSingularError{rolepermission.Label}
+		return nil, &NotSingularError{casbinrule.Label}
 	}
 }
 
 // OnlyX is like Only, but panics if an error occurs.
-func (_q *RolePermissionQuery) OnlyX(ctx context.Context) *RolePermission {
+func (_q *CasbinRuleQuery) OnlyX(ctx context.Context) *CasbinRule {
 	node, err := _q.Only(ctx)
 	if err != nil {
 		panic(err)
@@ -155,10 +131,10 @@ func (_q *RolePermissionQuery) OnlyX(ctx context.Context) *RolePermission {
 	return node
 }
 
-// OnlyID is like Only, but returns the only RolePermission ID in the query.
-// Returns a *NotSingularError when more than one RolePermission ID is found.
+// OnlyID is like Only, but returns the only CasbinRule ID in the query.
+// Returns a *NotSingularError when more than one CasbinRule ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (_q *RolePermissionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
+func (_q *CasbinRuleQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
 	if ids, err = _q.Limit(2).IDs(setContextOp(ctx, _q.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
@@ -167,15 +143,15 @@ func (_q *RolePermissionQuery) OnlyID(ctx context.Context) (id uuid.UUID, err er
 	case 1:
 		id = ids[0]
 	case 0:
-		err = &NotFoundError{rolepermission.Label}
+		err = &NotFoundError{casbinrule.Label}
 	default:
-		err = &NotSingularError{rolepermission.Label}
+		err = &NotSingularError{casbinrule.Label}
 	}
 	return
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (_q *RolePermissionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (_q *CasbinRuleQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	id, err := _q.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -183,18 +159,18 @@ func (_q *RolePermissionQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 	return id
 }
 
-// All executes the query and returns a list of RolePermissions.
-func (_q *RolePermissionQuery) All(ctx context.Context) ([]*RolePermission, error) {
+// All executes the query and returns a list of CasbinRules.
+func (_q *CasbinRuleQuery) All(ctx context.Context) ([]*CasbinRule, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryAll)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
-	qr := querierAll[[]*RolePermission, *RolePermissionQuery]()
-	return withInterceptors[[]*RolePermission](ctx, _q, qr, _q.inters)
+	qr := querierAll[[]*CasbinRule, *CasbinRuleQuery]()
+	return withInterceptors[[]*CasbinRule](ctx, _q, qr, _q.inters)
 }
 
 // AllX is like All, but panics if an error occurs.
-func (_q *RolePermissionQuery) AllX(ctx context.Context) []*RolePermission {
+func (_q *CasbinRuleQuery) AllX(ctx context.Context) []*CasbinRule {
 	nodes, err := _q.All(ctx)
 	if err != nil {
 		panic(err)
@@ -202,20 +178,20 @@ func (_q *RolePermissionQuery) AllX(ctx context.Context) []*RolePermission {
 	return nodes
 }
 
-// IDs executes the query and returns a list of RolePermission IDs.
-func (_q *RolePermissionQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+// IDs executes the query and returns a list of CasbinRule IDs.
+func (_q *CasbinRuleQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if _q.ctx.Unique == nil && _q.path != nil {
 		_q.Unique(true)
 	}
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryIDs)
-	if err = _q.Select(rolepermission.FieldID).Scan(ctx, &ids); err != nil {
+	if err = _q.Select(casbinrule.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
 	return ids, nil
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (_q *RolePermissionQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (_q *CasbinRuleQuery) IDsX(ctx context.Context) []uuid.UUID {
 	ids, err := _q.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -224,16 +200,16 @@ func (_q *RolePermissionQuery) IDsX(ctx context.Context) []uuid.UUID {
 }
 
 // Count returns the count of the given query.
-func (_q *RolePermissionQuery) Count(ctx context.Context) (int, error) {
+func (_q *CasbinRuleQuery) Count(ctx context.Context) (int, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryCount)
 	if err := _q.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
-	return withInterceptors[int](ctx, _q, querierCount[*RolePermissionQuery](), _q.inters)
+	return withInterceptors[int](ctx, _q, querierCount[*CasbinRuleQuery](), _q.inters)
 }
 
 // CountX is like Count, but panics if an error occurs.
-func (_q *RolePermissionQuery) CountX(ctx context.Context) int {
+func (_q *CasbinRuleQuery) CountX(ctx context.Context) int {
 	count, err := _q.Count(ctx)
 	if err != nil {
 		panic(err)
@@ -242,7 +218,7 @@ func (_q *RolePermissionQuery) CountX(ctx context.Context) int {
 }
 
 // Exist returns true if the query has elements in the graph.
-func (_q *RolePermissionQuery) Exist(ctx context.Context) (bool, error) {
+func (_q *CasbinRuleQuery) Exist(ctx context.Context) (bool, error) {
 	ctx = setContextOp(ctx, _q.ctx, ent.OpQueryExist)
 	switch _, err := _q.FirstID(ctx); {
 	case IsNotFound(err):
@@ -255,7 +231,7 @@ func (_q *RolePermissionQuery) Exist(ctx context.Context) (bool, error) {
 }
 
 // ExistX is like Exist, but panics if an error occurs.
-func (_q *RolePermissionQuery) ExistX(ctx context.Context) bool {
+func (_q *CasbinRuleQuery) ExistX(ctx context.Context) bool {
 	exist, err := _q.Exist(ctx)
 	if err != nil {
 		panic(err)
@@ -263,34 +239,22 @@ func (_q *RolePermissionQuery) ExistX(ctx context.Context) bool {
 	return exist
 }
 
-// Clone returns a duplicate of the RolePermissionQuery builder, including all associated steps. It can be
+// Clone returns a duplicate of the CasbinRuleQuery builder, including all associated steps. It can be
 // used to prepare common query builders and use them differently after the clone is made.
-func (_q *RolePermissionQuery) Clone() *RolePermissionQuery {
+func (_q *CasbinRuleQuery) Clone() *CasbinRuleQuery {
 	if _q == nil {
 		return nil
 	}
-	return &RolePermissionQuery{
+	return &CasbinRuleQuery{
 		config:     _q.config,
 		ctx:        _q.ctx.Clone(),
-		order:      append([]rolepermission.OrderOption{}, _q.order...),
+		order:      append([]casbinrule.OrderOption{}, _q.order...),
 		inters:     append([]Interceptor{}, _q.inters...),
-		predicates: append([]predicate.RolePermission{}, _q.predicates...),
-		withRole:   _q.withRole.Clone(),
+		predicates: append([]predicate.CasbinRule{}, _q.predicates...),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
 	}
-}
-
-// WithRole tells the query-builder to eager-load the nodes that are connected to
-// the "role" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *RolePermissionQuery) WithRole(opts ...func(*OrganizationRoleQuery)) *RolePermissionQuery {
-	query := (&OrganizationRoleClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withRole = query
-	return _q
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -299,19 +263,19 @@ func (_q *RolePermissionQuery) WithRole(opts ...func(*OrganizationRoleQuery)) *R
 // Example:
 //
 //	var v []struct {
-//		RoleID uuid.UUID `json:"role_id,omitempty"`
+//		Ptype string `json:"ptype,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
-//	client.RolePermission.Query().
-//		GroupBy(rolepermission.FieldRoleID).
+//	client.CasbinRule.Query().
+//		GroupBy(casbinrule.FieldPtype).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
-func (_q *RolePermissionQuery) GroupBy(field string, fields ...string) *RolePermissionGroupBy {
+func (_q *CasbinRuleQuery) GroupBy(field string, fields ...string) *CasbinRuleGroupBy {
 	_q.ctx.Fields = append([]string{field}, fields...)
-	grbuild := &RolePermissionGroupBy{build: _q}
+	grbuild := &CasbinRuleGroupBy{build: _q}
 	grbuild.flds = &_q.ctx.Fields
-	grbuild.label = rolepermission.Label
+	grbuild.label = casbinrule.Label
 	grbuild.scan = grbuild.Scan
 	return grbuild
 }
@@ -322,26 +286,26 @@ func (_q *RolePermissionQuery) GroupBy(field string, fields ...string) *RolePerm
 // Example:
 //
 //	var v []struct {
-//		RoleID uuid.UUID `json:"role_id,omitempty"`
+//		Ptype string `json:"ptype,omitempty"`
 //	}
 //
-//	client.RolePermission.Query().
-//		Select(rolepermission.FieldRoleID).
+//	client.CasbinRule.Query().
+//		Select(casbinrule.FieldPtype).
 //		Scan(ctx, &v)
-func (_q *RolePermissionQuery) Select(fields ...string) *RolePermissionSelect {
+func (_q *CasbinRuleQuery) Select(fields ...string) *CasbinRuleSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)
-	sbuild := &RolePermissionSelect{RolePermissionQuery: _q}
-	sbuild.label = rolepermission.Label
+	sbuild := &CasbinRuleSelect{CasbinRuleQuery: _q}
+	sbuild.label = casbinrule.Label
 	sbuild.flds, sbuild.scan = &_q.ctx.Fields, sbuild.Scan
 	return sbuild
 }
 
-// Aggregate returns a RolePermissionSelect configured with the given aggregations.
-func (_q *RolePermissionQuery) Aggregate(fns ...AggregateFunc) *RolePermissionSelect {
+// Aggregate returns a CasbinRuleSelect configured with the given aggregations.
+func (_q *CasbinRuleQuery) Aggregate(fns ...AggregateFunc) *CasbinRuleSelect {
 	return _q.Select().Aggregate(fns...)
 }
 
-func (_q *RolePermissionQuery) prepareQuery(ctx context.Context) error {
+func (_q *CasbinRuleQuery) prepareQuery(ctx context.Context) error {
 	for _, inter := range _q.inters {
 		if inter == nil {
 			return fmt.Errorf("ent: uninitialized interceptor (forgotten import ent/runtime?)")
@@ -353,7 +317,7 @@ func (_q *RolePermissionQuery) prepareQuery(ctx context.Context) error {
 		}
 	}
 	for _, f := range _q.ctx.Fields {
-		if !rolepermission.ValidColumn(f) {
+		if !casbinrule.ValidColumn(f) {
 			return &ValidationError{Name: f, err: fmt.Errorf("ent: invalid field %q for query", f)}
 		}
 	}
@@ -367,21 +331,17 @@ func (_q *RolePermissionQuery) prepareQuery(ctx context.Context) error {
 	return nil
 }
 
-func (_q *RolePermissionQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*RolePermission, error) {
+func (_q *CasbinRuleQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*CasbinRule, error) {
 	var (
-		nodes       = []*RolePermission{}
-		_spec       = _q.querySpec()
-		loadedTypes = [1]bool{
-			_q.withRole != nil,
-		}
+		nodes = []*CasbinRule{}
+		_spec = _q.querySpec()
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
-		return (*RolePermission).scanValues(nil, columns)
+		return (*CasbinRule).scanValues(nil, columns)
 	}
 	_spec.Assign = func(columns []string, values []any) error {
-		node := &RolePermission{config: _q.config}
+		node := &CasbinRule{config: _q.config}
 		nodes = append(nodes, node)
-		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	for i := range hooks {
@@ -393,46 +353,10 @@ func (_q *RolePermissionQuery) sqlAll(ctx context.Context, hooks ...queryHook) (
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := _q.withRole; query != nil {
-		if err := _q.loadRole(ctx, query, nodes, nil,
-			func(n *RolePermission, e *OrganizationRole) { n.Edges.Role = e }); err != nil {
-			return nil, err
-		}
-	}
 	return nodes, nil
 }
 
-func (_q *RolePermissionQuery) loadRole(ctx context.Context, query *OrganizationRoleQuery, nodes []*RolePermission, init func(*RolePermission), assign func(*RolePermission, *OrganizationRole)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*RolePermission)
-	for i := range nodes {
-		fk := nodes[i].RoleID
-		if _, ok := nodeids[fk]; !ok {
-			ids = append(ids, fk)
-		}
-		nodeids[fk] = append(nodeids[fk], nodes[i])
-	}
-	if len(ids) == 0 {
-		return nil
-	}
-	query.Where(organizationrole.IDIn(ids...))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		nodes, ok := nodeids[n.ID]
-		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "role_id" returned %v`, n.ID)
-		}
-		for i := range nodes {
-			assign(nodes[i], n)
-		}
-	}
-	return nil
-}
-
-func (_q *RolePermissionQuery) sqlCount(ctx context.Context) (int, error) {
+func (_q *CasbinRuleQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
 	_spec.Node.Columns = _q.ctx.Fields
 	if len(_q.ctx.Fields) > 0 {
@@ -441,8 +365,8 @@ func (_q *RolePermissionQuery) sqlCount(ctx context.Context) (int, error) {
 	return sqlgraph.CountNodes(ctx, _q.driver, _spec)
 }
 
-func (_q *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
-	_spec := sqlgraph.NewQuerySpec(rolepermission.Table, rolepermission.Columns, sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID))
+func (_q *CasbinRuleQuery) querySpec() *sqlgraph.QuerySpec {
+	_spec := sqlgraph.NewQuerySpec(casbinrule.Table, casbinrule.Columns, sqlgraph.NewFieldSpec(casbinrule.FieldID, field.TypeUUID))
 	_spec.From = _q.sql
 	if unique := _q.ctx.Unique; unique != nil {
 		_spec.Unique = *unique
@@ -451,14 +375,11 @@ func (_q *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
 	}
 	if fields := _q.ctx.Fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
-		_spec.Node.Columns = append(_spec.Node.Columns, rolepermission.FieldID)
+		_spec.Node.Columns = append(_spec.Node.Columns, casbinrule.FieldID)
 		for i := range fields {
-			if fields[i] != rolepermission.FieldID {
+			if fields[i] != casbinrule.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
-		}
-		if _q.withRole != nil {
-			_spec.Node.AddColumnOnce(rolepermission.FieldRoleID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
@@ -484,12 +405,12 @@ func (_q *RolePermissionQuery) querySpec() *sqlgraph.QuerySpec {
 	return _spec
 }
 
-func (_q *RolePermissionQuery) sqlQuery(ctx context.Context) *sql.Selector {
+func (_q *CasbinRuleQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	builder := sql.Dialect(_q.driver.Dialect())
-	t1 := builder.Table(rolepermission.Table)
+	t1 := builder.Table(casbinrule.Table)
 	columns := _q.ctx.Fields
 	if len(columns) == 0 {
-		columns = rolepermission.Columns
+		columns = casbinrule.Columns
 	}
 	selector := builder.Select(t1.Columns(columns...)...).From(t1)
 	if _q.sql != nil {
@@ -516,28 +437,28 @@ func (_q *RolePermissionQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// RolePermissionGroupBy is the group-by builder for RolePermission entities.
-type RolePermissionGroupBy struct {
+// CasbinRuleGroupBy is the group-by builder for CasbinRule entities.
+type CasbinRuleGroupBy struct {
 	selector
-	build *RolePermissionQuery
+	build *CasbinRuleQuery
 }
 
 // Aggregate adds the given aggregation functions to the group-by query.
-func (_g *RolePermissionGroupBy) Aggregate(fns ...AggregateFunc) *RolePermissionGroupBy {
+func (_g *CasbinRuleGroupBy) Aggregate(fns ...AggregateFunc) *CasbinRuleGroupBy {
 	_g.fns = append(_g.fns, fns...)
 	return _g
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_g *RolePermissionGroupBy) Scan(ctx context.Context, v any) error {
+func (_g *CasbinRuleGroupBy) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _g.build.ctx, ent.OpQueryGroupBy)
 	if err := _g.build.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RolePermissionQuery, *RolePermissionGroupBy](ctx, _g.build, _g, _g.build.inters, v)
+	return scanWithInterceptors[*CasbinRuleQuery, *CasbinRuleGroupBy](ctx, _g.build, _g, _g.build.inters, v)
 }
 
-func (_g *RolePermissionGroupBy) sqlScan(ctx context.Context, root *RolePermissionQuery, v any) error {
+func (_g *CasbinRuleGroupBy) sqlScan(ctx context.Context, root *CasbinRuleQuery, v any) error {
 	selector := root.sqlQuery(ctx).Select()
 	aggregation := make([]string, 0, len(_g.fns))
 	for _, fn := range _g.fns {
@@ -564,28 +485,28 @@ func (_g *RolePermissionGroupBy) sqlScan(ctx context.Context, root *RolePermissi
 	return sql.ScanSlice(rows, v)
 }
 
-// RolePermissionSelect is the builder for selecting fields of RolePermission entities.
-type RolePermissionSelect struct {
-	*RolePermissionQuery
+// CasbinRuleSelect is the builder for selecting fields of CasbinRule entities.
+type CasbinRuleSelect struct {
+	*CasbinRuleQuery
 	selector
 }
 
 // Aggregate adds the given aggregation functions to the selector query.
-func (_s *RolePermissionSelect) Aggregate(fns ...AggregateFunc) *RolePermissionSelect {
+func (_s *CasbinRuleSelect) Aggregate(fns ...AggregateFunc) *CasbinRuleSelect {
 	_s.fns = append(_s.fns, fns...)
 	return _s
 }
 
 // Scan applies the selector query and scans the result into the given value.
-func (_s *RolePermissionSelect) Scan(ctx context.Context, v any) error {
+func (_s *CasbinRuleSelect) Scan(ctx context.Context, v any) error {
 	ctx = setContextOp(ctx, _s.ctx, ent.OpQuerySelect)
 	if err := _s.prepareQuery(ctx); err != nil {
 		return err
 	}
-	return scanWithInterceptors[*RolePermissionQuery, *RolePermissionSelect](ctx, _s.RolePermissionQuery, _s, _s.inters, v)
+	return scanWithInterceptors[*CasbinRuleQuery, *CasbinRuleSelect](ctx, _s.CasbinRuleQuery, _s, _s.inters, v)
 }
 
-func (_s *RolePermissionSelect) sqlScan(ctx context.Context, root *RolePermissionQuery, v any) error {
+func (_s *CasbinRuleSelect) sqlScan(ctx context.Context, root *CasbinRuleQuery, v any) error {
 	selector := root.sqlQuery(ctx)
 	aggregation := make([]string, 0, len(_s.fns))
 	for _, fn := range _s.fns {

@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package muid.event.v1.authz;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/event/v1/authz;authzevent";
+
+// PolicyChangeKind classifies what part of the authz policy changed.
+enum PolicyChangeKind {
+  POLICY_CHANGE_KIND_UNSPECIFIED = 0;
+  // A role's permission grants changed (created/updated/raw policy edit).
+  POLICY_CHANGE_KIND_ROLE_GRANTS_CHANGED = 1;
+  POLICY_CHANGE_KIND_ROLE_DELETED = 2;
+  // A user's membership or role in an organization changed.
+  POLICY_CHANGE_KIND_MEMBERSHIP_CHANGED = 3;
+  // The static configuration was reconciled (wildcard-domain rules).
+  POLICY_CHANGE_KIND_CONFIG_RELOADED = 4;
+  // The whole organization (members, roles, grants) was removed.
+  POLICY_CHANGE_KIND_ORGANIZATION_DELETED = 5;
+}
+
+// PolicyChangedEvent is published on NATS topic authz.policy.changed (see
+// pkg/shared/topics) after an authz policy mutation commits. Consumers
+// (pkg/authzclient local enforcers and authz replicas) use it to invalidate
+// role caches and reload namespace policies.
+message PolicyChangedEvent {
+  PolicyChangeKind kind = 1;
+
+  // Affected organization UUID; empty when wildcard-domain rules changed.
+  string organization_id = 2;
+  // Affected service namespaces (e.g. ["authn"]); empty means all.
+  repeated string namespaces = 3;
+  // Affected role name, when applicable.
+  string role = 4;
+  // Affected user UUID, for MEMBERSHIP_CHANGED.
+  string user_id = 5;
+
+  // Policy snapshot id after the mutation; matches
+  // ListNamespacePoliciesResponse.revision_id.
+  string revision_id = 6;
+  // Random id of the publishing process so authz replicas can skip events
+  // they emitted themselves.
+  string origin_instance_id = 7;
+
+  google.protobuf.Timestamp occurred_at = 8;
+}

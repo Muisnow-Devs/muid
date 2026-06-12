@@ -14,7 +14,6 @@ import (
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
 )
 
 // OrganizationRoleCreate is the builder for creating a OrganizationRole entity.
@@ -109,21 +108,6 @@ func (_c *OrganizationRoleCreate) SetNillableID(v *uuid.UUID) *OrganizationRoleC
 // SetOrganization sets the "organization" edge to the Organization entity.
 func (_c *OrganizationRoleCreate) SetOrganization(v *Organization) *OrganizationRoleCreate {
 	return _c.SetOrganizationID(v.ID)
-}
-
-// AddPermissionIDs adds the "permissions" edge to the RolePermission entity by IDs.
-func (_c *OrganizationRoleCreate) AddPermissionIDs(ids ...uuid.UUID) *OrganizationRoleCreate {
-	_c.mutation.AddPermissionIDs(ids...)
-	return _c
-}
-
-// AddPermissions adds the "permissions" edges to the RolePermission entity.
-func (_c *OrganizationRoleCreate) AddPermissions(v ...*RolePermission) *OrganizationRoleCreate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _c.AddPermissionIDs(ids...)
 }
 
 // AddMemberIDs adds the "members" edge to the OrganizationMember entity by IDs.
@@ -294,22 +278,6 @@ func (_c *OrganizationRoleCreate) createSpec() (*OrganizationRole, *sqlgraph.Cre
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.OrganizationID = nodes[0]
-		_spec.Edges = append(_spec.Edges, edge)
-	}
-	if nodes := _c.mutation.PermissionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.MembersIDs(); len(nodes) > 0 {

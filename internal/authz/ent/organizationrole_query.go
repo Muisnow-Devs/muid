@@ -17,7 +17,6 @@ import (
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/predicate"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
 )
 
 // OrganizationRoleQuery is the builder for querying OrganizationRole entities.
@@ -28,7 +27,6 @@ type OrganizationRoleQuery struct {
 	inters           []Interceptor
 	predicates       []predicate.OrganizationRole
 	withOrganization *OrganizationQuery
-	withPermissions  *RolePermissionQuery
 	withMembers      *OrganizationMemberQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
@@ -81,28 +79,6 @@ func (_q *OrganizationRoleQuery) QueryOrganization() *OrganizationQuery {
 			sqlgraph.From(organizationrole.Table, organizationrole.FieldID, selector),
 			sqlgraph.To(organization.Table, organization.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, true, organizationrole.OrganizationTable, organizationrole.OrganizationColumn),
-		)
-		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
-		return fromU, nil
-	}
-	return query
-}
-
-// QueryPermissions chains the current query on the "permissions" edge.
-func (_q *OrganizationRoleQuery) QueryPermissions() *RolePermissionQuery {
-	query := (&RolePermissionClient{config: _q.config}).Query()
-	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
-		if err := _q.prepareQuery(ctx); err != nil {
-			return nil, err
-		}
-		selector := _q.sqlQuery(ctx)
-		if err := selector.Err(); err != nil {
-			return nil, err
-		}
-		step := sqlgraph.NewStep(
-			sqlgraph.From(organizationrole.Table, organizationrole.FieldID, selector),
-			sqlgraph.To(rolepermission.Table, rolepermission.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, organizationrole.PermissionsTable, organizationrole.PermissionsColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -325,7 +301,6 @@ func (_q *OrganizationRoleQuery) Clone() *OrganizationRoleQuery {
 		inters:           append([]Interceptor{}, _q.inters...),
 		predicates:       append([]predicate.OrganizationRole{}, _q.predicates...),
 		withOrganization: _q.withOrganization.Clone(),
-		withPermissions:  _q.withPermissions.Clone(),
 		withMembers:      _q.withMembers.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
@@ -341,17 +316,6 @@ func (_q *OrganizationRoleQuery) WithOrganization(opts ...func(*OrganizationQuer
 		opt(query)
 	}
 	_q.withOrganization = query
-	return _q
-}
-
-// WithPermissions tells the query-builder to eager-load the nodes that are connected to
-// the "permissions" edge. The optional arguments are used to configure the query builder of the edge.
-func (_q *OrganizationRoleQuery) WithPermissions(opts ...func(*RolePermissionQuery)) *OrganizationRoleQuery {
-	query := (&RolePermissionClient{config: _q.config}).Query()
-	for _, opt := range opts {
-		opt(query)
-	}
-	_q.withPermissions = query
 	return _q
 }
 
@@ -444,9 +408,8 @@ func (_q *OrganizationRoleQuery) sqlAll(ctx context.Context, hooks ...queryHook)
 	var (
 		nodes       = []*OrganizationRole{}
 		_spec       = _q.querySpec()
-		loadedTypes = [3]bool{
+		loadedTypes = [2]bool{
 			_q.withOrganization != nil,
-			_q.withPermissions != nil,
 			_q.withMembers != nil,
 		}
 	)
@@ -471,13 +434,6 @@ func (_q *OrganizationRoleQuery) sqlAll(ctx context.Context, hooks ...queryHook)
 	if query := _q.withOrganization; query != nil {
 		if err := _q.loadOrganization(ctx, query, nodes, nil,
 			func(n *OrganizationRole, e *Organization) { n.Edges.Organization = e }); err != nil {
-			return nil, err
-		}
-	}
-	if query := _q.withPermissions; query != nil {
-		if err := _q.loadPermissions(ctx, query, nodes,
-			func(n *OrganizationRole) { n.Edges.Permissions = []*RolePermission{} },
-			func(n *OrganizationRole, e *RolePermission) { n.Edges.Permissions = append(n.Edges.Permissions, e) }); err != nil {
 			return nil, err
 		}
 	}
@@ -517,36 +473,6 @@ func (_q *OrganizationRoleQuery) loadOrganization(ctx context.Context, query *Or
 		for i := range nodes {
 			assign(nodes[i], n)
 		}
-	}
-	return nil
-}
-func (_q *OrganizationRoleQuery) loadPermissions(ctx context.Context, query *RolePermissionQuery, nodes []*OrganizationRole, init func(*OrganizationRole), assign func(*OrganizationRole, *RolePermission)) error {
-	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*OrganizationRole)
-	for i := range nodes {
-		fks = append(fks, nodes[i].ID)
-		nodeids[nodes[i].ID] = nodes[i]
-		if init != nil {
-			init(nodes[i])
-		}
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(rolepermission.FieldRoleID)
-	}
-	query.Where(predicate.RolePermission(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(organizationrole.PermissionsColumn), fks...))
-	}))
-	neighbors, err := query.All(ctx)
-	if err != nil {
-		return err
-	}
-	for _, n := range neighbors {
-		fk := n.RoleID
-		node, ok := nodeids[fk]
-		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "role_id" returned %v for node %v`, fk, n.ID)
-		}
-		assign(node, n)
 	}
 	return nil
 }

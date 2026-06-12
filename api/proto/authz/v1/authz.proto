@@ -8,9 +8,16 @@ option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
 
 service AuthzService {
   /// Internal service-to-service organization checks (callers pass user_id
-  /// in the request body; no end-user metadata is required).
+  /// in the request body; no end-user metadata is required). Served on the
+  /// internal listener only.
   rpc CheckOrganizationMembership(CheckOrganizationMembershipRequest) returns (CheckOrganizationMembershipResponse);
   rpc CheckOrganizationPermission(CheckOrganizationPermissionRequest) returns (CheckOrganizationPermissionResponse);
+
+  /// Relation loading for per-service local enforcers (pkg/authzclient):
+  /// the policy rules of one service namespace plus the wildcard role
+  /// hierarchy, and a user's direct roles in one organization.
+  rpc ListNamespacePolicies(ListNamespacePoliciesRequest) returns (ListNamespacePoliciesResponse);
+  rpc ListUserOrganizationRoles(ListUserOrganizationRolesRequest) returns (ListUserOrganizationRolesResponse);
 }
 
 message CheckOrganizationMembershipRequest {
@@ -25,14 +32,66 @@ message CheckOrganizationMembershipResponse {
 message CheckOrganizationPermissionRequest {
   string organization_id = 1 [(buf.validate.field).string.uuid = true];
   string user_id = 2 [(buf.validate.field).string.uuid = true];
-  // "resource:action" permission string, e.g. "oidc_client:manage".
+  // "service/method.action" permission string, e.g.
+  // "authn/oidc_client.manage". The slash namespace separator is deliberate;
+  // OIDC scopes use "service:method.action" and must stay distinct.
   string permission = 3 [(buf.validate.field).string = {
-    min_len: 1
+    pattern: "^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
     max_len: 128
   }];
 }
 
 message CheckOrganizationPermissionResponse {
   bool allowed = 1;
+  bool is_member = 2;
+}
+
+// PolicyRule mirrors one casbin rule row.
+message PolicyRule {
+  // "p" (permission grant) or "g" (role link / membership).
+  string ptype = 1 [(buf.validate.field).string = {in: ["p", "g"]}];
+  // v0..v5 with trailing empty values trimmed.
+  // p: [subject, domain, object, action]; g: [member, role, domain].
+  repeated string values = 2 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 6
+    items: {
+      string: {max_len: 256}
+    }
+  }];
+}
+
+message ListNamespacePoliciesRequest {
+  // Service namespace, e.g. "authn". Selects p-rules whose object has the
+  // "<namespace>/" prefix (wildcard-domain system grants and per-org custom
+  // role grants) plus the wildcard-domain role-hierarchy g-rules.
+  string namespace = 1 [(buf.validate.field).string = {
+    pattern: "^[a-z][a-z0-9_]*$"
+    max_len: 32
+  }];
+  int32 page_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000
+  }];
+  string page_token = 3 [(buf.validate.field).string.max_len = 256];
+}
+
+message ListNamespacePoliciesResponse {
+  repeated PolicyRule rules = 1;
+  string next_page_token = 2;
+  // Opaque policy snapshot id (changes on every policy mutation); clients
+  // compare it against PolicyChangedEvent.revision_id to detect staleness.
+  string revision_id = 3;
+}
+
+message ListUserOrganizationRolesRequest {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  string organization_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message ListUserOrganizationRolesResponse {
+  // Direct role names (lowercase, e.g. ["admin"]); inherited roles are not
+  // expanded — consumers replicate the wildcard hierarchy g-rules instead.
+  repeated string roles = 1;
   bool is_member = 2;
 }

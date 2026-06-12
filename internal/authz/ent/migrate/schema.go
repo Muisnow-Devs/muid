@@ -8,6 +8,46 @@ import (
 )
 
 var (
+	// CasbinRulesColumns holds the columns for the "casbin_rules" table.
+	CasbinRulesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "ptype", Type: field.TypeString, Size: 8},
+		{Name: "v0", Type: field.TypeString, Size: 256, Default: ""},
+		{Name: "v1", Type: field.TypeString, Size: 256, Default: ""},
+		{Name: "v2", Type: field.TypeString, Size: 256, Default: ""},
+		{Name: "v3", Type: field.TypeString, Size: 256, Default: ""},
+		{Name: "v4", Type: field.TypeString, Size: 256, Default: ""},
+		{Name: "v5", Type: field.TypeString, Size: 256, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// CasbinRulesTable holds the schema information for the "casbin_rules" table.
+	CasbinRulesTable = &schema.Table{
+		Name:       "casbin_rules",
+		Columns:    CasbinRulesColumns,
+		PrimaryKey: []*schema.Column{CasbinRulesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "casbinrule_ptype_v0_v1_v2_v3_v4_v5",
+				Unique:  true,
+				Columns: []*schema.Column{CasbinRulesColumns[1], CasbinRulesColumns[2], CasbinRulesColumns[3], CasbinRulesColumns[4], CasbinRulesColumns[5], CasbinRulesColumns[6], CasbinRulesColumns[7]},
+			},
+			{
+				Name:    "casbinrule_ptype_v1",
+				Unique:  false,
+				Columns: []*schema.Column{CasbinRulesColumns[1], CasbinRulesColumns[3]},
+			},
+			{
+				Name:    "casbinrule_ptype_v2",
+				Unique:  false,
+				Columns: []*schema.Column{CasbinRulesColumns[1], CasbinRulesColumns[4]},
+			},
+			{
+				Name:    "casbinrule_ptype_v0",
+				Unique:  false,
+				Columns: []*schema.Column{CasbinRulesColumns[1], CasbinRulesColumns[2]},
+			},
+		},
+	}
 	// OrganizationsColumns holds the columns for the "organizations" table.
 	OrganizationsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -111,38 +151,17 @@ var (
 			},
 		},
 	}
-	// RolePermissionsColumns holds the columns for the "role_permissions" table.
-	RolePermissionsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID},
-		{Name: "permission", Type: field.TypeString, Size: 128},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "role_id", Type: field.TypeUUID},
+	// PolicyRevisionsColumns holds the columns for the "policy_revisions" table.
+	PolicyRevisionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "revision", Type: field.TypeUUID},
+		{Name: "updated_at", Type: field.TypeTime},
 	}
-	// RolePermissionsTable holds the schema information for the "role_permissions" table.
-	RolePermissionsTable = &schema.Table{
-		Name:       "role_permissions",
-		Columns:    RolePermissionsColumns,
-		PrimaryKey: []*schema.Column{RolePermissionsColumns[0]},
-		ForeignKeys: []*schema.ForeignKey{
-			{
-				Symbol:     "role_permissions_organization_roles_permissions",
-				Columns:    []*schema.Column{RolePermissionsColumns[3]},
-				RefColumns: []*schema.Column{OrganizationRolesColumns[0]},
-				OnDelete:   schema.NoAction,
-			},
-		},
-		Indexes: []*schema.Index{
-			{
-				Name:    "rolepermission_role_id_permission",
-				Unique:  true,
-				Columns: []*schema.Column{RolePermissionsColumns[3], RolePermissionsColumns[1]},
-			},
-			{
-				Name:    "rolepermission_permission",
-				Unique:  false,
-				Columns: []*schema.Column{RolePermissionsColumns[1]},
-			},
-		},
+	// PolicyRevisionsTable holds the schema information for the "policy_revisions" table.
+	PolicyRevisionsTable = &schema.Table{
+		Name:       "policy_revisions",
+		Columns:    PolicyRevisionsColumns,
+		PrimaryKey: []*schema.Column{PolicyRevisionsColumns[0]},
 	}
 	// UserRefsColumns holds the columns for the "user_refs" table.
 	UserRefsColumns = []*schema.Column{
@@ -158,10 +177,11 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		CasbinRulesTable,
 		OrganizationsTable,
 		OrganizationMembersTable,
 		OrganizationRolesTable,
-		RolePermissionsTable,
+		PolicyRevisionsTable,
 		UserRefsTable,
 	}
 )
@@ -171,5 +191,4 @@ func init() {
 	OrganizationMembersTable.ForeignKeys[1].RefTable = OrganizationRolesTable
 	OrganizationMembersTable.ForeignKeys[2].RefTable = UserRefsTable
 	OrganizationRolesTable.ForeignKeys[0].RefTable = OrganizationsTable
-	RolePermissionsTable.ForeignKeys[0].RefTable = OrganizationRolesTable
 }

@@ -15,7 +15,6 @@ import (
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/predicate"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
 )
 
 // OrganizationRoleUpdate is the builder for updating OrganizationRole entities.
@@ -71,21 +70,6 @@ func (_u *OrganizationRoleUpdate) SetUpdatedAt(v time.Time) *OrganizationRoleUpd
 	return _u
 }
 
-// AddPermissionIDs adds the "permissions" edge to the RolePermission entity by IDs.
-func (_u *OrganizationRoleUpdate) AddPermissionIDs(ids ...uuid.UUID) *OrganizationRoleUpdate {
-	_u.mutation.AddPermissionIDs(ids...)
-	return _u
-}
-
-// AddPermissions adds the "permissions" edges to the RolePermission entity.
-func (_u *OrganizationRoleUpdate) AddPermissions(v ...*RolePermission) *OrganizationRoleUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddPermissionIDs(ids...)
-}
-
 // AddMemberIDs adds the "members" edge to the OrganizationMember entity by IDs.
 func (_u *OrganizationRoleUpdate) AddMemberIDs(ids ...uuid.UUID) *OrganizationRoleUpdate {
 	_u.mutation.AddMemberIDs(ids...)
@@ -104,27 +88,6 @@ func (_u *OrganizationRoleUpdate) AddMembers(v ...*OrganizationMember) *Organiza
 // Mutation returns the OrganizationRoleMutation object of the builder.
 func (_u *OrganizationRoleUpdate) Mutation() *OrganizationRoleMutation {
 	return _u.mutation
-}
-
-// ClearPermissions clears all "permissions" edges to the RolePermission entity.
-func (_u *OrganizationRoleUpdate) ClearPermissions() *OrganizationRoleUpdate {
-	_u.mutation.ClearPermissions()
-	return _u
-}
-
-// RemovePermissionIDs removes the "permissions" edge to RolePermission entities by IDs.
-func (_u *OrganizationRoleUpdate) RemovePermissionIDs(ids ...uuid.UUID) *OrganizationRoleUpdate {
-	_u.mutation.RemovePermissionIDs(ids...)
-	return _u
-}
-
-// RemovePermissions removes "permissions" edges to RolePermission entities.
-func (_u *OrganizationRoleUpdate) RemovePermissions(v ...*RolePermission) *OrganizationRoleUpdate {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePermissionIDs(ids...)
 }
 
 // ClearMembers clears all "members" edges to the OrganizationMember entity.
@@ -225,51 +188,6 @@ func (_u *OrganizationRoleUpdate) sqlSave(ctx context.Context) (_node int, err e
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(organizationrole.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.PermissionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPermissionsIDs(); len(nodes) > 0 && !_u.mutation.PermissionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PermissionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.MembersCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -376,21 +294,6 @@ func (_u *OrganizationRoleUpdateOne) SetUpdatedAt(v time.Time) *OrganizationRole
 	return _u
 }
 
-// AddPermissionIDs adds the "permissions" edge to the RolePermission entity by IDs.
-func (_u *OrganizationRoleUpdateOne) AddPermissionIDs(ids ...uuid.UUID) *OrganizationRoleUpdateOne {
-	_u.mutation.AddPermissionIDs(ids...)
-	return _u
-}
-
-// AddPermissions adds the "permissions" edges to the RolePermission entity.
-func (_u *OrganizationRoleUpdateOne) AddPermissions(v ...*RolePermission) *OrganizationRoleUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.AddPermissionIDs(ids...)
-}
-
 // AddMemberIDs adds the "members" edge to the OrganizationMember entity by IDs.
 func (_u *OrganizationRoleUpdateOne) AddMemberIDs(ids ...uuid.UUID) *OrganizationRoleUpdateOne {
 	_u.mutation.AddMemberIDs(ids...)
@@ -409,27 +312,6 @@ func (_u *OrganizationRoleUpdateOne) AddMembers(v ...*OrganizationMember) *Organ
 // Mutation returns the OrganizationRoleMutation object of the builder.
 func (_u *OrganizationRoleUpdateOne) Mutation() *OrganizationRoleMutation {
 	return _u.mutation
-}
-
-// ClearPermissions clears all "permissions" edges to the RolePermission entity.
-func (_u *OrganizationRoleUpdateOne) ClearPermissions() *OrganizationRoleUpdateOne {
-	_u.mutation.ClearPermissions()
-	return _u
-}
-
-// RemovePermissionIDs removes the "permissions" edge to RolePermission entities by IDs.
-func (_u *OrganizationRoleUpdateOne) RemovePermissionIDs(ids ...uuid.UUID) *OrganizationRoleUpdateOne {
-	_u.mutation.RemovePermissionIDs(ids...)
-	return _u
-}
-
-// RemovePermissions removes "permissions" edges to RolePermission entities.
-func (_u *OrganizationRoleUpdateOne) RemovePermissions(v ...*RolePermission) *OrganizationRoleUpdateOne {
-	ids := make([]uuid.UUID, len(v))
-	for i := range v {
-		ids[i] = v[i].ID
-	}
-	return _u.RemovePermissionIDs(ids...)
 }
 
 // ClearMembers clears all "members" edges to the OrganizationMember entity.
@@ -560,51 +442,6 @@ func (_u *OrganizationRoleUpdateOne) sqlSave(ctx context.Context) (_node *Organi
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(organizationrole.FieldUpdatedAt, field.TypeTime, value)
-	}
-	if _u.mutation.PermissionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.RemovedPermissionsIDs(); len(nodes) > 0 && !_u.mutation.PermissionsCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := _u.mutation.PermissionsIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.O2M,
-			Inverse: false,
-			Table:   organizationrole.PermissionsTable,
-			Columns: []string{organizationrole.PermissionsColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if _u.mutation.MembersCleared() {
 		edge := &sqlgraph.EdgeSpec{

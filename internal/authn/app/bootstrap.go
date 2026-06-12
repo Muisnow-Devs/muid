@@ -22,6 +22,7 @@ import (
 	oidcstore "sanzi.io/muid/internal/authn/oidc/store"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/signature"
+	"sanzi.io/muid/pkg/authzclient"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
@@ -148,7 +149,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		return nil, fmt.Errorf("signature manager: %w", err)
 	}
 
-	err = wireOIDCProviderInfra(cfg, redisKV, deps)
+	err = wireOIDCProviderInfra(ctx, cfg, redisKV, deps)
 	if err != nil {
 		errutil.CloseIf(deps.SignatureManager)
 		identityMgr.Close()
@@ -169,10 +170,14 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 func wireSignatureManager(ctx context.Context, cfg Config, deps *InfraDependencies) error {
 	if !cfg.SignatureConfigured() {
 		if cfg.OIDCProviderEnabled() {
-			return fmt.Errorf("AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_OIDC_ISSUER is set")
+			return fmt.Errorf(
+				"AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_OIDC_ISSUER is set",
+			)
 		}
 		if cfg.SessionAccessTokenEnabled() {
-			return fmt.Errorf("AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_SESSION_ACCESS_TOKEN_ISSUER is set")
+			return fmt.Errorf(
+				"AUTHN_SIGNATURE_SECRET_NAME is required when AUTHN_SESSION_ACCESS_TOKEN_ISSUER is set",
+			)
 		}
 		return nil
 	}
@@ -209,11 +214,12 @@ func signatureRotationPeriod(cfg Config) time.Duration {
 	return time.Duration(cfg.SignatureRotationPeriodHours) * time.Hour
 }
 
-// wireOIDCProviderInfra adds the OP-specific dependencies (authz client, KV
-// protocol stores) when AUTHN_OIDC_ISSUER is set. The SignatureManager is
-// wired separately by wireSignatureManager. Without an issuer the OP surface
-// stays disabled and the service boots as before.
+// wireOIDCProviderInfra adds the OP-specific dependencies (local authz
+// enforcer, KV protocol stores) when AUTHN_OIDC_ISSUER is set. The
+// SignatureManager is wired separately by wireSignatureManager. Without an
+// issuer the OP surface stays disabled and the service boots as before.
 func wireOIDCProviderInfra(
+	ctx context.Context,
 	cfg Config,
 	redisKV kv.AtomicKVStore,
 	deps *InfraDependencies,
@@ -231,7 +237,25 @@ func wireOIDCProviderInfra(
 		return fmt.Errorf("authz grpc dial: %w", err)
 	}
 
-	deps.AuthzCli = authzpb.NewAuthzServiceClient(authzConn)
+	enforcer, err := authzclient.NewEnforcer(authzclient.Config{
+		Namespace:       "authn",
+		Client:          authzpb.NewAuthzServiceClient(authzConn),
+		PubSub:          deps.PubSub,
+		KV:              redisKV,
+		RoleCacheTTL:    time.Duration(cfg.AuthzRoleCacheTTLSeconds) * time.Second,
+		RefreshInterval: time.Duration(cfg.AuthzPolicyRefreshSeconds) * time.Second,
+	})
+	if err != nil {
+		errutil.Close(authzConn)
+		return fmt.Errorf("authz enforcer: %w", err)
+	}
+	err = enforcer.Start(ctx)
+	if err != nil {
+		errutil.Close(authzConn)
+		return fmt.Errorf("authz enforcer start: %w", err)
+	}
+
+	deps.AuthzEnforcer = enforcer
 	deps.OIDCCodes = oidcstore.NewKVCodeStore(redisKV)
 	deps.OIDCPendings = oidcstore.NewKVPendingStore(redisKV)
 	deps.OIDCDevices = oidcstore.NewKVDeviceStore(redisKV)

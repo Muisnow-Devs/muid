@@ -8,30 +8,30 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
+	"sanzi.io/muid/internal/authz/ent/policyrevision"
 	"sanzi.io/muid/internal/authz/ent/predicate"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
 )
 
-// RolePermissionDelete is the builder for deleting a RolePermission entity.
-type RolePermissionDelete struct {
+// PolicyRevisionDelete is the builder for deleting a PolicyRevision entity.
+type PolicyRevisionDelete struct {
 	config
 	hooks    []Hook
-	mutation *RolePermissionMutation
+	mutation *PolicyRevisionMutation
 }
 
-// Where appends a list predicates to the RolePermissionDelete builder.
-func (_d *RolePermissionDelete) Where(ps ...predicate.RolePermission) *RolePermissionDelete {
+// Where appends a list predicates to the PolicyRevisionDelete builder.
+func (_d *PolicyRevisionDelete) Where(ps ...predicate.PolicyRevision) *PolicyRevisionDelete {
 	_d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (_d *RolePermissionDelete) Exec(ctx context.Context) (int, error) {
+func (_d *PolicyRevisionDelete) Exec(ctx context.Context) (int, error) {
 	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *RolePermissionDelete) ExecX(ctx context.Context) int {
+func (_d *PolicyRevisionDelete) ExecX(ctx context.Context) int {
 	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
@@ -39,8 +39,8 @@ func (_d *RolePermissionDelete) ExecX(ctx context.Context) int {
 	return n
 }
 
-func (_d *RolePermissionDelete) sqlExec(ctx context.Context) (int, error) {
-	_spec := sqlgraph.NewDeleteSpec(rolepermission.Table, sqlgraph.NewFieldSpec(rolepermission.FieldID, field.TypeUUID))
+func (_d *PolicyRevisionDelete) sqlExec(ctx context.Context) (int, error) {
+	_spec := sqlgraph.NewDeleteSpec(policyrevision.Table, sqlgraph.NewFieldSpec(policyrevision.FieldID, field.TypeInt))
 	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
@@ -56,32 +56,32 @@ func (_d *RolePermissionDelete) sqlExec(ctx context.Context) (int, error) {
 	return affected, err
 }
 
-// RolePermissionDeleteOne is the builder for deleting a single RolePermission entity.
-type RolePermissionDeleteOne struct {
-	_d *RolePermissionDelete
+// PolicyRevisionDeleteOne is the builder for deleting a single PolicyRevision entity.
+type PolicyRevisionDeleteOne struct {
+	_d *PolicyRevisionDelete
 }
 
-// Where appends a list predicates to the RolePermissionDelete builder.
-func (_d *RolePermissionDeleteOne) Where(ps ...predicate.RolePermission) *RolePermissionDeleteOne {
+// Where appends a list predicates to the PolicyRevisionDelete builder.
+func (_d *PolicyRevisionDeleteOne) Where(ps ...predicate.PolicyRevision) *PolicyRevisionDeleteOne {
 	_d._d.mutation.Where(ps...)
 	return _d
 }
 
 // Exec executes the deletion query.
-func (_d *RolePermissionDeleteOne) Exec(ctx context.Context) error {
+func (_d *PolicyRevisionDeleteOne) Exec(ctx context.Context) error {
 	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
 	case n == 0:
-		return &NotFoundError{rolepermission.Label}
+		return &NotFoundError{policyrevision.Label}
 	default:
 		return nil
 	}
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (_d *RolePermissionDeleteOne) ExecX(ctx context.Context) {
+func (_d *PolicyRevisionDeleteOne) ExecX(ctx context.Context) {
 	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}

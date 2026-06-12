@@ -41,13 +41,11 @@ type OrganizationRole struct {
 type OrganizationRoleEdges struct {
 	// Organization holds the value of the organization edge.
 	Organization *Organization `json:"organization,omitempty"`
-	// Permissions holds the value of the permissions edge.
-	Permissions []*RolePermission `json:"permissions,omitempty"`
 	// Members holds the value of the members edge.
 	Members []*OrganizationMember `json:"members,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
-	loadedTypes [3]bool
+	loadedTypes [2]bool
 }
 
 // OrganizationOrErr returns the Organization value or an error if the edge
@@ -61,19 +59,10 @@ func (e OrganizationRoleEdges) OrganizationOrErr() (*Organization, error) {
 	return nil, &NotLoadedError{edge: "organization"}
 }
 
-// PermissionsOrErr returns the Permissions value or an error if the edge
-// was not loaded in eager-loading.
-func (e OrganizationRoleEdges) PermissionsOrErr() ([]*RolePermission, error) {
-	if e.loadedTypes[1] {
-		return e.Permissions, nil
-	}
-	return nil, &NotLoadedError{edge: "permissions"}
-}
-
 // MembersOrErr returns the Members value or an error if the edge
 // was not loaded in eager-loading.
 func (e OrganizationRoleEdges) MembersOrErr() ([]*OrganizationMember, error) {
-	if e.loadedTypes[2] {
+	if e.loadedTypes[1] {
 		return e.Members, nil
 	}
 	return nil, &NotLoadedError{edge: "members"}
@@ -165,11 +154,6 @@ func (_m *OrganizationRole) Value(name string) (ent.Value, error) {
 // QueryOrganization queries the "organization" edge of the OrganizationRole entity.
 func (_m *OrganizationRole) QueryOrganization() *OrganizationQuery {
 	return NewOrganizationRoleClient(_m.config).QueryOrganization(_m)
-}
-
-// QueryPermissions queries the "permissions" edge of the OrganizationRole entity.
-func (_m *OrganizationRole) QueryPermissions() *RolePermissionQuery {
-	return NewOrganizationRoleClient(_m.config).QueryPermissions(_m)
 }
 
 // QueryMembers queries the "members" edge of the OrganizationRole entity.

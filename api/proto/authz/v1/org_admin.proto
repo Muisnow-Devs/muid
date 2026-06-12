@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package muid.authz.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
+
+// AuthzOrganizationAdminService is the organization-administration surface,
+// served on the public listener behind the gateway alongside
+// AuthzUserService (caller identity comes from "x-user-id" metadata, see
+// user.proto). Every RPC is itself authorized through casbin in the target
+// organization: role RPCs need "authz/role.manage" ("authz/role.view" for
+// ListRoles), member RPCs need "authz/member.manage" ("authz/member.view"
+// for ListMembers).
+service AuthzOrganizationAdminService {
+  rpc CreateRole(CreateRoleRequest) returns (CreateRoleResponse);
+  rpc UpdateRole(UpdateRoleRequest) returns (UpdateRoleResponse);
+  rpc DeleteRole(DeleteRoleRequest) returns (DeleteRoleResponse);
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse);
+
+  rpc AddMember(AddMemberRequest) returns (AddMemberResponse);
+  rpc RemoveMember(RemoveMemberRequest) returns (RemoveMemberResponse);
+  rpc ChangeMemberRole(ChangeMemberRoleRequest) returns (ChangeMemberRoleResponse);
+  rpc ListMembers(ListMembersRequest) returns (ListMembersResponse);
+}
+
+message RoleView {
+  string role_id = 1;
+  string name = 2;
+  string description = 3;
+  // System roles (owner/admin/manager/member) are seeded per organization,
+  // cannot be renamed or deleted, and their grants come from the static
+  // policy configuration (wildcard-domain rules), so permissions lists the
+  // effective grants for system roles as well.
+  bool is_system = 4;
+  repeated string permissions = 5;
+}
+
+message MemberView {
+  string user_id = 1;
+  string role = 2;
+  google.protobuf.Timestamp created_at = 3;
+}
+
+message CreateRoleRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string name = 2 [(buf.validate.field).string.pattern = "^[a-z][a-z0-9_]{1,63}$"];
+  string description = 3 [(buf.validate.field).string.max_len = 255];
+  repeated string permissions = 4 [(buf.validate.field).repeated = {
+    max_items: 128
+    items: {
+      string: {
+        pattern: "^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+        max_len: 128
+      }
+    }
+  }];
+}
+
+message CreateRoleResponse {
+  RoleView role = 1;
+}
+
+message UpdateRoleRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  // Existing role name; system roles cannot be updated.
+  string name = 2 [(buf.validate.field).string.pattern = "^[a-z][a-z0-9_]{1,63}$"];
+  // Optional rename.
+  string new_name = 3 [(buf.validate.field).string = {
+    pattern: "^$|^[a-z][a-z0-9_]{1,63}$"
+    max_len: 64
+  }];
+  string description = 4 [(buf.validate.field).string.max_len = 255];
+  // Full replacement of the role's permission grants.
+  repeated string permissions = 5 [(buf.validate.field).repeated = {
+    max_items: 128
+    items: {
+      string: {
+        pattern: "^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+        max_len: 128
+      }
+    }
+  }];
+}
+
+message UpdateRoleResponse {
+  RoleView role = 1;
+}
+
+message DeleteRoleRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  // System roles and roles still assigned to members cannot be deleted.
+  string name = 2 [(buf.validate.field).string.pattern = "^[a-z][a-z0-9_]{1,63}$"];
+}
+
+message DeleteRoleResponse {}
+
+message ListRolesRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message ListRolesResponse {
+  repeated RoleView roles = 1;
+}
+
+message AddMemberRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  // Role name; granting "owner" additionally requires the caller to be an
+  // owner of the organization.
+  string role = 3 [(buf.validate.field).string.pattern = "^[a-z][a-z0-9_]{1,63}$"];
+}
+
+message AddMemberResponse {}
+
+message RemoveMemberRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  // Removing the last owner is rejected.
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+}
+
+message RemoveMemberResponse {}
+
+message ChangeMemberRoleRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  // New role name; demoting the last owner is rejected, and granting or
+  // revoking "owner" requires the caller to be an owner.
+  string role = 3 [(buf.validate.field).string.pattern = "^[a-z][a-z0-9_]{1,63}$"];
+}
+
+message ChangeMemberRoleResponse {}
+
+message ListMembersRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  int32 page_size = 2 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 500
+  }];
+  string page_token = 3 [(buf.validate.field).string.max_len = 256];
+}
+
+message ListMembersResponse {
+  repeated MemberView members = 1;
+  string next_page_token = 2;
+}

@@ -2,28 +2,70 @@ package app
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"entgo.io/ent/dialect"
 
+	"sanzi.io/muid/infra/nats"
 	authzent "sanzi.io/muid/internal/authz/ent"
+	"sanzi.io/muid/internal/authz/policy"
 	"sanzi.io/muid/pkg/entpostgres"
+	"sanzi.io/muid/pkg/errutil"
 )
 
 func NewAuthzInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
+	pubSub, err := nats.NewNATSPubSub(cfg.NATSURL)
+	if err != nil {
+		return nil, fmt.Errorf("nats: %w", err)
+	}
+
+	fatalCleanup := func() {
+		errutil.CloseIf(pubSub)
+	}
 	entClient, _, err := entpostgres.OpenEntPostgres(ctx, cfg.DatabaseURL,
 		func(d dialect.Driver) *authzent.Client {
 			return authzent.NewClient(authzent.Driver(d))
 		},
 		func(c *authzent.Client) entpostgres.SchemaMigrator { return c.Schema },
-		nil,
+		fatalCleanup,
 		"authz ent: ",
 	)
 	if err != nil {
 		return nil, err
 	}
 
+	staticConfig, err := policy.LoadStaticConfig(cfg.PolicyConfigPath, cfg.PolicyConfigJSON)
+	if err != nil {
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		return nil, fmt.Errorf("policy config: %w", err)
+	}
+
+	manager, err := policy.NewManager(policy.ManagerConfig{
+		DB:             entClient,
+		PubSub:         pubSub,
+		Config:         staticConfig,
+		ReloadInterval: time.Duration(cfg.PolicyReloadSeconds) * time.Second,
+	})
+	if err != nil {
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		return nil, fmt.Errorf("policy manager: %w", err)
+	}
+
+	_, _, err = manager.Reconcile(ctx)
+	if err != nil {
+		errutil.Discard(manager.Close())
+		errutil.Close(entClient)
+		errutil.CloseIf(pubSub)
+		return nil, fmt.Errorf("policy reconcile: %w", err)
+	}
+
 	return &InfraDependencies{
-		GlobalConfig: cfg,
-		entClient:    entClient,
+		GlobalConfig:  cfg,
+		entClient:     entClient,
+		pubSub:        pubSub,
+		PolicyManager: manager,
 	}, nil
 }

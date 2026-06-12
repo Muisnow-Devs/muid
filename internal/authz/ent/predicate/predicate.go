@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// CasbinRule is the predicate function for casbinrule builders.
+type CasbinRule func(*sql.Selector)
+
 // Organization is the predicate function for organization builders.
 type Organization func(*sql.Selector)
 
@@ -15,8 +18,8 @@ type OrganizationMember func(*sql.Selector)
 // OrganizationRole is the predicate function for organizationrole builders.
 type OrganizationRole func(*sql.Selector)
 
-// RolePermission is the predicate function for rolepermission builders.
-type RolePermission func(*sql.Selector)
+// PolicyRevision is the predicate function for policyrevision builders.
+type PolicyRevision func(*sql.Selector)
 
 // UserRef is the predicate function for userref builders.
 type UserRef func(*sql.Selector)

@@ -19,11 +19,11 @@ This repository is the **muid** Go monorepo (`module sanzi.io/muid`): gRPC servi
 | Task | Command (from repo root) |
 |------|---------------------------|
 | Protobuf (Buf build + Go/grpc codegen) | `buf build` then `buf generate --template buf.gen.yaml` (or `make proto` on Unix with Buf installed) |
-| Ent code generation | `go generate ./internal/authn/ent/...` and `go generate ./internal/profile/ent/...` (each `generate.go` runs `ent generate ./schema`) |
-| Compile a service | `go build -o bin/authn ./cmd/authn` (same for `profile`, `mailer`) |
+| Ent code generation | `go generate ./internal/authn/ent/...`, `go generate ./internal/profile/ent/...`, and `go generate ./internal/authz/ent/...` (each `generate.go` runs `ent generate ./schema`) |
+| Compile a service | `go build -o bin/authn ./cmd/authn` (same for `authz`, `profile`, `mailer`) |
 | Tests | `go test ./...` |
 
-**Note:** The root `Makefile` lists `authz` and `gateway` in `SERVICES`; only **`authn`**, **`profile`**, and **`mailer`** exist under `cmd/` today. Adjust targets or add binaries before relying on `make build` for missing commands.
+**Note:** The root `Makefile` lists `gateway` in `SERVICES`; `cmd/gateway` is still an empty placeholder. Adjust targets or add binaries before relying on `make build` for missing commands.
 
 ## Configuration prefixes
 
@@ -32,6 +32,7 @@ Config is loaded with `pkg/shared.LoadConfig[T](prefix)` and `github.com/kelseyh
 | Prefix | Service | Examples |
 |--------|---------|----------|
 | `AUTHN_` | Authn | `AUTHN_DATABASE_URL`, `AUTHN_REDIS_URL`, `AUTHN_NATS_URL`, `AUTHN_OTP_SECRET_KEY`, `AUTHN_OTP_SEND_COOLDOWN_SECONDS` (min delay between OTP sends for the same transition **and** the same normalized email recipient; default `60`, `0` disables both), `AUTHN_OIDC_CLIENTS_JSON`, `AUTHN_PROFILE_GRPC_ADDR`, `AUTHN_PROFILE_GRPC_TIMEOUT_SECONDS`, `AUTHN_REQUEST_TIMEOUT_SECONDS`, `AUTHN_LOGIN_ALERT_SECURE_LINK` (HTTPS URL in login-alert mail; client context uses `pkg/clientmeta` metadata including `x-client-ip` set by the gateway) |
+| `AUTHZ_` | Authz | `AUTHZ_DATABASE_URL`, `AUTHZ_NATS_URL`, `AUTHZ_PORT` (public listener: user + org-admin services, gateway-fronted, identity via `x-user-id` metadata), `AUTHZ_INTERNAL_PORT` (internal listener: service-to-service checks + platform admin, never gateway-exposed), `AUTHZ_POLICY_CONFIG_PATH`/`AUTHZ_POLICY_CONFIG_JSON` (static permission catalog/system-role grants; embedded default otherwise), `AUTHZ_POLICY_RELOAD_SECONDS`, `AUTHZ_REQUEST_TIMEOUT_SECONDS` |
 | `PROFILE_` | Profile | `PROFILE_DATABASE_URL`, `PROFILE_NATS_URL`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, `PROFILE_R2_*`, `PROFILE_PUBLIC_ASSETS_URL` |
 | `MAILER_` | Mailer | `MAILER_NATS_URL`, `MAILER_SMTP_HOST`, `MAILER_SMTP_PORT`, `MAILER_SMTP_FROM`, optional `MAILER_SMTP_USERNAME`, `MAILER_SMTP_PASSWORD`, `MAILER_SMTP_SSL` |
 

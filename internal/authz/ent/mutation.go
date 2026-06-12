@@ -12,11 +12,12 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authz/ent/casbinrule"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
+	"sanzi.io/muid/internal/authz/ent/policyrevision"
 	"sanzi.io/muid/internal/authz/ent/predicate"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -29,12 +30,723 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeCasbinRule         = "CasbinRule"
 	TypeOrganization       = "Organization"
 	TypeOrganizationMember = "OrganizationMember"
 	TypeOrganizationRole   = "OrganizationRole"
-	TypeRolePermission     = "RolePermission"
+	TypePolicyRevision     = "PolicyRevision"
 	TypeUserRef            = "UserRef"
 )
+
+// CasbinRuleMutation represents an operation that mutates the CasbinRule nodes in the graph.
+type CasbinRuleMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	ptype         *string
+	v0            *string
+	v1            *string
+	v2            *string
+	v3            *string
+	v4            *string
+	v5            *string
+	created_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*CasbinRule, error)
+	predicates    []predicate.CasbinRule
+}
+
+var _ ent.Mutation = (*CasbinRuleMutation)(nil)
+
+// casbinruleOption allows management of the mutation configuration using functional options.
+type casbinruleOption func(*CasbinRuleMutation)
+
+// newCasbinRuleMutation creates new mutation for the CasbinRule entity.
+func newCasbinRuleMutation(c config, op Op, opts ...casbinruleOption) *CasbinRuleMutation {
+	m := &CasbinRuleMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeCasbinRule,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withCasbinRuleID sets the ID field of the mutation.
+func withCasbinRuleID(id uuid.UUID) casbinruleOption {
+	return func(m *CasbinRuleMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *CasbinRule
+		)
+		m.oldValue = func(ctx context.Context) (*CasbinRule, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().CasbinRule.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withCasbinRule sets the old CasbinRule of the mutation.
+func withCasbinRule(node *CasbinRule) casbinruleOption {
+	return func(m *CasbinRuleMutation) {
+		m.oldValue = func(context.Context) (*CasbinRule, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m CasbinRuleMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m CasbinRuleMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of CasbinRule entities.
+func (m *CasbinRuleMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *CasbinRuleMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *CasbinRuleMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().CasbinRule.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetPtype sets the "ptype" field.
+func (m *CasbinRuleMutation) SetPtype(s string) {
+	m.ptype = &s
+}
+
+// Ptype returns the value of the "ptype" field in the mutation.
+func (m *CasbinRuleMutation) Ptype() (r string, exists bool) {
+	v := m.ptype
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPtype returns the old "ptype" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldPtype(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPtype is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPtype requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPtype: %w", err)
+	}
+	return oldValue.Ptype, nil
+}
+
+// ResetPtype resets all changes to the "ptype" field.
+func (m *CasbinRuleMutation) ResetPtype() {
+	m.ptype = nil
+}
+
+// SetV0 sets the "v0" field.
+func (m *CasbinRuleMutation) SetV0(s string) {
+	m.v0 = &s
+}
+
+// V0 returns the value of the "v0" field in the mutation.
+func (m *CasbinRuleMutation) V0() (r string, exists bool) {
+	v := m.v0
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldV0 returns the old "v0" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldV0(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldV0 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldV0 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldV0: %w", err)
+	}
+	return oldValue.V0, nil
+}
+
+// ResetV0 resets all changes to the "v0" field.
+func (m *CasbinRuleMutation) ResetV0() {
+	m.v0 = nil
+}
+
+// SetV1 sets the "v1" field.
+func (m *CasbinRuleMutation) SetV1(s string) {
+	m.v1 = &s
+}
+
+// V1 returns the value of the "v1" field in the mutation.
+func (m *CasbinRuleMutation) V1() (r string, exists bool) {
+	v := m.v1
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldV1 returns the old "v1" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldV1(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldV1 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldV1 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldV1: %w", err)
+	}
+	return oldValue.V1, nil
+}
+
+// ResetV1 resets all changes to the "v1" field.
+func (m *CasbinRuleMutation) ResetV1() {
+	m.v1 = nil
+}
+
+// SetV2 sets the "v2" field.
+func (m *CasbinRuleMutation) SetV2(s string) {
+	m.v2 = &s
+}
+
+// V2 returns the value of the "v2" field in the mutation.
+func (m *CasbinRuleMutation) V2() (r string, exists bool) {
+	v := m.v2
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldV2 returns the old "v2" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldV2(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldV2 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldV2 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldV2: %w", err)
+	}
+	return oldValue.V2, nil
+}
+
+// ResetV2 resets all changes to the "v2" field.
+func (m *CasbinRuleMutation) ResetV2() {
+	m.v2 = nil
+}
+
+// SetV3 sets the "v3" field.
+func (m *CasbinRuleMutation) SetV3(s string) {
+	m.v3 = &s
+}
+
+// V3 returns the value of the "v3" field in the mutation.
+func (m *CasbinRuleMutation) V3() (r string, exists bool) {
+	v := m.v3
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldV3 returns the old "v3" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldV3(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldV3 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldV3 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldV3: %w", err)
+	}
+	return oldValue.V3, nil
+}
+
+// ResetV3 resets all changes to the "v3" field.
+func (m *CasbinRuleMutation) ResetV3() {
+	m.v3 = nil
+}
+
+// SetV4 sets the "v4" field.
+func (m *CasbinRuleMutation) SetV4(s string) {
+	m.v4 = &s
+}
+
+// V4 returns the value of the "v4" field in the mutation.
+func (m *CasbinRuleMutation) V4() (r string, exists bool) {
+	v := m.v4
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldV4 returns the old "v4" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldV4(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldV4 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldV4 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldV4: %w", err)
+	}
+	return oldValue.V4, nil
+}
+
+// ResetV4 resets all changes to the "v4" field.
+func (m *CasbinRuleMutation) ResetV4() {
+	m.v4 = nil
+}
+
+// SetV5 sets the "v5" field.
+func (m *CasbinRuleMutation) SetV5(s string) {
+	m.v5 = &s
+}
+
+// V5 returns the value of the "v5" field in the mutation.
+func (m *CasbinRuleMutation) V5() (r string, exists bool) {
+	v := m.v5
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldV5 returns the old "v5" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldV5(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldV5 is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldV5 requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldV5: %w", err)
+	}
+	return oldValue.V5, nil
+}
+
+// ResetV5 resets all changes to the "v5" field.
+func (m *CasbinRuleMutation) ResetV5() {
+	m.v5 = nil
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *CasbinRuleMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *CasbinRuleMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the CasbinRule entity.
+// If the CasbinRule object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *CasbinRuleMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *CasbinRuleMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// Where appends a list predicates to the CasbinRuleMutation builder.
+func (m *CasbinRuleMutation) Where(ps ...predicate.CasbinRule) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the CasbinRuleMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *CasbinRuleMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.CasbinRule, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *CasbinRuleMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *CasbinRuleMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (CasbinRule).
+func (m *CasbinRuleMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *CasbinRuleMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.ptype != nil {
+		fields = append(fields, casbinrule.FieldPtype)
+	}
+	if m.v0 != nil {
+		fields = append(fields, casbinrule.FieldV0)
+	}
+	if m.v1 != nil {
+		fields = append(fields, casbinrule.FieldV1)
+	}
+	if m.v2 != nil {
+		fields = append(fields, casbinrule.FieldV2)
+	}
+	if m.v3 != nil {
+		fields = append(fields, casbinrule.FieldV3)
+	}
+	if m.v4 != nil {
+		fields = append(fields, casbinrule.FieldV4)
+	}
+	if m.v5 != nil {
+		fields = append(fields, casbinrule.FieldV5)
+	}
+	if m.created_at != nil {
+		fields = append(fields, casbinrule.FieldCreatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *CasbinRuleMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case casbinrule.FieldPtype:
+		return m.Ptype()
+	case casbinrule.FieldV0:
+		return m.V0()
+	case casbinrule.FieldV1:
+		return m.V1()
+	case casbinrule.FieldV2:
+		return m.V2()
+	case casbinrule.FieldV3:
+		return m.V3()
+	case casbinrule.FieldV4:
+		return m.V4()
+	case casbinrule.FieldV5:
+		return m.V5()
+	case casbinrule.FieldCreatedAt:
+		return m.CreatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *CasbinRuleMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case casbinrule.FieldPtype:
+		return m.OldPtype(ctx)
+	case casbinrule.FieldV0:
+		return m.OldV0(ctx)
+	case casbinrule.FieldV1:
+		return m.OldV1(ctx)
+	case casbinrule.FieldV2:
+		return m.OldV2(ctx)
+	case casbinrule.FieldV3:
+		return m.OldV3(ctx)
+	case casbinrule.FieldV4:
+		return m.OldV4(ctx)
+	case casbinrule.FieldV5:
+		return m.OldV5(ctx)
+	case casbinrule.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown CasbinRule field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CasbinRuleMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case casbinrule.FieldPtype:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPtype(v)
+		return nil
+	case casbinrule.FieldV0:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetV0(v)
+		return nil
+	case casbinrule.FieldV1:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetV1(v)
+		return nil
+	case casbinrule.FieldV2:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetV2(v)
+		return nil
+	case casbinrule.FieldV3:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetV3(v)
+		return nil
+	case casbinrule.FieldV4:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetV4(v)
+		return nil
+	case casbinrule.FieldV5:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetV5(v)
+		return nil
+	case casbinrule.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown CasbinRule field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *CasbinRuleMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *CasbinRuleMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *CasbinRuleMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown CasbinRule numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *CasbinRuleMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *CasbinRuleMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *CasbinRuleMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown CasbinRule nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *CasbinRuleMutation) ResetField(name string) error {
+	switch name {
+	case casbinrule.FieldPtype:
+		m.ResetPtype()
+		return nil
+	case casbinrule.FieldV0:
+		m.ResetV0()
+		return nil
+	case casbinrule.FieldV1:
+		m.ResetV1()
+		return nil
+	case casbinrule.FieldV2:
+		m.ResetV2()
+		return nil
+	case casbinrule.FieldV3:
+		m.ResetV3()
+		return nil
+	case casbinrule.FieldV4:
+		m.ResetV4()
+		return nil
+	case casbinrule.FieldV5:
+		m.ResetV5()
+		return nil
+	case casbinrule.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown CasbinRule field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *CasbinRuleMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *CasbinRuleMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *CasbinRuleMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *CasbinRuleMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *CasbinRuleMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *CasbinRuleMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *CasbinRuleMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown CasbinRule unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *CasbinRuleMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown CasbinRule edge %s", name)
+}
 
 // OrganizationMutation represents an operation that mutates the Organization nodes in the graph.
 type OrganizationMutation struct {
@@ -1490,9 +2202,6 @@ type OrganizationRoleMutation struct {
 	clearedFields       map[string]struct{}
 	organization        *uuid.UUID
 	clearedorganization bool
-	permissions         map[uuid.UUID]struct{}
-	removedpermissions  map[uuid.UUID]struct{}
-	clearedpermissions  bool
 	members             map[uuid.UUID]struct{}
 	removedmembers      map[uuid.UUID]struct{}
 	clearedmembers      bool
@@ -1861,60 +2570,6 @@ func (m *OrganizationRoleMutation) ResetOrganization() {
 	m.clearedorganization = false
 }
 
-// AddPermissionIDs adds the "permissions" edge to the RolePermission entity by ids.
-func (m *OrganizationRoleMutation) AddPermissionIDs(ids ...uuid.UUID) {
-	if m.permissions == nil {
-		m.permissions = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		m.permissions[ids[i]] = struct{}{}
-	}
-}
-
-// ClearPermissions clears the "permissions" edge to the RolePermission entity.
-func (m *OrganizationRoleMutation) ClearPermissions() {
-	m.clearedpermissions = true
-}
-
-// PermissionsCleared reports if the "permissions" edge to the RolePermission entity was cleared.
-func (m *OrganizationRoleMutation) PermissionsCleared() bool {
-	return m.clearedpermissions
-}
-
-// RemovePermissionIDs removes the "permissions" edge to the RolePermission entity by IDs.
-func (m *OrganizationRoleMutation) RemovePermissionIDs(ids ...uuid.UUID) {
-	if m.removedpermissions == nil {
-		m.removedpermissions = make(map[uuid.UUID]struct{})
-	}
-	for i := range ids {
-		delete(m.permissions, ids[i])
-		m.removedpermissions[ids[i]] = struct{}{}
-	}
-}
-
-// RemovedPermissions returns the removed IDs of the "permissions" edge to the RolePermission entity.
-func (m *OrganizationRoleMutation) RemovedPermissionsIDs() (ids []uuid.UUID) {
-	for id := range m.removedpermissions {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// PermissionsIDs returns the "permissions" edge IDs in the mutation.
-func (m *OrganizationRoleMutation) PermissionsIDs() (ids []uuid.UUID) {
-	for id := range m.permissions {
-		ids = append(ids, id)
-	}
-	return
-}
-
-// ResetPermissions resets all changes to the "permissions" edge.
-func (m *OrganizationRoleMutation) ResetPermissions() {
-	m.permissions = nil
-	m.clearedpermissions = false
-	m.removedpermissions = nil
-}
-
 // AddMemberIDs adds the "members" edge to the OrganizationMember entity by ids.
 func (m *OrganizationRoleMutation) AddMemberIDs(ids ...uuid.UUID) {
 	if m.members == nil {
@@ -2196,12 +2851,9 @@ func (m *OrganizationRoleMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OrganizationRoleMutation) AddedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.organization != nil {
 		edges = append(edges, organizationrole.EdgeOrganization)
-	}
-	if m.permissions != nil {
-		edges = append(edges, organizationrole.EdgePermissions)
 	}
 	if m.members != nil {
 		edges = append(edges, organizationrole.EdgeMembers)
@@ -2217,12 +2869,6 @@ func (m *OrganizationRoleMutation) AddedIDs(name string) []ent.Value {
 		if id := m.organization; id != nil {
 			return []ent.Value{*id}
 		}
-	case organizationrole.EdgePermissions:
-		ids := make([]ent.Value, 0, len(m.permissions))
-		for id := range m.permissions {
-			ids = append(ids, id)
-		}
-		return ids
 	case organizationrole.EdgeMembers:
 		ids := make([]ent.Value, 0, len(m.members))
 		for id := range m.members {
@@ -2235,10 +2881,7 @@ func (m *OrganizationRoleMutation) AddedIDs(name string) []ent.Value {
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OrganizationRoleMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 3)
-	if m.removedpermissions != nil {
-		edges = append(edges, organizationrole.EdgePermissions)
-	}
+	edges := make([]string, 0, 2)
 	if m.removedmembers != nil {
 		edges = append(edges, organizationrole.EdgeMembers)
 	}
@@ -2249,12 +2892,6 @@ func (m *OrganizationRoleMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *OrganizationRoleMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case organizationrole.EdgePermissions:
-		ids := make([]ent.Value, 0, len(m.removedpermissions))
-		for id := range m.removedpermissions {
-			ids = append(ids, id)
-		}
-		return ids
 	case organizationrole.EdgeMembers:
 		ids := make([]ent.Value, 0, len(m.removedmembers))
 		for id := range m.removedmembers {
@@ -2267,12 +2904,9 @@ func (m *OrganizationRoleMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OrganizationRoleMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 3)
+	edges := make([]string, 0, 2)
 	if m.clearedorganization {
 		edges = append(edges, organizationrole.EdgeOrganization)
-	}
-	if m.clearedpermissions {
-		edges = append(edges, organizationrole.EdgePermissions)
 	}
 	if m.clearedmembers {
 		edges = append(edges, organizationrole.EdgeMembers)
@@ -2286,8 +2920,6 @@ func (m *OrganizationRoleMutation) EdgeCleared(name string) bool {
 	switch name {
 	case organizationrole.EdgeOrganization:
 		return m.clearedorganization
-	case organizationrole.EdgePermissions:
-		return m.clearedpermissions
 	case organizationrole.EdgeMembers:
 		return m.clearedmembers
 	}
@@ -2312,9 +2944,6 @@ func (m *OrganizationRoleMutation) ResetEdge(name string) error {
 	case organizationrole.EdgeOrganization:
 		m.ResetOrganization()
 		return nil
-	case organizationrole.EdgePermissions:
-		m.ResetPermissions()
-		return nil
 	case organizationrole.EdgeMembers:
 		m.ResetMembers()
 		return nil
@@ -2322,33 +2951,31 @@ func (m *OrganizationRoleMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown OrganizationRole edge %s", name)
 }
 
-// RolePermissionMutation represents an operation that mutates the RolePermission nodes in the graph.
-type RolePermissionMutation struct {
+// PolicyRevisionMutation represents an operation that mutates the PolicyRevision nodes in the graph.
+type PolicyRevisionMutation struct {
 	config
 	op            Op
 	typ           string
-	id            *uuid.UUID
-	permission    *string
-	created_at    *time.Time
+	id            *int
+	revision      *uuid.UUID
+	updated_at    *time.Time
 	clearedFields map[string]struct{}
-	role          *uuid.UUID
-	clearedrole   bool
 	done          bool
-	oldValue      func(context.Context) (*RolePermission, error)
-	predicates    []predicate.RolePermission
+	oldValue      func(context.Context) (*PolicyRevision, error)
+	predicates    []predicate.PolicyRevision
 }
 
-var _ ent.Mutation = (*RolePermissionMutation)(nil)
+var _ ent.Mutation = (*PolicyRevisionMutation)(nil)
 
-// rolepermissionOption allows management of the mutation configuration using functional options.
-type rolepermissionOption func(*RolePermissionMutation)
+// policyrevisionOption allows management of the mutation configuration using functional options.
+type policyrevisionOption func(*PolicyRevisionMutation)
 
-// newRolePermissionMutation creates new mutation for the RolePermission entity.
-func newRolePermissionMutation(c config, op Op, opts ...rolepermissionOption) *RolePermissionMutation {
-	m := &RolePermissionMutation{
+// newPolicyRevisionMutation creates new mutation for the PolicyRevision entity.
+func newPolicyRevisionMutation(c config, op Op, opts ...policyrevisionOption) *PolicyRevisionMutation {
+	m := &PolicyRevisionMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeRolePermission,
+		typ:           TypePolicyRevision,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -2357,20 +2984,20 @@ func newRolePermissionMutation(c config, op Op, opts ...rolepermissionOption) *R
 	return m
 }
 
-// withRolePermissionID sets the ID field of the mutation.
-func withRolePermissionID(id uuid.UUID) rolepermissionOption {
-	return func(m *RolePermissionMutation) {
+// withPolicyRevisionID sets the ID field of the mutation.
+func withPolicyRevisionID(id int) policyrevisionOption {
+	return func(m *PolicyRevisionMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *RolePermission
+			value *PolicyRevision
 		)
-		m.oldValue = func(ctx context.Context) (*RolePermission, error) {
+		m.oldValue = func(ctx context.Context) (*PolicyRevision, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().RolePermission.Get(ctx, id)
+					value, err = m.Client().PolicyRevision.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -2379,10 +3006,10 @@ func withRolePermissionID(id uuid.UUID) rolepermissionOption {
 	}
 }
 
-// withRolePermission sets the old RolePermission of the mutation.
-func withRolePermission(node *RolePermission) rolepermissionOption {
-	return func(m *RolePermissionMutation) {
-		m.oldValue = func(context.Context) (*RolePermission, error) {
+// withPolicyRevision sets the old PolicyRevision of the mutation.
+func withPolicyRevision(node *PolicyRevision) policyrevisionOption {
+	return func(m *PolicyRevisionMutation) {
+		m.oldValue = func(context.Context) (*PolicyRevision, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -2391,7 +3018,7 @@ func withRolePermission(node *RolePermission) rolepermissionOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m RolePermissionMutation) Client() *Client {
+func (m PolicyRevisionMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -2399,7 +3026,7 @@ func (m RolePermissionMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m RolePermissionMutation) Tx() (*Tx, error) {
+func (m PolicyRevisionMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -2409,14 +3036,14 @@ func (m RolePermissionMutation) Tx() (*Tx, error) {
 }
 
 // SetID sets the value of the id field. Note that this
-// operation is only accepted on creation of RolePermission entities.
-func (m *RolePermissionMutation) SetID(id uuid.UUID) {
+// operation is only accepted on creation of PolicyRevision entities.
+func (m *PolicyRevisionMutation) SetID(id int) {
 	m.id = &id
 }
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *RolePermissionMutation) ID() (id uuid.UUID, exists bool) {
+func (m *PolicyRevisionMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -2427,165 +3054,102 @@ func (m *RolePermissionMutation) ID() (id uuid.UUID, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *RolePermissionMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+func (m *PolicyRevisionMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
 		if exists {
-			return []uuid.UUID{id}, nil
+			return []int{id}, nil
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().RolePermission.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().PolicyRevision.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
-// SetRoleID sets the "role_id" field.
-func (m *RolePermissionMutation) SetRoleID(u uuid.UUID) {
-	m.role = &u
+// SetRevision sets the "revision" field.
+func (m *PolicyRevisionMutation) SetRevision(u uuid.UUID) {
+	m.revision = &u
 }
 
-// RoleID returns the value of the "role_id" field in the mutation.
-func (m *RolePermissionMutation) RoleID() (r uuid.UUID, exists bool) {
-	v := m.role
+// Revision returns the value of the "revision" field in the mutation.
+func (m *PolicyRevisionMutation) Revision() (r uuid.UUID, exists bool) {
+	v := m.revision
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldRoleID returns the old "role_id" field's value of the RolePermission entity.
-// If the RolePermission object wasn't provided to the builder, the object is fetched from the database.
+// OldRevision returns the old "revision" field's value of the PolicyRevision entity.
+// If the PolicyRevision object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RolePermissionMutation) OldRoleID(ctx context.Context) (v uuid.UUID, err error) {
+func (m *PolicyRevisionMutation) OldRevision(ctx context.Context) (v uuid.UUID, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldRoleID is only allowed on UpdateOne operations")
+		return v, errors.New("OldRevision is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldRoleID requires an ID field in the mutation")
+		return v, errors.New("OldRevision requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldRoleID: %w", err)
+		return v, fmt.Errorf("querying old value for OldRevision: %w", err)
 	}
-	return oldValue.RoleID, nil
+	return oldValue.Revision, nil
 }
 
-// ResetRoleID resets all changes to the "role_id" field.
-func (m *RolePermissionMutation) ResetRoleID() {
-	m.role = nil
+// ResetRevision resets all changes to the "revision" field.
+func (m *PolicyRevisionMutation) ResetRevision() {
+	m.revision = nil
 }
 
-// SetPermission sets the "permission" field.
-func (m *RolePermissionMutation) SetPermission(s string) {
-	m.permission = &s
+// SetUpdatedAt sets the "updated_at" field.
+func (m *PolicyRevisionMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
 }
 
-// Permission returns the value of the "permission" field in the mutation.
-func (m *RolePermissionMutation) Permission() (r string, exists bool) {
-	v := m.permission
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *PolicyRevisionMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldPermission returns the old "permission" field's value of the RolePermission entity.
-// If the RolePermission object wasn't provided to the builder, the object is fetched from the database.
+// OldUpdatedAt returns the old "updated_at" field's value of the PolicyRevision entity.
+// If the PolicyRevision object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RolePermissionMutation) OldPermission(ctx context.Context) (v string, err error) {
+func (m *PolicyRevisionMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldPermission is only allowed on UpdateOne operations")
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldPermission requires an ID field in the mutation")
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldPermission: %w", err)
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
 	}
-	return oldValue.Permission, nil
+	return oldValue.UpdatedAt, nil
 }
 
-// ResetPermission resets all changes to the "permission" field.
-func (m *RolePermissionMutation) ResetPermission() {
-	m.permission = nil
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *PolicyRevisionMutation) ResetUpdatedAt() {
+	m.updated_at = nil
 }
 
-// SetCreatedAt sets the "created_at" field.
-func (m *RolePermissionMutation) SetCreatedAt(t time.Time) {
-	m.created_at = &t
-}
-
-// CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *RolePermissionMutation) CreatedAt() (r time.Time, exists bool) {
-	v := m.created_at
-	if v == nil {
-		return
-	}
-	return *v, true
-}
-
-// OldCreatedAt returns the old "created_at" field's value of the RolePermission entity.
-// If the RolePermission object wasn't provided to the builder, the object is fetched from the database.
-// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *RolePermissionMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
-	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
-	}
-	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
-	}
-	oldValue, err := m.oldValue(ctx)
-	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
-	}
-	return oldValue.CreatedAt, nil
-}
-
-// ResetCreatedAt resets all changes to the "created_at" field.
-func (m *RolePermissionMutation) ResetCreatedAt() {
-	m.created_at = nil
-}
-
-// ClearRole clears the "role" edge to the OrganizationRole entity.
-func (m *RolePermissionMutation) ClearRole() {
-	m.clearedrole = true
-	m.clearedFields[rolepermission.FieldRoleID] = struct{}{}
-}
-
-// RoleCleared reports if the "role" edge to the OrganizationRole entity was cleared.
-func (m *RolePermissionMutation) RoleCleared() bool {
-	return m.clearedrole
-}
-
-// RoleIDs returns the "role" edge IDs in the mutation.
-// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// RoleID instead. It exists only for internal usage by the builders.
-func (m *RolePermissionMutation) RoleIDs() (ids []uuid.UUID) {
-	if id := m.role; id != nil {
-		ids = append(ids, *id)
-	}
-	return
-}
-
-// ResetRole resets all changes to the "role" edge.
-func (m *RolePermissionMutation) ResetRole() {
-	m.role = nil
-	m.clearedrole = false
-}
-
-// Where appends a list predicates to the RolePermissionMutation builder.
-func (m *RolePermissionMutation) Where(ps ...predicate.RolePermission) {
+// Where appends a list predicates to the PolicyRevisionMutation builder.
+func (m *PolicyRevisionMutation) Where(ps ...predicate.PolicyRevision) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the RolePermissionMutation builder. Using this method,
+// WhereP appends storage-level predicates to the PolicyRevisionMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *RolePermissionMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.RolePermission, len(ps))
+func (m *PolicyRevisionMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.PolicyRevision, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -2593,33 +3157,30 @@ func (m *RolePermissionMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *RolePermissionMutation) Op() Op {
+func (m *PolicyRevisionMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *RolePermissionMutation) SetOp(op Op) {
+func (m *PolicyRevisionMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (RolePermission).
-func (m *RolePermissionMutation) Type() string {
+// Type returns the node type of this mutation (PolicyRevision).
+func (m *PolicyRevisionMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *RolePermissionMutation) Fields() []string {
-	fields := make([]string, 0, 3)
-	if m.role != nil {
-		fields = append(fields, rolepermission.FieldRoleID)
+func (m *PolicyRevisionMutation) Fields() []string {
+	fields := make([]string, 0, 2)
+	if m.revision != nil {
+		fields = append(fields, policyrevision.FieldRevision)
 	}
-	if m.permission != nil {
-		fields = append(fields, rolepermission.FieldPermission)
-	}
-	if m.created_at != nil {
-		fields = append(fields, rolepermission.FieldCreatedAt)
+	if m.updated_at != nil {
+		fields = append(fields, policyrevision.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -2627,14 +3188,12 @@ func (m *RolePermissionMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *RolePermissionMutation) Field(name string) (ent.Value, bool) {
+func (m *PolicyRevisionMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case rolepermission.FieldRoleID:
-		return m.RoleID()
-	case rolepermission.FieldPermission:
-		return m.Permission()
-	case rolepermission.FieldCreatedAt:
-		return m.CreatedAt()
+	case policyrevision.FieldRevision:
+		return m.Revision()
+	case policyrevision.FieldUpdatedAt:
+		return m.UpdatedAt()
 	}
 	return nil, false
 }
@@ -2642,178 +3201,140 @@ func (m *RolePermissionMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *RolePermissionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *PolicyRevisionMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case rolepermission.FieldRoleID:
-		return m.OldRoleID(ctx)
-	case rolepermission.FieldPermission:
-		return m.OldPermission(ctx)
-	case rolepermission.FieldCreatedAt:
-		return m.OldCreatedAt(ctx)
+	case policyrevision.FieldRevision:
+		return m.OldRevision(ctx)
+	case policyrevision.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
 	}
-	return nil, fmt.Errorf("unknown RolePermission field %s", name)
+	return nil, fmt.Errorf("unknown PolicyRevision field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *RolePermissionMutation) SetField(name string, value ent.Value) error {
+func (m *PolicyRevisionMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case rolepermission.FieldRoleID:
+	case policyrevision.FieldRevision:
 		v, ok := value.(uuid.UUID)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetRoleID(v)
+		m.SetRevision(v)
 		return nil
-	case rolepermission.FieldPermission:
-		v, ok := value.(string)
-		if !ok {
-			return fmt.Errorf("unexpected type %T for field %s", value, name)
-		}
-		m.SetPermission(v)
-		return nil
-	case rolepermission.FieldCreatedAt:
+	case policyrevision.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCreatedAt(v)
+		m.SetUpdatedAt(v)
 		return nil
 	}
-	return fmt.Errorf("unknown RolePermission field %s", name)
+	return fmt.Errorf("unknown PolicyRevision field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *RolePermissionMutation) AddedFields() []string {
+func (m *PolicyRevisionMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *RolePermissionMutation) AddedField(name string) (ent.Value, bool) {
+func (m *PolicyRevisionMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *RolePermissionMutation) AddField(name string, value ent.Value) error {
+func (m *PolicyRevisionMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown RolePermission numeric field %s", name)
+	return fmt.Errorf("unknown PolicyRevision numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *RolePermissionMutation) ClearedFields() []string {
+func (m *PolicyRevisionMutation) ClearedFields() []string {
 	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *RolePermissionMutation) FieldCleared(name string) bool {
+func (m *PolicyRevisionMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *RolePermissionMutation) ClearField(name string) error {
-	return fmt.Errorf("unknown RolePermission nullable field %s", name)
+func (m *PolicyRevisionMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown PolicyRevision nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *RolePermissionMutation) ResetField(name string) error {
+func (m *PolicyRevisionMutation) ResetField(name string) error {
 	switch name {
-	case rolepermission.FieldRoleID:
-		m.ResetRoleID()
+	case policyrevision.FieldRevision:
+		m.ResetRevision()
 		return nil
-	case rolepermission.FieldPermission:
-		m.ResetPermission()
-		return nil
-	case rolepermission.FieldCreatedAt:
-		m.ResetCreatedAt()
+	case policyrevision.FieldUpdatedAt:
+		m.ResetUpdatedAt()
 		return nil
 	}
-	return fmt.Errorf("unknown RolePermission field %s", name)
+	return fmt.Errorf("unknown PolicyRevision field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *RolePermissionMutation) AddedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.role != nil {
-		edges = append(edges, rolepermission.EdgeRole)
-	}
+func (m *PolicyRevisionMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *RolePermissionMutation) AddedIDs(name string) []ent.Value {
-	switch name {
-	case rolepermission.EdgeRole:
-		if id := m.role; id != nil {
-			return []ent.Value{*id}
-		}
-	}
+func (m *PolicyRevisionMutation) AddedIDs(name string) []ent.Value {
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *RolePermissionMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 1)
+func (m *PolicyRevisionMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *RolePermissionMutation) RemovedIDs(name string) []ent.Value {
+func (m *PolicyRevisionMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *RolePermissionMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 1)
-	if m.clearedrole {
-		edges = append(edges, rolepermission.EdgeRole)
-	}
+func (m *PolicyRevisionMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *RolePermissionMutation) EdgeCleared(name string) bool {
-	switch name {
-	case rolepermission.EdgeRole:
-		return m.clearedrole
-	}
+func (m *PolicyRevisionMutation) EdgeCleared(name string) bool {
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *RolePermissionMutation) ClearEdge(name string) error {
-	switch name {
-	case rolepermission.EdgeRole:
-		m.ClearRole()
-		return nil
-	}
-	return fmt.Errorf("unknown RolePermission unique edge %s", name)
+func (m *PolicyRevisionMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown PolicyRevision unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *RolePermissionMutation) ResetEdge(name string) error {
-	switch name {
-	case rolepermission.EdgeRole:
-		m.ResetRole()
-		return nil
-	}
-	return fmt.Errorf("unknown RolePermission edge %s", name)
+func (m *PolicyRevisionMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown PolicyRevision edge %s", name)
 }
 
 // UserRefMutation represents an operation that mutates the UserRef nodes in the graph.

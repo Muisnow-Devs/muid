@@ -8,102 +8,83 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
-	authzent "sanzi.io/muid/internal/authz/ent"
 	"sanzi.io/muid/internal/authz/ent/enttest"
+	"sanzi.io/muid/internal/authz/policy"
 )
 
 type orgFixture struct {
+	manager        *policy.Manager
 	organizationID uuid.UUID
-	memberWithPerm uuid.UUID
-	memberNoPerm   uuid.UUID
+	owner          uuid.UUID
+	admin          uuid.UUID
+	member         uuid.UUID
 	nonMember      uuid.UUID
 }
 
-func newOrgFixture(t *testing.T, client *authzent.Client) orgFixture {
+// newOrgFixture builds a manager on in-memory sqlite with the default
+// static policy, one organization, and members in the admin/member system
+// roles.
+func newOrgFixture(t *testing.T, dbName string) orgFixture {
 	t.Helper()
 	ctx := context.Background()
 
+	client := enttest.Open(t, "sqlite3", "file:"+dbName+"?mode=memory&cache=shared&_fk=1")
+	t.Cleanup(func() { client.Close() })
+
+	cfg, err := policy.LoadStaticConfig("", "")
+	if err != nil {
+		t.Fatalf("LoadStaticConfig: %v", err)
+	}
+	manager, err := policy.NewManager(policy.ManagerConfig{DB: client, Config: cfg})
+	if err != nil {
+		t.Fatalf("NewManager: %v", err)
+	}
+	t.Cleanup(func() { manager.Close() })
+	if _, _, err := manager.Reconcile(ctx); err != nil {
+		t.Fatalf("Reconcile: %v", err)
+	}
+
 	fixture := orgFixture{
-		memberWithPerm: uuid.New(),
-		memberNoPerm:   uuid.New(),
-		nonMember:      uuid.New(),
+		manager:   manager,
+		owner:     uuid.New(),
+		admin:     uuid.New(),
+		member:    uuid.New(),
+		nonMember: uuid.New(),
 	}
-
-	org, err := client.Organization.Create().
-		SetName("Acme").
-		SetDomain("acme.test").
-		Save(ctx)
+	fixture.organizationID, err = manager.CreateOrganization(
+		ctx,
+		"Acme",
+		"",
+		"acme.test",
+		fixture.owner,
+	)
 	if err != nil {
-		t.Fatalf("create organization: %v", err)
+		t.Fatalf("CreateOrganization: %v", err)
 	}
-	fixture.organizationID = org.ID
-
-	adminRole, err := client.OrganizationRole.Create().
-		SetOrganizationID(org.ID).
-		SetName("admin").
-		Save(ctx)
-	if err != nil {
-		t.Fatalf("create admin role: %v", err)
+	if err := manager.AddMember(ctx, fixture.owner, fixture.organizationID, fixture.admin, "admin"); err != nil {
+		t.Fatalf("AddMember(admin): %v", err)
 	}
-	memberRole, err := client.OrganizationRole.Create().
-		SetOrganizationID(org.ID).
-		SetName("member").
-		Save(ctx)
-	if err != nil {
-		t.Fatalf("create member role: %v", err)
+	if err := manager.AddMember(ctx, fixture.owner, fixture.organizationID, fixture.member, "member"); err != nil {
+		t.Fatalf("AddMember(member): %v", err)
 	}
-
-	err = client.RolePermission.Create().
-		SetRoleID(adminRole.ID).
-		SetPermission("oidc_client:manage").
-		Exec(ctx)
-	if err != nil {
-		t.Fatalf("create role permission: %v", err)
-	}
-
-	for userID, roleID := range map[uuid.UUID]uuid.UUID{
-		fixture.memberWithPerm: adminRole.ID,
-		fixture.memberNoPerm:   memberRole.ID,
-	} {
-		err = client.UserRef.Create().SetID(userID).Exec(ctx)
-		if err != nil {
-			t.Fatalf("create user ref: %v", err)
-		}
-		err = client.OrganizationMember.Create().
-			SetOrganizationID(org.ID).
-			SetUserID(userID).
-			SetRoleID(roleID).
-			Exec(ctx)
-		if err != nil {
-			t.Fatalf("create membership: %v", err)
-		}
-	}
-
 	return fixture
 }
 
 func TestCheckOrganizationMembership(t *testing.T) {
-	t.Parallel()
-
-	client := enttest.Open(t, "sqlite3", "file:authzmembership?mode=memory&cache=shared&_fk=1")
-	t.Cleanup(func() { client.Close() })
-	fixture := newOrgFixture(t, client)
-	handler := NewGRPCHandler(HandlerConfig{DB: client})
+	fixture := newOrgFixture(t, "authzmembership")
+	handler := NewGRPCHandler(HandlerConfig{Manager: fixture.manager})
 
 	tests := []struct {
 		name   string
 		userID uuid.UUID
 		want   bool
 	}{
-		{name: "member", userID: fixture.memberNoPerm, want: true},
+		{name: "member", userID: fixture.member, want: true},
 		{name: "non-member", userID: fixture.nonMember, want: false},
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			req := &pb.CheckOrganizationMembershipRequest{}
 			req.SetOrganizationId(fixture.organizationID.String())
 			req.SetUserId(tc.userID.String())
@@ -120,12 +101,8 @@ func TestCheckOrganizationMembership(t *testing.T) {
 }
 
 func TestCheckOrganizationPermission(t *testing.T) {
-	t.Parallel()
-
-	client := enttest.Open(t, "sqlite3", "file:authzpermission?mode=memory&cache=shared&_fk=1")
-	t.Cleanup(func() { client.Close() })
-	fixture := newOrgFixture(t, client)
-	handler := NewGRPCHandler(HandlerConfig{DB: client})
+	fixture := newOrgFixture(t, "authzpermission")
+	handler := NewGRPCHandler(HandlerConfig{Manager: fixture.manager})
 
 	tests := []struct {
 		name        string
@@ -135,36 +112,41 @@ func TestCheckOrganizationPermission(t *testing.T) {
 		wantMember  bool
 	}{
 		{
-			name:        "member with permission",
-			userID:      fixture.memberWithPerm,
-			permission:  "oidc_client:manage",
+			name:        "admin holds the manage grant",
+			userID:      fixture.admin,
+			permission:  "authn/oidc_client.manage",
 			wantAllowed: true,
 			wantMember:  true,
 		},
 		{
-			name:       "member without permission",
-			userID:     fixture.memberNoPerm,
-			permission: "oidc_client:manage",
+			name:        "owner inherits the manage grant",
+			userID:      fixture.owner,
+			permission:  "authn/oidc_client.manage",
+			wantAllowed: true,
+			wantMember:  true,
+		},
+		{
+			name:       "member lacks the manage grant",
+			userID:     fixture.member,
+			permission: "authn/oidc_client.manage",
 			wantMember: true,
 		},
 		{
-			name:       "member with unknown permission",
-			userID:     fixture.memberWithPerm,
-			permission: "organization:delete",
-			wantMember: true,
+			name:        "member holds the view grant",
+			userID:      fixture.member,
+			permission:  "authn/oidc_client.view",
+			wantAllowed: true,
+			wantMember:  true,
 		},
 		{
 			name:       "non-member",
 			userID:     fixture.nonMember,
-			permission: "oidc_client:manage",
+			permission: "authn/oidc_client.manage",
 		},
 	}
 
 	for _, tc := range tests {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
 			req := &pb.CheckOrganizationPermissionRequest{}
 			req.SetOrganizationId(fixture.organizationID.String())
 			req.SetUserId(tc.userID.String())
@@ -181,5 +163,49 @@ func TestCheckOrganizationPermission(t *testing.T) {
 				)
 			}
 		})
+	}
+}
+
+func TestListUserOrganizationRoles(t *testing.T) {
+	fixture := newOrgFixture(t, "authzuserroles")
+	handler := NewGRPCHandler(HandlerConfig{Manager: fixture.manager})
+
+	req := &pb.ListUserOrganizationRolesRequest{}
+	req.SetOrganizationId(fixture.organizationID.String())
+	req.SetUserId(fixture.admin.String())
+
+	resp, err := handler.ListUserOrganizationRoles(context.Background(), req)
+	if err != nil {
+		t.Fatalf("ListUserOrganizationRoles: %v", err)
+	}
+	if !resp.GetIsMember() || len(resp.GetRoles()) != 1 || resp.GetRoles()[0] != "admin" {
+		t.Fatalf("roles = %v (member %v), want [admin] (member true)",
+			resp.GetRoles(), resp.GetIsMember())
+	}
+}
+
+func TestListNamespacePolicies(t *testing.T) {
+	fixture := newOrgFixture(t, "authznamespacepolicies")
+	handler := NewGRPCHandler(HandlerConfig{Manager: fixture.manager})
+
+	req := &pb.ListNamespacePoliciesRequest{}
+	req.SetNamespace("authn")
+
+	resp, err := handler.ListNamespacePolicies(context.Background(), req)
+	if err != nil {
+		t.Fatalf("ListNamespacePolicies: %v", err)
+	}
+	if len(resp.GetRules()) == 0 {
+		t.Fatal("ListNamespacePolicies returned no rules, want authn grants + hierarchy")
+	}
+	if resp.GetRevisionId() == "" {
+		t.Error("revision_id is empty, want a snapshot id")
+	}
+	for _, rule := range resp.GetRules() {
+		switch rule.GetPtype() {
+		case "p", "g":
+		default:
+			t.Errorf("unexpected ptype %q in rule %v", rule.GetPtype(), rule.GetValues())
+		}
 	}
 }

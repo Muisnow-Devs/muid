@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "authz": [
+      "org.view",
+      "org.manage",
+      "member.view",
+      "member.manage",
+      "role.view",
+      "role.manage"
+    ],
+    "authn": [
+      "oidc_client.view",
+      "oidc_client.manage"
+    ]
+  },
+  "system_roles": ["owner", "admin", "manager", "member"],
+  "role_inheritance": [
+    ["owner", "admin"],
+    ["admin", "manager"],
+    ["manager", "member"]
+  ],
+  "grants": {
+    "member": [
+      "authz/org.view",
+      "authz/member.view",
+      "authz/role.view",
+      "authn/oidc_client.view"
+    ],
+    "manager": [
+      "authz/member.manage"
+    ],
+    "admin": [
+      "authz/role.manage",
+      "authn/oidc_client.manage"
+    ],
+    "owner": [
+      "authz/org.manage"
+    ]
+  }
+}

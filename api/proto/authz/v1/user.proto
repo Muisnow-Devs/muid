@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package muid.authz.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
+
+// AuthzUserService is the default end-user surface, served on the public
+// listener behind the gateway. The gateway verifies the caller's
+// access/session token and injects the resolved user id as "x-user-id" gRPC
+// metadata; requests therefore carry no user_id field, and authz rejects
+// calls without the metadata.
+service AuthzUserService {
+  rpc ListMyOrganizations(ListMyOrganizationsRequest) returns (ListMyOrganizationsResponse);
+  rpc ListMyPermissions(ListMyPermissionsRequest) returns (ListMyPermissionsResponse);
+  rpc CheckMyPermission(CheckMyPermissionRequest) returns (CheckMyPermissionResponse);
+}
+
+message OrganizationMembershipView {
+  string organization_id = 1;
+  string name = 2;
+  string description = 3;
+  // The caller's direct role in the organization (lowercase name).
+  string role = 4;
+}
+
+message ListMyOrganizationsRequest {
+  int32 page_size = 1 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 200
+  }];
+  string page_token = 2 [(buf.validate.field).string.max_len = 256];
+}
+
+message ListMyOrganizationsResponse {
+  repeated OrganizationMembershipView organizations = 1;
+  string next_page_token = 2;
+}
+
+message ListMyPermissionsRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message ListMyPermissionsResponse {
+  // Effective permissions (role inheritance expanded), as
+  // "service/method.action" strings.
+  repeated string permissions = 1;
+}
+
+message CheckMyPermissionRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string permission = 2 [(buf.validate.field).string = {
+    pattern: "^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+    max_len: 128
+  }];
+}
+
+message CheckMyPermissionResponse {
+  bool allowed = 1;
+}

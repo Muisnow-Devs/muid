@@ -29,8 +29,6 @@ const (
 	FieldUpdatedAt = "updated_at"
 	// EdgeOrganization holds the string denoting the organization edge name in mutations.
 	EdgeOrganization = "organization"
-	// EdgePermissions holds the string denoting the permissions edge name in mutations.
-	EdgePermissions = "permissions"
 	// EdgeMembers holds the string denoting the members edge name in mutations.
 	EdgeMembers = "members"
 	// Table holds the table name of the organizationrole in the database.
@@ -42,13 +40,6 @@ const (
 	OrganizationInverseTable = "organizations"
 	// OrganizationColumn is the table column denoting the organization relation/edge.
 	OrganizationColumn = "organization_id"
-	// PermissionsTable is the table that holds the permissions relation/edge.
-	PermissionsTable = "role_permissions"
-	// PermissionsInverseTable is the table name for the RolePermission entity.
-	// It exists in this package in order to avoid circular dependency with the "rolepermission" package.
-	PermissionsInverseTable = "role_permissions"
-	// PermissionsColumn is the table column denoting the permissions relation/edge.
-	PermissionsColumn = "role_id"
 	// MembersTable is the table that holds the members relation/edge.
 	MembersTable = "organization_members"
 	// MembersInverseTable is the table name for the OrganizationMember entity.
@@ -141,20 +132,6 @@ func ByOrganizationField(field string, opts ...sql.OrderTermOption) OrderOption 
 	}
 }
 
-// ByPermissionsCount orders the results by permissions count.
-func ByPermissionsCount(opts ...sql.OrderTermOption) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newPermissionsStep(), opts...)
-	}
-}
-
-// ByPermissions orders the results by permissions terms.
-func ByPermissions(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
-	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newPermissionsStep(), append([]sql.OrderTerm{term}, terms...)...)
-	}
-}
-
 // ByMembersCount orders the results by members count.
 func ByMembersCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -173,13 +150,6 @@ func newOrganizationStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(OrganizationInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, true, OrganizationTable, OrganizationColumn),
-	)
-}
-func newPermissionsStep() *sqlgraph.Step {
-	return sqlgraph.NewStep(
-		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(PermissionsInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, PermissionsTable, PermissionsColumn),
 	)
 }
 func newMembersStep() *sqlgraph.Step {

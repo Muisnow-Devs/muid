@@ -8,38 +8,29 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
-	authzent "sanzi.io/muid/internal/authz/ent"
-	"sanzi.io/muid/internal/authz/ent/organizationmember"
-	"sanzi.io/muid/internal/authz/ent/organizationrole"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
-	grpcutils "sanzi.io/muid/pkg/grpc_utils"
-	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/internal/authz/policy"
 )
 
+// GRPCHandler implements AuthzService: internal service-to-service checks
+// and relation loading for per-service local enforcers.
 type GRPCHandler struct {
 	pb.UnimplementedAuthzServiceServer
 
-	db *authzent.Client
+	manager *policy.Manager
 }
 
 type HandlerConfig struct {
-	DB *authzent.Client
+	Manager *policy.Manager
 }
 
 func NewGRPCHandler(config HandlerConfig) pb.AuthzServiceServer {
-	return &GRPCHandler{
-		db: config.DB,
-	}
+	return &GRPCHandler{manager: config.Manager}
 }
 
 func (g *GRPCHandler) CheckOrganizationMembership(
 	ctx context.Context,
 	req *pb.CheckOrganizationMembershipRequest,
 ) (*pb.CheckOrganizationMembershipResponse, error) {
-	if g.db == nil {
-		return nil, status.Error(codes.Unavailable, "database unavailable")
-	}
-
 	organizationID, userID, err := parseOrganizationAndUser(
 		req.GetOrganizationId(),
 		req.GetUserId(),
@@ -48,16 +39,9 @@ func (g *GRPCHandler) CheckOrganizationMembership(
 		return nil, err
 	}
 
-	isMember, err := g.db.OrganizationMember.Query().
-		Where(
-			organizationmember.OrganizationID(organizationID),
-			organizationmember.UserID(userID),
-		).
-		Exist(ctx)
+	isMember, err := g.manager.IsMember(ctx, organizationID, userID)
 	if err != nil {
-		log.LogUnexpected(ctx, "authz check membership", err.Error(),
-			log.UserID(userID))
-		return nil, grpcutils.GRPCInternalError()
+		return nil, mapPolicyError(ctx, "authz check membership", err)
 	}
 
 	out := &pb.CheckOrganizationMembershipResponse{}
@@ -69,10 +53,6 @@ func (g *GRPCHandler) CheckOrganizationPermission(
 	ctx context.Context,
 	req *pb.CheckOrganizationPermissionRequest,
 ) (*pb.CheckOrganizationPermissionResponse, error) {
-	if g.db == nil {
-		return nil, status.Error(codes.Unavailable, "database unavailable")
-	}
-
 	organizationID, userID, err := parseOrganizationAndUser(
 		req.GetOrganizationId(),
 		req.GetUserId(),
@@ -81,39 +61,63 @@ func (g *GRPCHandler) CheckOrganizationPermission(
 		return nil, err
 	}
 
-	member, err := g.db.OrganizationMember.Query().
-		Where(
-			organizationmember.OrganizationID(organizationID),
-			organizationmember.UserID(userID),
-		).
-		Only(ctx)
-	if authzent.IsNotFound(err) {
-		out := &pb.CheckOrganizationPermissionResponse{}
-		out.SetAllowed(false)
-		out.SetIsMember(false)
-		return out, nil
-	}
+	allowed, isMember, err := g.manager.CheckPermission(
+		ctx,
+		organizationID,
+		userID,
+		req.GetPermission(),
+	)
 	if err != nil {
-		log.LogUnexpected(ctx, "authz check permission member", err.Error(),
-			log.UserID(userID))
-		return nil, grpcutils.GRPCInternalError()
-	}
-
-	allowed, err := g.db.RolePermission.Query().
-		Where(
-			rolepermission.Permission(req.GetPermission()),
-			rolepermission.HasRoleWith(organizationrole.ID(member.RoleID)),
-		).
-		Exist(ctx)
-	if err != nil {
-		log.LogUnexpected(ctx, "authz check permission role", err.Error(),
-			log.UserID(userID))
-		return nil, grpcutils.GRPCInternalError()
+		return nil, mapPolicyError(ctx, "authz check permission", err)
 	}
 
 	out := &pb.CheckOrganizationPermissionResponse{}
 	out.SetAllowed(allowed)
-	out.SetIsMember(true)
+	out.SetIsMember(isMember)
+	return out, nil
+}
+
+func (g *GRPCHandler) ListNamespacePolicies(
+	ctx context.Context,
+	req *pb.ListNamespacePoliciesRequest,
+) (*pb.ListNamespacePoliciesResponse, error) {
+	rules, nextPageToken, revision, err := g.manager.NamespacePolicies(
+		ctx,
+		req.GetNamespace(),
+		int(req.GetPageSize()),
+		req.GetPageToken(),
+	)
+	if err != nil {
+		return nil, mapPolicyError(ctx, "authz list namespace policies", err)
+	}
+
+	out := &pb.ListNamespacePoliciesResponse{}
+	out.SetRules(rulesToProto(rules))
+	out.SetNextPageToken(nextPageToken)
+	out.SetRevisionId(revisionToProto(revision))
+	return out, nil
+}
+
+func (g *GRPCHandler) ListUserOrganizationRoles(
+	ctx context.Context,
+	req *pb.ListUserOrganizationRolesRequest,
+) (*pb.ListUserOrganizationRolesResponse, error) {
+	organizationID, userID, err := parseOrganizationAndUser(
+		req.GetOrganizationId(),
+		req.GetUserId(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	roles, isMember, err := g.manager.UserRoles(ctx, userID, organizationID)
+	if err != nil {
+		return nil, mapPolicyError(ctx, "authz list user roles", err)
+	}
+
+	out := &pb.ListUserOrganizationRolesResponse{}
+	out.SetRoles(roles)
+	out.SetIsMember(isMember)
 	return out, nil
 }
 
@@ -127,4 +131,33 @@ func parseOrganizationAndUser(rawOrgID, rawUserID string) (uuid.UUID, uuid.UUID,
 		return uuid.Nil, uuid.Nil, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 	return organizationID, userID, nil
+}
+
+// rulesToProto converts policy rules to wire PolicyRule messages.
+func rulesToProto(rules []policy.Rule) []*pb.PolicyRule {
+	out := make([]*pb.PolicyRule, 0, len(rules))
+	for _, r := range rules {
+		msg := &pb.PolicyRule{}
+		msg.SetPtype(r.Ptype)
+		msg.SetValues(r.Values)
+		out = append(out, msg)
+	}
+	return out
+}
+
+// rulesFromProto converts wire PolicyRule messages to policy rules.
+func rulesFromProto(rules []*pb.PolicyRule) []policy.Rule {
+	out := make([]policy.Rule, 0, len(rules))
+	for _, msg := range rules {
+		out = append(out, policy.Rule{Ptype: msg.GetPtype(), Values: msg.GetValues()})
+	}
+	return out
+}
+
+// revisionToProto renders a revision id ("" when none yet).
+func revisionToProto(revision uuid.UUID) string {
+	if revision == uuid.Nil {
+		return ""
+	}
+	return revision.String()
 }

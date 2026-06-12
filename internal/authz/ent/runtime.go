@@ -6,10 +6,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/authz/ent/casbinrule"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
+	"sanzi.io/muid/internal/authz/ent/policyrevision"
 	"sanzi.io/muid/internal/authz/ent/schema"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
@@ -18,6 +19,70 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	casbinruleFields := schema.CasbinRule{}.Fields()
+	_ = casbinruleFields
+	// casbinruleDescPtype is the schema descriptor for ptype field.
+	casbinruleDescPtype := casbinruleFields[1].Descriptor()
+	// casbinrule.PtypeValidator is a validator for the "ptype" field. It is called by the builders before save.
+	casbinrule.PtypeValidator = func() func(string) error {
+		validators := casbinruleDescPtype.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(ptype string) error {
+			for _, fn := range fns {
+				if err := fn(ptype); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// casbinruleDescV0 is the schema descriptor for v0 field.
+	casbinruleDescV0 := casbinruleFields[2].Descriptor()
+	// casbinrule.DefaultV0 holds the default value on creation for the v0 field.
+	casbinrule.DefaultV0 = casbinruleDescV0.Default.(string)
+	// casbinrule.V0Validator is a validator for the "v0" field. It is called by the builders before save.
+	casbinrule.V0Validator = casbinruleDescV0.Validators[0].(func(string) error)
+	// casbinruleDescV1 is the schema descriptor for v1 field.
+	casbinruleDescV1 := casbinruleFields[3].Descriptor()
+	// casbinrule.DefaultV1 holds the default value on creation for the v1 field.
+	casbinrule.DefaultV1 = casbinruleDescV1.Default.(string)
+	// casbinrule.V1Validator is a validator for the "v1" field. It is called by the builders before save.
+	casbinrule.V1Validator = casbinruleDescV1.Validators[0].(func(string) error)
+	// casbinruleDescV2 is the schema descriptor for v2 field.
+	casbinruleDescV2 := casbinruleFields[4].Descriptor()
+	// casbinrule.DefaultV2 holds the default value on creation for the v2 field.
+	casbinrule.DefaultV2 = casbinruleDescV2.Default.(string)
+	// casbinrule.V2Validator is a validator for the "v2" field. It is called by the builders before save.
+	casbinrule.V2Validator = casbinruleDescV2.Validators[0].(func(string) error)
+	// casbinruleDescV3 is the schema descriptor for v3 field.
+	casbinruleDescV3 := casbinruleFields[5].Descriptor()
+	// casbinrule.DefaultV3 holds the default value on creation for the v3 field.
+	casbinrule.DefaultV3 = casbinruleDescV3.Default.(string)
+	// casbinrule.V3Validator is a validator for the "v3" field. It is called by the builders before save.
+	casbinrule.V3Validator = casbinruleDescV3.Validators[0].(func(string) error)
+	// casbinruleDescV4 is the schema descriptor for v4 field.
+	casbinruleDescV4 := casbinruleFields[6].Descriptor()
+	// casbinrule.DefaultV4 holds the default value on creation for the v4 field.
+	casbinrule.DefaultV4 = casbinruleDescV4.Default.(string)
+	// casbinrule.V4Validator is a validator for the "v4" field. It is called by the builders before save.
+	casbinrule.V4Validator = casbinruleDescV4.Validators[0].(func(string) error)
+	// casbinruleDescV5 is the schema descriptor for v5 field.
+	casbinruleDescV5 := casbinruleFields[7].Descriptor()
+	// casbinrule.DefaultV5 holds the default value on creation for the v5 field.
+	casbinrule.DefaultV5 = casbinruleDescV5.Default.(string)
+	// casbinrule.V5Validator is a validator for the "v5" field. It is called by the builders before save.
+	casbinrule.V5Validator = casbinruleDescV5.Validators[0].(func(string) error)
+	// casbinruleDescCreatedAt is the schema descriptor for created_at field.
+	casbinruleDescCreatedAt := casbinruleFields[8].Descriptor()
+	// casbinrule.DefaultCreatedAt holds the default value on creation for the created_at field.
+	casbinrule.DefaultCreatedAt = casbinruleDescCreatedAt.Default.(func() time.Time)
+	// casbinruleDescID is the schema descriptor for id field.
+	casbinruleDescID := casbinruleFields[0].Descriptor()
+	// casbinrule.DefaultID holds the default value on creation for the id field.
+	casbinrule.DefaultID = casbinruleDescID.Default.(func() uuid.UUID)
 	organizationFields := schema.Organization{}.Fields()
 	_ = organizationFields
 	// organizationDescName is the schema descriptor for name field.
@@ -118,34 +183,14 @@ func init() {
 	organizationroleDescID := organizationroleFields[0].Descriptor()
 	// organizationrole.DefaultID holds the default value on creation for the id field.
 	organizationrole.DefaultID = organizationroleDescID.Default.(func() uuid.UUID)
-	rolepermissionFields := schema.RolePermission{}.Fields()
-	_ = rolepermissionFields
-	// rolepermissionDescPermission is the schema descriptor for permission field.
-	rolepermissionDescPermission := rolepermissionFields[2].Descriptor()
-	// rolepermission.PermissionValidator is a validator for the "permission" field. It is called by the builders before save.
-	rolepermission.PermissionValidator = func() func(string) error {
-		validators := rolepermissionDescPermission.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(permission string) error {
-			for _, fn := range fns {
-				if err := fn(permission); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
-	// rolepermissionDescCreatedAt is the schema descriptor for created_at field.
-	rolepermissionDescCreatedAt := rolepermissionFields[3].Descriptor()
-	// rolepermission.DefaultCreatedAt holds the default value on creation for the created_at field.
-	rolepermission.DefaultCreatedAt = rolepermissionDescCreatedAt.Default.(func() time.Time)
-	// rolepermissionDescID is the schema descriptor for id field.
-	rolepermissionDescID := rolepermissionFields[0].Descriptor()
-	// rolepermission.DefaultID holds the default value on creation for the id field.
-	rolepermission.DefaultID = rolepermissionDescID.Default.(func() uuid.UUID)
+	policyrevisionFields := schema.PolicyRevision{}.Fields()
+	_ = policyrevisionFields
+	// policyrevisionDescUpdatedAt is the schema descriptor for updated_at field.
+	policyrevisionDescUpdatedAt := policyrevisionFields[2].Descriptor()
+	// policyrevision.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	policyrevision.DefaultUpdatedAt = policyrevisionDescUpdatedAt.Default.(func() time.Time)
+	// policyrevision.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	policyrevision.UpdateDefaultUpdatedAt = policyrevisionDescUpdatedAt.UpdateDefault.(func() time.Time)
 	userrefFields := schema.UserRef{}.Fields()
 	_ = userrefFields
 	// userrefDescCreatedAt is the schema descriptor for created_at field.

@@ -9,6 +9,18 @@ import (
 	"sanzi.io/muid/internal/authz/ent"
 )
 
+// The CasbinRuleFunc type is an adapter to allow the use of ordinary
+// function as CasbinRule mutator.
+type CasbinRuleFunc func(context.Context, *ent.CasbinRuleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f CasbinRuleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.CasbinRuleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.CasbinRuleMutation", m)
+}
+
 // The OrganizationFunc type is an adapter to allow the use of ordinary
 // function as Organization mutator.
 type OrganizationFunc func(context.Context, *ent.OrganizationMutation) (ent.Value, error)
@@ -45,16 +57,16 @@ func (f OrganizationRoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.V
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrganizationRoleMutation", m)
 }
 
-// The RolePermissionFunc type is an adapter to allow the use of ordinary
-// function as RolePermission mutator.
-type RolePermissionFunc func(context.Context, *ent.RolePermissionMutation) (ent.Value, error)
+// The PolicyRevisionFunc type is an adapter to allow the use of ordinary
+// function as PolicyRevision mutator.
+type PolicyRevisionFunc func(context.Context, *ent.PolicyRevisionMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f RolePermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.RolePermissionMutation); ok {
+func (f PolicyRevisionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.PolicyRevisionMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.RolePermissionMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.PolicyRevisionMutation", m)
 }
 
 // The UserRefFunc type is an adapter to allow the use of ordinary

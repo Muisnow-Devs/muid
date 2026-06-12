@@ -12,10 +12,11 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/authz/ent/casbinrule"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
+	"sanzi.io/muid/internal/authz/ent/policyrevision"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -77,10 +78,11 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			casbinrule.Table:         casbinrule.ValidColumn,
 			organization.Table:       organization.ValidColumn,
 			organizationmember.Table: organizationmember.ValidColumn,
 			organizationrole.Table:   organizationrole.ValidColumn,
-			rolepermission.Table:     rolepermission.ValidColumn,
+			policyrevision.Table:     policyrevision.ValidColumn,
 			userref.Table:            userref.ValidColumn,
 		})
 	})

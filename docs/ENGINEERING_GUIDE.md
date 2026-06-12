@@ -22,7 +22,7 @@ There is no separate frontend design system in this repo; the “contract surfac
 
 | Area | Role |
 |------|------|
-| **`cmd/<service>/main.go`** | Process entrypoints. Present today: **`authn`**, **`profile`**, **`mailer`**. |
+| **`cmd/<service>/main.go`** | Process entrypoints. Present today: **`authn`**, **`authz`**, **`profile`**, **`mailer`** (`cmd/gateway` is an empty placeholder). |
 | **`internal/<domain>/`** | Domain logic per service (`internal/authn`, `internal/profile`, `internal/mailer`, plus shared packages like `internal/session`, `internal/identity`, `internal/media`, `internal/templates`). |
 | **`infra/<backend>/`** | Reusable infrastructure: **interfaces in `interface.go`**, implementations in sibling files (`infra/redis`, `infra/nats`, `infra/smtp`, `infra/r2`, `infra/secretmanager`, `infra/mocked`, …). |
 | **`pkg/`** | Shared libraries (`pkg/grpc_utils`, `pkg/log`, `pkg/sqldb`, `pkg/entpostgres`, `pkg/enttx`, `pkg/errutil`, `pkg/validation`, `pkg/shared`, …). Contracts such as **`pkg/shared/secretmanager.SecretManager`** live under **`pkg/shared/<name>/`**. |
@@ -37,11 +37,11 @@ There is no separate frontend design system in this repo; the “contract surfac
 Each service follows the same broad shape:
 
 1. **`cmd/<service>/main.go`** — load config with **`pkg/shared.LoadConfig[app.Config](app.ConfigEnvPrefix)`**, construct infra, construct app, start, graceful shutdown on signals.
-2. **`internal/<service>/app/config.go`** — `envconfig` struct tags; **`ConfigEnvPrefix`** is `AUTHN`, `PROFILE`, or `MAILER`.
+2. **`internal/<service>/app/config.go`** — `envconfig` struct tags; **`ConfigEnvPrefix`** is `AUTHN`, `AUTHZ`, `PROFILE`, or `MAILER`.
 3. **`internal/<service>/app/bootstrap.go`** (or equivalent) — **`New*Infra`**: open NATS/Redis/R2/SMTP as needed, open DB via **`pkg/entpostgres`**, register cleanup with **`errutil.Close` / `errutil.CloseIf`**.
 4. **`internal/<service>/app/service.go`** (or similar) — gRPC server wiring, interceptor chain, `Register*Server`.
 
-**Makefile:** `make proto` runs `buf build` and `buf generate`. `make build` targets a fixed `SERVICES` list that includes **`authz`** and **`gateway`**; those **`cmd/`** trees are **not** in the repo yet—use explicit `go build ./cmd/authn` (etc.) until those commands exist.
+**Makefile:** `make proto` runs `buf build` and `buf generate`. `make build` targets a fixed `SERVICES` list that includes **`gateway`**; that **`cmd/`** tree is still an empty placeholder—use explicit `go build ./cmd/authn` (etc.) until it exists.
 
 ---
 
@@ -190,6 +190,19 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 - **Transition state:** **`internal/session`** (`AuthFlowKind`, `EmailOTPFlow`, `OIDCFlow`, `PasskeyFlow` pointers on `SessionStore`) with Redis backing **`internal/authn/kv`** implementing **`internal/session.AuthTransitionStore`**.
 - **Identity providers:** **`internal/authn/identity`** implement **`internal/identity.IdentityProvider`**; **`internal/authn/app/handler.go`** routes **`ContinueAuthSession`** using transition `Provider` and maps `proof` into **`ContinueInput.Payload`**.
 - **Account domain:** **`internal/authn/account`** exposes small interfaces (`Provisioning`, `Email`, `OIDC`, `Federated`, `Passkey`, `Session`, `LoginNotifier`) wired via **`account.Wire`** in bootstrap; callers inject only what they need. Profile **`CreateProfile`** when configured; session token shape per proto. Profile gRPC dial attaches **`log.UnaryClientInterceptor()`** for **`x-trace-id`**.
+
+---
+
+## Authz service (Casbin)
+
+Authz is the organization/RBAC authority, built on **casbin v2** with domain (= organization UUID) RBAC.
+
+- **Permission strings:** **`<service>/<method>.<action>`** (e.g. `authn/oidc_client.manage`, `authz/member.manage`). The **slash** is deliberate — OIDC scopes use `service:method.action` (colon) and permissions must stay visually distinct. Shared model + parse helpers live in **`pkg/shared/authzmodel`** (casbin obj = `service/method`, act = `action`).
+- **Rule storage:** the **`casbin_rule`** table (Ent schema `CasbinRule`, ptype + v0–v5), written **only** by **`internal/authz/policy.Manager`** in the same `enttx` transaction as the relational rows. `OrganizationRole` holds role metadata only (the old `RolePermission` table is gone — drop it manually in existing databases: `DROP TABLE IF EXISTS role_permissions;`). `OrganizationMember` rows are mirrored to `g, user:<uuid>, role:<name>, <orgID>` rules.
+- **System roles:** `owner > admin > manager > member`, seeded per organization, hierarchy + default grants come from the **static policy config** (`internal/authz/policy/default_policy.json`, overridable via `AUTHZ_POLICY_CONFIG_PATH`/`_JSON`) as wildcard-domain (`*`) rules; `policy.Manager.Reconcile` diffs them idempotently at startup and on the `ReloadPolicyConfig` admin RPC. Guard rails: only owners grant/revoke `owner`; the last owner cannot be removed/demoted; system roles are immutable.
+- **Two listeners:** public **`AUTHZ_PORT`** serves `AuthzUserService` (my orgs/permissions) + `AuthzOrganizationAdminService` (role CRUD, member management; each RPC casbin-enforced, e.g. `authz/role.manage`) — identity comes from the gateway-injected **`x-user-id`** metadata (`authzgrpc.UserIdentityInterceptor`; authz never verifies tokens, so this listener must sit behind the gateway). Internal **`AUTHZ_INTERNAL_PORT`** serves `AuthzService` (service-to-service checks + `ListNamespacePolicies`/`ListUserOrganizationRoles` relation loading) + `AuthzAdminService` (IdP/platform management, no per-RPC auth) and must never be gateway-exposed.
+- **Events:** every committed mutation publishes **`muid.event.v1.authz.PolicyChangedEvent`** on **`authz.policy.changed`** (`pkg/shared/topics`); authz replicas reload on foreign events (`origin_instance_id` skips self), and a periodic `LoadPolicy` (`AUTHZ_POLICY_RELOAD_SECONDS`) is the drift safety net. Transport is NATS today via `pkg/shared/pubsub` (GCP Pub/Sub can swap in behind the same contract).
+- **Consuming services:** **`pkg/authzclient.Enforcer`** embeds a local casbin enforcer — it loads the service's namespace rules from `ListNamespacePolicies`, resolves user roles on demand (Redis-cached, `ListUserOrganizationRoles`), and invalidates on `authz.policy.changed`; decisions are local, no per-check RPC. Authn wires it in `wireOIDCProviderInfra` (`AUTHN_AUTHZ_GRPC_ADDR` → **internal** listener; `AUTHN_AUTHZ_ROLE_CACHE_TTL_SECONDS`, `AUTHN_AUTHZ_POLICY_REFRESH_SECONDS`) and adapts it via `internal/authn/oidc/policy.LocalEnforcerAccess`.
 
 ---
 

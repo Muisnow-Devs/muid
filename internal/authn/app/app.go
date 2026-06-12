@@ -73,7 +73,7 @@ func newOIDCProvider(infra *InfraDependencies) *oidc.Provider {
 		return nil
 	}
 	evaluator := oidcpolicy.NewEvaluator(
-		oidcpolicy.GRPCMembership{Client: infra.AuthzCli},
+		oidcpolicy.LocalEnforcerAccess{Enforcer: infra.AuthzEnforcer},
 		oidcpolicy.EntAllowlist{DB: infra.entClient},
 	)
 	return oidc.NewProvider(
@@ -102,7 +102,7 @@ func newOIDCAdmin(infra *InfraDependencies) *oidc.Admin {
 	}
 	return oidc.NewAdmin(
 		infra.entClient,
-		oidcpolicy.GRPCMembership{Client: infra.AuthzCli},
+		oidcpolicy.LocalEnforcerAccess{Enforcer: infra.AuthzEnforcer},
 	)
 }
 

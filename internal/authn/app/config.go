@@ -9,7 +9,6 @@ import (
 	"github.com/go-webauthn/webauthn/webauthn"
 	"google.golang.org/grpc"
 
-	authzpb "sanzi.io/muid/api/proto/authz/v1"
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	authnconfig "sanzi.io/muid/internal/authn/config"
 	authnent "sanzi.io/muid/internal/authn/ent"
@@ -18,6 +17,7 @@ import (
 	"sanzi.io/muid/internal/otp"
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/internal/signature"
+	"sanzi.io/muid/pkg/authzclient"
 	"sanzi.io/muid/pkg/shared/kv"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
@@ -104,14 +104,20 @@ type Config struct {
 	// SessionAccessTokenIssuer enables short-lived JWT access tokens for
 	// sessions when set (iss claim). Requires SignatureSecretName. Independent
 	// of OIDCIssuer; both features share the one SignatureManager.
-	SessionAccessTokenIssuer string `envconfig:"SESSION_ACCESS_TOKEN_ISSUER" default:""`
+	SessionAccessTokenIssuer string `envconfig:"SESSION_ACCESS_TOKEN_ISSUER"      default:""`
 	// SessionAccessTokenTTLSeconds is clamped to [1, 300] (5 minutes max).
 	SessionAccessTokenTTLSeconds int `envconfig:"SESSION_ACCESS_TOKEN_TTL_SECONDS" default:"300"`
 
-	// AuthzGRPCAddr is the authz gRPC authority (host:port) used for
-	// organization membership/permission checks. The outbound client reuses
-	// the Profile resilience settings above.
-	AuthzGRPCAddr string `envconfig:"AUTHZ_GRPC_ADDR" default:""`
+	// AuthzGRPCAddr is the authz **internal-listener** gRPC authority
+	// (host:port) the local enforcer loads permission relations from. The
+	// outbound client reuses the Profile resilience settings above.
+	AuthzGRPCAddr string `envconfig:"AUTHZ_GRPC_ADDR"              default:""`
+	// AuthzRoleCacheTTLSeconds bounds how long a user's resolved org roles
+	// are reused by the local enforcer before re-fetching from authz.
+	AuthzRoleCacheTTLSeconds int `envconfig:"AUTHZ_ROLE_CACHE_TTL_SECONDS" default:"300"`
+	// AuthzPolicyRefreshSeconds is the periodic full resync of the authn
+	// namespace policies (drift safety net for missed events).
+	AuthzPolicyRefreshSeconds int `envconfig:"AUTHZ_POLICY_REFRESH_SECONDS" default:"300"`
 }
 
 // OIDCProviderEnabled reports whether the OIDC provider surface is configured.
@@ -151,10 +157,12 @@ type InfraDependencies struct {
 	SignatureManager signature.SignatureManager
 
 	// OIDC provider dependencies; nil/zero when the OP is not configured.
-	AuthzCli authzpb.AuthzServiceClient
-	OIDCCodes        *oidcstore.KVCodeStore
-	OIDCPendings     *oidcstore.KVPendingStore
-	OIDCDevices      *oidcstore.KVDeviceStore
+	// AuthzEnforcer is the service-local casbin enforcer replicating authn's
+	// permission relations from authz (pkg/authzclient).
+	AuthzEnforcer *authzclient.Enforcer
+	OIDCCodes     *oidcstore.KVCodeStore
+	OIDCPendings  *oidcstore.KVPendingStore
+	OIDCDevices   *oidcstore.KVDeviceStore
 
 	entClient   *authnent.Client
 	profileConn *grpc.ClientConn
@@ -169,6 +177,12 @@ func (d *InfraDependencies) Close() error {
 	}
 	if d.profileConn != nil {
 		err := d.profileConn.Close()
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if d.AuthzEnforcer != nil {
+		err := d.AuthzEnforcer.Close()
 		if err != nil {
 			errs = append(errs, err)
 		}

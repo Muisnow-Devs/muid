@@ -16,10 +16,11 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/authz/ent/casbinrule"
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
-	"sanzi.io/muid/internal/authz/ent/rolepermission"
+	"sanzi.io/muid/internal/authz/ent/policyrevision"
 	"sanzi.io/muid/internal/authz/ent/userref"
 )
 
@@ -28,14 +29,16 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// CasbinRule is the client for interacting with the CasbinRule builders.
+	CasbinRule *CasbinRuleClient
 	// Organization is the client for interacting with the Organization builders.
 	Organization *OrganizationClient
 	// OrganizationMember is the client for interacting with the OrganizationMember builders.
 	OrganizationMember *OrganizationMemberClient
 	// OrganizationRole is the client for interacting with the OrganizationRole builders.
 	OrganizationRole *OrganizationRoleClient
-	// RolePermission is the client for interacting with the RolePermission builders.
-	RolePermission *RolePermissionClient
+	// PolicyRevision is the client for interacting with the PolicyRevision builders.
+	PolicyRevision *PolicyRevisionClient
 	// UserRef is the client for interacting with the UserRef builders.
 	UserRef *UserRefClient
 }
@@ -49,10 +52,11 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.CasbinRule = NewCasbinRuleClient(c.config)
 	c.Organization = NewOrganizationClient(c.config)
 	c.OrganizationMember = NewOrganizationMemberClient(c.config)
 	c.OrganizationRole = NewOrganizationRoleClient(c.config)
-	c.RolePermission = NewRolePermissionClient(c.config)
+	c.PolicyRevision = NewPolicyRevisionClient(c.config)
 	c.UserRef = NewUserRefClient(c.config)
 }
 
@@ -146,10 +150,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                ctx,
 		config:             cfg,
+		CasbinRule:         NewCasbinRuleClient(cfg),
 		Organization:       NewOrganizationClient(cfg),
 		OrganizationMember: NewOrganizationMemberClient(cfg),
 		OrganizationRole:   NewOrganizationRoleClient(cfg),
-		RolePermission:     NewRolePermissionClient(cfg),
+		PolicyRevision:     NewPolicyRevisionClient(cfg),
 		UserRef:            NewUserRefClient(cfg),
 	}, nil
 }
@@ -170,10 +175,11 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                ctx,
 		config:             cfg,
+		CasbinRule:         NewCasbinRuleClient(cfg),
 		Organization:       NewOrganizationClient(cfg),
 		OrganizationMember: NewOrganizationMemberClient(cfg),
 		OrganizationRole:   NewOrganizationRoleClient(cfg),
-		RolePermission:     NewRolePermissionClient(cfg),
+		PolicyRevision:     NewPolicyRevisionClient(cfg),
 		UserRef:            NewUserRefClient(cfg),
 	}, nil
 }
@@ -181,7 +187,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		Organization.
+//		CasbinRule.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -203,38 +209,175 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.Organization.Use(hooks...)
-	c.OrganizationMember.Use(hooks...)
-	c.OrganizationRole.Use(hooks...)
-	c.RolePermission.Use(hooks...)
-	c.UserRef.Use(hooks...)
+	for _, n := range []interface{ Use(...Hook) }{
+		c.CasbinRule, c.Organization, c.OrganizationMember, c.OrganizationRole,
+		c.PolicyRevision, c.UserRef,
+	} {
+		n.Use(hooks...)
+	}
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.Organization.Intercept(interceptors...)
-	c.OrganizationMember.Intercept(interceptors...)
-	c.OrganizationRole.Intercept(interceptors...)
-	c.RolePermission.Intercept(interceptors...)
-	c.UserRef.Intercept(interceptors...)
+	for _, n := range []interface{ Intercept(...Interceptor) }{
+		c.CasbinRule, c.Organization, c.OrganizationMember, c.OrganizationRole,
+		c.PolicyRevision, c.UserRef,
+	} {
+		n.Intercept(interceptors...)
+	}
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *CasbinRuleMutation:
+		return c.CasbinRule.mutate(ctx, m)
 	case *OrganizationMutation:
 		return c.Organization.mutate(ctx, m)
 	case *OrganizationMemberMutation:
 		return c.OrganizationMember.mutate(ctx, m)
 	case *OrganizationRoleMutation:
 		return c.OrganizationRole.mutate(ctx, m)
-	case *RolePermissionMutation:
-		return c.RolePermission.mutate(ctx, m)
+	case *PolicyRevisionMutation:
+		return c.PolicyRevision.mutate(ctx, m)
 	case *UserRefMutation:
 		return c.UserRef.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// CasbinRuleClient is a client for the CasbinRule schema.
+type CasbinRuleClient struct {
+	config
+}
+
+// NewCasbinRuleClient returns a client for the CasbinRule from the given config.
+func NewCasbinRuleClient(c config) *CasbinRuleClient {
+	return &CasbinRuleClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `casbinrule.Hooks(f(g(h())))`.
+func (c *CasbinRuleClient) Use(hooks ...Hook) {
+	c.hooks.CasbinRule = append(c.hooks.CasbinRule, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `casbinrule.Intercept(f(g(h())))`.
+func (c *CasbinRuleClient) Intercept(interceptors ...Interceptor) {
+	c.inters.CasbinRule = append(c.inters.CasbinRule, interceptors...)
+}
+
+// Create returns a builder for creating a CasbinRule entity.
+func (c *CasbinRuleClient) Create() *CasbinRuleCreate {
+	mutation := newCasbinRuleMutation(c.config, OpCreate)
+	return &CasbinRuleCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of CasbinRule entities.
+func (c *CasbinRuleClient) CreateBulk(builders ...*CasbinRuleCreate) *CasbinRuleCreateBulk {
+	return &CasbinRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *CasbinRuleClient) MapCreateBulk(slice any, setFunc func(*CasbinRuleCreate, int)) *CasbinRuleCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &CasbinRuleCreateBulk{err: fmt.Errorf("calling to CasbinRuleClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*CasbinRuleCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &CasbinRuleCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for CasbinRule.
+func (c *CasbinRuleClient) Update() *CasbinRuleUpdate {
+	mutation := newCasbinRuleMutation(c.config, OpUpdate)
+	return &CasbinRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *CasbinRuleClient) UpdateOne(_m *CasbinRule) *CasbinRuleUpdateOne {
+	mutation := newCasbinRuleMutation(c.config, OpUpdateOne, withCasbinRule(_m))
+	return &CasbinRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *CasbinRuleClient) UpdateOneID(id uuid.UUID) *CasbinRuleUpdateOne {
+	mutation := newCasbinRuleMutation(c.config, OpUpdateOne, withCasbinRuleID(id))
+	return &CasbinRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for CasbinRule.
+func (c *CasbinRuleClient) Delete() *CasbinRuleDelete {
+	mutation := newCasbinRuleMutation(c.config, OpDelete)
+	return &CasbinRuleDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *CasbinRuleClient) DeleteOne(_m *CasbinRule) *CasbinRuleDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *CasbinRuleClient) DeleteOneID(id uuid.UUID) *CasbinRuleDeleteOne {
+	builder := c.Delete().Where(casbinrule.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &CasbinRuleDeleteOne{builder}
+}
+
+// Query returns a query builder for CasbinRule.
+func (c *CasbinRuleClient) Query() *CasbinRuleQuery {
+	return &CasbinRuleQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeCasbinRule},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a CasbinRule entity by its id.
+func (c *CasbinRuleClient) Get(ctx context.Context, id uuid.UUID) (*CasbinRule, error) {
+	return c.Query().Where(casbinrule.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *CasbinRuleClient) GetX(ctx context.Context, id uuid.UUID) *CasbinRule {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *CasbinRuleClient) Hooks() []Hook {
+	return c.hooks.CasbinRule
+}
+
+// Interceptors returns the client interceptors.
+func (c *CasbinRuleClient) Interceptors() []Interceptor {
+	return c.inters.CasbinRule
+}
+
+func (c *CasbinRuleClient) mutate(ctx context.Context, m *CasbinRuleMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&CasbinRuleCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&CasbinRuleUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&CasbinRuleUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&CasbinRuleDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown CasbinRule mutation op: %q", m.Op())
 	}
 }
 
@@ -708,22 +851,6 @@ func (c *OrganizationRoleClient) QueryOrganization(_m *OrganizationRole) *Organi
 	return query
 }
 
-// QueryPermissions queries the permissions edge of a OrganizationRole.
-func (c *OrganizationRoleClient) QueryPermissions(_m *OrganizationRole) *RolePermissionQuery {
-	query := (&RolePermissionClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(organizationrole.Table, organizationrole.FieldID, id),
-			sqlgraph.To(rolepermission.Table, rolepermission.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, organizationrole.PermissionsTable, organizationrole.PermissionsColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // QueryMembers queries the members edge of a OrganizationRole.
 func (c *OrganizationRoleClient) QueryMembers(_m *OrganizationRole) *OrganizationMemberQuery {
 	query := (&OrganizationMemberClient{config: c.config}).Query()
@@ -765,107 +892,107 @@ func (c *OrganizationRoleClient) mutate(ctx context.Context, m *OrganizationRole
 	}
 }
 
-// RolePermissionClient is a client for the RolePermission schema.
-type RolePermissionClient struct {
+// PolicyRevisionClient is a client for the PolicyRevision schema.
+type PolicyRevisionClient struct {
 	config
 }
 
-// NewRolePermissionClient returns a client for the RolePermission from the given config.
-func NewRolePermissionClient(c config) *RolePermissionClient {
-	return &RolePermissionClient{config: c}
+// NewPolicyRevisionClient returns a client for the PolicyRevision from the given config.
+func NewPolicyRevisionClient(c config) *PolicyRevisionClient {
+	return &PolicyRevisionClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `rolepermission.Hooks(f(g(h())))`.
-func (c *RolePermissionClient) Use(hooks ...Hook) {
-	c.hooks.RolePermission = append(c.hooks.RolePermission, hooks...)
+// A call to `Use(f, g, h)` equals to `policyrevision.Hooks(f(g(h())))`.
+func (c *PolicyRevisionClient) Use(hooks ...Hook) {
+	c.hooks.PolicyRevision = append(c.hooks.PolicyRevision, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `rolepermission.Intercept(f(g(h())))`.
-func (c *RolePermissionClient) Intercept(interceptors ...Interceptor) {
-	c.inters.RolePermission = append(c.inters.RolePermission, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `policyrevision.Intercept(f(g(h())))`.
+func (c *PolicyRevisionClient) Intercept(interceptors ...Interceptor) {
+	c.inters.PolicyRevision = append(c.inters.PolicyRevision, interceptors...)
 }
 
-// Create returns a builder for creating a RolePermission entity.
-func (c *RolePermissionClient) Create() *RolePermissionCreate {
-	mutation := newRolePermissionMutation(c.config, OpCreate)
-	return &RolePermissionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a PolicyRevision entity.
+func (c *PolicyRevisionClient) Create() *PolicyRevisionCreate {
+	mutation := newPolicyRevisionMutation(c.config, OpCreate)
+	return &PolicyRevisionCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of RolePermission entities.
-func (c *RolePermissionClient) CreateBulk(builders ...*RolePermissionCreate) *RolePermissionCreateBulk {
-	return &RolePermissionCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of PolicyRevision entities.
+func (c *PolicyRevisionClient) CreateBulk(builders ...*PolicyRevisionCreate) *PolicyRevisionCreateBulk {
+	return &PolicyRevisionCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *RolePermissionClient) MapCreateBulk(slice any, setFunc func(*RolePermissionCreate, int)) *RolePermissionCreateBulk {
+func (c *PolicyRevisionClient) MapCreateBulk(slice any, setFunc func(*PolicyRevisionCreate, int)) *PolicyRevisionCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &RolePermissionCreateBulk{err: fmt.Errorf("calling to RolePermissionClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &PolicyRevisionCreateBulk{err: fmt.Errorf("calling to PolicyRevisionClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*RolePermissionCreate, rv.Len())
+	builders := make([]*PolicyRevisionCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &RolePermissionCreateBulk{config: c.config, builders: builders}
+	return &PolicyRevisionCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for RolePermission.
-func (c *RolePermissionClient) Update() *RolePermissionUpdate {
-	mutation := newRolePermissionMutation(c.config, OpUpdate)
-	return &RolePermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for PolicyRevision.
+func (c *PolicyRevisionClient) Update() *PolicyRevisionUpdate {
+	mutation := newPolicyRevisionMutation(c.config, OpUpdate)
+	return &PolicyRevisionUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *RolePermissionClient) UpdateOne(_m *RolePermission) *RolePermissionUpdateOne {
-	mutation := newRolePermissionMutation(c.config, OpUpdateOne, withRolePermission(_m))
-	return &RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *PolicyRevisionClient) UpdateOne(_m *PolicyRevision) *PolicyRevisionUpdateOne {
+	mutation := newPolicyRevisionMutation(c.config, OpUpdateOne, withPolicyRevision(_m))
+	return &PolicyRevisionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *RolePermissionClient) UpdateOneID(id uuid.UUID) *RolePermissionUpdateOne {
-	mutation := newRolePermissionMutation(c.config, OpUpdateOne, withRolePermissionID(id))
-	return &RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *PolicyRevisionClient) UpdateOneID(id int) *PolicyRevisionUpdateOne {
+	mutation := newPolicyRevisionMutation(c.config, OpUpdateOne, withPolicyRevisionID(id))
+	return &PolicyRevisionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for RolePermission.
-func (c *RolePermissionClient) Delete() *RolePermissionDelete {
-	mutation := newRolePermissionMutation(c.config, OpDelete)
-	return &RolePermissionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for PolicyRevision.
+func (c *PolicyRevisionClient) Delete() *PolicyRevisionDelete {
+	mutation := newPolicyRevisionMutation(c.config, OpDelete)
+	return &PolicyRevisionDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *RolePermissionClient) DeleteOne(_m *RolePermission) *RolePermissionDeleteOne {
+func (c *PolicyRevisionClient) DeleteOne(_m *PolicyRevision) *PolicyRevisionDeleteOne {
 	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RolePermissionClient) DeleteOneID(id uuid.UUID) *RolePermissionDeleteOne {
-	builder := c.Delete().Where(rolepermission.ID(id))
+func (c *PolicyRevisionClient) DeleteOneID(id int) *PolicyRevisionDeleteOne {
+	builder := c.Delete().Where(policyrevision.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &RolePermissionDeleteOne{builder}
+	return &PolicyRevisionDeleteOne{builder}
 }
 
-// Query returns a query builder for RolePermission.
-func (c *RolePermissionClient) Query() *RolePermissionQuery {
-	return &RolePermissionQuery{
+// Query returns a query builder for PolicyRevision.
+func (c *PolicyRevisionClient) Query() *PolicyRevisionQuery {
+	return &PolicyRevisionQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeRolePermission},
+		ctx:    &QueryContext{Type: TypePolicyRevision},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a RolePermission entity by its id.
-func (c *RolePermissionClient) Get(ctx context.Context, id uuid.UUID) (*RolePermission, error) {
-	return c.Query().Where(rolepermission.ID(id)).Only(ctx)
+// Get returns a PolicyRevision entity by its id.
+func (c *PolicyRevisionClient) Get(ctx context.Context, id int) (*PolicyRevision, error) {
+	return c.Query().Where(policyrevision.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *RolePermissionClient) GetX(ctx context.Context, id uuid.UUID) *RolePermission {
+func (c *PolicyRevisionClient) GetX(ctx context.Context, id int) *PolicyRevision {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -873,44 +1000,28 @@ func (c *RolePermissionClient) GetX(ctx context.Context, id uuid.UUID) *RolePerm
 	return obj
 }
 
-// QueryRole queries the role edge of a RolePermission.
-func (c *RolePermissionClient) QueryRole(_m *RolePermission) *OrganizationRoleQuery {
-	query := (&OrganizationRoleClient{config: c.config}).Query()
-	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := _m.ID
-		step := sqlgraph.NewStep(
-			sqlgraph.From(rolepermission.Table, rolepermission.FieldID, id),
-			sqlgraph.To(organizationrole.Table, organizationrole.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, rolepermission.RoleTable, rolepermission.RoleColumn),
-		)
-		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
-		return fromV, nil
-	}
-	return query
-}
-
 // Hooks returns the client hooks.
-func (c *RolePermissionClient) Hooks() []Hook {
-	return c.hooks.RolePermission
+func (c *PolicyRevisionClient) Hooks() []Hook {
+	return c.hooks.PolicyRevision
 }
 
 // Interceptors returns the client interceptors.
-func (c *RolePermissionClient) Interceptors() []Interceptor {
-	return c.inters.RolePermission
+func (c *PolicyRevisionClient) Interceptors() []Interceptor {
+	return c.inters.PolicyRevision
 }
 
-func (c *RolePermissionClient) mutate(ctx context.Context, m *RolePermissionMutation) (Value, error) {
+func (c *PolicyRevisionClient) mutate(ctx context.Context, m *PolicyRevisionMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&RolePermissionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&PolicyRevisionCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&RolePermissionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&PolicyRevisionUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&RolePermissionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&PolicyRevisionUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&RolePermissionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&PolicyRevisionDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown RolePermission mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown PolicyRevision mutation op: %q", m.Op())
 	}
 }
 
@@ -1066,11 +1177,11 @@ func (c *UserRefClient) mutate(ctx context.Context, m *UserRefMutation) (Value, 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Organization, OrganizationMember, OrganizationRole, RolePermission,
+		CasbinRule, Organization, OrganizationMember, OrganizationRole, PolicyRevision,
 		UserRef []ent.Hook
 	}
 	inters struct {
-		Organization, OrganizationMember, OrganizationRole, RolePermission,
+		CasbinRule, Organization, OrganizationMember, OrganizationRole, PolicyRevision,
 		UserRef []ent.Interceptor
 	}
 )

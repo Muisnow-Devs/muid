@@ -1,0 +1,103 @@
+syntax = "proto3";
+
+package muid.authz.v1;
+
+import "authz/v1/authz.proto";
+import "buf/validate/validate.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
+
+// AuthzAdminService is the IdP/platform-management surface. It performs no
+// per-RPC authorization and is served exclusively on the internal listener
+// (AUTHZ_INTERNAL_PORT), which must never be reachable through the public
+// gateway.
+service AuthzAdminService {
+  rpc CreateOrganization(CreateOrganizationRequest) returns (CreateOrganizationResponse);
+  rpc DeleteOrganization(DeleteOrganizationRequest) returns (DeleteOrganizationResponse);
+  // SetOrganizationMember adds the member or changes their role without
+  // membership/permission checks (platform override).
+  rpc SetOrganizationMember(SetOrganizationMemberRequest) returns (SetOrganizationMemberResponse);
+
+  rpc ListCasbinRules(ListCasbinRulesRequest) returns (ListCasbinRulesResponse);
+  // Raw policy escape hatch; rules are written verbatim to casbin_rule.
+  rpc AddRawPolicies(AddRawPoliciesRequest) returns (AddRawPoliciesResponse);
+  rpc RemoveRawPolicies(RemoveRawPoliciesRequest) returns (RemoveRawPoliciesResponse);
+  // ReloadPolicyConfig re-runs the static-configuration reconciler
+  // (wildcard-domain system rules).
+  rpc ReloadPolicyConfig(ReloadPolicyConfigRequest) returns (ReloadPolicyConfigResponse);
+}
+
+message CreateOrganizationRequest {
+  string name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  string description = 2 [(buf.validate.field).string.max_len = 255];
+  string domain = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Seeded as the organization's first owner.
+  string owner_user_id = 4 [(buf.validate.field).string.uuid = true];
+}
+
+message CreateOrganizationResponse {
+  string organization_id = 1;
+}
+
+message DeleteOrganizationRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message DeleteOrganizationResponse {}
+
+message SetOrganizationMemberRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  string role = 3 [(buf.validate.field).string.pattern = "^[a-z][a-z0-9_]{1,63}$"];
+}
+
+message SetOrganizationMemberResponse {}
+
+message ListCasbinRulesRequest {
+  // Optional filters; empty matches all.
+  string ptype = 1 [(buf.validate.field).string = {in: ["", "p", "g"]}];
+  // Domain value ("*" or an organization UUID).
+  string domain = 2 [(buf.validate.field).string.max_len = 64];
+  int32 page_size = 3 [(buf.validate.field).int32 = {
+    gte: 0
+    lte: 1000
+  }];
+  string page_token = 4 [(buf.validate.field).string.max_len = 256];
+}
+
+message ListCasbinRulesResponse {
+  repeated PolicyRule rules = 1;
+  string next_page_token = 2;
+  string revision_id = 3;
+}
+
+message AddRawPoliciesRequest {
+  repeated PolicyRule rules = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+  }];
+}
+
+message AddRawPoliciesResponse {}
+
+message RemoveRawPoliciesRequest {
+  repeated PolicyRule rules = 1 [(buf.validate.field).repeated = {
+    min_items: 1
+    max_items: 500
+  }];
+}
+
+message RemoveRawPoliciesResponse {}
+
+message ReloadPolicyConfigRequest {}
+
+message ReloadPolicyConfigResponse {
+  bool changed = 1;
+  string revision_id = 2;
+}

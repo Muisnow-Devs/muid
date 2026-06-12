@@ -13,9 +13,11 @@ import (
 
 // OrganizationRole holds the schema definition for the OrganizationRole entity.
 //
-// Roles belong to a single organization. System roles (owner, admin, member) are
-// seeded automatically when an organization is created and may not be deleted.
-// Custom roles are created by organization admins.
+// Roles belong to a single organization. System roles (owner, admin, manager,
+// member) are seeded automatically when an organization is created and may not
+// be deleted. Custom roles are created by organization admins. This table only
+// holds role metadata: permission grants live in casbin_rule, maintained by
+// internal/authz/policy.
 type OrganizationRole struct {
 	ent.Schema
 }
@@ -32,8 +34,8 @@ func (OrganizationRole) Fields() []ent.Field {
 
 		field.String("description").MaxLen(255).Optional(),
 
-		// is_system marks built-in roles (e.g. "owner", "admin", "member") that cannot
-		// be deleted and whose names cannot be changed.
+		// is_system marks built-in roles ("owner", "admin", "manager", "member")
+		// that cannot be deleted and whose names cannot be changed.
 		field.Bool("is_system").Default(false).Immutable(),
 
 		field.Time("created_at").Default(time.Now).Immutable(),
@@ -58,8 +60,6 @@ func (OrganizationRole) Edges() []ent.Edge {
 			Field("organization_id").
 			Required().
 			Immutable(),
-
-		edge.To("permissions", RolePermission.Type),
 
 		edge.To("members", OrganizationMember.Type),
 	}

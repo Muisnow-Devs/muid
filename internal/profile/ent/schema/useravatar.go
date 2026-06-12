@@ -20,6 +20,8 @@ import (
 // Displayed avatar: among rows for this user_id where uploaded_at IS NOT NULL, take the row with the
 // greatest id (UUID v7 is time-ordered, so max(id) is deterministic latest completed asset).
 // Rows with uploaded_at == nil are in-flight presigned staging uploads only; they are ignored for display.
+// Staging-session rows (uploaded_at IS NULL) may be DELETEd when superseded by a newer upload session or
+// consumed by completion — only completed rows are append-only history.
 //
 // Persisted public_url (when set) must be derived from the configured CDN/assets base + object_key at
 // insert time, not third-party identity URLs.

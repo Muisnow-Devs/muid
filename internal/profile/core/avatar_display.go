@@ -1,4 +1,4 @@
-package profilegrpc
+package core
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"sanzi.io/muid/internal/profile/synthavatar"
 )
 
-// queryDisplayAvatar returns the avatar URL and object key for API responses.
+// displayAvatar returns the avatar URL and object key for API responses.
 //
 // Selection rule (keep in sync with schema comment on UserAvatar): among rows for this user
 // where uploaded_at is non-null, take the one with the greatest id (UUID v7 is time-ordered).
@@ -22,11 +22,11 @@ import (
 // Display URLs are composed from PROFILE_PUBLIC_ASSETS_URL + object_key when avatar storage is
 // configured; legacy rows with object_key under virtual/ are treated as non-CDN and fall back
 // to an inline synthetic PNG (goavatar) without exposing stored third-party picture URLs.
-func (g *GRPCHandler) queryDisplayAvatar(
+func (m *Manager) displayAvatar(
 	ctx context.Context,
 	userID uuid.UUID,
 ) (avatarURL, objectKey string, err error) {
-	av, err := g.db.UserAvatar.Query().
+	av, err := m.db.UserAvatar.Query().
 		Where(
 			useravatar.HasUserWith(userprofile.ID(userID)),
 			useravatar.UploadedAtNotNil(),
@@ -53,8 +53,8 @@ func (g *GRPCHandler) queryDisplayAvatar(
 		return u, "", nil
 	}
 
-	if g.avatars != nil && av.ObjectKey != "" {
-		return g.avatars.publicProdURL(av.ObjectKey), av.ObjectKey, nil
+	if m.media != nil && av.ObjectKey != "" {
+		return m.media.PublicProdURL(av.ObjectKey), av.ObjectKey, nil
 	}
 
 	u, err := synthavatar.DataURL(userID)

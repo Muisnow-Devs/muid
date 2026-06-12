@@ -150,7 +150,8 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 
 ### Packages
 
-- **gRPC:** **`internal/profile/grpc`**, Go package name **`profilegrpc`** (RPC implementations and gRPC-only helpers).
+- **Domain:** **`internal/profile/core`** (`core.Manager`) — owns the ent client, transactions, the patchable-field registry, avatar upload orchestration, and `profile.change` event publishing. Errors are sentinels / `core.InvalidArgumentError`, never gRPC statuses.
+- **gRPC:** **`internal/profile/grpc`**, Go package name **`profilegrpc`** — thin adapters: proto↔domain mapping plus `mapProfileError` / `mapAvatarError` sentinel-to-status translation (same shape as authz).
 - **App wiring / server lifecycle:** **`internal/profile/app`** (`bootstrap.go`, `service.go`, config).
 - **NATS subscriber:** **`internal/profile/subscriber`** — e.g. **`RunProfileSubscriber`** unmarshals **`ProfileChangedEvent`** for `profile.change`.
 
@@ -164,7 +165,7 @@ Event-specific code goes under **`internal/mailer/handlers/<event>/`** (e.g. `ot
 
 - Request uses **`google.protobuf.FieldMask`** (`update_mask`) and **`optional IdentityInformation identity`**.
 - Allowlisted paths normalize to **`identity.<proto snake_case>`** (e.g. `identity.email`, `identity.username`). JSON camelCase in the second segment is accepted and canonicalized (see package docs in **`internal/profile/updatemask`**).
-- Parsing / tests: **`internal/profile/updatemask`**. DB mutators: registered from **`internal/profile/grpc`** (e.g. `profilePatchRegistry`).
+- Parsing / tests: **`internal/profile/updatemask`**. DB mutators + event field mapping: the unified registry in **`internal/profile/core/fields.go`** (`profileFields`) — one entry per patchable path covers validation, the ent setter, and the `ProfileChangedEvent` claim.
 
 ### Usernames
 

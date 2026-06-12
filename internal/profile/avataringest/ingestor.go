@@ -9,10 +9,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"sanzi.io/muid/infra/r2"
 	"sanzi.io/muid/internal/media"
 	"sanzi.io/muid/internal/profile/avatarkey"
-	"sanzi.io/muid/internal/profile/ent"
+	"sanzi.io/muid/internal/profile/core"
 	"sanzi.io/muid/internal/profile/synthavatar"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
@@ -21,34 +20,35 @@ import (
 
 const ingestTimeout = 3 * time.Minute
 
+// CommittedAvatarStore persists display-ready avatar rows (implemented by core.AvatarRepo).
+type CommittedAvatarStore interface {
+	InsertCommittedAvatar(
+		ctx context.Context,
+		userID, rowID uuid.UUID,
+		objectKey, publicURL string,
+		byteSize int64,
+	) error
+}
+
 // ExternalAvatarIngestor downloads HTTPS avatar sources, validates and rasterizes to WebP,
 // uploads to the production assets bucket, and INSERTs append-only UserAvatar rows.
 type ExternalAvatarIngestor struct {
-	db             *ent.Client
-	store          r2.ObjectStore
-	assetsBucket   string
-	publicAssetURL string
-	proc           media.RasterAvatarProcessor
+	rows  CommittedAvatarStore
+	media *core.AvatarMedia
+	proc  media.RasterAvatarProcessor
 }
 
 // NewExternalAvatarIngestor wires object storage and raster processing for URL-based ingestion.
 func NewExternalAvatarIngestor(
-	db *ent.Client,
-	store r2.ObjectStore,
-	assetsBucket, publicAssetURL string,
+	rows CommittedAvatarStore,
+	avatarMedia *core.AvatarMedia,
 	proc media.RasterAvatarProcessor,
 ) *ExternalAvatarIngestor {
 	return &ExternalAvatarIngestor{
-		db:             db,
-		store:          store,
-		assetsBucket:   assetsBucket,
-		publicAssetURL: publicAssetURL,
-		proc:           proc,
+		rows:  rows,
+		media: avatarMedia,
+		proc:  proc,
 	}
-}
-
-func (i *ExternalAvatarIngestor) publicProdURL(objectKey string) string {
-	return r2.PublicObjectURL(i.publicAssetURL, objectKey)
 }
 
 // prepareAndUploadFromRaw validates raster bytes, converts to WebP, uploads to assets bucket.
@@ -74,9 +74,9 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(
 	rowID = shared.UUIDV7()
 	objectKey = avatarkey.ProductionWebPObjectKey(userID.String(), rowID.String())
 	ctx, putSpan := tracing.StartSpan(ctx, "avataringest.upload")
-	err = i.store.PutObject(
+	err = i.media.Store.PutObject(
 		ctx,
-		i.assetsBucket,
+		i.media.AssetsBucket,
 		objectKey,
 		webp,
 		media.ContentTypeWebP,
@@ -85,7 +85,7 @@ func (i *ExternalAvatarIngestor) prepareAndUploadFromRaw(
 	if err != nil {
 		return uuid.Nil, "", "", 0, err
 	}
-	publicURL = i.publicProdURL(objectKey)
+	publicURL = i.media.PublicProdURL(objectKey)
 	return rowID, objectKey, publicURL, int64(len(webp)), nil
 }
 
@@ -108,16 +108,7 @@ func (i *ExternalAvatarIngestor) insertCommittedAvatar(
 	objectKey, publicURL string,
 	byteSize int64,
 ) error {
-	_, err := i.db.UserAvatar.Create().
-		SetID(rowID).
-		SetUserID(userID).
-		SetObjectKey(objectKey).
-		SetContentType(media.ContentTypeWebP).
-		SetByteSize(byteSize).
-		SetPublicURL(publicURL).
-		SetUploadedAt(time.Now()).
-		Save(ctx)
-	return err
+	return i.rows.InsertCommittedAvatar(ctx, userID, rowID, objectKey, publicURL, byteSize)
 }
 
 // IngestSyntheticLocal generates a deterministic goavatar PNG for userID, then uses the same WebP upload path as HTTPS ingestion.

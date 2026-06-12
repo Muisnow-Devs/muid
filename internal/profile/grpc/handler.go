@@ -2,37 +2,17 @@ package profilegrpc
 
 import (
 	pb "sanzi.io/muid/api/proto/profile/v1"
-	"sanzi.io/muid/internal/media"
-	"sanzi.io/muid/internal/profile/avataringest"
-	"sanzi.io/muid/internal/profile/ent"
-	"sanzi.io/muid/pkg/shared/pubsub"
+	"sanzi.io/muid/internal/profile/core"
 )
 
+// GRPCHandler adapts the profile domain manager to the ProfileService API:
+// proto↔domain mapping plus sentinel-to-status error translation only.
 type GRPCHandler struct {
 	pb.UnimplementedProfileServiceServer
 
-	db           *ent.Client
-	pub          pubsub.PubSub
-	avatars      *AvatarMedia
-	avatarProc   media.RasterAvatarProcessor
-	avatarIngest *avataringest.ExternalAvatarIngestor
+	mgr *core.Manager
 }
 
-func NewGRPCHandler(
-	db *ent.Client,
-	ps pubsub.PubSub,
-	avatars *AvatarMedia,
-	avatarProc media.RasterAvatarProcessor,
-) pb.ProfileServiceServer {
-	h := &GRPCHandler{db: db, pub: ps, avatars: avatars, avatarProc: avatarProc}
-	if avatars != nil {
-		h.avatarIngest = avataringest.NewExternalAvatarIngestor(
-			db,
-			avatars.Store,
-			avatars.AssetsBucket,
-			avatars.PublicAssetURL,
-			avatarProc,
-		)
-	}
-	return h
+func NewGRPCHandler(mgr *core.Manager) pb.ProfileServiceServer {
+	return &GRPCHandler{mgr: mgr}
 }

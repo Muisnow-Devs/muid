@@ -1,4 +1,4 @@
-package profilegrpc
+package core
 
 import (
 	"strings"
@@ -32,12 +32,4 @@ func avatarFromIdentity(c *idclaims.IdentityInformation) string {
 	}
 
 	return strings.TrimSpace(c.GetPicture())
-}
-
-func emailLocalPart(email string) string {
-	at := strings.LastIndex(email, "@")
-	if at <= 0 {
-		return ""
-	}
-	return strings.TrimSpace(email[:at])
 }

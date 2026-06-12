@@ -31,16 +31,36 @@ services:
               required: false
         environment:
             # Convenience: point services at the compose network hostnames.
-            # Override individual values via a local .env file.
+            # Secrets / per-developer values (AUTHN_OTP_SECRET_KEY, MAILER_SMTP_*,
+            # AUTHN_OIDC_CLIENTS_JSON, optional PROFILE_R2_* for avatar uploads)
+            # belong in the local .env file — compose `environment:` entries
+            # would override it, so never duplicate .env keys here.
+
+            # ── authn ────────────────────────────────────────────────────────
             AUTHN_DATABASE_URL: "postgres://muid:muid@postgres:5432/muid_authn?sslmode=disable"
-            PROFILE_DATABASE_URL: "postgres://muid:muid@postgres:5432/muid_profile?sslmode=disable"
-            REDIS_ADDR: "redis:6379"
             AUTHN_NATS_URL: "nats://nats:4222"
             AUTHN_PORT: "8080"
             AUTHN_PROFILE_GRPC_ADDR: "localhost:8081"
+            # Authz *internal* listener (service-to-service surface); dialed by
+            # the local enforcer when the OIDC provider is enabled.
+            AUTHN_AUTHZ_GRPC_ADDR: "localhost:8083"
+            REDIS_ADDR: "redis:6379"
+
+            # ── profile ──────────────────────────────────────────────────────
+            PROFILE_DATABASE_URL: "postgres://muid:muid@postgres:5432/muid_profile?sslmode=disable"
             PROFILE_NATS_URL: "nats://nats:4222"
             PROFILE_PORT: "8081"
+
+            # ── authz ────────────────────────────────────────────────────────
+            AUTHZ_DATABASE_URL: "postgres://muid:muid@postgres:5432/muid_authz?sslmode=disable"
+            AUTHZ_NATS_URL: "nats://nats:4222"
             AUTHZ_PORT: "8082"
+            # Internal listener: AuthzService + AuthzAdminService. Reached as
+            # localhost inside the devcontainer; intentionally not published to
+            # the host (must never be gateway-exposed).
+            AUTHZ_INTERNAL_PORT: "8083"
+
+            # ── mailer ───────────────────────────────────────────────────────
             MAILER_NATS_URL: "nats://nats:4222"
         networks:
             - muid-dev

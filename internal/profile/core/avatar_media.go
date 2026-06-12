@@ -1,4 +1,4 @@
-package profilegrpc
+package core
 
 import "sanzi.io/muid/infra/r2"
 
@@ -10,6 +10,8 @@ type AvatarMedia struct {
 	PublicAssetURL string
 }
 
-func (a *AvatarMedia) publicProdURL(objectKey string) string {
+// PublicProdURL derives the public CDN URL for an object in the assets bucket.
+// This is the single source of that rule; do not duplicate it elsewhere.
+func (a *AvatarMedia) PublicProdURL(objectKey string) string {
 	return r2.PublicObjectURL(a.PublicAssetURL, objectKey)
 }

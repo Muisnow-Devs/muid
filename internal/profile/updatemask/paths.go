@@ -19,8 +19,9 @@ import (
 //
 //	identity.<field>  e.g. identity.email, identity.locale, identity.name, identity.username, identity.bio
 //
-// Patchable identity paths must be registered in profilegrpc.profilePatchRegistry; each path
-// that publishes profile.change events also needs a GetProfileResponse segment below.
+// Patchable identity paths must be registered in the core profile field registry
+// (internal/profile/core/fields.go), which also maps each path to its
+// GetProfileResponse field for profile.change events.
 //
 // Paths are relative to muid.profile.v1.UpdateProfileRequest (the identity field is optional;
 // mutators still require a non-nil identity message when a masked path needs payload values).
@@ -143,53 +144,4 @@ func SortedUniqueGetProfileResponsePaths(raw []string) ([]string, error) {
 	}
 	sort.Strings(out)
 	return out, nil
-}
-
-func updateMaskPathToGetProfileSegment(canon string) (string, error) {
-	canon = strings.TrimSpace(canon)
-	switch {
-	case strings.HasPrefix(canon, identityPrefix):
-		switch strings.TrimPrefix(canon, identityPrefix) {
-		case "email":
-			return "email", nil
-		case "locale":
-			return "locale", nil
-		case "timezone":
-			return "timezone", nil
-		case "username":
-			return "username", nil
-		case "name", "given_name", "family_name":
-			return "display_name", nil
-		case "picture":
-			return "avatar_url", nil
-		case "bio":
-			return "bio", nil
-		default:
-			return "", fmt.Errorf(
-				"%w: identity path %q has no GetProfileResponse mapping",
-				ErrUnknownPath,
-				canon,
-			)
-		}
-	default:
-		return "", fmt.Errorf("%w: path %q", ErrUnknownPath, canon)
-	}
-}
-
-// GetProfileResponsePathsFromUpdateRequestPaths maps canonical UpdateProfileRequest mask
-// paths (identity.*) to GetProfileResponse-relative names for profile.change events.
-func GetProfileResponsePathsFromUpdateRequestPaths(updatePaths []string) ([]string, error) {
-	if len(updatePaths) == 0 {
-		return nil, ErrEmptyMask
-	}
-	raw := make([]string, 0, len(updatePaths))
-	for _, p := range updatePaths {
-		p = strings.TrimSpace(p)
-		seg, err := updateMaskPathToGetProfileSegment(p)
-		if err != nil {
-			return nil, err
-		}
-		raw = append(raw, seg)
-	}
-	return SortedUniqueGetProfileResponsePaths(raw)
 }

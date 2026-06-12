@@ -77,9 +77,9 @@ Match **`internal/authn/app/service.go`** and **`internal/profile/app/service.go
 
 ## Profile conventions
 
-- gRPC handlers and helpers: package **`profilegrpc`**, directory **`internal/profile/grpc`** (not `internal/profile/handler`).
+- Domain logic: **`internal/profile/core`** (`core.Manager`) owns ent, transactions, and event publishing; gRPC handlers in package **`profilegrpc`**, directory **`internal/profile/grpc`** (not `internal/profile/handler`), stay thin (proto mapping + sentinel→status translation).
 - NATS: **`internal/profile/subscriber`** (e.g. `profile.change` → `ProfileChangedEvent`).
-- Partial updates: **`google.protobuf.FieldMask`** + optional **`IdentityInformation`**; canonical paths **`identity.<proto snake_case field>`** — logic in **`internal/profile/updatemask`**; mutators registered from **`internal/profile/grpc`** (`profilePatchRegistry` / related).
+- Partial updates: **`google.protobuf.FieldMask`** + optional **`IdentityInformation`**; canonical paths **`identity.<proto snake_case field>`** — logic in **`internal/profile/updatemask`**; mutators + event field mapping registered in the unified registry **`internal/profile/core/fields.go`** (`profileFields`).
 - **`api/proto/shared/v1/claims.proto`**: **`IdentityInformation`** is the shared shape for OIDC, create/update, and event **`changes`**; timestamps as **`google.protobuf.Timestamp`** where used.
 - **Usernames:** proto `buf.validate` + **`pkg/validation.ValidUsername`** / **`UsernameCharsetRegex`** (`^[a-zA-Z0-9_]{5,32}$`); storage normalization uses **`strings.ToLower`** where implemented.
 - **UserAvatar:** append-only (**INSERT** only for new visible rows; display rule max `id` among rows with **`uploaded_at` set**). Staging rows excluded from display selection. **`internal/profile/avataringest`** for async OIDC/bootstrap avatar pipeline — **not** awaited inside `CreateProfile` RPC handler.

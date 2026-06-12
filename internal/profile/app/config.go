@@ -4,8 +4,8 @@ import (
 	"errors"
 	"io"
 
+	"sanzi.io/muid/internal/profile/core"
 	"sanzi.io/muid/internal/profile/ent"
-	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -39,7 +39,7 @@ type InfraDependencies struct {
 	PubSub pubsub.PubSub
 	Ent    *ent.Client
 	// Avatars is optional; when nil, StartAvatarUpload / CompleteAvatarUpload return FailedPrecondition.
-	Avatars *profilegrpc.AvatarMedia
+	Avatars *core.AvatarMedia
 }
 
 func (d *InfraDependencies) Close() error {

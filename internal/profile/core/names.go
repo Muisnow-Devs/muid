@@ -1,4 +1,4 @@
-package profilegrpc
+package core
 
 import (
 	"crypto/rand"
@@ -71,7 +71,7 @@ func generateUsernameCandidates(base string) []string {
 		)
 	}
 
-	for i := 0; i < 32; i++ {
+	for range 32 {
 		candidates = append(
 			candidates,
 			randomUsernameBase(),

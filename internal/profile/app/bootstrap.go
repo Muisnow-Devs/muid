@@ -9,6 +9,8 @@ import (
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/r2"
 	"sanzi.io/muid/internal/media"
+	"sanzi.io/muid/internal/profile/avataringest"
+	"sanzi.io/muid/internal/profile/core"
 	"sanzi.io/muid/internal/profile/ent"
 	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	"sanzi.io/muid/pkg/entpostgres"
@@ -33,7 +35,7 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 		return nil, err
 	}
 
-	var avatars *profilegrpc.AvatarMedia
+	var avatars *core.AvatarMedia
 	if cfg.R2AccountID != "" || cfg.R2AccessKeyID != "" || cfg.R2SecretAccessKey != "" ||
 		cfg.R2UploadBucket != "" ||
 		cfg.R2AssetsBucket != "" {
@@ -64,7 +66,7 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 			errutil.CloseIf(pubSub)
 			return nil, fmt.Errorf("r2: %w", err)
 		}
-		avatars = &profilegrpc.AvatarMedia{
+		avatars = &core.AvatarMedia{
 			Store:          store,
 			UploadBucket:   cfg.R2UploadBucket,
 			AssetsBucket:   cfg.R2AssetsBucket,
@@ -86,12 +88,24 @@ type ProfileApp struct {
 }
 
 func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
-	h := profilegrpc.NewGRPCHandler(
-		infra.Ent,
-		infra.PubSub,
-		infra.Avatars,
-		media.NewWebPRasterAvatarProcessor(),
-	)
+	proc := media.NewWebPRasterAvatarProcessor()
+	mcfg := core.ManagerConfig{
+		DB:     infra.Ent,
+		PubSub: infra.PubSub,
+		Media:  infra.Avatars,
+		Proc:   proc,
+	}
+	// Assign Ingest only when a concrete ingestor exists so the interface
+	// field stays nil (a typed-nil ingestor would pass != nil checks).
+	if infra.Avatars != nil {
+		mcfg.Ingest = avataringest.NewExternalAvatarIngestor(
+			core.NewAvatarRepo(infra.Ent),
+			infra.Avatars,
+			proc,
+		)
+	}
+
+	h := profilegrpc.NewGRPCHandler(core.NewManager(mcfg))
 
 	svc, err := NewProfileGRPC(infra.GlobalConfig, h, nil)
 	if err != nil {

@@ -42,7 +42,7 @@ func (m *Manager) IsMember(ctx context.Context, organizationID, userID uuid.UUID
 		Exist(ctx)
 }
 
-// Enforce runs the casbin decision for a "service/method.action" permission
+// Enforce runs the casbin decision for a "namespace/resource.action" permission
 // in the organization domain.
 func (m *Manager) Enforce(
 	ctx context.Context,

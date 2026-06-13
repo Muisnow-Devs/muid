@@ -39,7 +39,7 @@ type OrganizationProfileServiceClient interface {
 	CreateOrganizationProfile(ctx context.Context, in *CreateOrganizationProfileRequest, opts ...grpc.CallOption) (*CreateOrganizationProfileResponse, error)
 	GetOrganizationProfile(ctx context.Context, in *GetOrganizationProfileRequest, opts ...grpc.CallOption) (*GetOrganizationProfileResponse, error)
 	// UpdateOrganizationProfile edits basic information. Requires an
-	// authenticated principal (x-authn-user-id) holding "authz/org.manage" in
+	// authenticated principal (x-authn-user-id) holding "organization/setting.write" in
 	// the target organization.
 	UpdateOrganizationProfile(ctx context.Context, in *UpdateOrganizationProfileRequest, opts ...grpc.CallOption) (*UpdateOrganizationProfileResponse, error)
 }
@@ -97,7 +97,7 @@ type OrganizationProfileServiceServer interface {
 	CreateOrganizationProfile(context.Context, *CreateOrganizationProfileRequest) (*CreateOrganizationProfileResponse, error)
 	GetOrganizationProfile(context.Context, *GetOrganizationProfileRequest) (*GetOrganizationProfileResponse, error)
 	// UpdateOrganizationProfile edits basic information. Requires an
-	// authenticated principal (x-authn-user-id) holding "authz/org.manage" in
+	// authenticated principal (x-authn-user-id) holding "organization/setting.write" in
 	// the target organization.
 	UpdateOrganizationProfile(context.Context, *UpdateOrganizationProfileRequest) (*UpdateOrganizationProfileResponse, error)
 	mustEmbedUnimplementedOrganizationProfileServiceServer()

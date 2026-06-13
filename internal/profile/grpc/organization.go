@@ -13,9 +13,10 @@ import (
 	sharedauthn "sanzi.io/muid/pkg/shared/authn"
 )
 
-// orgManagePermission gates organization-profile edits; it belongs to the
-// authz namespace (see CLAUDE.md: permissions are "service/method.action").
-const orgManagePermission = "authz/org.manage"
+// orgManagePermission gates organization-profile edits; it lives in the
+// "organization" namespace (see CLAUDE.md: permissions are
+// "namespace/resource.action").
+const orgManagePermission = "organization/setting.write"
 
 // OrgPermissionEnforcer decides organization-scoped permissions for the
 // caller. Satisfied by *authzclient.Enforcer.

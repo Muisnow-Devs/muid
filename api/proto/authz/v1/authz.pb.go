@@ -221,9 +221,10 @@ type CheckOrganizationPermissionRequest_builder struct {
 
 	OrganizationId string
 	UserId         string
-	// "service/method.action" permission string, e.g.
-	// "authn/oidc_client.manage". The slash namespace separator is deliberate;
-	// OIDC scopes use "service:method.action" and must stay distinct.
+	// "namespace/resource.action" permission string, e.g.
+	// "organization/oidc_client.write". The slash namespace separator is
+	// deliberate; OIDC scopes use "namespace:resource.action" and must stay
+	// distinct.
 	Permission string
 }
 

@@ -138,7 +138,7 @@ func (e *Enforcer) Close() error {
 	return nil
 }
 
-// Enforce decides a "service/method.action" permission for a user in an
+// Enforce decides a "namespace/resource.action" permission for a user in an
 // organization, resolving (and caching) the user's roles first.
 func (e *Enforcer) Enforce(
 	ctx context.Context,

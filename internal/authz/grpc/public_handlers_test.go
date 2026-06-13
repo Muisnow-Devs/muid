@@ -125,9 +125,9 @@ func TestOrgAdminHandlerAuthorization(t *testing.T) {
 	createReq := &pb.CreateRoleRequest{}
 	createReq.SetOrganizationId(fixture.organizationID.String())
 	createReq.SetName("auditors")
-	createReq.SetPermissions([]string{"authz/org.view"})
+	createReq.SetPermissions([]string{"organization/setting.read"})
 
-	t.Run("member without role.manage is denied", func(t *testing.T) {
+	t.Run("member without role.write is denied", func(t *testing.T) {
 		_, err := handler.CreateRole(ctxAsUser(fixture.member), createReq)
 		wantCode(t, err, codes.PermissionDenied)
 	})
@@ -214,7 +214,7 @@ func TestUserHandler(t *testing.T) {
 	t.Run("check my permission", func(t *testing.T) {
 		req := &pb.CheckMyPermissionRequest{}
 		req.SetOrganizationId(fixture.organizationID.String())
-		req.SetPermission("authn/oidc_client.view")
+		req.SetPermission("organization/oidc_client.read")
 
 		resp, err := handler.CheckMyPermission(ctxAsUser(fixture.member), req)
 		if err != nil {
@@ -224,7 +224,7 @@ func TestUserHandler(t *testing.T) {
 			t.Error("member view permission = false, want true")
 		}
 
-		req.SetPermission("authn/oidc_client.manage")
+		req.SetPermission("organization/oidc_client.write")
 		resp, err = handler.CheckMyPermission(ctxAsUser(fixture.member), req)
 		if err != nil {
 			t.Fatalf("CheckMyPermission(manage): %v", err)
@@ -262,13 +262,13 @@ func TestUserHandler(t *testing.T) {
 			t.Fatalf("organization id %q is not a uuid", resp.GetOrganizationId())
 		}
 
-		// The creator is the owner: org.manage is an owner-only grant.
-		allowed, err := fixture.manager.Enforce(ctx, creator, orgID, "authz/org.manage")
+		// The creator is the owner: setting.write is an owner-only grant.
+		allowed, err := fixture.manager.Enforce(ctx, creator, orgID, "organization/setting.write")
 		if err != nil {
 			t.Fatalf("Enforce: %v", err)
 		}
 		if !allowed {
-			t.Error("creator lacks authz/org.manage, want owner")
+			t.Error("creator lacks organization/setting.write permission, want owner")
 		}
 
 		listResp, err := handler.ListMyOrganizations(
@@ -336,13 +336,13 @@ func TestAdminHandler(t *testing.T) {
 			ctx,
 			fixture.member,
 			fixture.organizationID,
-			"authz/org.manage",
+			"organization/setting.write",
 		)
 		if err != nil {
 			t.Fatalf("Enforce after promotion: %v", err)
 		}
 		if !allowed {
-			t.Error("promoted member org.manage = false, want true")
+			t.Error("promoted member setting.write = false, want true")
 		}
 	})
 

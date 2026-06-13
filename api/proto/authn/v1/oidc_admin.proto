@@ -12,7 +12,7 @@ option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 //
 // Every RPC requires a first-party session via the authorization metadata
 // header ("Session <token>") and the caller must hold the
-// "authn/oidc_client.manage" permission in the client's owning organization
+// "organization/oidc_client.write" permission in the client's owning organization
 // (checked through the authz service). Missing permission returns gRPC
 // PermissionDenied.
 service OIDCClientAdminService {

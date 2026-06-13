@@ -4,7 +4,7 @@ import "errors"
 
 var (
 	// ErrInvalidPermission reports a permission string that does not match
-	// the "service/method.action" pattern.
+	// the "namespace/resource.action" pattern.
 	ErrInvalidPermission = errors.New("invalid permission string")
 
 	// ErrRoleManagerInit reports that the casbin role manager could not be

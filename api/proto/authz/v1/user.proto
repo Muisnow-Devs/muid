@@ -64,7 +64,7 @@ message ListMyPermissionsRequest {
 
 message ListMyPermissionsResponse {
   // Effective permissions (role inheritance expanded), as
-  // "service/method.action" strings.
+  // "namespace/resource.action" strings.
   repeated string permissions = 1;
 }
 

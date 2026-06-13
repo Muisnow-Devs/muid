@@ -7,28 +7,28 @@ import (
 	"github.com/google/uuid"
 )
 
-// Permission strings follow "service/method.action" where service is the
-// owning service namespace (e.g. "authn/oidc_client.manage"). The slash
-// separator is deliberate: OIDC scopes use "service:method.action", and
+// Permission strings follow "namespace/resource.action" where namespace is
+// the resource domain (e.g. "organization/oidc_client.write"). The slash
+// separator is deliberate: OIDC scopes use "namespace:resource.action", and
 // permissions must stay visually distinct from scopes.
 var permissionPattern = regexp.MustCompile(`^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$`)
 
-// namespacePattern matches a bare service namespace (e.g. "authn").
+// namespacePattern matches a bare namespace (e.g. "organization").
 var namespacePattern = regexp.MustCompile(`^[a-z][a-z0-9_]*$`)
 
 // ValidPermission reports whether permission matches the
-// "service/method.action" pattern.
+// "namespace/resource.action" pattern.
 func ValidPermission(permission string) bool {
 	return permissionPattern.MatchString(permission)
 }
 
-// ValidNamespace reports whether namespace is a bare service namespace.
+// ValidNamespace reports whether namespace is a bare namespace.
 func ValidNamespace(namespace string) bool {
 	return namespacePattern.MatchString(namespace)
 }
 
-// SplitPermission splits "service/method.action" into the casbin object
-// ("service/method") and action ("action"). It returns
+// SplitPermission splits "namespace/resource.action" into the casbin object
+// ("namespace/resource") and action ("action"). It returns
 // ErrInvalidPermission when the string does not match the pattern.
 func SplitPermission(permission string) (obj, act string, err error) {
 	if !ValidPermission(permission) {
@@ -43,8 +43,8 @@ func JoinPermission(obj, act string) string {
 	return obj + "." + act
 }
 
-// Namespace returns the service namespace of a permission ("authn" for
-// "authn/oidc_client.manage").
+// Namespace returns the namespace of a permission ("organization" for
+// "organization/oidc_client.write").
 func Namespace(permission string) (string, error) {
 	if !ValidPermission(permission) {
 		return "", ErrInvalidPermission
@@ -53,7 +53,7 @@ func Namespace(permission string) (string, error) {
 }
 
 // NamespaceObjPrefix returns the casbin object prefix selecting every
-// permission owned by a service namespace (e.g. "authn/").
+// permission in a namespace (e.g. "organization/").
 func NamespaceObjPrefix(namespace string) string {
 	return namespace + "/"
 }

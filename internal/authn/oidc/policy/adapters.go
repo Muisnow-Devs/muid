@@ -24,7 +24,7 @@ func (a LocalEnforcerAccess) IsMember(
 	return a.Enforcer.IsMember(ctx, userID, organizationID)
 }
 
-// HasPermission checks a "service/method.action" permission locally.
+// HasPermission checks a "namespace/resource.action" permission locally.
 func (a LocalEnforcerAccess) HasPermission(
 	ctx context.Context,
 	organizationID, userID uuid.UUID,

@@ -65,7 +65,7 @@ func (h *OrgAdminHandler) CreateRole(
 	ctx context.Context,
 	req *pb.CreateRoleRequest,
 ) (*pb.CreateRoleResponse, error) {
-	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleManage)
+	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +85,7 @@ func (h *OrgAdminHandler) UpdateRole(
 	ctx context.Context,
 	req *pb.UpdateRoleRequest,
 ) (*pb.UpdateRoleResponse, error) {
-	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleManage)
+	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (h *OrgAdminHandler) DeleteRole(
 	ctx context.Context,
 	req *pb.DeleteRoleRequest,
 ) (*pb.DeleteRoleResponse, error) {
-	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleManage)
+	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleWrite)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +121,7 @@ func (h *OrgAdminHandler) ListRoles(
 	ctx context.Context,
 	req *pb.ListRolesRequest,
 ) (*pb.ListRolesResponse, error) {
-	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleView)
+	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionRoleRead)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (h *OrgAdminHandler) AddMember(
 	actorID, organizationID, err := h.authorize(
 		ctx,
 		req.GetOrganizationId(),
-		policy.PermissionMemberManage,
+		policy.PermissionMemberWrite,
 	)
 	if err != nil {
 		return nil, err
@@ -171,7 +171,7 @@ func (h *OrgAdminHandler) RemoveMember(
 	actorID, organizationID, err := h.authorize(
 		ctx,
 		req.GetOrganizationId(),
-		policy.PermissionMemberManage,
+		policy.PermissionMemberWrite,
 	)
 	if err != nil {
 		return nil, err
@@ -195,7 +195,7 @@ func (h *OrgAdminHandler) ChangeMemberRole(
 	actorID, organizationID, err := h.authorize(
 		ctx,
 		req.GetOrganizationId(),
-		policy.PermissionMemberManage,
+		policy.PermissionMemberWrite,
 	)
 	if err != nil {
 		return nil, err
@@ -216,7 +216,7 @@ func (h *OrgAdminHandler) ListMembers(
 	ctx context.Context,
 	req *pb.ListMembersRequest,
 ) (*pb.ListMembersResponse, error) {
-	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionMemberView)
+	_, organizationID, err := h.authorize(ctx, req.GetOrganizationId(), policy.PermissionMemberRead)
 	if err != nil {
 		return nil, err
 	}

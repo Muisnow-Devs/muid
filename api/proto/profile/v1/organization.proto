@@ -21,7 +21,7 @@ service OrganizationProfileService {
   rpc GetOrganizationProfile(GetOrganizationProfileRequest) returns (GetOrganizationProfileResponse);
 
   // UpdateOrganizationProfile edits basic information. Requires an
-  // authenticated principal (x-authn-user-id) holding "authz/org.manage" in
+  // authenticated principal (x-authn-user-id) holding "organization/setting.write" in
   // the target organization.
   rpc UpdateOrganizationProfile(UpdateOrganizationProfileRequest) returns (UpdateOrganizationProfileResponse);
 }

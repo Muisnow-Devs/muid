@@ -90,7 +90,7 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 			return nil, fmt.Errorf("authz grpc dial: %w", err)
 		}
 		authzEnforcer, err = authzclient.NewEnforcer(authzclient.Config{
-			Namespace:       "authz",
+			Namespace:       "organization",
 			Client:          authzpb.NewAuthzServiceClient(authzConn),
 			PubSub:          pubSub,
 			RoleCacheTTL:    time.Duration(cfg.AuthzRoleCacheTTLSeconds) * time.Second,

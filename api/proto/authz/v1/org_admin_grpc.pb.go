@@ -37,9 +37,9 @@ const (
 // served on the public listener behind the gateway alongside
 // AuthzUserService (caller identity comes from "x-user-id" metadata, see
 // user.proto). Every RPC is itself authorized through casbin in the target
-// organization: role RPCs need "authz/role.manage" ("authz/role.view" for
-// ListRoles), member RPCs need "authz/member.manage" ("authz/member.view"
-// for ListMembers).
+// organization: role RPCs need "organization/role.write"
+// ("organization/role.read" for ListRoles), member RPCs need
+// "organization/member.write" ("organization/member.read" for ListMembers).
 type AuthzOrganizationAdminServiceClient interface {
 	CreateRole(ctx context.Context, in *CreateRoleRequest, opts ...grpc.CallOption) (*CreateRoleResponse, error)
 	UpdateRole(ctx context.Context, in *UpdateRoleRequest, opts ...grpc.CallOption) (*UpdateRoleResponse, error)
@@ -147,9 +147,9 @@ func (c *authzOrganizationAdminServiceClient) ListMembers(ctx context.Context, i
 // served on the public listener behind the gateway alongside
 // AuthzUserService (caller identity comes from "x-user-id" metadata, see
 // user.proto). Every RPC is itself authorized through casbin in the target
-// organization: role RPCs need "authz/role.manage" ("authz/role.view" for
-// ListRoles), member RPCs need "authz/member.manage" ("authz/member.view"
-// for ListMembers).
+// organization: role RPCs need "organization/role.write"
+// ("organization/role.read" for ListRoles), member RPCs need
+// "organization/member.write" ("organization/member.read" for ListMembers).
 type AuthzOrganizationAdminServiceServer interface {
 	CreateRole(context.Context, *CreateRoleRequest) (*CreateRoleResponse, error)
 	UpdateRole(context.Context, *UpdateRoleRequest) (*UpdateRoleResponse, error)

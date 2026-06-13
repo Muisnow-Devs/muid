@@ -167,9 +167,9 @@ func TestOrganizationLifecycleAndHierarchy(t *testing.T) {
 		t.Fatalf("seeded roles = %v, want %v", names, want)
 	}
 
-	// Owner inherits grants down the hierarchy: role.manage is an admin
-	// grant, org.view a member grant.
-	for _, permission := range []string{"authz/role.manage", "authz/org.view", "authz/org.manage"} {
+	// Owner inherits grants down the hierarchy: role.write is an admin
+	// grant, setting.read a member grant.
+	for _, permission := range []string{"organization/role.write", "organization/setting.read", "organization/setting.write"} {
 		allowed, err := m.Enforce(ctx, owner, orgID, permission)
 		if err != nil {
 			t.Fatalf("Enforce(owner, %s) error = %v", permission, err)
@@ -221,7 +221,7 @@ func TestOrganizationLifecycleAndHierarchy(t *testing.T) {
 	if left != 0 {
 		t.Errorf("org-scoped rule count after delete = %d, want 0", left)
 	}
-	allowed, err := m.Enforce(ctx, owner, orgID, "authz/org.view")
+	allowed, err := m.Enforce(ctx, owner, orgID, "organization/setting.read")
 	if err != nil {
 		t.Fatalf("Enforce(after delete) error = %v", err)
 	}
@@ -269,19 +269,19 @@ func TestMemberMutations(t *testing.T) {
 			t.Errorf("AddMember(duplicate) error = %v, want ErrAlreadyMember", err)
 		}
 
-		allowed, err := m.Enforce(ctx, alice, orgID, "authz/org.view")
+		allowed, err := m.Enforce(ctx, alice, orgID, "organization/setting.read")
 		if err != nil {
 			t.Fatalf("Enforce(alice, org.view) error = %v", err)
 		}
 		if !allowed {
-			t.Error("Enforce(alice member, authz/org.view) = false, want true")
+			t.Error("Enforce(alice member, organization/setting.read) = false, want true")
 		}
-		allowed, err = m.Enforce(ctx, alice, orgID, "authz/role.manage")
+		allowed, err = m.Enforce(ctx, alice, orgID, "organization/role.write")
 		if err != nil {
 			t.Fatalf("Enforce(alice, role.manage) error = %v", err)
 		}
 		if allowed {
-			t.Error("Enforce(alice member, authz/role.manage) = true, want false")
+			t.Error("Enforce(alice member, organization/role.write) = true, want false")
 		}
 	})
 
@@ -309,12 +309,12 @@ func TestMemberMutations(t *testing.T) {
 		if err := m.ChangeMemberRole(ctx, owner, orgID, alice, "admin"); err != nil {
 			t.Fatalf("ChangeMemberRole(alice to admin) error = %v", err)
 		}
-		allowed, err := m.Enforce(ctx, alice, orgID, "authz/role.manage")
+		allowed, err := m.Enforce(ctx, alice, orgID, "organization/role.write")
 		if err != nil {
 			t.Fatalf("Enforce(alice admin) error = %v", err)
 		}
 		if !allowed {
-			t.Error("Enforce(alice admin, authz/role.manage) = false, want true")
+			t.Error("Enforce(alice admin, organization/role.write) = false, want true")
 		}
 
 		rows, err := client.CasbinRule.Query().
@@ -339,12 +339,12 @@ func TestMemberMutations(t *testing.T) {
 		if err := m.RemoveMember(ctx, owner, orgID, alice); !errors.Is(err, ErrNotMember) {
 			t.Errorf("RemoveMember(again) error = %v, want ErrNotMember", err)
 		}
-		allowed, err := m.Enforce(ctx, alice, orgID, "authz/org.view")
+		allowed, err := m.Enforce(ctx, alice, orgID, "organization/setting.read")
 		if err != nil {
 			t.Fatalf("Enforce(alice removed) error = %v", err)
 		}
 		if allowed {
-			t.Error("Enforce(removed alice, authz/org.view) = true, want false")
+			t.Error("Enforce(removed alice, organization/setting.read) = true, want false")
 		}
 		n, err := client.CasbinRule.Query().
 			Where(
@@ -373,7 +373,7 @@ func TestCustomRoles(t *testing.T) {
 	}
 
 	role, err := m.CreateRole(ctx, orgID, "oidc_editor", "manages oidc clients",
-		[]string{"authn/oidc_client.manage", "authn/oidc_client.view"})
+		[]string{"organization/oidc_client.write", "organization/oidc_client.read"})
 	if err != nil {
 		t.Fatalf("CreateRole(oidc_editor) error = %v", err)
 	}
@@ -394,12 +394,12 @@ func TestCustomRoles(t *testing.T) {
 	if err := m.AddMember(ctx, owner, orgID, bob, "oidc_editor"); err != nil {
 		t.Fatalf("AddMember(bob, oidc_editor) error = %v", err)
 	}
-	allowed, err := m.Enforce(ctx, bob, orgID, "authn/oidc_client.manage")
+	allowed, err := m.Enforce(ctx, bob, orgID, "organization/oidc_client.write")
 	if err != nil {
 		t.Fatalf("Enforce(bob) error = %v", err)
 	}
 	if !allowed {
-		t.Error("Enforce(bob oidc_editor, authn/oidc_client.manage) = false, want true")
+		t.Error("Enforce(bob oidc_editor, organization/oidc_client.write) = false, want true")
 	}
 
 	t.Run("system role immutable", func(t *testing.T) {
@@ -414,11 +414,11 @@ func TestCustomRoles(t *testing.T) {
 
 	t.Run("rename keeps memberships working", func(t *testing.T) {
 		_, err := m.UpdateRole(ctx, orgID, "oidc_editor", "client_admin", "",
-			[]string{"authn/oidc_client.manage"})
+			[]string{"organization/oidc_client.write"})
 		if err != nil {
 			t.Fatalf("UpdateRole(rename) error = %v", err)
 		}
-		allowed, err := m.Enforce(ctx, bob, orgID, "authn/oidc_client.manage")
+		allowed, err := m.Enforce(ctx, bob, orgID, "organization/oidc_client.write")
 		if err != nil {
 			t.Fatalf("Enforce(bob after rename) error = %v", err)
 		}
@@ -426,7 +426,7 @@ func TestCustomRoles(t *testing.T) {
 			t.Error("Enforce(bob after role rename) = false, want true")
 		}
 		// The dropped grant no longer applies.
-		allowed, err = m.Enforce(ctx, bob, orgID, "authn/oidc_client.view")
+		allowed, err = m.Enforce(ctx, bob, orgID, "organization/oidc_client.read")
 		if err != nil {
 			t.Fatalf("Enforce(bob view after rename) error = %v", err)
 		}
@@ -460,7 +460,7 @@ func TestNamespacePolicies(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CreateOrganization() error = %v", err)
 	}
-	_, err = m.CreateRole(ctx, orgID, "oidc_editor", "", []string{"authn/oidc_client.manage"})
+	_, err = m.CreateRole(ctx, orgID, "oidc_editor", "", []string{"organization/oidc_client.write"})
 	if err != nil {
 		t.Fatalf("CreateRole() error = %v", err)
 	}
@@ -468,9 +468,9 @@ func TestNamespacePolicies(t *testing.T) {
 	var rules []Rule
 	pageToken := ""
 	for {
-		page, next, revision, err := m.NamespacePolicies(ctx, "authn", 2, pageToken)
+		page, next, revision, err := m.NamespacePolicies(ctx, "organization", 2, pageToken)
 		if err != nil {
-			t.Fatalf("NamespacePolicies(authn) error = %v", err)
+			t.Fatalf("NamespacePolicies(organization) error = %v", err)
 		}
 		if revision == uuid.Nil {
 			t.Error("NamespacePolicies revision = Nil, want a snapshot id")
@@ -482,13 +482,19 @@ func TestNamespacePolicies(t *testing.T) {
 		pageToken = next
 	}
 
+	orgObjects := []string{
+		"organization/setting",
+		"organization/member",
+		"organization/role",
+		"organization/oidc_client",
+	}
 	var gotP, gotG int
 	for _, r := range rules {
 		switch r.Ptype {
 		case "p":
 			gotP++
-			if len(r.Values) < 3 || !slices.Contains([]string{"authn/oidc_client"}, r.Values[2]) {
-				t.Errorf("namespace p-rule outside authn namespace: %v", r)
+			if len(r.Values) < 3 || !slices.Contains(orgObjects, r.Values[2]) {
+				t.Errorf("namespace p-rule outside organization namespace: %v", r)
 			}
 		case "g":
 			gotG++
@@ -497,9 +503,11 @@ func TestNamespacePolicies(t *testing.T) {
 			}
 		}
 	}
-	// p-rules: member view + admin manage (wildcard) + custom role manage.
-	if gotP != 3 {
-		t.Errorf("namespace p-rule count = %d, want 3 (rules: %v)", gotP, rules)
+	// p-rules: the eight default wildcard grants (member read x4, manager
+	// member.write, admin role.write + oidc_client.write, owner setting.write)
+	// plus the custom role's oidc_client.write grant.
+	if gotP != 9 {
+		t.Errorf("namespace p-rule count = %d, want 9 (rules: %v)", gotP, rules)
 	}
 	// g-rules: the three hierarchy links.
 	if gotG != 3 {
@@ -523,11 +531,11 @@ func TestStaticConfigValidation(t *testing.T) {
 	}{
 		{
 			name: "missing owner role",
-			json: `{"permissions":{"authz":["org.view"]},"system_roles":["admin"],"role_inheritance":[],"grants":{}}`,
+			json: `{"permissions":{"organization":["setting.read"]},"system_roles":["admin"],"role_inheritance":[],"grants":{}}`,
 		},
 		{
 			name: "grant outside catalog",
-			json: `{"permissions":{"authz":["org.view"]},"system_roles":["owner"],"role_inheritance":[],"grants":{"owner":["authz/org.manage"]}}`,
+			json: `{"permissions":{"organization":["setting.read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{"owner":["organization/setting.write"]}}`,
 		},
 		{
 			name: "inheritance with unknown role",
@@ -535,7 +543,7 @@ func TestStaticConfigValidation(t *testing.T) {
 		},
 		{
 			name: "bad permission entry",
-			json: `{"permissions":{"authz":["Org.View"]},"system_roles":["owner"],"role_inheritance":[],"grants":{}}`,
+			json: `{"permissions":{"organization":["Setting.Read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{}}`,
 		},
 		{
 			name: "malformed inheritance pair",

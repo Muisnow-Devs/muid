@@ -238,7 +238,7 @@ func wireOIDCProviderInfra(
 	}
 
 	enforcer, err := authzclient.NewEnforcer(authzclient.Config{
-		Namespace:       "authn",
+		Namespace:       "organization",
 		Client:          authzpb.NewAuthzServiceClient(authzConn),
 		PubSub:          deps.PubSub,
 		KV:              redisKV,

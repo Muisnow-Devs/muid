@@ -143,7 +143,7 @@ func (c StaticConfig) Validate() error {
 }
 
 // Catalog returns the set of full permission strings
-// ("service/method.action") declared by the configuration.
+// ("namespace/resource.action") declared by the configuration.
 func (c StaticConfig) Catalog() map[string]struct{} {
 	out := make(map[string]struct{})
 	for ns, entries := range c.Permissions {

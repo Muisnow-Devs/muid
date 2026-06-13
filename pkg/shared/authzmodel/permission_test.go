@@ -19,15 +19,15 @@ func TestSplitPermission(t *testing.T) {
 	}{
 		{
 			name:       "simple",
-			permission: "authn/oidc_client.manage",
-			wantObj:    "authn/oidc_client",
-			wantAct:    "manage",
+			permission: "organization/oidc_client.write",
+			wantObj:    "organization/oidc_client",
+			wantAct:    "write",
 		},
 		{
 			name:       "underscores and digits",
-			permission: "authz/member_v2.view",
-			wantObj:    "authz/member_v2",
-			wantAct:    "view",
+			permission: "organization/member_v2.read",
+			wantObj:    "organization/member_v2",
+			wantAct:    "read",
 		},
 		{
 			name:       "empty",
@@ -36,37 +36,37 @@ func TestSplitPermission(t *testing.T) {
 		},
 		{
 			name:       "oidc scope style colon",
-			permission: "authn:oidc_client.manage",
+			permission: "organization:oidc_client.write",
 			wantErr:    ErrInvalidPermission,
 		},
 		{
 			name:       "missing action",
-			permission: "authn/oidc_client",
+			permission: "organization/oidc_client",
 			wantErr:    ErrInvalidPermission,
 		},
 		{
 			name:       "missing namespace",
-			permission: "oidc_client.manage",
+			permission: "oidc_client.write",
 			wantErr:    ErrInvalidPermission,
 		},
 		{
 			name:       "uppercase",
-			permission: "Authn/Client.Manage",
+			permission: "Organization/Client.Write",
 			wantErr:    ErrInvalidPermission,
 		},
 		{
 			name:       "extra segment",
-			permission: "authn/oidc_client.manage.all",
+			permission: "organization/oidc_client.write.all",
 			wantErr:    ErrInvalidPermission,
 		},
 		{
 			name:       "leading digit namespace",
-			permission: "1authn/oidc_client.manage",
+			permission: "1organization/oidc_client.write",
 			wantErr:    ErrInvalidPermission,
 		},
 		{
 			name:       "double slash",
-			permission: "authn/oidc/client.manage",
+			permission: "organization/oidc/client.write",
 			wantErr:    ErrInvalidPermission,
 		},
 	}
@@ -100,8 +100,8 @@ func TestNamespace(t *testing.T) {
 		want       string
 		wantErr    error
 	}{
-		{name: "authn", permission: "authn/oidc_client.manage", want: "authn"},
-		{name: "authz", permission: "authz/member.view", want: "authz"},
+		{name: "oidc_client", permission: "organization/oidc_client.write", want: "organization"},
+		{name: "member", permission: "organization/member.read", want: "organization"},
 		{name: "invalid", permission: "not-a-permission", wantErr: ErrInvalidPermission},
 	}
 

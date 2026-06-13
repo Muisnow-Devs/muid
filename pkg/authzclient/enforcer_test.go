@@ -130,13 +130,13 @@ const (
 )
 
 // newTestEnforcer builds a started enforcer over the fake backends. The
-// canned policy mirrors the authn namespace of the default config.
+// canned policy mirrors the organization namespace of the default config.
 func newTestEnforcer(t *testing.T, cfg Config, client *fakeAuthzClient) *Enforcer {
 	t.Helper()
 
 	client.rules = []*authzpb.PolicyRule{
-		policyRule("p", "role:member", "*", "authn/oidc_client", "view"),
-		policyRule("p", "role:admin", "*", "authn/oidc_client", "manage"),
+		policyRule("p", "role:member", "*", "organization/oidc_client", "read"),
+		policyRule("p", "role:admin", "*", "organization/oidc_client", "write"),
 		policyRule("g", "role:owner", "role:admin", "*"),
 		policyRule("g", "role:admin", "role:manager", "*"),
 		policyRule("g", "role:manager", "role:member", "*"),
@@ -146,7 +146,7 @@ func newTestEnforcer(t *testing.T, cfg Config, client *fakeAuthzClient) *Enforce
 		client.roles = make(map[string][]string)
 	}
 
-	cfg.Namespace = "authn"
+	cfg.Namespace = "organization"
 	cfg.Client = client
 	enf, err := NewEnforcer(cfg)
 	if err != nil {
@@ -182,26 +182,26 @@ func TestEnforceWithRoleResolution(t *testing.T) {
 		{
 			name:       "owner inherits manage",
 			userID:     owner,
-			permission: "authn/oidc_client.manage",
+			permission: "organization/oidc_client.write",
 			want:       true,
 		},
 		{
 			name:       "owner inherits view",
 			userID:     owner,
-			permission: "authn/oidc_client.view",
+			permission: "organization/oidc_client.read",
 			want:       true,
 		},
-		{name: "member can view", userID: member, permission: "authn/oidc_client.view", want: true},
+		{name: "member can view", userID: member, permission: "organization/oidc_client.read", want: true},
 		{
 			name:       "member cannot manage",
 			userID:     member,
-			permission: "authn/oidc_client.manage",
+			permission: "organization/oidc_client.write",
 			want:       false,
 		},
 		{
 			name:       "stranger denied",
 			userID:     stranger,
-			permission: "authn/oidc_client.view",
+			permission: "organization/oidc_client.read",
 			want:       false,
 		},
 	}
@@ -235,7 +235,7 @@ func TestEnforceWithRoleResolution(t *testing.T) {
 	})
 
 	t.Run("invalid permission string", func(t *testing.T) {
-		_, err := enf.Enforce(ctx, owner, orgID, "authn:oidc_client.manage")
+		_, err := enf.Enforce(ctx, owner, orgID, "organization:oidc_client.write")
 		if err == nil {
 			t.Error("Enforce(colon permission) error = nil, want invalid-permission error")
 		}
@@ -253,7 +253,7 @@ func TestRoleCaching(t *testing.T) {
 	ctx := context.Background()
 
 	for range 3 {
-		if _, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.view"); err != nil {
+		if _, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.read"); err != nil {
 			t.Fatalf("Enforce error = %v", err)
 		}
 	}
@@ -269,7 +269,7 @@ func TestRoleCaching(t *testing.T) {
 	second := newTestEnforcer(t, Config{KV: kvStore, RoleCacheTTL: time.Hour}, &fakeAuthzClient{
 		roles: map[string][]string{},
 	})
-	allowed, err := second.Enforce(ctx, user, orgID, "authn/oidc_client.view")
+	allowed, err := second.Enforce(ctx, user, orgID, "organization/oidc_client.read")
 	if err != nil {
 		t.Fatalf("second enforcer Enforce error = %v", err)
 	}
@@ -287,11 +287,11 @@ func TestRoleCacheTTLExpiry(t *testing.T) {
 	enf := newTestEnforcer(t, Config{RoleCacheTTL: 10 * time.Millisecond}, client)
 	ctx := context.Background()
 
-	if _, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.view"); err != nil {
+	if _, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.read"); err != nil {
 		t.Fatalf("Enforce error = %v", err)
 	}
 	time.Sleep(20 * time.Millisecond)
-	if _, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.view"); err != nil {
+	if _, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.read"); err != nil {
 		t.Fatalf("Enforce after TTL error = %v", err)
 	}
 
@@ -314,7 +314,7 @@ func TestMembershipChangeEviction(t *testing.T) {
 	enf := newTestEnforcer(t, Config{PubSub: ps, KV: kvStore, RoleCacheTTL: time.Hour}, client)
 	ctx := context.Background()
 
-	allowed, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.manage")
+	allowed, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.write")
 	if err != nil {
 		t.Fatalf("Enforce error = %v", err)
 	}
@@ -333,7 +333,7 @@ func TestMembershipChangeEviction(t *testing.T) {
 	ev.SetUserId(user.String())
 	publishEvent(t, ps, ev)
 
-	allowed, err = enf.Enforce(ctx, user, orgID, "authn/oidc_client.manage")
+	allowed, err = enf.Enforce(ctx, user, orgID, "organization/oidc_client.write")
 	if err != nil {
 		t.Fatalf("Enforce after demotion error = %v", err)
 	}
@@ -352,7 +352,7 @@ func TestNamespacePolicyReloadOnEvent(t *testing.T) {
 	enf := newTestEnforcer(t, Config{PubSub: ps}, client)
 	ctx := context.Background()
 
-	allowed, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.view")
+	allowed, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.read")
 	if err != nil {
 		t.Fatalf("Enforce error = %v", err)
 	}
@@ -361,10 +361,10 @@ func TestNamespacePolicyReloadOnEvent(t *testing.T) {
 	}
 
 	// The member grant is revoked upstream; a grants-changed event for the
-	// authn namespace triggers a reload.
+	// organization namespace triggers a reload.
 	client.mu.Lock()
 	client.rules = []*authzpb.PolicyRule{
-		policyRule("p", "role:admin", "*", "authn/oidc_client", "manage"),
+		policyRule("p", "role:admin", "*", "organization/oidc_client", "write"),
 		policyRule("g", "role:owner", "role:admin", "*"),
 	}
 	client.revision = uuid.NewString()
@@ -372,10 +372,10 @@ func TestNamespacePolicyReloadOnEvent(t *testing.T) {
 
 	ev := &authzevent.PolicyChangedEvent{}
 	ev.SetKind(authzevent.PolicyChangeKind_POLICY_CHANGE_KIND_ROLE_GRANTS_CHANGED)
-	ev.SetNamespaces([]string{"authn"})
+	ev.SetNamespaces([]string{"organization"})
 	publishEvent(t, ps, ev)
 
-	allowed, err = enf.Enforce(ctx, user, orgID, "authn/oidc_client.view")
+	allowed, err = enf.Enforce(ctx, user, orgID, "organization/oidc_client.read")
 	if err != nil {
 		t.Fatalf("Enforce after reload error = %v", err)
 	}
@@ -409,7 +409,7 @@ func TestOrganizationDeletedEviction(t *testing.T) {
 	enf := newTestEnforcer(t, Config{PubSub: ps, RoleCacheTTL: time.Hour}, client)
 	ctx := context.Background()
 
-	if _, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.view"); err != nil {
+	if _, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.read"); err != nil {
 		t.Fatalf("Enforce error = %v", err)
 	}
 
@@ -423,7 +423,7 @@ func TestOrganizationDeletedEviction(t *testing.T) {
 	ev.SetOrganizationId(testOrg)
 	publishEvent(t, ps, ev)
 
-	allowed, err := enf.Enforce(ctx, user, orgID, "authn/oidc_client.view")
+	allowed, err := enf.Enforce(ctx, user, orgID, "organization/oidc_client.read")
 	if err != nil {
 		t.Fatalf("Enforce after org delete error = %v", err)
 	}
@@ -435,11 +435,11 @@ func TestOrganizationDeletedEviction(t *testing.T) {
 func TestNotStarted(t *testing.T) {
 	t.Parallel()
 
-	enf, err := NewEnforcer(Config{Namespace: "authn", Client: &fakeAuthzClient{}})
+	enf, err := NewEnforcer(Config{Namespace: "organization", Client: &fakeAuthzClient{}})
 	if err != nil {
 		t.Fatalf("NewEnforcer() error = %v", err)
 	}
-	_, err = enf.Enforce(context.Background(), uuid.New(), uuid.New(), "authn/oidc_client.view")
+	_, err = enf.Enforce(context.Background(), uuid.New(), uuid.New(), "organization/oidc_client.read")
 	if err == nil {
 		t.Error("Enforce(before Start) error = nil, want ErrNotStarted")
 	}

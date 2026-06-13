@@ -48,7 +48,7 @@ func adminDomainError(ctx context.Context, op string, err error) error {
 	case errors.Is(err, oidc.ErrClientNotFound):
 		return status.Error(codes.NotFound, "client not found")
 	case errors.Is(err, oidc.ErrPermissionDenied):
-		return status.Error(codes.PermissionDenied, "missing authn/oidc_client.manage permission")
+		return status.Error(codes.PermissionDenied, "missing organization/oidc_client.write permission")
 	case errors.Is(err, oidc.ErrInvalidInput):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:

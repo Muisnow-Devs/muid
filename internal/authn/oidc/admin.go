@@ -18,7 +18,7 @@ import (
 
 // PermissionManageClients is the org permission required for client
 // administration (seed it on the org admin/owner system roles).
-const PermissionManageClients = "authn/oidc_client.manage"
+const PermissionManageClients = "organization/oidc_client.write"
 
 var (
 	// ErrPermissionDenied: the actor lacks PermissionManageClients in the

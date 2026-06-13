@@ -512,7 +512,7 @@ type ListMyPermissionsResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	// Effective permissions (role inheritance expanded), as
-	// "service/method.action" strings.
+	// "namespace/resource.action" strings.
 	Permissions []string
 }
 

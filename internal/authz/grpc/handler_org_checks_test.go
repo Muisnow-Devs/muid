@@ -113,34 +113,34 @@ func TestCheckOrganizationPermission(t *testing.T) {
 		{
 			name:        "admin holds the manage grant",
 			userID:      fixture.admin,
-			permission:  "authn/oidc_client.manage",
+			permission:  "organization/oidc_client.write",
 			wantAllowed: true,
 			wantMember:  true,
 		},
 		{
 			name:        "owner inherits the manage grant",
 			userID:      fixture.owner,
-			permission:  "authn/oidc_client.manage",
+			permission:  "organization/oidc_client.write",
 			wantAllowed: true,
 			wantMember:  true,
 		},
 		{
 			name:       "member lacks the manage grant",
 			userID:     fixture.member,
-			permission: "authn/oidc_client.manage",
+			permission: "organization/oidc_client.write",
 			wantMember: true,
 		},
 		{
 			name:        "member holds the view grant",
 			userID:      fixture.member,
-			permission:  "authn/oidc_client.view",
+			permission:  "organization/oidc_client.read",
 			wantAllowed: true,
 			wantMember:  true,
 		},
 		{
 			name:       "non-member",
 			userID:     fixture.nonMember,
-			permission: "authn/oidc_client.manage",
+			permission: "organization/oidc_client.write",
 		},
 	}
 
@@ -188,14 +188,14 @@ func TestListNamespacePolicies(t *testing.T) {
 	handler := NewGRPCHandler(HandlerConfig{Manager: fixture.manager})
 
 	req := &pb.ListNamespacePoliciesRequest{}
-	req.SetNamespace("authn")
+	req.SetNamespace("organization")
 
 	resp, err := handler.ListNamespacePolicies(context.Background(), req)
 	if err != nil {
 		t.Fatalf("ListNamespacePolicies: %v", err)
 	}
 	if len(resp.GetRules()) == 0 {
-		t.Fatal("ListNamespacePolicies returned no rules, want authn grants + hierarchy")
+		t.Fatal("ListNamespacePolicies returned no rules, want organization grants + hierarchy")
 	}
 	if resp.GetRevisionId() == "" {
 		t.Error("revision_id is empty, want a snapshot id")

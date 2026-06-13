@@ -1,16 +1,14 @@
 {
   "permissions": {
-    "authz": [
-      "org.view",
-      "org.manage",
-      "member.view",
-      "member.manage",
-      "role.view",
-      "role.manage"
-    ],
-    "authn": [
-      "oidc_client.view",
-      "oidc_client.manage"
+    "organization": [
+      "setting.read",
+      "setting.write",
+      "member.read",
+      "member.write",
+      "role.read",
+      "role.write",
+      "oidc_client.read",
+      "oidc_client.write"
     ]
   },
   "system_roles": ["owner", "admin", "manager", "member"],
@@ -21,20 +19,20 @@
   ],
   "grants": {
     "member": [
-      "authz/org.view",
-      "authz/member.view",
-      "authz/role.view",
-      "authn/oidc_client.view"
+      "organization/setting.read",
+      "organization/member.read",
+      "organization/role.read",
+      "organization/oidc_client.read"
     ],
     "manager": [
-      "authz/member.manage"
+      "organization/member.write"
     ],
     "admin": [
-      "authz/role.manage",
-      "authn/oidc_client.manage"
+      "organization/role.write",
+      "organization/oidc_client.write"
     ],
     "owner": [
-      "authz/org.manage"
+      "organization/setting.write"
     ]
   }
 }

@@ -19,7 +19,7 @@ import (
 // adds the first owner — all in one transaction.
 func (m *Manager) CreateOrganization(
 	ctx context.Context,
-	name, description, domain string,
+	name, description string,
 	ownerUserID uuid.UUID,
 ) (uuid.UUID, error) {
 	type txOut struct {
@@ -32,7 +32,6 @@ func (m *Manager) CreateOrganization(
 			org, err := tx.Organization.Create().
 				SetName(name).
 				SetDescription(description).
-				SetDomain(domain).
 				Save(ctx)
 			if authzent.IsConstraintError(err) {
 				return txOut{}, ErrOrganizationExists

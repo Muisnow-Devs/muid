@@ -65,20 +65,6 @@ func (_u *OrganizationUpdate) ClearDescription() *OrganizationUpdate {
 	return _u
 }
 
-// SetDomain sets the "domain" field.
-func (_u *OrganizationUpdate) SetDomain(v string) *OrganizationUpdate {
-	_u.mutation.SetDomain(v)
-	return _u
-}
-
-// SetNillableDomain sets the "domain" field if the given value is not nil.
-func (_u *OrganizationUpdate) SetNillableDomain(v *string) *OrganizationUpdate {
-	if v != nil {
-		_u.SetDomain(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrganizationUpdate) SetUpdatedAt(v time.Time) *OrganizationUpdate {
 	_u.mutation.SetUpdatedAt(v)
@@ -210,11 +196,6 @@ func (_u *OrganizationUpdate) check() error {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Organization.description": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Domain(); ok {
-		if err := organization.DomainValidator(v); err != nil {
-			return &ValidationError{Name: "domain", err: fmt.Errorf(`ent: validator failed for field "Organization.domain": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -238,9 +219,6 @@ func (_u *OrganizationUpdate) sqlSave(ctx context.Context) (_node int, err error
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(organization.FieldDescription, field.TypeString)
-	}
-	if value, ok := _u.mutation.Domain(); ok {
-		_spec.SetField(organization.FieldDomain, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(organization.FieldUpdatedAt, field.TypeTime, value)
@@ -389,20 +367,6 @@ func (_u *OrganizationUpdateOne) ClearDescription() *OrganizationUpdateOne {
 	return _u
 }
 
-// SetDomain sets the "domain" field.
-func (_u *OrganizationUpdateOne) SetDomain(v string) *OrganizationUpdateOne {
-	_u.mutation.SetDomain(v)
-	return _u
-}
-
-// SetNillableDomain sets the "domain" field if the given value is not nil.
-func (_u *OrganizationUpdateOne) SetNillableDomain(v *string) *OrganizationUpdateOne {
-	if v != nil {
-		_u.SetDomain(*v)
-	}
-	return _u
-}
-
 // SetUpdatedAt sets the "updated_at" field.
 func (_u *OrganizationUpdateOne) SetUpdatedAt(v time.Time) *OrganizationUpdateOne {
 	_u.mutation.SetUpdatedAt(v)
@@ -547,11 +511,6 @@ func (_u *OrganizationUpdateOne) check() error {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Organization.description": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.Domain(); ok {
-		if err := organization.DomainValidator(v); err != nil {
-			return &ValidationError{Name: "domain", err: fmt.Errorf(`ent: validator failed for field "Organization.domain": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -592,9 +551,6 @@ func (_u *OrganizationUpdateOne) sqlSave(ctx context.Context) (_node *Organizati
 	}
 	if _u.mutation.DescriptionCleared() {
 		_spec.ClearField(organization.FieldDescription, field.TypeString)
-	}
-	if value, ok := _u.mutation.Domain(); ok {
-		_spec.SetField(organization.FieldDomain, field.TypeString, value)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(organization.FieldUpdatedAt, field.TypeTime, value)

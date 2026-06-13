@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
+	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/authz/policy"
 )
 
@@ -21,6 +22,10 @@ type GRPCHandler struct {
 
 type HandlerConfig struct {
 	Manager *policy.Manager
+	// ProfileClient creates the organization's profile (slug/display
+	// name/description) after the org is created. Nil disables that step
+	// (the org is still created without a profile row).
+	ProfileClient profilepb.OrganizationProfileServiceClient
 }
 
 func NewGRPCHandler(config HandlerConfig) pb.AuthzServiceServer {

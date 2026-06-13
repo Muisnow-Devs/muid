@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/profile/ent/organizationprofile"
 	"sanzi.io/muid/internal/profile/ent/schema"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
@@ -16,6 +17,46 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	organizationprofileFields := schema.OrganizationProfile{}.Fields()
+	_ = organizationprofileFields
+	// organizationprofileDescSlug is the schema descriptor for slug field.
+	organizationprofileDescSlug := organizationprofileFields[1].Descriptor()
+	// organizationprofile.SlugValidator is a validator for the "slug" field. It is called by the builders before save.
+	organizationprofile.SlugValidator = func() func(string) error {
+		validators := organizationprofileDescSlug.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(slug string) error {
+			for _, fn := range fns {
+				if err := fn(slug); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// organizationprofileDescDisplayName is the schema descriptor for display_name field.
+	organizationprofileDescDisplayName := organizationprofileFields[2].Descriptor()
+	// organizationprofile.DisplayNameValidator is a validator for the "display_name" field. It is called by the builders before save.
+	organizationprofile.DisplayNameValidator = organizationprofileDescDisplayName.Validators[0].(func(string) error)
+	// organizationprofileDescDescription is the schema descriptor for description field.
+	organizationprofileDescDescription := organizationprofileFields[3].Descriptor()
+	// organizationprofile.DefaultDescription holds the default value on creation for the description field.
+	organizationprofile.DefaultDescription = organizationprofileDescDescription.Default.(string)
+	// organizationprofile.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	organizationprofile.DescriptionValidator = organizationprofileDescDescription.Validators[0].(func(string) error)
+	// organizationprofileDescCreatedAt is the schema descriptor for created_at field.
+	organizationprofileDescCreatedAt := organizationprofileFields[4].Descriptor()
+	// organizationprofile.DefaultCreatedAt holds the default value on creation for the created_at field.
+	organizationprofile.DefaultCreatedAt = organizationprofileDescCreatedAt.Default.(func() time.Time)
+	// organizationprofileDescUpdatedAt is the schema descriptor for updated_at field.
+	organizationprofileDescUpdatedAt := organizationprofileFields[5].Descriptor()
+	// organizationprofile.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	organizationprofile.DefaultUpdatedAt = organizationprofileDescUpdatedAt.Default.(func() time.Time)
+	// organizationprofile.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	organizationprofile.UpdateDefaultUpdatedAt = organizationprofileDescUpdatedAt.UpdateDefault.(func() time.Time)
 	useravatarFields := schema.UserAvatar{}.Fields()
 	_ = useravatarFields
 	// useravatarDescObjectKey is the schema descriptor for object_key field.

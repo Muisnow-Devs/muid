@@ -1,6 +1,9 @@
 package app
 
 import (
+	"google.golang.org/grpc"
+
+	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	authzent "sanzi.io/muid/internal/authz/ent"
 	"sanzi.io/muid/internal/authz/policy"
 	"sanzi.io/muid/pkg/errutil"
@@ -30,6 +33,11 @@ type Config struct {
 	// (drift safety net for missed events); 0 disables it.
 	PolicyReloadSeconds int `envconfig:"POLICY_RELOAD_SECONDS" default:"300"`
 
+	// ProfileGRPCAddr is the profile service address used to provision an
+	// organization's profile (slug/display name/description) on creation.
+	// Empty disables that step (the org is still created).
+	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"`
+
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
 }
 
@@ -39,12 +47,16 @@ type InfraDependencies struct {
 	entClient     *authzent.Client
 	pubSub        pubsub.PubSub
 	PolicyManager *policy.Manager
+
+	profileConn   *grpc.ClientConn
+	ProfileClient profilepb.OrganizationProfileServiceClient
 }
 
 func (d *InfraDependencies) Close() error {
 	if d.PolicyManager != nil {
 		errutil.Discard(d.PolicyManager.Close())
 	}
+	errutil.CloseIf(d.profileConn)
 	errutil.CloseIf(d.pubSub)
 	if d.entClient != nil {
 		return d.entClient.Close()

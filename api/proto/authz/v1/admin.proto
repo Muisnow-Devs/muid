@@ -33,12 +33,13 @@ message CreateOrganizationRequest {
     max_len: 255
   }];
   string description = 2 [(buf.validate.field).string.max_len = 255];
-  string domain = 3 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 255
-  }];
   // Seeded as the organization's first owner.
-  string owner_user_id = 4 [(buf.validate.field).string.uuid = true];
+  string owner_user_id = 3 [(buf.validate.field).string.uuid = true];
+  // Optional URL-safe handle; auto-generated from name (and uniquified) when empty.
+  string slug = 4 [(buf.validate.field).string = {
+    pattern: "^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+    max_len: 63
+  }];
 }
 
 message CreateOrganizationResponse {
@@ -61,7 +62,13 @@ message SetOrganizationMemberResponse {}
 
 message ListCasbinRulesRequest {
   // Optional filters; empty matches all.
-  string ptype = 1 [(buf.validate.field).string = {in: ["", "p", "g"]}];
+  string ptype = 1 [(buf.validate.field).string = {
+    in: [
+      "",
+      "p",
+      "g"
+    ]
+  }];
   // Domain value ("*" or an organization UUID).
   string domain = 2 [(buf.validate.field).string.max_len = 64];
   int32 page_size = 3 [(buf.validate.field).int32 = {

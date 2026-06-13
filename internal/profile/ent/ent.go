@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/profile/ent/organizationprofile"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
@@ -75,6 +76,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			organizationprofile.Table:  organizationprofile.ValidColumn,
 			useravatar.Table:           useravatar.ValidColumn,
 			useroriginalidentity.Table: useroriginalidentity.ValidColumn,
 			userprofile.Table:          userprofile.ValidColumn,

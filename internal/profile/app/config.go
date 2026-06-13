@@ -4,8 +4,11 @@ import (
 	"errors"
 	"io"
 
+	"google.golang.org/grpc"
+
 	"sanzi.io/muid/internal/profile/core"
 	"sanzi.io/muid/internal/profile/ent"
+	"sanzi.io/muid/pkg/authzclient"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -19,6 +22,15 @@ type Config struct {
 	NATSURL     string `envconfig:"NATS_URL"                    required:"true"`
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
+
+	// AuthzInternalGRPCAddr is the authz internal listener (AuthzService),
+	// used by the local enforcer to authorize organization-profile edits.
+	// Empty disables UpdateOrganizationProfile (returns Unavailable).
+	AuthzInternalGRPCAddr string `envconfig:"AUTHZ_INTERNAL_GRPC_ADDR"`
+	// AuthzRoleCacheTTLSeconds bounds how long resolved user roles are reused.
+	AuthzRoleCacheTTLSeconds int `envconfig:"AUTHZ_ROLE_CACHE_TTL_SECONDS" default:"300"`
+	// AuthzPolicyRefreshSeconds is the periodic namespace-policy resync.
+	AuthzPolicyRefreshSeconds int `envconfig:"AUTHZ_POLICY_REFRESH_SECONDS" default:"300"`
 
 	// PublicAssetURL is the CDN or public origin for objects in the production assets bucket (used when deriving URLs from UserAvatar.object_key).
 	PublicAssetURL string `envconfig:"PUBLIC_ASSETS_URL" default:""`
@@ -40,10 +52,25 @@ type InfraDependencies struct {
 	Ent    *ent.Client
 	// Avatars is optional; when nil, StartAvatarUpload / CompleteAvatarUpload return FailedPrecondition.
 	Avatars *core.AvatarMedia
+
+	// AuthzEnforcer authorizes organization-profile edits; nil when
+	// AuthzInternalGRPCAddr is unset.
+	AuthzEnforcer *authzclient.Enforcer
+	authzConn     *grpc.ClientConn
 }
 
 func (d *InfraDependencies) Close() error {
 	var errs []error
+	if d.AuthzEnforcer != nil {
+		if err := d.AuthzEnforcer.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if d.authzConn != nil {
+		if err := d.authzConn.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
 	if d.Ent != nil {
 		err := d.Ent.Close()
 		if err != nil {

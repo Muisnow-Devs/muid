@@ -26,6 +26,7 @@ type ProfileGRPC struct {
 func NewProfileGRPC(
 	config Config,
 	handler pb.ProfileServiceServer,
+	orgHandler pb.OrganizationProfileServiceServer,
 	tracer tracing.Tracer,
 ) (*ProfileGRPC, error) {
 	if tracer == nil {
@@ -57,6 +58,7 @@ func NewProfileGRPC(
 		),
 	)
 	pb.RegisterProfileServiceServer(grpcServer, handler)
+	pb.RegisterOrganizationProfileServiceServer(grpcServer, orgHandler)
 
 	return &ProfileGRPC{
 		grpcServer: grpcServer,

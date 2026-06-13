@@ -93,30 +93,12 @@ func init() {
 	organizationDescDescription := organizationFields[2].Descriptor()
 	// organization.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
 	organization.DescriptionValidator = organizationDescDescription.Validators[0].(func(string) error)
-	// organizationDescDomain is the schema descriptor for domain field.
-	organizationDescDomain := organizationFields[3].Descriptor()
-	// organization.DomainValidator is a validator for the "domain" field. It is called by the builders before save.
-	organization.DomainValidator = func() func(string) error {
-		validators := organizationDescDomain.Validators
-		fns := [...]func(string) error{
-			validators[0].(func(string) error),
-			validators[1].(func(string) error),
-		}
-		return func(domain string) error {
-			for _, fn := range fns {
-				if err := fn(domain); err != nil {
-					return err
-				}
-			}
-			return nil
-		}
-	}()
 	// organizationDescCreatedAt is the schema descriptor for created_at field.
-	organizationDescCreatedAt := organizationFields[4].Descriptor()
+	organizationDescCreatedAt := organizationFields[3].Descriptor()
 	// organization.DefaultCreatedAt holds the default value on creation for the created_at field.
 	organization.DefaultCreatedAt = organizationDescCreatedAt.Default.(func() time.Time)
 	// organizationDescUpdatedAt is the schema descriptor for updated_at field.
-	organizationDescUpdatedAt := organizationFields[5].Descriptor()
+	organizationDescUpdatedAt := organizationFields[4].Descriptor()
 	// organization.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	organization.DefaultUpdatedAt = organizationDescUpdatedAt.Default.(func() time.Time)
 	// organization.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

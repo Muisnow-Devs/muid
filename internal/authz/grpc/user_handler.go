@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
+	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/authz/policy"
 )
 
@@ -16,11 +17,34 @@ import (
 type UserHandler struct {
 	pb.UnimplementedAuthzUserServiceServer
 
-	manager *policy.Manager
+	manager       *policy.Manager
+	profileClient profilepb.OrganizationProfileServiceClient
 }
 
 func NewUserHandler(config HandlerConfig) pb.AuthzUserServiceServer {
-	return &UserHandler{manager: config.Manager}
+	return &UserHandler{manager: config.Manager, profileClient: config.ProfileClient}
+}
+
+// CreateMyOrganization creates an organization with the caller seeded as its
+// first owner, then provisions its profile in the profile service.
+func (h *UserHandler) CreateMyOrganization(
+	ctx context.Context,
+	req *pb.CreateMyOrganizationRequest,
+) (*pb.CreateMyOrganizationResponse, error) {
+	userID, err := caller(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	organizationID, err := createOrganization(ctx, h.manager, h.profileClient,
+		req.GetName(), req.GetSlug(), req.GetDescription(), userID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &pb.CreateMyOrganizationResponse{}
+	out.SetOrganizationId(organizationID.String())
+	return out, nil
 }
 
 // caller returns the gateway-verified user id.

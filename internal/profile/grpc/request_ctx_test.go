@@ -111,6 +111,63 @@ func TestProfileRequestContextInterceptor_updateProfile(t *testing.T) {
 	}
 }
 
+func TestProfileRequestContextInterceptor_updateOrganizationProfileRequiresPrincipal(t *testing.T) {
+	t.Parallel()
+
+	interceptor := ProfileRequestContextInterceptor()
+	req := &pb.UpdateOrganizationProfileRequest{}
+	info := &grpc.UnaryServerInfo{
+		FullMethod: pb.OrganizationProfileService_UpdateOrganizationProfile_FullMethodName,
+	}
+
+	called := false
+	_, err := interceptor(
+		context.Background(), // no x-authn-user-id metadata
+		req,
+		info,
+		func(context.Context, any) (any, error) {
+			called = true
+			return nil, nil
+		},
+	)
+	if err == nil {
+		t.Fatal("expected error for missing authenticated principal")
+	}
+	if called {
+		t.Fatal("handler should not run without an authenticated principal")
+	}
+}
+
+func TestProfileRequestContextInterceptor_createOrganizationProfilePassthrough(t *testing.T) {
+	t.Parallel()
+
+	interceptor := ProfileRequestContextInterceptor()
+	req := &pb.CreateOrganizationProfileRequest{}
+	info := &grpc.UnaryServerInfo{
+		FullMethod: pb.OrganizationProfileService_CreateOrganizationProfile_FullMethodName,
+	}
+
+	called := false
+	_, err := interceptor(
+		context.Background(),
+		req,
+		info,
+		func(ctx context.Context, _ any) (any, error) {
+			called = true
+			if _, ok := sharedauthn.AuthenticatedUserIDFromContext(ctx); ok {
+				t.Fatal("CreateOrganizationProfile should not require a principal")
+			}
+			return nil, nil
+		},
+	)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !called {
+		t.Fatal("handler not called")
+	}
+}
+
 func TestProfileRequestContextInterceptor_createProfilePassthrough(t *testing.T) {
 	t.Parallel()
 

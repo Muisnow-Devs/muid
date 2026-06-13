@@ -21,6 +21,149 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type CreateMyOrganizationRequest struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3"`
+	xxx_hidden_Slug        string                 `protobuf:"bytes,2,opt,name=slug,proto3"`
+	xxx_hidden_Description string                 `protobuf:"bytes,3,opt,name=description,proto3"`
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *CreateMyOrganizationRequest) Reset() {
+	*x = CreateMyOrganizationRequest{}
+	mi := &file_authz_v1_user_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateMyOrganizationRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateMyOrganizationRequest) ProtoMessage() {}
+
+func (x *CreateMyOrganizationRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authz_v1_user_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateMyOrganizationRequest) GetName() string {
+	if x != nil {
+		return x.xxx_hidden_Name
+	}
+	return ""
+}
+
+func (x *CreateMyOrganizationRequest) GetSlug() string {
+	if x != nil {
+		return x.xxx_hidden_Slug
+	}
+	return ""
+}
+
+func (x *CreateMyOrganizationRequest) GetDescription() string {
+	if x != nil {
+		return x.xxx_hidden_Description
+	}
+	return ""
+}
+
+func (x *CreateMyOrganizationRequest) SetName(v string) {
+	x.xxx_hidden_Name = v
+}
+
+func (x *CreateMyOrganizationRequest) SetSlug(v string) {
+	x.xxx_hidden_Slug = v
+}
+
+func (x *CreateMyOrganizationRequest) SetDescription(v string) {
+	x.xxx_hidden_Description = v
+}
+
+type CreateMyOrganizationRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Name string
+	// Optional URL-safe handle; auto-generated from name (and uniquified) when empty.
+	Slug        string
+	Description string
+}
+
+func (b0 CreateMyOrganizationRequest_builder) Build() *CreateMyOrganizationRequest {
+	m0 := &CreateMyOrganizationRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Name = b.Name
+	x.xxx_hidden_Slug = b.Slug
+	x.xxx_hidden_Description = b.Description
+	return m0
+}
+
+type CreateMyOrganizationResponse struct {
+	state                     protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3"`
+	unknownFields             protoimpl.UnknownFields
+	sizeCache                 protoimpl.SizeCache
+}
+
+func (x *CreateMyOrganizationResponse) Reset() {
+	*x = CreateMyOrganizationResponse{}
+	mi := &file_authz_v1_user_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateMyOrganizationResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateMyOrganizationResponse) ProtoMessage() {}
+
+func (x *CreateMyOrganizationResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authz_v1_user_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CreateMyOrganizationResponse) GetOrganizationId() string {
+	if x != nil {
+		return x.xxx_hidden_OrganizationId
+	}
+	return ""
+}
+
+func (x *CreateMyOrganizationResponse) SetOrganizationId(v string) {
+	x.xxx_hidden_OrganizationId = v
+}
+
+type CreateMyOrganizationResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	OrganizationId string
+}
+
+func (b0 CreateMyOrganizationResponse_builder) Build() *CreateMyOrganizationResponse {
+	m0 := &CreateMyOrganizationResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_OrganizationId = b.OrganizationId
+	return m0
+}
+
 type OrganizationMembershipView struct {
 	state                     protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_OrganizationId string                 `protobuf:"bytes,1,opt,name=organization_id,json=organizationId,proto3"`
@@ -33,7 +176,7 @@ type OrganizationMembershipView struct {
 
 func (x *OrganizationMembershipView) Reset() {
 	*x = OrganizationMembershipView{}
-	mi := &file_authz_v1_user_proto_msgTypes[0]
+	mi := &file_authz_v1_user_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -45,7 +188,7 @@ func (x *OrganizationMembershipView) String() string {
 func (*OrganizationMembershipView) ProtoMessage() {}
 
 func (x *OrganizationMembershipView) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[0]
+	mi := &file_authz_v1_user_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -131,7 +274,7 @@ type ListMyOrganizationsRequest struct {
 
 func (x *ListMyOrganizationsRequest) Reset() {
 	*x = ListMyOrganizationsRequest{}
-	mi := &file_authz_v1_user_proto_msgTypes[1]
+	mi := &file_authz_v1_user_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -143,7 +286,7 @@ func (x *ListMyOrganizationsRequest) String() string {
 func (*ListMyOrganizationsRequest) ProtoMessage() {}
 
 func (x *ListMyOrganizationsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[1]
+	mi := &file_authz_v1_user_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,7 +345,7 @@ type ListMyOrganizationsResponse struct {
 
 func (x *ListMyOrganizationsResponse) Reset() {
 	*x = ListMyOrganizationsResponse{}
-	mi := &file_authz_v1_user_proto_msgTypes[2]
+	mi := &file_authz_v1_user_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -214,7 +357,7 @@ func (x *ListMyOrganizationsResponse) String() string {
 func (*ListMyOrganizationsResponse) ProtoMessage() {}
 
 func (x *ListMyOrganizationsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[2]
+	mi := &file_authz_v1_user_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -274,7 +417,7 @@ type ListMyPermissionsRequest struct {
 
 func (x *ListMyPermissionsRequest) Reset() {
 	*x = ListMyPermissionsRequest{}
-	mi := &file_authz_v1_user_proto_msgTypes[3]
+	mi := &file_authz_v1_user_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -286,7 +429,7 @@ func (x *ListMyPermissionsRequest) String() string {
 func (*ListMyPermissionsRequest) ProtoMessage() {}
 
 func (x *ListMyPermissionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[3]
+	mi := &file_authz_v1_user_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -331,7 +474,7 @@ type ListMyPermissionsResponse struct {
 
 func (x *ListMyPermissionsResponse) Reset() {
 	*x = ListMyPermissionsResponse{}
-	mi := &file_authz_v1_user_proto_msgTypes[4]
+	mi := &file_authz_v1_user_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -343,7 +486,7 @@ func (x *ListMyPermissionsResponse) String() string {
 func (*ListMyPermissionsResponse) ProtoMessage() {}
 
 func (x *ListMyPermissionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[4]
+	mi := &file_authz_v1_user_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -391,7 +534,7 @@ type CheckMyPermissionRequest struct {
 
 func (x *CheckMyPermissionRequest) Reset() {
 	*x = CheckMyPermissionRequest{}
-	mi := &file_authz_v1_user_proto_msgTypes[5]
+	mi := &file_authz_v1_user_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -403,7 +546,7 @@ func (x *CheckMyPermissionRequest) String() string {
 func (*CheckMyPermissionRequest) ProtoMessage() {}
 
 func (x *CheckMyPermissionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[5]
+	mi := &file_authz_v1_user_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -461,7 +604,7 @@ type CheckMyPermissionResponse struct {
 
 func (x *CheckMyPermissionResponse) Reset() {
 	*x = CheckMyPermissionResponse{}
-	mi := &file_authz_v1_user_proto_msgTypes[6]
+	mi := &file_authz_v1_user_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -473,7 +616,7 @@ func (x *CheckMyPermissionResponse) String() string {
 func (*CheckMyPermissionResponse) ProtoMessage() {}
 
 func (x *CheckMyPermissionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_user_proto_msgTypes[6]
+	mi := &file_authz_v1_user_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,7 +656,14 @@ var File_authz_v1_user_proto protoreflect.FileDescriptor
 
 const file_authz_v1_user_proto_rawDesc = "" +
 	"\n" +
-	"\x13authz/v1/user.proto\x12\rmuid.authz.v1\x1a\x1bbuf/validate/validate.proto\"\x8f\x01\n" +
+	"\x13authz/v1/user.proto\x12\rmuid.authz.v1\x1a\x1bbuf/validate/validate.proto\"\xac\x01\n" +
+	"\x1bCreateMyOrganizationRequest\x12\x1e\n" +
+	"\x04name\x18\x01 \x01(\tB\n" +
+	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04name\x12A\n" +
+	"\x04slug\x18\x02 \x01(\tB-\xbaH*r(\x18?2$^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$R\x04slug\x12*\n" +
+	"\vdescription\x18\x03 \x01(\tB\b\xbaH\x05r\x03\x18\xff\x01R\vdescription\"G\n" +
+	"\x1cCreateMyOrganizationResponse\x12'\n" +
+	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\"\x8f\x01\n" +
 	"\x1aOrganizationMembershipView\x12'\n" +
 	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -537,33 +687,38 @@ const file_authz_v1_user_proto_rawDesc = "" +
 	"permission\x18\x02 \x01(\tB<\xbaH9r7\x18\x80\x0122^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$R\n" +
 	"permission\"5\n" +
 	"\x19CheckMyPermissionResponse\x12\x18\n" +
-	"\aallowed\x18\x01 \x01(\bR\aallowed2\xd0\x02\n" +
-	"\x10AuthzUserService\x12l\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed2\xc1\x03\n" +
+	"\x10AuthzUserService\x12o\n" +
+	"\x14CreateMyOrganization\x12*.muid.authz.v1.CreateMyOrganizationRequest\x1a+.muid.authz.v1.CreateMyOrganizationResponse\x12l\n" +
 	"\x13ListMyOrganizations\x12).muid.authz.v1.ListMyOrganizationsRequest\x1a*.muid.authz.v1.ListMyOrganizationsResponse\x12f\n" +
 	"\x11ListMyPermissions\x12'.muid.authz.v1.ListMyPermissionsRequest\x1a(.muid.authz.v1.ListMyPermissionsResponse\x12f\n" +
 	"\x11CheckMyPermission\x12'.muid.authz.v1.CheckMyPermissionRequest\x1a(.muid.authz.v1.CheckMyPermissionResponseB\x9c\x01\n" +
 	"\x11com.muid.authz.v1B\tUserProtoP\x01Z&sanzi.io/muid/api/proto/authz/v1;authz\xa2\x02\x03MAX\xaa\x02\rMuid.Authz.V1\xca\x02\rMuid\\Authz\\V1\xe2\x02\x19Muid\\Authz\\V1\\GPBMetadata\xea\x02\x0fMuid::Authz::V1b\x06proto3"
 
-var file_authz_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_authz_v1_user_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_authz_v1_user_proto_goTypes = []any{
-	(*OrganizationMembershipView)(nil),  // 0: muid.authz.v1.OrganizationMembershipView
-	(*ListMyOrganizationsRequest)(nil),  // 1: muid.authz.v1.ListMyOrganizationsRequest
-	(*ListMyOrganizationsResponse)(nil), // 2: muid.authz.v1.ListMyOrganizationsResponse
-	(*ListMyPermissionsRequest)(nil),    // 3: muid.authz.v1.ListMyPermissionsRequest
-	(*ListMyPermissionsResponse)(nil),   // 4: muid.authz.v1.ListMyPermissionsResponse
-	(*CheckMyPermissionRequest)(nil),    // 5: muid.authz.v1.CheckMyPermissionRequest
-	(*CheckMyPermissionResponse)(nil),   // 6: muid.authz.v1.CheckMyPermissionResponse
+	(*CreateMyOrganizationRequest)(nil),  // 0: muid.authz.v1.CreateMyOrganizationRequest
+	(*CreateMyOrganizationResponse)(nil), // 1: muid.authz.v1.CreateMyOrganizationResponse
+	(*OrganizationMembershipView)(nil),   // 2: muid.authz.v1.OrganizationMembershipView
+	(*ListMyOrganizationsRequest)(nil),   // 3: muid.authz.v1.ListMyOrganizationsRequest
+	(*ListMyOrganizationsResponse)(nil),  // 4: muid.authz.v1.ListMyOrganizationsResponse
+	(*ListMyPermissionsRequest)(nil),     // 5: muid.authz.v1.ListMyPermissionsRequest
+	(*ListMyPermissionsResponse)(nil),    // 6: muid.authz.v1.ListMyPermissionsResponse
+	(*CheckMyPermissionRequest)(nil),     // 7: muid.authz.v1.CheckMyPermissionRequest
+	(*CheckMyPermissionResponse)(nil),    // 8: muid.authz.v1.CheckMyPermissionResponse
 }
 var file_authz_v1_user_proto_depIdxs = []int32{
-	0, // 0: muid.authz.v1.ListMyOrganizationsResponse.organizations:type_name -> muid.authz.v1.OrganizationMembershipView
-	1, // 1: muid.authz.v1.AuthzUserService.ListMyOrganizations:input_type -> muid.authz.v1.ListMyOrganizationsRequest
-	3, // 2: muid.authz.v1.AuthzUserService.ListMyPermissions:input_type -> muid.authz.v1.ListMyPermissionsRequest
-	5, // 3: muid.authz.v1.AuthzUserService.CheckMyPermission:input_type -> muid.authz.v1.CheckMyPermissionRequest
-	2, // 4: muid.authz.v1.AuthzUserService.ListMyOrganizations:output_type -> muid.authz.v1.ListMyOrganizationsResponse
-	4, // 5: muid.authz.v1.AuthzUserService.ListMyPermissions:output_type -> muid.authz.v1.ListMyPermissionsResponse
-	6, // 6: muid.authz.v1.AuthzUserService.CheckMyPermission:output_type -> muid.authz.v1.CheckMyPermissionResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
+	2, // 0: muid.authz.v1.ListMyOrganizationsResponse.organizations:type_name -> muid.authz.v1.OrganizationMembershipView
+	0, // 1: muid.authz.v1.AuthzUserService.CreateMyOrganization:input_type -> muid.authz.v1.CreateMyOrganizationRequest
+	3, // 2: muid.authz.v1.AuthzUserService.ListMyOrganizations:input_type -> muid.authz.v1.ListMyOrganizationsRequest
+	5, // 3: muid.authz.v1.AuthzUserService.ListMyPermissions:input_type -> muid.authz.v1.ListMyPermissionsRequest
+	7, // 4: muid.authz.v1.AuthzUserService.CheckMyPermission:input_type -> muid.authz.v1.CheckMyPermissionRequest
+	1, // 5: muid.authz.v1.AuthzUserService.CreateMyOrganization:output_type -> muid.authz.v1.CreateMyOrganizationResponse
+	4, // 6: muid.authz.v1.AuthzUserService.ListMyOrganizations:output_type -> muid.authz.v1.ListMyOrganizationsResponse
+	6, // 7: muid.authz.v1.AuthzUserService.ListMyPermissions:output_type -> muid.authz.v1.ListMyPermissionsResponse
+	8, // 8: muid.authz.v1.AuthzUserService.CheckMyPermission:output_type -> muid.authz.v1.CheckMyPermissionResponse
+	5, // [5:9] is the sub-list for method output_type
+	1, // [1:5] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -580,7 +735,7 @@ func file_authz_v1_user_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authz_v1_user_proto_rawDesc), len(file_authz_v1_user_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

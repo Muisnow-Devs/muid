@@ -193,6 +193,7 @@ func TestOrgAdminHandlerAuthorization(t *testing.T) {
 func TestUserHandler(t *testing.T) {
 	fixture := newOrgFixture(t, "authzuserhandler")
 	handler := NewUserHandler(HandlerConfig{Manager: fixture.manager})
+	ctx := context.Background()
 
 	t.Run("list my organizations", func(t *testing.T) {
 		req := &pb.ListMyOrganizationsRequest{}
@@ -245,6 +246,53 @@ func TestUserHandler(t *testing.T) {
 			t.Error("owner permissions empty, want the full inherited set")
 		}
 	})
+
+	t.Run("create my organization makes caller owner", func(t *testing.T) {
+		creator := uuid.New()
+		req := &pb.CreateMyOrganizationRequest{}
+		req.SetName("My New Org")
+		req.SetDescription("a freshly created org")
+
+		resp, err := handler.CreateMyOrganization(ctxAsUser(creator), req)
+		if err != nil {
+			t.Fatalf("CreateMyOrganization: %v", err)
+		}
+		orgID, err := uuid.Parse(resp.GetOrganizationId())
+		if err != nil {
+			t.Fatalf("organization id %q is not a uuid", resp.GetOrganizationId())
+		}
+
+		// The creator is the owner: org.manage is an owner-only grant.
+		allowed, err := fixture.manager.Enforce(ctx, creator, orgID, "authz/org.manage")
+		if err != nil {
+			t.Fatalf("Enforce: %v", err)
+		}
+		if !allowed {
+			t.Error("creator lacks authz/org.manage, want owner")
+		}
+
+		listResp, err := handler.ListMyOrganizations(
+			ctxAsUser(creator),
+			&pb.ListMyOrganizationsRequest{},
+		)
+		if err != nil {
+			t.Fatalf("ListMyOrganizations: %v", err)
+		}
+		if len(listResp.GetOrganizations()) != 1 ||
+			listResp.GetOrganizations()[0].GetRole() != "owner" {
+			t.Errorf(
+				"creator memberships = %+v, want one org with role owner",
+				listResp.GetOrganizations(),
+			)
+		}
+	})
+
+	t.Run("create my organization without identity is unauthenticated", func(t *testing.T) {
+		req := &pb.CreateMyOrganizationRequest{}
+		req.SetName("No Caller Org")
+		_, err := handler.CreateMyOrganization(context.Background(), req)
+		wantCode(t, err, codes.Unauthenticated)
+	})
 }
 
 func TestAdminHandler(t *testing.T) {
@@ -255,7 +303,6 @@ func TestAdminHandler(t *testing.T) {
 	t.Run("create and delete organization", func(t *testing.T) {
 		req := &pb.CreateOrganizationRequest{}
 		req.SetName("globex")
-		req.SetDomain("globex.test")
 		req.SetOwnerUserId(uuid.New().String())
 
 		resp, err := handler.CreateOrganization(ctx, req)
@@ -266,10 +313,6 @@ func TestAdminHandler(t *testing.T) {
 		if _, err := uuid.Parse(orgID); err != nil {
 			t.Fatalf("organization id %q is not a uuid", orgID)
 		}
-
-		// Duplicate name collides.
-		_, err = handler.CreateOrganization(ctx, req)
-		wantCode(t, err, codes.AlreadyExists)
 
 		delReq := &pb.DeleteOrganizationRequest{}
 		delReq.SetOrganizationId(orgID)

@@ -20,9 +20,12 @@ func (Organization) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Default(shared.UUIDV7).Immutable(),
 
-		field.String("name").NotEmpty().Unique(),
+		// Denormalized display fields used by authz's own membership/admin
+		// lists; the editable source of truth (slug, display name,
+		// description) lives in the profile service's OrganizationProfile.
+		// name is not unique — the unique handle is the profile slug.
+		field.String("name").NotEmpty(),
 		field.String("description").MaxLen(255).Optional(),
-		field.String("domain").MaxLen(255).NotEmpty().Unique(),
 
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),

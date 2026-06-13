@@ -38,6 +38,25 @@ func mapProfileError(ctx context.Context, op string, err error) error {
 	}
 }
 
+// mapOrganizationProfileError converts organization-profile sentinels to gRPC
+// statuses. It reuses the shared mask/conflict/invalid-argument handling and
+// adds the organization-profile not-found / already-exists cases.
+func mapOrganizationProfileError(ctx context.Context, op string, err error) error {
+	switch {
+	case errors.Is(err, core.ErrOrganizationProfileNotFound):
+		return status.Error(codes.NotFound, "organization profile not found")
+	case errors.Is(err, core.ErrOrganizationProfileExists):
+		return status.Error(codes.AlreadyExists, "organization profile already exists")
+	case errors.Is(err, core.ErrSlugExhausted):
+		return status.Error(
+			codes.ResourceExhausted,
+			"could not allocate a unique organization slug",
+		)
+	default:
+		return mapProfileError(ctx, op, err)
+	}
+}
+
 // mapAvatarError converts avatar upload sentinels to gRPC statuses.
 func mapAvatarError(ctx context.Context, op string, err error) error {
 	if ia, ok := errors.AsType[core.InvalidArgumentError](err); ok {

@@ -3,15 +3,19 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"entgo.io/ent/dialect"
+	"google.golang.org/grpc"
 
+	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/infra/nats"
 	authzent "sanzi.io/muid/internal/authz/ent"
 	"sanzi.io/muid/internal/authz/policy"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
 func NewAuthzInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
@@ -62,10 +66,25 @@ func NewAuthzInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 		return nil, fmt.Errorf("policy reconcile: %w", err)
 	}
 
+	var profileConn *grpc.ClientConn
+	var profileClient profilepb.OrganizationProfileServiceClient
+	if addr := strings.TrimSpace(cfg.ProfileGRPCAddr); addr != "" {
+		profileConn, err = grpcutils.DialInsecureClient(addr, grpcutils.ClientResilienceConfig{})
+		if err != nil {
+			errutil.Discard(manager.Close())
+			errutil.Close(entClient)
+			errutil.CloseIf(pubSub)
+			return nil, fmt.Errorf("profile grpc dial: %w", err)
+		}
+		profileClient = profilepb.NewOrganizationProfileServiceClient(profileConn)
+	}
+
 	return &InfraDependencies{
 		GlobalConfig:  cfg,
 		entClient:     entClient,
 		pubSub:        pubSub,
 		PolicyManager: manager,
+		profileConn:   profileConn,
+		ProfileClient: profileClient,
 	}, nil
 }

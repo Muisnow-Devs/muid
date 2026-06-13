@@ -8,6 +8,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
+	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/authz/policy"
 )
 
@@ -17,11 +18,12 @@ import (
 type AdminHandler struct {
 	pb.UnimplementedAuthzAdminServiceServer
 
-	manager *policy.Manager
+	manager       *policy.Manager
+	profileClient profilepb.OrganizationProfileServiceClient
 }
 
 func NewAdminHandler(config HandlerConfig) pb.AuthzAdminServiceServer {
-	return &AdminHandler{manager: config.Manager}
+	return &AdminHandler{manager: config.Manager, profileClient: config.ProfileClient}
 }
 
 func (h *AdminHandler) CreateOrganization(
@@ -33,10 +35,10 @@ func (h *AdminHandler) CreateOrganization(
 		return nil, status.Error(codes.InvalidArgument, "invalid owner user id")
 	}
 
-	organizationID, err := h.manager.CreateOrganization(ctx,
-		req.GetName(), req.GetDescription(), req.GetDomain(), ownerUserID)
+	organizationID, err := createOrganization(ctx, h.manager, h.profileClient,
+		req.GetName(), req.GetSlug(), req.GetDescription(), ownerUserID)
 	if err != nil {
-		return nil, mapPolicyError(ctx, "authz create organization", err)
+		return nil, err
 	}
 
 	out := &pb.CreateOrganizationResponse{}

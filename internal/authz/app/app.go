@@ -12,7 +12,10 @@ type AuthzApp struct {
 }
 
 func NewAuthzApp(ctx context.Context, infra *InfraDependencies) (*AuthzApp, error) {
-	handlerCfg := authzgrpc.HandlerConfig{Manager: infra.PolicyManager}
+	handlerCfg := authzgrpc.HandlerConfig{
+		Manager:       infra.PolicyManager,
+		ProfileClient: infra.ProfileClient,
+	}
 	handlers := Handlers{
 		Service:  authzgrpc.NewGRPCHandler(handlerCfg),
 		User:     authzgrpc.NewUserHandler(handlerCfg),

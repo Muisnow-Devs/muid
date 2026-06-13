@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// OrganizationProfile is the predicate function for organizationprofile builders.
+type OrganizationProfile func(*sql.Selector)
+
 // UserAvatar is the predicate function for useravatar builders.
 type UserAvatar func(*sql.Selector)
 

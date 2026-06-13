@@ -9,6 +9,18 @@ import (
 	"sanzi.io/muid/internal/profile/ent"
 )
 
+// The OrganizationProfileFunc type is an adapter to allow the use of ordinary
+// function as OrganizationProfile mutator.
+type OrganizationProfileFunc func(context.Context, *ent.OrganizationProfileMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f OrganizationProfileFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.OrganizationProfileMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.OrganizationProfileMutation", m)
+}
+
 // The UserAvatarFunc type is an adapter to allow the use of ordinary
 // function as UserAvatar mutator.
 type UserAvatarFunc func(context.Context, *ent.UserAvatarMutation) (ent.Value, error)

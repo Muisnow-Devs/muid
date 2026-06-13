@@ -25,8 +25,8 @@ type CreateOrganizationRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Name        string                 `protobuf:"bytes,1,opt,name=name,proto3"`
 	xxx_hidden_Description string                 `protobuf:"bytes,2,opt,name=description,proto3"`
-	xxx_hidden_Domain      string                 `protobuf:"bytes,3,opt,name=domain,proto3"`
 	xxx_hidden_OwnerUserId string                 `protobuf:"bytes,4,opt,name=owner_user_id,json=ownerUserId,proto3"`
+	xxx_hidden_Slug        string                 `protobuf:"bytes,5,opt,name=slug,proto3"`
 	unknownFields          protoimpl.UnknownFields
 	sizeCache              protoimpl.SizeCache
 }
@@ -70,16 +70,16 @@ func (x *CreateOrganizationRequest) GetDescription() string {
 	return ""
 }
 
-func (x *CreateOrganizationRequest) GetDomain() string {
+func (x *CreateOrganizationRequest) GetOwnerUserId() string {
 	if x != nil {
-		return x.xxx_hidden_Domain
+		return x.xxx_hidden_OwnerUserId
 	}
 	return ""
 }
 
-func (x *CreateOrganizationRequest) GetOwnerUserId() string {
+func (x *CreateOrganizationRequest) GetSlug() string {
 	if x != nil {
-		return x.xxx_hidden_OwnerUserId
+		return x.xxx_hidden_Slug
 	}
 	return ""
 }
@@ -92,12 +92,12 @@ func (x *CreateOrganizationRequest) SetDescription(v string) {
 	x.xxx_hidden_Description = v
 }
 
-func (x *CreateOrganizationRequest) SetDomain(v string) {
-	x.xxx_hidden_Domain = v
-}
-
 func (x *CreateOrganizationRequest) SetOwnerUserId(v string) {
 	x.xxx_hidden_OwnerUserId = v
+}
+
+func (x *CreateOrganizationRequest) SetSlug(v string) {
+	x.xxx_hidden_Slug = v
 }
 
 type CreateOrganizationRequest_builder struct {
@@ -105,9 +105,10 @@ type CreateOrganizationRequest_builder struct {
 
 	Name        string
 	Description string
-	Domain      string
 	// Seeded as the organization's first owner.
 	OwnerUserId string
+	// Optional URL-safe handle; auto-generated from name (and uniquified) when empty.
+	Slug string
 }
 
 func (b0 CreateOrganizationRequest_builder) Build() *CreateOrganizationRequest {
@@ -116,8 +117,8 @@ func (b0 CreateOrganizationRequest_builder) Build() *CreateOrganizationRequest {
 	_, _ = b, x
 	x.xxx_hidden_Name = b.Name
 	x.xxx_hidden_Description = b.Description
-	x.xxx_hidden_Domain = b.Domain
 	x.xxx_hidden_OwnerUserId = b.OwnerUserId
+	x.xxx_hidden_Slug = b.Slug
 	return m0
 }
 
@@ -916,14 +917,13 @@ var File_authz_v1_admin_proto protoreflect.FileDescriptor
 
 const file_authz_v1_admin_proto_rawDesc = "" +
 	"\n" +
-	"\x14authz/v1/admin.proto\x12\rmuid.authz.v1\x1a\x14authz/v1/authz.proto\x1a\x1bbuf/validate/validate.proto\"\xb9\x01\n" +
+	"\x14authz/v1/admin.proto\x12\rmuid.authz.v1\x1a\x14authz/v1/authz.proto\x1a\x1bbuf/validate/validate.proto\"\xe6\x01\n" +
 	"\x19CreateOrganizationRequest\x12\x1e\n" +
 	"\x04name\x18\x01 \x01(\tB\n" +
 	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x04name\x12*\n" +
-	"\vdescription\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\xff\x01R\vdescription\x12\"\n" +
-	"\x06domain\x18\x03 \x01(\tB\n" +
-	"\xbaH\ar\x05\x10\x01\x18\xff\x01R\x06domain\x12,\n" +
-	"\rowner_user_id\x18\x04 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vownerUserId\"E\n" +
+	"\vdescription\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\xff\x01R\vdescription\x12,\n" +
+	"\rowner_user_id\x18\x04 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\vownerUserId\x12A\n" +
+	"\x04slug\x18\x05 \x01(\tB-\xbaH*r(\x18?2$^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$R\x04slugJ\x04\b\x03\x10\x04R\x06domain\"E\n" +
 	"\x1aCreateOrganizationResponse\x12'\n" +
 	"\x0forganization_id\x18\x01 \x01(\tR\x0eorganizationId\"N\n" +
 	"\x19DeleteOrganizationRequest\x121\n" +

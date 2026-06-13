@@ -83,16 +83,16 @@ Keys must be rotated periodically (e.g., every 30-90 days, or on demand).
     2. **Active overlap**: Publish both Key A and Key B in `/jwks.json` to allow relying parties to cache them.
     3. **Switch**: Promote Key A to handle new signatures; Key B remains in JWKS for validation of old tokens until their expiry.
     4. **Purge/Archive**: Remove Key B from `/jwks.json` and optionally destroy it in GSM after maximum token TTL expires.
-- [ ] **4.2 Rotation Logic inside `infra/secretmanager`**
+- [X] **4.2 Rotation Logic inside `infra/secretmanager`**
   - Implement logic using `google.golang.org/api/secretmanager/v1`. Create new Secret Versions for new RSA keys. Disable/Destroy old versions.
 
 ### Phase 5: OIDC Specifics in `authn` Service
 
 The `authn` service must actually process the OIDC core logic (rather than the gateway, which is stateless).
 
-- [ ] **5.1 OIDC State Management**
+- [X] **5.1 OIDC State Management**
   - Add OIDC Session/Grant storage (likely in Postgres via `pkg/entpostgres` or Redis). We need to store `auth_code` and PKCE (`code_challenge`) state during the `/authorize` -> `/token` exchange.
-- [ ] **5.2 ID Token Generation**
+- [X] **5.2 ID Token Generation**
   - Implement strict JWT generation complying with the OIDC standard (correct `iss`, `aud`, `exp`, `iat`, `nonce` claims).
   - Sign tokens using the current Active Private Key from GSM.
 - [ ] **5.3 Risk Model & Abuse Prevention**
@@ -109,9 +109,9 @@ The `authz` service handles fine-grained access control, OAuth2 clients, and use
   - Implement Scope mapping (defining what internal permissions a specific OAuth2/OIDC scope grants).
 - [ ] **6.2 User Grants & Delegation**
   - Track which scopes a user has explicitly granted to a specific Client (e.g., recording that user Alice granted App X the `profile:read` scope).
-- [ ] **6.3 Permission Control & Access Policies**
+- [X] **6.3 Permission Control & Access Policies**
   - Implement Role-Based Access Control (RBAC) or Attribute-Based Access Control (ABAC) defining user permissions.
-- [ ] **6.4 Group & Team Management**
+- [X] **6.4 Group & Team Management**
   - Develop Group/Team management, allowing users to be organized into teams.
   - Allow permissions and roles to be granted at a group level and inherited by members.
 

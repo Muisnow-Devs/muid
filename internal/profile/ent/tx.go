@@ -12,6 +12,8 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// OrganizationProfile is the client for interacting with the OrganizationProfile builders.
+	OrganizationProfile *OrganizationProfileClient
 	// UserAvatar is the client for interacting with the UserAvatar builders.
 	UserAvatar *UserAvatarClient
 	// UserOriginalIdentity is the client for interacting with the UserOriginalIdentity builders.
@@ -149,6 +151,7 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.OrganizationProfile = NewOrganizationProfileClient(tx.config)
 	tx.UserAvatar = NewUserAvatarClient(tx.config)
 	tx.UserOriginalIdentity = NewUserOriginalIdentityClient(tx.config)
 	tx.UserProfile = NewUserProfileClient(tx.config)
@@ -161,7 +164,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: UserAvatar.QueryXXX(), the query will be executed
+// applies a query, for example: OrganizationProfile.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

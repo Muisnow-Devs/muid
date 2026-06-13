@@ -16,6 +16,7 @@ import (
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/profile/ent/organizationprofile"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/useroriginalidentity"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
@@ -26,6 +27,8 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
+	// OrganizationProfile is the client for interacting with the OrganizationProfile builders.
+	OrganizationProfile *OrganizationProfileClient
 	// UserAvatar is the client for interacting with the UserAvatar builders.
 	UserAvatar *UserAvatarClient
 	// UserOriginalIdentity is the client for interacting with the UserOriginalIdentity builders.
@@ -43,6 +46,7 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
+	c.OrganizationProfile = NewOrganizationProfileClient(c.config)
 	c.UserAvatar = NewUserAvatarClient(c.config)
 	c.UserOriginalIdentity = NewUserOriginalIdentityClient(c.config)
 	c.UserProfile = NewUserProfileClient(c.config)
@@ -138,6 +142,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	return &Tx{
 		ctx:                  ctx,
 		config:               cfg,
+		OrganizationProfile:  NewOrganizationProfileClient(cfg),
 		UserAvatar:           NewUserAvatarClient(cfg),
 		UserOriginalIdentity: NewUserOriginalIdentityClient(cfg),
 		UserProfile:          NewUserProfileClient(cfg),
@@ -160,6 +165,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	return &Tx{
 		ctx:                  ctx,
 		config:               cfg,
+		OrganizationProfile:  NewOrganizationProfileClient(cfg),
 		UserAvatar:           NewUserAvatarClient(cfg),
 		UserOriginalIdentity: NewUserOriginalIdentityClient(cfg),
 		UserProfile:          NewUserProfileClient(cfg),
@@ -169,7 +175,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		UserAvatar.
+//		OrganizationProfile.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -191,6 +197,7 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
+	c.OrganizationProfile.Use(hooks...)
 	c.UserAvatar.Use(hooks...)
 	c.UserOriginalIdentity.Use(hooks...)
 	c.UserProfile.Use(hooks...)
@@ -199,6 +206,7 @@ func (c *Client) Use(hooks ...Hook) {
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
+	c.OrganizationProfile.Intercept(interceptors...)
 	c.UserAvatar.Intercept(interceptors...)
 	c.UserOriginalIdentity.Intercept(interceptors...)
 	c.UserProfile.Intercept(interceptors...)
@@ -207,6 +215,8 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
+	case *OrganizationProfileMutation:
+		return c.OrganizationProfile.mutate(ctx, m)
 	case *UserAvatarMutation:
 		return c.UserAvatar.mutate(ctx, m)
 	case *UserOriginalIdentityMutation:
@@ -215,6 +225,139 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.UserProfile.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
+	}
+}
+
+// OrganizationProfileClient is a client for the OrganizationProfile schema.
+type OrganizationProfileClient struct {
+	config
+}
+
+// NewOrganizationProfileClient returns a client for the OrganizationProfile from the given config.
+func NewOrganizationProfileClient(c config) *OrganizationProfileClient {
+	return &OrganizationProfileClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `organizationprofile.Hooks(f(g(h())))`.
+func (c *OrganizationProfileClient) Use(hooks ...Hook) {
+	c.hooks.OrganizationProfile = append(c.hooks.OrganizationProfile, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `organizationprofile.Intercept(f(g(h())))`.
+func (c *OrganizationProfileClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OrganizationProfile = append(c.inters.OrganizationProfile, interceptors...)
+}
+
+// Create returns a builder for creating a OrganizationProfile entity.
+func (c *OrganizationProfileClient) Create() *OrganizationProfileCreate {
+	mutation := newOrganizationProfileMutation(c.config, OpCreate)
+	return &OrganizationProfileCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OrganizationProfile entities.
+func (c *OrganizationProfileClient) CreateBulk(builders ...*OrganizationProfileCreate) *OrganizationProfileCreateBulk {
+	return &OrganizationProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OrganizationProfileClient) MapCreateBulk(slice any, setFunc func(*OrganizationProfileCreate, int)) *OrganizationProfileCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OrganizationProfileCreateBulk{err: fmt.Errorf("calling to OrganizationProfileClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OrganizationProfileCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OrganizationProfileCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OrganizationProfile.
+func (c *OrganizationProfileClient) Update() *OrganizationProfileUpdate {
+	mutation := newOrganizationProfileMutation(c.config, OpUpdate)
+	return &OrganizationProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrganizationProfileClient) UpdateOne(_m *OrganizationProfile) *OrganizationProfileUpdateOne {
+	mutation := newOrganizationProfileMutation(c.config, OpUpdateOne, withOrganizationProfile(_m))
+	return &OrganizationProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrganizationProfileClient) UpdateOneID(id uuid.UUID) *OrganizationProfileUpdateOne {
+	mutation := newOrganizationProfileMutation(c.config, OpUpdateOne, withOrganizationProfileID(id))
+	return &OrganizationProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OrganizationProfile.
+func (c *OrganizationProfileClient) Delete() *OrganizationProfileDelete {
+	mutation := newOrganizationProfileMutation(c.config, OpDelete)
+	return &OrganizationProfileDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OrganizationProfileClient) DeleteOne(_m *OrganizationProfile) *OrganizationProfileDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OrganizationProfileClient) DeleteOneID(id uuid.UUID) *OrganizationProfileDeleteOne {
+	builder := c.Delete().Where(organizationprofile.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrganizationProfileDeleteOne{builder}
+}
+
+// Query returns a query builder for OrganizationProfile.
+func (c *OrganizationProfileClient) Query() *OrganizationProfileQuery {
+	return &OrganizationProfileQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOrganizationProfile},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OrganizationProfile entity by its id.
+func (c *OrganizationProfileClient) Get(ctx context.Context, id uuid.UUID) (*OrganizationProfile, error) {
+	return c.Query().Where(organizationprofile.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrganizationProfileClient) GetX(ctx context.Context, id uuid.UUID) *OrganizationProfile {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *OrganizationProfileClient) Hooks() []Hook {
+	return c.hooks.OrganizationProfile
+}
+
+// Interceptors returns the client interceptors.
+func (c *OrganizationProfileClient) Interceptors() []Interceptor {
+	return c.inters.OrganizationProfile
+}
+
+func (c *OrganizationProfileClient) mutate(ctx context.Context, m *OrganizationProfileMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OrganizationProfileCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OrganizationProfileUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OrganizationProfileUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OrganizationProfileDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OrganizationProfile mutation op: %q", m.Op())
 	}
 }
 
@@ -684,9 +827,10 @@ func (c *UserProfileClient) mutate(ctx context.Context, m *UserProfileMutation) 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		UserAvatar, UserOriginalIdentity, UserProfile []ent.Hook
+		OrganizationProfile, UserAvatar, UserOriginalIdentity, UserProfile []ent.Hook
 	}
 	inters struct {
-		UserAvatar, UserOriginalIdentity, UserProfile []ent.Interceptor
+		OrganizationProfile, UserAvatar, UserOriginalIdentity,
+		UserProfile []ent.Interceptor
 	}
 )

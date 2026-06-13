@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package muid.profile.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/profile/v1;profile";
+
+// OrganizationProfileService owns an organization's editable basic
+// information (slug, display name, description). The organization itself —
+// identity, membership, and permissions — is owned by the authz service; the
+// row here is keyed by the authz organization id.
+service OrganizationProfileService {
+  // CreateOrganizationProfile is a service-to-service call from authz when an
+  // organization is created. It carries no authenticated principal and relies
+  // on the network boundary, mirroring ProfileService.CreateProfile.
+  rpc CreateOrganizationProfile(CreateOrganizationProfileRequest) returns (CreateOrganizationProfileResponse);
+
+  rpc GetOrganizationProfile(GetOrganizationProfileRequest) returns (GetOrganizationProfileResponse);
+
+  // UpdateOrganizationProfile edits basic information. Requires an
+  // authenticated principal (x-authn-user-id) holding "authz/org.manage" in
+  // the target organization.
+  rpc UpdateOrganizationProfile(UpdateOrganizationProfileRequest) returns (UpdateOrganizationProfileResponse);
+}
+
+message OrganizationProfileView {
+  string organization_id = 1;
+  string slug = 2;
+  string display_name = 3;
+  string description = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
+}
+
+message CreateOrganizationProfileRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  string display_name = 2 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Optional handle; auto-generated from display_name (and uniquified) when empty.
+  string slug = 3 [(buf.validate.field).string = {
+    pattern: "^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+    max_len: 63
+  }];
+  string description = 4 [(buf.validate.field).string.max_len = 255];
+}
+
+message CreateOrganizationProfileResponse {
+  OrganizationProfileView profile = 1;
+}
+
+message GetOrganizationProfileRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+}
+
+message GetOrganizationProfileResponse {
+  OrganizationProfileView profile = 1;
+}
+
+message UpdateOrganizationProfileRequest {
+  string organization_id = 1 [(buf.validate.field).string.uuid = true];
+  // Paths select which of display_name, slug, description to apply.
+  google.protobuf.FieldMask update_mask = 2;
+  string display_name = 3 [(buf.validate.field).string.max_len = 255];
+  string slug = 4 [(buf.validate.field).string = {
+    pattern: "^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+    max_len: 63
+  }];
+  string description = 5 [(buf.validate.field).string.max_len = 255];
+}
+
+message UpdateOrganizationProfileResponse {
+  OrganizationProfileView profile = 1;
+}

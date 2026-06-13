@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AuthzUserService_ListMyOrganizations_FullMethodName = "/muid.authz.v1.AuthzUserService/ListMyOrganizations"
-	AuthzUserService_ListMyPermissions_FullMethodName   = "/muid.authz.v1.AuthzUserService/ListMyPermissions"
-	AuthzUserService_CheckMyPermission_FullMethodName   = "/muid.authz.v1.AuthzUserService/CheckMyPermission"
+	AuthzUserService_CreateMyOrganization_FullMethodName = "/muid.authz.v1.AuthzUserService/CreateMyOrganization"
+	AuthzUserService_ListMyOrganizations_FullMethodName  = "/muid.authz.v1.AuthzUserService/ListMyOrganizations"
+	AuthzUserService_ListMyPermissions_FullMethodName    = "/muid.authz.v1.AuthzUserService/ListMyPermissions"
+	AuthzUserService_CheckMyPermission_FullMethodName    = "/muid.authz.v1.AuthzUserService/CheckMyPermission"
 )
 
 // AuthzUserServiceClient is the client API for AuthzUserService service.
@@ -34,6 +35,9 @@ const (
 // metadata; requests therefore carry no user_id field, and authz rejects
 // calls without the metadata.
 type AuthzUserServiceClient interface {
+	// CreateMyOrganization creates an organization with the caller (resolved
+	// from "x-user-id" metadata) seeded as its first owner.
+	CreateMyOrganization(ctx context.Context, in *CreateMyOrganizationRequest, opts ...grpc.CallOption) (*CreateMyOrganizationResponse, error)
 	ListMyOrganizations(ctx context.Context, in *ListMyOrganizationsRequest, opts ...grpc.CallOption) (*ListMyOrganizationsResponse, error)
 	ListMyPermissions(ctx context.Context, in *ListMyPermissionsRequest, opts ...grpc.CallOption) (*ListMyPermissionsResponse, error)
 	CheckMyPermission(ctx context.Context, in *CheckMyPermissionRequest, opts ...grpc.CallOption) (*CheckMyPermissionResponse, error)
@@ -45,6 +49,16 @@ type authzUserServiceClient struct {
 
 func NewAuthzUserServiceClient(cc grpc.ClientConnInterface) AuthzUserServiceClient {
 	return &authzUserServiceClient{cc}
+}
+
+func (c *authzUserServiceClient) CreateMyOrganization(ctx context.Context, in *CreateMyOrganizationRequest, opts ...grpc.CallOption) (*CreateMyOrganizationResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CreateMyOrganizationResponse)
+	err := c.cc.Invoke(ctx, AuthzUserService_CreateMyOrganization_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *authzUserServiceClient) ListMyOrganizations(ctx context.Context, in *ListMyOrganizationsRequest, opts ...grpc.CallOption) (*ListMyOrganizationsResponse, error) {
@@ -87,6 +101,9 @@ func (c *authzUserServiceClient) CheckMyPermission(ctx context.Context, in *Chec
 // metadata; requests therefore carry no user_id field, and authz rejects
 // calls without the metadata.
 type AuthzUserServiceServer interface {
+	// CreateMyOrganization creates an organization with the caller (resolved
+	// from "x-user-id" metadata) seeded as its first owner.
+	CreateMyOrganization(context.Context, *CreateMyOrganizationRequest) (*CreateMyOrganizationResponse, error)
 	ListMyOrganizations(context.Context, *ListMyOrganizationsRequest) (*ListMyOrganizationsResponse, error)
 	ListMyPermissions(context.Context, *ListMyPermissionsRequest) (*ListMyPermissionsResponse, error)
 	CheckMyPermission(context.Context, *CheckMyPermissionRequest) (*CheckMyPermissionResponse, error)
@@ -100,6 +117,9 @@ type AuthzUserServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAuthzUserServiceServer struct{}
 
+func (UnimplementedAuthzUserServiceServer) CreateMyOrganization(context.Context, *CreateMyOrganizationRequest) (*CreateMyOrganizationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateMyOrganization not implemented")
+}
 func (UnimplementedAuthzUserServiceServer) ListMyOrganizations(context.Context, *ListMyOrganizationsRequest) (*ListMyOrganizationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListMyOrganizations not implemented")
 }
@@ -128,6 +148,24 @@ func RegisterAuthzUserServiceServer(s grpc.ServiceRegistrar, srv AuthzUserServic
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&AuthzUserService_ServiceDesc, srv)
+}
+
+func _AuthzUserService_CreateMyOrganization_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateMyOrganizationRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzUserServiceServer).CreateMyOrganization(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthzUserService_CreateMyOrganization_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzUserServiceServer).CreateMyOrganization(ctx, req.(*CreateMyOrganizationRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _AuthzUserService_ListMyOrganizations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -191,6 +229,10 @@ var AuthzUserService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "muid.authz.v1.AuthzUserService",
 	HandlerType: (*AuthzUserServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateMyOrganization",
+			Handler:    _AuthzUserService_CreateMyOrganization_Handler,
+		},
 		{
 			MethodName: "ListMyOrganizations",
 			Handler:    _AuthzUserService_ListMyOrganizations_Handler,

@@ -43,12 +43,6 @@ func (_c *OrganizationCreate) SetNillableDescription(v *string) *OrganizationCre
 	return _c
 }
 
-// SetDomain sets the "domain" field.
-func (_c *OrganizationCreate) SetDomain(v string) *OrganizationCreate {
-	_c.mutation.SetDomain(v)
-	return _c
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (_c *OrganizationCreate) SetCreatedAt(v time.Time) *OrganizationCreate {
 	_c.mutation.SetCreatedAt(v)
@@ -185,14 +179,6 @@ func (_c *OrganizationCreate) check() error {
 			return &ValidationError{Name: "description", err: fmt.Errorf(`ent: validator failed for field "Organization.description": %w`, err)}
 		}
 	}
-	if _, ok := _c.mutation.Domain(); !ok {
-		return &ValidationError{Name: "domain", err: errors.New(`ent: missing required field "Organization.domain"`)}
-	}
-	if v, ok := _c.mutation.Domain(); ok {
-		if err := organization.DomainValidator(v); err != nil {
-			return &ValidationError{Name: "domain", err: fmt.Errorf(`ent: validator failed for field "Organization.domain": %w`, err)}
-		}
-	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Organization.created_at"`)}
 	}
@@ -241,10 +227,6 @@ func (_c *OrganizationCreate) createSpec() (*Organization, *sqlgraph.CreateSpec)
 	if value, ok := _c.mutation.Description(); ok {
 		_spec.SetField(organization.FieldDescription, field.TypeString, value)
 		_node.Description = value
-	}
-	if value, ok := _c.mutation.Domain(); ok {
-		_spec.SetField(organization.FieldDomain, field.TypeString, value)
-		_node.Domain = value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(organization.FieldCreatedAt, field.TypeTime, value)

@@ -55,7 +55,6 @@ func newOrgFixture(t *testing.T, dbName string) orgFixture {
 		ctx,
 		"Acme",
 		"",
-		"acme.test",
 		fixture.owner,
 	)
 	if err != nil {

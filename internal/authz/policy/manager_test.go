@@ -144,7 +144,7 @@ func TestOrganizationLifecycleAndHierarchy(t *testing.T) {
 	ctx := context.Background()
 
 	owner := uuid.New()
-	orgID, err := m.CreateOrganization(ctx, "acme", "test org", "acme.example", owner)
+	orgID, err := m.CreateOrganization(ctx, "acme", "test org", owner)
 	if err != nil {
 		t.Fatalf("CreateOrganization() error = %v", err)
 	}
@@ -253,7 +253,7 @@ func TestMemberMutations(t *testing.T) {
 
 	owner := uuid.New()
 	alice := uuid.New()
-	orgID, err := m.CreateOrganization(ctx, "acme", "", "acme.example", owner)
+	orgID, err := m.CreateOrganization(ctx, "acme", "", owner)
 	if err != nil {
 		t.Fatalf("CreateOrganization() error = %v", err)
 	}
@@ -367,7 +367,7 @@ func TestCustomRoles(t *testing.T) {
 
 	owner := uuid.New()
 	bob := uuid.New()
-	orgID, err := m.CreateOrganization(ctx, "acme", "", "acme.example", owner)
+	orgID, err := m.CreateOrganization(ctx, "acme", "", owner)
 	if err != nil {
 		t.Fatalf("CreateOrganization() error = %v", err)
 	}
@@ -456,7 +456,7 @@ func TestNamespacePolicies(t *testing.T) {
 	ctx := context.Background()
 
 	owner := uuid.New()
-	orgID, err := m.CreateOrganization(ctx, "acme", "", "acme.example", owner)
+	orgID, err := m.CreateOrganization(ctx, "acme", "", owner)
 	if err != nil {
 		t.Fatalf("CreateOrganization() error = %v", err)
 	}

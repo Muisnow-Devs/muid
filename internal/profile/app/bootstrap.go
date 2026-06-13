@@ -3,9 +3,13 @@ package app
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"entgo.io/ent/dialect"
+	"google.golang.org/grpc"
 
+	authzpb "sanzi.io/muid/api/proto/authz/v1"
 	"sanzi.io/muid/infra/nats"
 	"sanzi.io/muid/infra/r2"
 	"sanzi.io/muid/internal/media"
@@ -13,8 +17,10 @@ import (
 	"sanzi.io/muid/internal/profile/core"
 	"sanzi.io/muid/internal/profile/ent"
 	profilegrpc "sanzi.io/muid/internal/profile/grpc"
+	"sanzi.io/muid/pkg/authzclient"
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
 func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
@@ -74,11 +80,44 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 		}
 	}
 
+	var authzConn *grpc.ClientConn
+	var authzEnforcer *authzclient.Enforcer
+	if addr := strings.TrimSpace(cfg.AuthzInternalGRPCAddr); addr != "" {
+		authzConn, err = grpcutils.DialInsecureClient(addr, grpcutils.ClientResilienceConfig{})
+		if err != nil {
+			errutil.Close(client)
+			errutil.CloseIf(pubSub)
+			return nil, fmt.Errorf("authz grpc dial: %w", err)
+		}
+		authzEnforcer, err = authzclient.NewEnforcer(authzclient.Config{
+			Namespace:       "authz",
+			Client:          authzpb.NewAuthzServiceClient(authzConn),
+			PubSub:          pubSub,
+			RoleCacheTTL:    time.Duration(cfg.AuthzRoleCacheTTLSeconds) * time.Second,
+			RefreshInterval: time.Duration(cfg.AuthzPolicyRefreshSeconds) * time.Second,
+		})
+		if err != nil {
+			errutil.Close(authzConn)
+			errutil.Close(client)
+			errutil.CloseIf(pubSub)
+			return nil, fmt.Errorf("authz enforcer: %w", err)
+		}
+		err = authzEnforcer.Start(ctx)
+		if err != nil {
+			errutil.Close(authzConn)
+			errutil.Close(client)
+			errutil.CloseIf(pubSub)
+			return nil, fmt.Errorf("authz enforcer start: %w", err)
+		}
+	}
+
 	return &InfraDependencies{
-		GlobalConfig: cfg,
-		PubSub:       pubSub,
-		Ent:          client,
-		Avatars:      avatars,
+		GlobalConfig:  cfg,
+		PubSub:        pubSub,
+		Ent:           client,
+		Avatars:       avatars,
+		AuthzEnforcer: authzEnforcer,
+		authzConn:     authzConn,
 	}, nil
 }
 
@@ -105,9 +144,18 @@ func NewProfileApp(infra *InfraDependencies) (*ProfileApp, error) {
 		)
 	}
 
-	h := profilegrpc.NewGRPCHandler(core.NewManager(mcfg))
+	mgr := core.NewManager(mcfg)
+	h := profilegrpc.NewGRPCHandler(mgr)
 
-	svc, err := NewProfileGRPC(infra.GlobalConfig, h, nil)
+	// Pass a true nil interface (not a typed-nil enforcer) when unconfigured so
+	// the handler's nil check works.
+	var orgEnforcer profilegrpc.OrgPermissionEnforcer
+	if infra.AuthzEnforcer != nil {
+		orgEnforcer = infra.AuthzEnforcer
+	}
+	orgHandler := profilegrpc.NewOrganizationGRPCHandler(mgr, orgEnforcer)
+
+	svc, err := NewProfileGRPC(infra.GlobalConfig, h, orgHandler, nil)
 	if err != nil {
 		return nil, err
 	}

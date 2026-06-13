@@ -23,6 +23,12 @@ var (
 	ErrObjectKeyNotOwned = errors.New("object key does not belong to user")
 	// ErrInvalidAvatarImage tags media validation/decode failures that are the client's fault.
 	ErrInvalidAvatarImage = errors.New("invalid avatar image")
+	// ErrOrganizationProfileNotFound is returned when no organization profile row matches the id.
+	ErrOrganizationProfileNotFound = errors.New("organization profile not found")
+	// ErrOrganizationProfileExists is returned when a profile already exists for the organization id.
+	ErrOrganizationProfileExists = errors.New("organization profile already exists")
+	// ErrSlugExhausted is returned when every generated organization slug candidate is taken.
+	ErrSlugExhausted = errors.New("organization slug candidates exhausted")
 )
 
 // InvalidArgumentError carries a client-safe message; the grpc layer maps it

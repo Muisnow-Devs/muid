@@ -66,11 +66,6 @@ func Description(v string) predicate.Organization {
 	return predicate.Organization(sql.FieldEQ(FieldDescription, v))
 }
 
-// Domain applies equality check predicate on the "domain" field. It's identical to DomainEQ.
-func Domain(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldEQ(FieldDomain, v))
-}
-
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Organization {
 	return predicate.Organization(sql.FieldEQ(FieldCreatedAt, v))
@@ -219,71 +214,6 @@ func DescriptionEqualFold(v string) predicate.Organization {
 // DescriptionContainsFold applies the ContainsFold predicate on the "description" field.
 func DescriptionContainsFold(v string) predicate.Organization {
 	return predicate.Organization(sql.FieldContainsFold(FieldDescription, v))
-}
-
-// DomainEQ applies the EQ predicate on the "domain" field.
-func DomainEQ(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldEQ(FieldDomain, v))
-}
-
-// DomainNEQ applies the NEQ predicate on the "domain" field.
-func DomainNEQ(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldNEQ(FieldDomain, v))
-}
-
-// DomainIn applies the In predicate on the "domain" field.
-func DomainIn(vs ...string) predicate.Organization {
-	return predicate.Organization(sql.FieldIn(FieldDomain, vs...))
-}
-
-// DomainNotIn applies the NotIn predicate on the "domain" field.
-func DomainNotIn(vs ...string) predicate.Organization {
-	return predicate.Organization(sql.FieldNotIn(FieldDomain, vs...))
-}
-
-// DomainGT applies the GT predicate on the "domain" field.
-func DomainGT(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldGT(FieldDomain, v))
-}
-
-// DomainGTE applies the GTE predicate on the "domain" field.
-func DomainGTE(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldGTE(FieldDomain, v))
-}
-
-// DomainLT applies the LT predicate on the "domain" field.
-func DomainLT(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldLT(FieldDomain, v))
-}
-
-// DomainLTE applies the LTE predicate on the "domain" field.
-func DomainLTE(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldLTE(FieldDomain, v))
-}
-
-// DomainContains applies the Contains predicate on the "domain" field.
-func DomainContains(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldContains(FieldDomain, v))
-}
-
-// DomainHasPrefix applies the HasPrefix predicate on the "domain" field.
-func DomainHasPrefix(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldHasPrefix(FieldDomain, v))
-}
-
-// DomainHasSuffix applies the HasSuffix predicate on the "domain" field.
-func DomainHasSuffix(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldHasSuffix(FieldDomain, v))
-}
-
-// DomainEqualFold applies the EqualFold predicate on the "domain" field.
-func DomainEqualFold(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldEqualFold(FieldDomain, v))
-}
-
-// DomainContainsFold applies the ContainsFold predicate on the "domain" field.
-func DomainContainsFold(v string) predicate.Organization {
-	return predicate.Organization(sql.FieldContainsFold(FieldDomain, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

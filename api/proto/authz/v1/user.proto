@@ -12,9 +12,29 @@ option go_package = "sanzi.io/muid/api/proto/authz/v1;authz";
 // metadata; requests therefore carry no user_id field, and authz rejects
 // calls without the metadata.
 service AuthzUserService {
+  // CreateMyOrganization creates an organization with the caller (resolved
+  // from "x-user-id" metadata) seeded as its first owner.
+  rpc CreateMyOrganization(CreateMyOrganizationRequest) returns (CreateMyOrganizationResponse);
   rpc ListMyOrganizations(ListMyOrganizationsRequest) returns (ListMyOrganizationsResponse);
   rpc ListMyPermissions(ListMyPermissionsRequest) returns (ListMyPermissionsResponse);
   rpc CheckMyPermission(CheckMyPermissionRequest) returns (CheckMyPermissionResponse);
+}
+
+message CreateMyOrganizationRequest {
+  string name = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Optional URL-safe handle; auto-generated from name (and uniquified) when empty.
+  string slug = 2 [(buf.validate.field).string = {
+    pattern: "^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+    max_len: 63
+  }];
+  string description = 3 [(buf.validate.field).string.max_len = 255];
+}
+
+message CreateMyOrganizationResponse {
+  string organization_id = 1;
 }
 
 message OrganizationMembershipView {

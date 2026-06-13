@@ -8,6 +8,28 @@ import (
 )
 
 var (
+	// OrganizationProfilesColumns holds the columns for the "organization_profiles" table.
+	OrganizationProfilesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "slug", Type: field.TypeString, Unique: true},
+		{Name: "display_name", Type: field.TypeString},
+		{Name: "description", Type: field.TypeString, Size: 255, Default: ""},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// OrganizationProfilesTable holds the schema information for the "organization_profiles" table.
+	OrganizationProfilesTable = &schema.Table{
+		Name:       "organization_profiles",
+		Columns:    OrganizationProfilesColumns,
+		PrimaryKey: []*schema.Column{OrganizationProfilesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "organizationprofile_slug",
+				Unique:  false,
+				Columns: []*schema.Column{OrganizationProfilesColumns[1]},
+			},
+		},
+	}
 	// UserAvatarsColumns holds the columns for the "user_avatars" table.
 	UserAvatarsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -95,6 +117,7 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		OrganizationProfilesTable,
 		UserAvatarsTable,
 		UserOriginalIdentitiesTable,
 		UserProfilesTable,

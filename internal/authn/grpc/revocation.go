@@ -10,10 +10,14 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
+	"sanzi.io/muid/internal/authn/authnaudit"
+	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/userfederatedidentity"
 	"sanzi.io/muid/internal/authn/ent/useridentity"
 	"sanzi.io/muid/internal/session"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/clientmeta"
+	"sanzi.io/muid/pkg/enttx"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
@@ -36,30 +40,53 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 	}
 
 	now := time.Now()
-	federatedUpdated, err := g.db.UserFederatedIdentity.Update().
-		Where(
-			userfederatedidentity.ProviderEQ(provider),
-			userfederatedidentity.RevokedAtIsNil(),
-			userfederatedidentity.HasIdentityWith(useridentity.UserIDEQ(resolved.UserID)),
-		).
-		SetRevokedAt(now).
-		Save(ctx)
-	if err != nil {
-		return nil, err
-	}
+	revokedCount, err := enttx.Run(ctx, g.db.Tx,
+		func(ctx context.Context, tx *ent.Tx) (int, error) {
+			federatedUpdated, err := tx.UserFederatedIdentity.Update().
+				Where(
+					userfederatedidentity.ProviderEQ(provider),
+					userfederatedidentity.RevokedAtIsNil(),
+					userfederatedidentity.HasIdentityWith(useridentity.UserIDEQ(resolved.UserID)),
+				).
+				SetRevokedAt(now).
+				Save(ctx)
+			if err != nil {
+				return 0, err
+			}
 
-	userIdentityUpdated, err := g.db.UserIdentity.Update().
-		Where(
-			useridentity.UserID(resolved.UserID),
-			useridentity.Provider(provider),
-			useridentity.RevokedAtIsNil(),
-		).
-		SetRevokedAt(now).
-		Save(ctx)
+			userIdentityUpdated, err := tx.UserIdentity.Update().
+				Where(
+					useridentity.UserID(resolved.UserID),
+					useridentity.Provider(provider),
+					useridentity.RevokedAtIsNil(),
+				).
+				SetRevokedAt(now).
+				Save(ctx)
+			if err != nil {
+				return 0, err
+			}
+
+			total := federatedUpdated + userIdentityUpdated
+			if total == 0 {
+				return 0, nil
+			}
+			actor := resolved.UserID
+			err = authnaudit.Write(ctx, tx, audit.Entry{
+				ActorID:      &actor,
+				Action:       audit.ActionFederatedIdentityRevoke,
+				ResourceType: audit.ResourceFederatedIdentity,
+				ResourceID:   resolved.UserID.String(),
+				Changes:      audit.Payload(map[string]any{"provider": provider}),
+			})
+			if err != nil {
+				return 0, err
+			}
+			return total, nil
+		})
 	if err != nil {
 		return nil, err
 	}
-	if federatedUpdated+userIdentityUpdated == 0 {
+	if revokedCount == 0 {
 		return nil, status.Error(codes.NotFound, "federated identity not found")
 	}
 

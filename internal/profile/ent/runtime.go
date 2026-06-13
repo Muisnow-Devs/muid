@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"sanzi.io/muid/internal/profile/ent/auditlog"
 	"sanzi.io/muid/internal/profile/ent/organizationprofile"
 	"sanzi.io/muid/internal/profile/ent/schema"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
@@ -17,6 +18,24 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	auditlogFields := schema.AuditLog{}.Fields()
+	_ = auditlogFields
+	// auditlogDescAction is the schema descriptor for action field.
+	auditlogDescAction := auditlogFields[2].Descriptor()
+	// auditlog.ActionValidator is a validator for the "action" field. It is called by the builders before save.
+	auditlog.ActionValidator = auditlogDescAction.Validators[0].(func(string) error)
+	// auditlogDescResourceType is the schema descriptor for resource_type field.
+	auditlogDescResourceType := auditlogFields[3].Descriptor()
+	// auditlog.ResourceTypeValidator is a validator for the "resource_type" field. It is called by the builders before save.
+	auditlog.ResourceTypeValidator = auditlogDescResourceType.Validators[0].(func(string) error)
+	// auditlogDescCreatedAt is the schema descriptor for created_at field.
+	auditlogDescCreatedAt := auditlogFields[8].Descriptor()
+	// auditlog.DefaultCreatedAt holds the default value on creation for the created_at field.
+	auditlog.DefaultCreatedAt = auditlogDescCreatedAt.Default.(func() time.Time)
+	// auditlogDescID is the schema descriptor for id field.
+	auditlogDescID := auditlogFields[0].Descriptor()
+	// auditlog.DefaultID holds the default value on creation for the id field.
+	auditlog.DefaultID = auditlogDescID.Default.(func() uuid.UUID)
 	organizationprofileFields := schema.OrganizationProfile{}.Fields()
 	_ = organizationprofileFields
 	// organizationprofileDescSlug is the schema descriptor for slug field.

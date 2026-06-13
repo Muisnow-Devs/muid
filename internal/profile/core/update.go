@@ -8,6 +8,7 @@ import (
 
 	idclaims "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/profile/ent"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
@@ -53,7 +54,20 @@ func (m *Manager) UpdateProfile(
 				return nil, err
 			}
 
-			return tx.UserProfile.Get(ctx, userID)
+			snap, err := tx.UserProfile.Get(ctx, userID)
+			if err != nil {
+				return nil, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:       audit.ActionProfileUpdate,
+				ResourceType: audit.ResourceProfile,
+				ResourceID:   userID.String(),
+				Changes:      audit.Payload(map[string]any{"fields": paths}),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return snap, nil
 		},
 	)
 	if err != nil {

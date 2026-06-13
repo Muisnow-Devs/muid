@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/log"
 )
 
@@ -55,6 +56,7 @@ func UserIdentityInterceptor() grpc.UnaryServerInterceptor {
 
 		ctx = context.WithValue(ctx, userIDContextKey{}, userID)
 		ctx = log.WithAttrs(ctx, log.UserID(userID))
+		ctx = audit.WithActor(ctx, userID)
 		return handler(ctx, req)
 	}
 }

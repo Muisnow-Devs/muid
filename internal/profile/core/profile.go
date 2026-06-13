@@ -9,6 +9,7 @@ import (
 	idclaims "sanzi.io/muid/api/proto/shared/v1/claims"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/shared/tracing"
 	"sanzi.io/muid/pkg/utils"
@@ -57,7 +58,29 @@ func (m *Manager) CreateProfile(
 		ctx,
 		m.db.Tx,
 		func(ctx context.Context, tx *ent.Tx) (*ent.UserProfile, error) {
-			return createProfileRow(ctx, tx, candidates, displayName, locale, timezone)
+			user, err := createProfileRow(ctx, tx, candidates, displayName, locale, timezone)
+			if err != nil {
+				return nil, err
+			}
+			// A profile is created for and by its own user; the new user is
+			// the actor of their own profile creation.
+			actor := user.ID
+			err = writeAudit(ctx, tx, audit.Entry{
+				ActorID:      &actor,
+				Action:       audit.ActionProfileCreate,
+				ResourceType: audit.ResourceProfile,
+				ResourceID:   user.ID.String(),
+				Changes: audit.Changes(nil, map[string]any{
+					"display_name": displayName,
+					"username":     user.Username,
+					"locale":       locale,
+					"timezone":     timezone,
+				}),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return user, nil
 		},
 	)
 	if err != nil {

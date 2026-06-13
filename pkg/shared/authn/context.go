@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/log"
 )
 
@@ -35,6 +36,7 @@ func EnrichRequiredAuthenticatedUser(ctx context.Context) (context.Context, uuid
 	}
 	ctx = log.WithAttrs(ctx, log.UserID(id))
 	ctx = WithAuthenticatedUserID(ctx, id)
+	ctx = audit.WithActor(ctx, id)
 	return ctx, id, nil
 }
 

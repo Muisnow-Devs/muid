@@ -12,6 +12,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/organization"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared/authzmodel"
@@ -72,6 +73,20 @@ func (m *Manager) CreateRole(
 				return txOut{}, err
 			}
 			err = insertRules(ctx, tx.CasbinRule, grantRules)
+			if err != nil {
+				return txOut{}, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionRoleCreate,
+				ResourceType:   audit.ResourceRole,
+				ResourceID:     role.ID.String(),
+				OrganizationID: &organizationID,
+				Changes: audit.Changes(nil, map[string]any{
+					"name":        name,
+					"description": description,
+					"permissions": permissions,
+				}),
+			})
 			if err != nil {
 				return txOut{}, err
 			}
@@ -195,6 +210,24 @@ func (m *Manager) UpdateRole(
 				}
 			}
 
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionRoleUpdate,
+				ResourceType:   audit.ResourceRole,
+				ResourceID:     role.ID.String(),
+				OrganizationID: &organizationID,
+				Changes: audit.Changes(
+					map[string]any{"name": name},
+					map[string]any{
+						"name":        finalName,
+						"description": description,
+						"permissions": permissions,
+					},
+				),
+			})
+			if err != nil {
+				return txOut{}, err
+			}
+
 			rev, err := bumpRevision(ctx, tx)
 			if err != nil {
 				return txOut{}, err
@@ -284,6 +317,16 @@ func (m *Manager) DeleteRole(ctx context.Context, organizationID uuid.UUID, name
 				return txOut{}, err
 			}
 			err = tx.OrganizationRole.DeleteOneID(role.ID).Exec(ctx)
+			if err != nil {
+				return txOut{}, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionRoleDelete,
+				ResourceType:   audit.ResourceRole,
+				ResourceID:     role.ID.String(),
+				OrganizationID: &organizationID,
+				Changes:        audit.Changes(map[string]any{"name": name}, nil),
+			})
 			if err != nil {
 				return txOut{}, err
 			}

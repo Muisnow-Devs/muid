@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AuditLog is the predicate function for auditlog builders.
+type AuditLog func(*sql.Selector)
+
 // OIDCCallbackURI is the predicate function for oidccallbackuri builders.
 type OIDCCallbackURI func(*sql.Selector)
 

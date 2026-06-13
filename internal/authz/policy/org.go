@@ -11,6 +11,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/casbinrule"
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/log"
 )
@@ -77,6 +78,21 @@ func (m *Manager) CreateOrganization(
 			if err != nil {
 				return txOut{}, err
 			}
+			orgID := org.ID
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionOrganizationCreate,
+				ResourceType:   audit.ResourceOrganization,
+				ResourceID:     orgID.String(),
+				OrganizationID: &orgID,
+				Changes: audit.Changes(nil, map[string]any{
+					"name":          name,
+					"description":   description,
+					"owner_user_id": ownerUserID.String(),
+				}),
+			})
+			if err != nil {
+				return txOut{}, err
+			}
 			return txOut{orgID: org.ID, grouping: grouping, revision: rev}, nil
 		})
 	if err != nil {
@@ -131,6 +147,15 @@ func (m *Manager) DeleteOrganization(ctx context.Context, organizationID uuid.UU
 			if err != nil {
 				return uuid.Nil, err
 			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionOrganizationDelete,
+				ResourceType:   audit.ResourceOrganization,
+				ResourceID:     organizationID.String(),
+				OrganizationID: &organizationID,
+			})
+			if err != nil {
+				return uuid.Nil, err
+			}
 			return bumpRevision(ctx, tx)
 		})
 	if err != nil {
@@ -169,6 +194,14 @@ func (m *Manager) AddRawRules(ctx context.Context, rules []Rule) error {
 			if err != nil {
 				return uuid.Nil, err
 			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:       audit.ActionRulesAdd,
+				ResourceType: audit.ResourceCasbinRules,
+				Changes:      audit.Payload(rules),
+			})
+			if err != nil {
+				return uuid.Nil, err
+			}
 			return bumpRevision(ctx, tx)
 		})
 	if err != nil {
@@ -197,6 +230,14 @@ func (m *Manager) RemoveRawRules(ctx context.Context, rules []Rule) error {
 				if err != nil {
 					return uuid.Nil, err
 				}
+			}
+			err := writeAudit(ctx, tx, audit.Entry{
+				Action:       audit.ActionRulesRemove,
+				ResourceType: audit.ResourceCasbinRules,
+				Changes:      audit.Payload(rules),
+			})
+			if err != nil {
+				return uuid.Nil, err
 			}
 			return bumpRevision(ctx, tx)
 		})

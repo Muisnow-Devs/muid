@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
+	"sanzi.io/muid/internal/authn/ent/auditlog"
 	"sanzi.io/muid/internal/authn/ent/oidccallbackuri"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
 	"sanzi.io/muid/internal/authn/ent/oidcclientaccessgrant"
@@ -85,6 +86,7 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
+			auditlog.Table:              auditlog.ValidColumn,
 			oidccallbackuri.Table:       oidccallbackuri.ValidColumn,
 			oidcclient.Table:            oidcclient.ValidColumn,
 			oidcclientaccessgrant.Table: oidcclientaccessgrant.ValidColumn,

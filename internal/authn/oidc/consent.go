@@ -6,10 +6,13 @@ import (
 
 	"github.com/google/uuid"
 
+	"sanzi.io/muid/internal/authn/authnaudit"
 	"sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/authn/ent/oidcclient"
 	"sanzi.io/muid/internal/authn/ent/oidcgrant"
 	"sanzi.io/muid/internal/authn/ent/oidcrefreshtoken"
+	"sanzi.io/muid/pkg/audit"
+	"sanzi.io/muid/pkg/enttx"
 )
 
 // GrantedConsent is one row of the user's consent overview.
@@ -70,26 +73,49 @@ func (p *Provider) RevokeConsent(
 	}
 
 	now := time.Now()
-	revoked, err := p.db.OIDCGrant.Update().
-		Where(
-			oidcgrant.UserID(userID),
-			oidcgrant.ClientRefID(client.ID),
-			oidcgrant.RevokedAtIsNil(),
-		).
-		SetRevokedAt(now).
-		Save(ctx)
-	if err != nil {
-		return false, err
-	}
+	revoked, err := enttx.Run(ctx, p.db.Tx,
+		func(ctx context.Context, tx *ent.Tx) (int, error) {
+			revoked, err := tx.OIDCGrant.Update().
+				Where(
+					oidcgrant.UserID(userID),
+					oidcgrant.ClientRefID(client.ID),
+					oidcgrant.RevokedAtIsNil(),
+				).
+				SetRevokedAt(now).
+				Save(ctx)
+			if err != nil {
+				return 0, err
+			}
 
-	err = p.db.OIDCRefreshToken.Update().
-		Where(
-			oidcrefreshtoken.UserID(userID),
-			oidcrefreshtoken.ClientRefID(client.ID),
-			oidcrefreshtoken.RevokedAtIsNil(),
-		).
-		SetRevokedAt(now).
-		Exec(ctx)
+			err = tx.OIDCRefreshToken.Update().
+				Where(
+					oidcrefreshtoken.UserID(userID),
+					oidcrefreshtoken.ClientRefID(client.ID),
+					oidcrefreshtoken.RevokedAtIsNil(),
+				).
+				SetRevokedAt(now).
+				Exec(ctx)
+			if err != nil {
+				return 0, err
+			}
+
+			if revoked == 0 {
+				// No active consent matched; nothing to audit.
+				return 0, nil
+			}
+			actor := userID
+			err = authnaudit.Write(ctx, tx, audit.Entry{
+				ActorID:      &actor,
+				Action:       audit.ActionConsentRevoke,
+				ResourceType: audit.ResourceConsent,
+				ResourceID:   userID.String(),
+				Changes:      audit.Payload(map[string]any{"client_id": clientID}),
+			})
+			if err != nil {
+				return 0, err
+			}
+			return revoked, nil
+		})
 	if err != nil {
 		return false, err
 	}

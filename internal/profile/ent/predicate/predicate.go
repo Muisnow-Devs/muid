@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AuditLog is the predicate function for auditlog builders.
+type AuditLog func(*sql.Selector)
+
 // OrganizationProfile is the predicate function for organizationprofile builders.
 type OrganizationProfile func(*sql.Selector)
 

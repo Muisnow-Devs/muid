@@ -10,6 +10,8 @@ import (
 
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/organizationprofile"
+	"sanzi.io/muid/pkg/audit"
+	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/validation"
 )
 
@@ -75,12 +77,33 @@ func (m *Manager) CreateOrganizationProfile(
 			continue
 		}
 
-		row, err := m.db.OrganizationProfile.Create().
-			SetID(organizationID).
-			SetSlug(candidate).
-			SetDisplayName(displayName).
-			SetDescription(strings.TrimSpace(description)).
-			Save(ctx)
+		row, err := enttx.Run(ctx, m.db.Tx,
+			func(ctx context.Context, tx *ent.Tx) (*ent.OrganizationProfile, error) {
+				r, err := tx.OrganizationProfile.Create().
+					SetID(organizationID).
+					SetSlug(candidate).
+					SetDisplayName(displayName).
+					SetDescription(strings.TrimSpace(description)).
+					Save(ctx)
+				if err != nil {
+					return nil, err
+				}
+				err = writeAudit(ctx, tx, audit.Entry{
+					Action:         audit.ActionOrganizationProfileCreate,
+					ResourceType:   audit.ResourceOrganizationProfile,
+					ResourceID:     organizationID.String(),
+					OrganizationID: &organizationID,
+					Changes: audit.Changes(nil, map[string]any{
+						"slug":         candidate,
+						"display_name": displayName,
+						"description":  strings.TrimSpace(description),
+					}),
+				})
+				if err != nil {
+					return nil, err
+				}
+				return r, nil
+			})
 		if err == nil {
 			return toOrganizationProfile(row), nil
 		}
@@ -123,31 +146,48 @@ func (m *Manager) UpdateOrganizationProfile(
 		)
 	}
 
-	update := m.db.OrganizationProfile.UpdateOneID(organizationID)
-	for _, raw := range paths {
-		switch strings.TrimSpace(raw) {
-		case "display_name", "displayName":
-			value := strings.TrimSpace(displayName)
-			if value == "" {
-				return OrganizationProfile{}, NewInvalidArgumentError(
-					"display_name must not be empty",
-				)
+	row, err := enttx.Run(ctx, m.db.Tx,
+		func(ctx context.Context, tx *ent.Tx) (*ent.OrganizationProfile, error) {
+			update := tx.OrganizationProfile.UpdateOneID(organizationID)
+			for _, raw := range paths {
+				switch strings.TrimSpace(raw) {
+				case "display_name", "displayName":
+					value := strings.TrimSpace(displayName)
+					if value == "" {
+						return nil, NewInvalidArgumentError(
+							"display_name must not be empty",
+						)
+					}
+					update.SetDisplayName(value)
+				case "slug":
+					value := strings.TrimSpace(slug)
+					if !validation.ValidOrgSlug(value) {
+						return nil, NewInvalidArgumentError("invalid slug")
+					}
+					update.SetSlug(value)
+				case "description":
+					update.SetDescription(strings.TrimSpace(description))
+				default:
+					return nil, ErrUnsupportedMaskPath
+				}
 			}
-			update.SetDisplayName(value)
-		case "slug":
-			value := strings.TrimSpace(slug)
-			if !validation.ValidOrgSlug(value) {
-				return OrganizationProfile{}, NewInvalidArgumentError("invalid slug")
-			}
-			update.SetSlug(value)
-		case "description":
-			update.SetDescription(strings.TrimSpace(description))
-		default:
-			return OrganizationProfile{}, ErrUnsupportedMaskPath
-		}
-	}
 
-	row, err := update.Save(ctx)
+			r, err := update.Save(ctx)
+			if err != nil {
+				return nil, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionOrganizationProfileUpdate,
+				ResourceType:   audit.ResourceOrganizationProfile,
+				ResourceID:     organizationID.String(),
+				OrganizationID: &organizationID,
+				Changes:        audit.Payload(map[string]any{"fields": paths}),
+			})
+			if err != nil {
+				return nil, err
+			}
+			return r, nil
+		})
 	if ent.IsNotFound(err) {
 		return OrganizationProfile{}, ErrOrganizationProfileNotFound
 	}

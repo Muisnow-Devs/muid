@@ -16,6 +16,7 @@ import (
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/internal/profile/ent/useravatar"
 	"sanzi.io/muid/internal/profile/ent/userprofile"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/log"
@@ -242,7 +243,19 @@ func (m *Manager) CompleteAvatarUpload(
 			SetContentType(media.ContentTypeWebP).
 			SetPublicURL(publicURL).
 			Save(ctx)
-		return err
+		if err != nil {
+			return err
+		}
+		return writeAudit(ctx, tx, audit.Entry{
+			Action:       audit.ActionProfileAvatarUpdate,
+			ResourceType: audit.ResourceAvatar,
+			ResourceID:   userID.String(),
+			Changes: audit.Changes(nil, map[string]any{
+				"avatar_id":  finalRowID.String(),
+				"object_key": prodKey,
+				"public_url": publicURL,
+			}),
+		})
 	})
 	if err != nil {
 		return "", err

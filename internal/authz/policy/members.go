@@ -12,6 +12,7 @@ import (
 	"sanzi.io/muid/internal/authz/ent/organizationmember"
 	"sanzi.io/muid/internal/authz/ent/organizationrole"
 	"sanzi.io/muid/internal/authz/ent/userref"
+	"sanzi.io/muid/pkg/audit"
 	"sanzi.io/muid/pkg/enttx"
 	"sanzi.io/muid/pkg/shared/authzmodel"
 )
@@ -58,6 +59,16 @@ func (m *Manager) AddMember(
 				return uuid.Nil, err
 			}
 			err = insertRules(ctx, tx.CasbinRule, []Rule{grouping})
+			if err != nil {
+				return uuid.Nil, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionMemberAdd,
+				ResourceType:   audit.ResourceMember,
+				ResourceID:     userID.String(),
+				OrganizationID: &organizationID,
+				Changes:        audit.Changes(nil, map[string]any{"role": roleName}),
+			})
 			if err != nil {
 				return uuid.Nil, err
 			}
@@ -116,6 +127,16 @@ func (m *Manager) RemoveMember(
 					casbinrule.V2(domain),
 				).
 				Exec(ctx)
+			if err != nil {
+				return uuid.Nil, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionMemberRemove,
+				ResourceType:   audit.ResourceMember,
+				ResourceID:     userID.String(),
+				OrganizationID: &organizationID,
+				Changes:        audit.Changes(map[string]any{"role": currentRole}, nil),
+			})
 			if err != nil {
 				return uuid.Nil, err
 			}
@@ -183,6 +204,19 @@ func (m *Manager) ChangeMemberRole(
 				return uuid.Nil, err
 			}
 			err = insertRules(ctx, tx.CasbinRule, []Rule{newRule})
+			if err != nil {
+				return uuid.Nil, err
+			}
+			err = writeAudit(ctx, tx, audit.Entry{
+				Action:         audit.ActionMemberRoleChange,
+				ResourceType:   audit.ResourceMember,
+				ResourceID:     userID.String(),
+				OrganizationID: &organizationID,
+				Changes: audit.Changes(
+					map[string]any{"role": currentRole},
+					map[string]any{"role": roleName},
+				),
+			})
 			if err != nil {
 				return uuid.Nil, err
 			}

@@ -1,4 +1,4 @@
-.PHONY: all build clean authn authz profile gateway mailer test-publish-tools
+.PHONY: all build clean authn authz profile gateway-public gateway-services gateway-internal mailer test-publish-tools
 
 # Output directory for binaries
 BIN_DIR := bin
@@ -6,7 +6,7 @@ GO_CC := go
 GO_ENV := CGO_ENABLED=0 GOOS=linux GOARCH=amd64
 
 # List of services to build
-SERVICES := authn authz profile gateway mailer
+SERVICES := authn authz profile gateway-public gateway-services gateway-internal mailer
 
 # NATS publishers for manual mailer testing (native GOOS/GOARCH)
 TEST_PUBLISH_TOOLS := test-publish-otp test-publish-login-alert test-publish-email-changed test-publish-passkey-added

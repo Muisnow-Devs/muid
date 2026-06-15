@@ -239,11 +239,10 @@ func (store *kvOTPStore) VerifyOTP(
 		return otp.ErrOTPInvalid
 	}
 
-	attempts, err := store.client.Increment(ctx, store.attemptsKey(transitionId))
+	attempts, err := store.client.IncrementWithTTL(ctx, store.attemptsKey(transitionId), ttl)
 	if err != nil {
 		return err
 	}
-	store.client.Expire(ctx, store.attemptsKey(transitionId), ttl)
 
 	if attempts >= store.maxAttempts {
 		store.RevokeOTP(ctx, transitionId)

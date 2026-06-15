@@ -1,0 +1,47 @@
+# gqlgen config for the public gateway GraphQL surface. The schema contract is
+# kept under api/graphql; the generated exec/model and the resolvers live here
+# in the gateway (the api module stays a pure contract). Regenerate with:
+#   cd internal/gatewaypublic && go run github.com/99designs/gqlgen generate
+schema:
+  - ../../api/graphql/*.graphqls
+
+exec:
+  filename: graph/generated/generated.go
+  package: generated
+
+model:
+  filename: graph/model/models_gen.go
+  package: model
+
+resolver:
+  layout: follow-schema
+  dir: graph
+  package: graph
+  filename_template: "{name}.resolvers.go"
+
+omit_getters: true
+
+models:
+  ID:
+    model:
+      - github.com/99designs/gqlgen/graphql.ID
+      - github.com/99designs/gqlgen/graphql.Int
+  # Composed BFF types: these fields fan out to authz/profile lazily via field
+  # resolvers (marked resolver:true so gqlgen drops them from the model struct
+  # and generates a resolver method instead of serving a static field).
+  Viewer:
+    fields:
+      profile: { resolver: true }
+      organizations: { resolver: true }
+  Organization:
+    fields:
+      profile: { resolver: true }
+      roles: { resolver: true }
+      members: { resolver: true }
+      myPermissions: { resolver: true }
+  OrganizationMembership:
+    fields:
+      organization: { resolver: true }
+  OrganizationMember:
+    fields:
+      profile: { resolver: true }

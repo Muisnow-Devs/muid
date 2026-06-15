@@ -23,7 +23,7 @@ This repository is the **muid** Go monorepo (`module sanzi.io/muid`): gRPC servi
 | Compile a service | `go build -o bin/authn ./cmd/authn` (same for `authz`, `profile`, `mailer`) |
 | Tests | `go test ./...` |
 
-**Note:** The root `Makefile` lists `gateway` in `SERVICES`; `cmd/gateway` is still an empty placeholder. Adjust targets or add binaries before relying on `make build` for missing commands.
+**Gateways:** the edge lives in three independent binaries — `cmd/gateway-public` (untrusted-internet **HTTP** edge: the app-facing **GraphQL** API for auth flows — `startLogin`/`continueLogin`/`resendLoginOtp` onto authn — plus OIDC REST + JWKS, CSRF (on the GraphQL mutations), Turnstile, MaxMind IP-resolve, risk model, header/IP→gRPC metadata), `cmd/gateway-services` (trusted BFF: a **gRPC** server over the curated `ServicesGatewayService` proto with mTLS creds + JWT-auth + rate-limit interceptors, delegating to backends), and `cmd/gateway-internal` (ops/admin **HTTP** edge onto the internal gRPC admin surfaces; never internet-exposed). They share reusable capabilities under `pkg/gateway/*` (`risk`, `ratelimit`, `pow`, `csrf`, `httpmeta`, `jwtauth`, `mtls`, `httpx`) and external drivers `infra/geoip` (MaxMind, hot-reloaded) + `infra/turnstile`. Contracts under `api/`: public GraphQL schema `api/graphql/schema.graphqls`; services BFF `api/proto/gateway/v1/services.proto`. The old empty `cmd/gateway` placeholder was removed; update the root `Makefile` `SERVICES` list accordingly.
 
 ## Configuration prefixes
 
@@ -35,6 +35,9 @@ Config is loaded with `pkg/shared.LoadConfig[T](prefix)` and `github.com/kelseyh
 | `AUTHZ_` | Authz | `AUTHZ_DATABASE_URL`, `AUTHZ_NATS_URL`, `AUTHZ_PORT` (public listener: user + org-admin services, gateway-fronted, identity via `x-user-id` metadata), `AUTHZ_INTERNAL_PORT` (internal listener: service-to-service checks + platform admin, never gateway-exposed), `AUTHZ_POLICY_CONFIG_PATH`/`AUTHZ_POLICY_CONFIG_JSON` (static permission catalog/system-role grants; embedded default otherwise), `AUTHZ_POLICY_RELOAD_SECONDS`, `AUTHZ_REQUEST_TIMEOUT_SECONDS` |
 | `PROFILE_` | Profile | `PROFILE_DATABASE_URL`, `PROFILE_NATS_URL`, `PROFILE_REQUEST_TIMEOUT_SECONDS`, `PROFILE_R2_*`, `PROFILE_PUBLIC_ASSETS_URL` |
 | `MAILER_` | Mailer | `MAILER_NATS_URL`, `MAILER_SMTP_HOST`, `MAILER_SMTP_PORT`, `MAILER_SMTP_FROM`, optional `MAILER_SMTP_USERNAME`, `MAILER_SMTP_PASSWORD`, `MAILER_SMTP_SSL` |
+| `GATEWAY_PUBLIC_` | Public gateway | `GATEWAY_PUBLIC_PORT`, `GATEWAY_PUBLIC_AUTHN_GRPC_ADDR`, `GATEWAY_PUBLIC_REDIS_ADDR`, `GATEWAY_PUBLIC_TURNSTILE_SECRET` (empty ⇒ permissive mock), `GATEWAY_PUBLIC_GEOIP_PATH` (mmdb mount; empty ⇒ disabled), `GATEWAY_PUBLIC_CSRF_SECRET`, `GATEWAY_PUBLIC_RATE_LIMIT`, `GATEWAY_PUBLIC_RISK_{POW,BLOCK}_THRESHOLD`, `GATEWAY_PUBLIC_BLOCKED_COUNTRIES` |
+| `GATEWAY_SERVICES_` | Services gateway (gRPC BFF) | `GATEWAY_SERVICES_PORT` (gRPC), `GATEWAY_SERVICES_AUTHN_GRPC_ADDR`, `GATEWAY_SERVICES_PROFILE_GRPC_ADDR`, `GATEWAY_SERVICES_REDIS_ADDR`, `GATEWAY_SERVICES_SESSION_ACCESS_TOKEN_ISSUER` (JWT `iss` to verify), `GATEWAY_SERVICES_{MTLS_CLIENT_CA_PATH,TLS_CERT_PATH,TLS_KEY_PATH}` (all three ⇒ mTLS client-cert verification) |
+| `GATEWAY_INTERNAL_` | Internal gateway | `GATEWAY_INTERNAL_PORT`, `GATEWAY_INTERNAL_AUTHN_GRPC_ADDR`, `GATEWAY_INTERNAL_AUTHZ_INTERNAL_GRPC_ADDR`, `GATEWAY_INTERNAL_REDIS_ADDR`, `GATEWAY_INTERNAL_SESSION_ACCESS_TOKEN_ISSUER` |
 
 ## Do
 

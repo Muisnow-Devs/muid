@@ -14,6 +14,11 @@ type KVStore interface {
 	Expire(ctx context.Context, key string, ttl time.Duration) error
 	TTL(ctx context.Context, key string) (time.Duration, error)
 	Increment(ctx context.Context, key string) (int64, error)
+	// IncrementWithTTL atomically increments the counter at key and applies ttl
+	// when the key has no expiry yet, in a single operation. It returns the new
+	// value. Unlike Increment followed by Expire, a transient failure cannot
+	// leave a permanent counter with no TTL.
+	IncrementWithTTL(ctx context.Context, key string, ttl time.Duration) (int64, error)
 }
 
 type AtomicKVStore interface {

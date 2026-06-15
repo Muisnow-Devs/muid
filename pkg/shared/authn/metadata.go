@@ -8,7 +8,11 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-const AuthenticatedUserIDMetadataKey = "x-authn-user-id"
+// AuthenticatedUserIDMetadataKey is the gRPC metadata key the gateway sets to the
+// verified caller id. It is unified with authz's identity key and
+// httpmeta.UserIDKey ("x-user-id"): a gateway injects a single caller-id key for
+// all downstream services rather than a per-service key.
+const AuthenticatedUserIDMetadataKey = "x-user-id"
 
 // AuthenticatedUserIDFromMetadata returns the authenticated user id from incoming gRPC metadata.
 func AuthenticatedUserIDFromMetadata(ctx context.Context) (string, bool) {

@@ -1,0 +1,213 @@
+# Data-plane BFF surface: the public gateway fans out to authz (organizations,
+# roles, members, permissions) and profile (user + organization profiles,
+# avatars) on behalf of the authenticated caller, then composes the results.
+#
+# The caller is authenticated by the gateway verifying the session access-token
+# JWT (carried in the __Secure- access-token cookie) locally via JWKS; the
+# resolved user id is injected into the backend gRPC calls (authz expects
+# x-user-id, profile expects x-authn-user-id). Admin/internal/service-to-service
+# RPCs (AuthzAdminService, AuthzService, CreateProfile, CreateOrganizationProfile)
+# are intentionally NOT exposed here.
+
+extend type Query {
+  "The authenticated caller's aggregated view: their profile and organization memberships."
+  viewer: Viewer
+  "A public profile by id."
+  profile(id: ID!): Profile
+  "A single organization, composed across authz + profile."
+  organization(id: ID!): Organization
+}
+
+extend type Mutation {
+  "Update the caller's own profile. Only the provided fields are changed."
+  updateProfile(input: UpdateProfileInput!): Profile!
+  "Begin an avatar upload: returns a presigned URL the client PUTs the image to."
+  startAvatarUpload(input: StartAvatarUploadInput!): AvatarUpload!
+  "Finalize an avatar upload after the client has PUT the bytes."
+  completeAvatarUpload(input: CompleteAvatarUploadInput!): Profile!
+
+  "Create an organization owned by the caller."
+  createMyOrganization(input: CreateMyOrganizationInput!): Organization!
+  "Edit an organization's profile (display name / slug / description)."
+  updateOrganizationProfile(input: UpdateOrganizationProfileInput!): OrganizationProfile!
+
+  "Create a custom role in an organization."
+  createRole(input: CreateRoleInput!): Role!
+  "Update a custom role's name/description/permissions."
+  updateRole(input: UpdateRoleInput!): Role!
+  "Delete a custom role."
+  deleteRole(input: DeleteRoleInput!): Boolean!
+
+  "Add a member to an organization with a role."
+  addMember(input: AddMemberInput!): Boolean!
+  "Remove a member from an organization."
+  removeMember(input: RemoveMemberInput!): Boolean!
+  "Change a member's role."
+  changeMemberRole(input: ChangeMemberRoleInput!): Boolean!
+}
+
+"The authenticated caller's aggregated view."
+type Viewer {
+  "The caller's own profile."
+  profile: Profile
+  "Organizations the caller belongs to (with their direct role)."
+  organizations: [OrganizationMembership!]!
+}
+
+"A user profile."
+type Profile {
+  id: ID!
+  username: String!
+  displayName: String!
+  avatarUrl: String
+  bio: String
+  locale: String
+  timezone: String
+}
+
+"An organization the caller is a member of, with their direct role."
+type OrganizationMembership {
+  organizationId: ID!
+  name: String!
+  description: String
+  "The caller's direct role in the organization (lowercase)."
+  role: String!
+  "The composed organization, resolved across authz + profile on demand."
+  organization: Organization!
+}
+
+"""
+An organization, composed across services. Only `id` is resolved eagerly; the
+remaining fields fan out to authz/profile when selected. Fields gated by an org
+permission (roles/members) error for callers without it.
+"""
+type Organization {
+  id: ID!
+  "Editable basic info (display name / slug / description) from the profile service."
+  profile: OrganizationProfile
+  "Roles defined in the organization (requires organization/role.read)."
+  roles: [Role!]!
+  "Members of the organization (requires organization/member.read)."
+  members(pageSize: Int, pageToken: String): MemberConnection!
+  "The caller's effective permissions in this organization."
+  myPermissions: [String!]!
+}
+
+"Editable basic information for an organization, owned by the profile service."
+type OrganizationProfile {
+  organizationId: ID!
+  slug: String!
+  displayName: String!
+  description: String
+  createdAt: String
+  updatedAt: String
+}
+
+"A role within an organization."
+type Role {
+  roleId: ID!
+  name: String!
+  description: String
+  "System roles (owner/admin/manager/member) cannot be renamed or deleted."
+  isSystem: Boolean!
+  "Effective permission grants (\"namespace/resource.action\")."
+  permissions: [String!]!
+}
+
+type MemberConnection {
+  members: [OrganizationMember!]!
+  nextPageToken: String
+}
+
+"A member of an organization."
+type OrganizationMember {
+  userId: ID!
+  role: String!
+  createdAt: String
+  "The member's public profile, fanned out to the profile service (batched)."
+  profile: Profile
+}
+
+"A presigned avatar upload handoff."
+type AvatarUpload {
+  uploadUrl: String!
+  objectKey: String!
+  expiresAt: String
+}
+
+"""
+Fields to change on the caller's profile. Only non-null fields are applied
+(mapped onto the profile service's update mask). displayName maps to the
+identity name claim.
+"""
+input UpdateProfileInput {
+  username: String
+  displayName: String
+  bio: String
+  locale: String
+  timezone: String
+}
+
+input StartAvatarUploadInput {
+  "MIME type of the image to upload (image/jpeg, image/png, image/gif, image/webp)."
+  contentType: String!
+}
+
+input CompleteAvatarUploadInput {
+  objectKey: String!
+  byteSize: Int!
+}
+
+input CreateMyOrganizationInput {
+  name: String!
+  "Optional URL-safe handle; auto-generated from name when omitted."
+  slug: String
+  description: String
+}
+
+input UpdateOrganizationProfileInput {
+  organizationId: ID!
+  displayName: String
+  slug: String
+  description: String
+}
+
+input CreateRoleInput {
+  organizationId: ID!
+  name: String!
+  description: String
+  permissions: [String!]!
+}
+
+input UpdateRoleInput {
+  organizationId: ID!
+  "Existing role name (system roles cannot be updated)."
+  name: String!
+  "Optional rename."
+  newName: String
+  description: String
+  "Full replacement of the role's permission grants."
+  permissions: [String!]!
+}
+
+input DeleteRoleInput {
+  organizationId: ID!
+  name: String!
+}
+
+input AddMemberInput {
+  organizationId: ID!
+  userId: ID!
+  role: String!
+}
+
+input RemoveMemberInput {
+  organizationId: ID!
+  userId: ID!
+}
+
+input ChangeMemberRoleInput {
+  organizationId: ID!
+  userId: ID!
+  role: String!
+}

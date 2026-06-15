@@ -134,6 +134,20 @@ func (r *redisKVStore) Increment(ctx context.Context, key string) (int64, error)
 	return result.Val(), result.Err()
 }
 
+func (r *redisKVStore) IncrementWithTTL(
+	ctx context.Context,
+	key string,
+	ttl time.Duration,
+) (int64, error) {
+	if key == "" {
+		return 0, kv.ErrInvalidKey
+	}
+
+	return scripts.IncrementAndExpireScript.
+		Run(r.client, []string{key}, ttl.Milliseconds()).
+		Int64()
+}
+
 func (r *redisKVStore) CompareAndDelete(
 	ctx context.Context,
 	key string,

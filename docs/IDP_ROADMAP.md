@@ -10,14 +10,15 @@ Mark | Description
 [-]  | Partially implemented / in progress
 [X]  | Fully implemented
 
-> **Status snapshot (last scan):** The backend gRPC services carry most of the IdP weight today — OIDC provider logic, RSA signing-key ownership & rotation, Casbin RBAC org/role/membership, OIDC client administration, and immutable audit logging are all implemented inside `authn`/`authz`/`profile`. The **gateway (`cmd/gateway`) is still an empty placeholder**, so every public HTTP/REST + GraphQL surface (Phase 1, Phase 2 REST mapping, gateway-side caching/security) remains pending; the underlying capabilities exist as gRPC and only need the HTTP edge. The audit subsystem was implemented as **per-service, same-transaction immutable tables** rather than the originally-planned async NATS consumer (see Phase 8).
+> **Status snapshot (last scan):** The backend gRPC services carry most of the IdP weight today — OIDC provider logic, RSA signing-key ownership & rotation, Casbin RBAC org/role/membership, OIDC client administration, and immutable audit logging are all implemented inside `authn`/`authz`/`profile`. The **gateway edge now exists** as three independent binaries — `cmd/gateway-public` (untrusted HTTP edge: app-facing GraphQL for auth flows + OIDC REST + JWKS, CSRF, Turnstile, MaxMind IP-resolve, risk model), `cmd/gateway-services` (trusted gRPC BFF: mTLS, JWT auth, rate limiting), and `cmd/gateway-internal` (ops/admin HTTP onto the internal admin RPCs) — sharing `pkg/gateway/*` capabilities and the `infra/geoip`/`infra/turnstile` drivers. The remaining OIDC REST endpoints beyond discovery/JWKS/token/userinfo (full authorize/device/consent flows) are still to be wired onto the existing gRPC. The audit subsystem was implemented as **per-service, same-transaction immutable tables** rather than the originally-planned async NATS consumer (see Phase 8).
 
 ## 1. Architecture Overview
 
-- **Gateway (`cmd/gateway`)** — *not yet built (empty placeholder)*:
-  - **API Gateway**: Acts as the single entry point. Translates public requests into internal gRPC calls to `authn`, `profile`, etc.
-  - **GraphQL Interface**: Serves as the primary public API for standard application interactions (e.g., frontend/mobile clients querying profile data, managing settings).
-  - **OIDC REST Endpoints**: Standard OIDC strictly requires HTTP GET/POST for specific flows (like `/authorize` and `/token`). The gateway will multiplex these REST routes alongside the GraphQL endpoint.
+- **Gateways** — *implemented as three independent binaries* (`cmd/gateway-public`, `cmd/gateway-services`, `cmd/gateway-internal`):
+  - **Public gateway**: untrusted-internet entry point. Serves the app-facing **GraphQL** API for authentication flows (`startLogin`/`continueLogin`/`resendLoginOtp` → authn's `StartAuthSession`/`ContinueAuthSession`) and maps the OIDC REST + JWKS surface, all behind the abuse-protection middleware (rate limiting, risk model, CSRF, Turnstile CAPTCHA, MaxMind IP-resolve). The GraphQL schema contract lives at `api/graphql/schema.graphqls`.
+  - **Services gateway (gRPC BFF)**: the trusted frontend BFF — a gRPC server over the curated `ServicesGatewayService` proto (the predefined schema is the security boundary, e.g. `GetMe` → `profilev1.GetProfile`), terminating mTLS from the edge, verifying session-access-token JWTs locally, and delegating to backends with the verified identity attached.
+  - **Internal gateway**: ops/admin edge onto the internal admin gRPC surfaces; never internet-exposed.
+  - Shared capabilities: `pkg/gateway/{risk,ratelimit,pow,csrf,httpmeta,jwtauth,mtls,httpx}`; external drivers `infra/geoip` (MaxMind, hot-reload) + `infra/turnstile`.
 - **Secret Management (JWK & rotation)** — *implemented in `authn`*:
   - Uses **Google Secret Manager (GSM)** via `infra/secretmanager` (contract in `pkg/shared/secretmanager`).
   - Generates, stores, and rotates RSA key pairs used for signing JWTs/OIDC tokens (`internal/signature`).
@@ -36,37 +37,33 @@ Mark | Description
 
 ### Phase 1: Gateway Skeleton & internal gRPC routing
 
-The gateway must safely route traffic to backend services while acting as the GraphQL server.
+The gateways must safely route traffic to backend services: the public gateway serves the app-facing GraphQL API (auth flows) and OIDC REST, while the services gateway acts as the curated gRPC BFF.
 
-> `cmd/gateway` is currently an empty directory — none of the items below are started.
+> The three gateway binaries are scaffolded and wired; remaining work is breadth (more OIDC endpoints, richer BFF surface).
 
-- [ ] **1.1 Gateway Service Bootstrapping**
-  - Scaffold `cmd/gateway/main.go` using the standard `muid` bootstrapping pattern.
-  - Instantiate gRPC clients (`api/proto/authn/v1`, `api/proto/profile/v1`) using existing `grpcutils` resilience/timeout logic.
-  - Add standard HTTP middleware (CORS, Trace ID injection, structured logging matching `pkg/log`).
-- [ ] **1.2 GraphQL Engine Integration**
-  - Integrate a Go GraphQL library (e.g., `github.com/99designs/gqlgen`).
-  - Create the exact schema definitions (`schema.graphql`) mirroring public use cases.
-  - Implement resolvers that map GraphQL queries/mutations to backend gRPC services (e.g., `Query.me` -> `profilev1.GetProfile`).
-- [ ] **1.3 Gateway Security & Context Middleware**
-  - Implement API rate limiting to mitigate abuse.
-  - Add security middleware (e.g., strict security headers) and CSRF validation for mutating endpoints.
-  - Implement a Context Provider to extract and inject user session details into the request context before hitting the resolvers or backend.
+- [X] **1.1 Gateway Service Bootstrapping**
+  - All three gateways (`cmd/gateway-{public,services,internal}/main.go`) follow the standard `muid` bootstrap pattern (`internal/gateway*/app`).
+  - gRPC clients to `authn`/`profile`/`authz` are dialled via `grpcutils.DialInsecureClient` with resilience config; a graceful HTTP server wrapper lives in `pkg/gateway/httpx`.
+  - Shared HTTP middleware (CORS, Trace ID injection, structured `pkg/log` logging, panic recovery, security headers) in `pkg/gateway/httpx`.
+- [-] **1.2 App API (GraphQL on public, gRPC BFF on services — both predefined schemas)**
+  - Public gateway: gqlgen GraphQL at `/graphql` over `api/graphql/schema.graphqls` (generated code + resolvers in `internal/gatewaypublic/graph`). Covers the basic email-OTP login flow — `startLogin`/`continueLogin`/`resendLoginOtp` → authn's `StartAuthSession`/`ContinueAuthSession`; CSRF-enforced, Turnstile-verified on start, auth failures fed back into the risk tracker. Broader coverage (passkey/OAuth methods, profile/settings) still to add.
+  - Services gateway: a gRPC server over the curated `ServicesGatewayService` proto (`api/proto/gateway/v1/services.proto`); `GetMe` → `profilev1.GetProfile` forwarding the JWT-verified `x-user-id`. Both narrow, predefined schemas are the security boundary.
+- [X] **1.3 Gateway Security & Context Middleware**
+  - Redis-backed rate limiting (`pkg/gateway/ratelimit`), risk model with PoW/block decisions (`pkg/gateway/risk` + `pow`), CSRF validation (`pkg/gateway/csrf`), strict security headers, and a context provider (`pkg/gateway/httpmeta` + `internal/gatewaypublic/reqctx` / `internal/gatewayservices/authctx`) injecting verified identity/IP/geo into request + outgoing gRPC metadata.
 
 ### Phase 2: Standard OIDC Provider Endpoints
 
-While GraphQL is the primary structural API, an IdP *must* support standard OAuth2/OIDC REST interfaces for relying parties.
+Beyond the curated gRPC BFF, an IdP *must* support standard OAuth2/OIDC REST interfaces for relying parties (served by the public gateway).
 
 > The OIDC logic is fully implemented as gRPC in `authn` (`OIDCService` in `api/proto/authn/v1/oidc.proto`, handlers in `internal/authn/grpc/oidc_handler.go`). What's missing is the HTTP/REST surface, which the (unbuilt) gateway must map onto these RPCs.
 
-- [-] **2.1 Discovery & JWKS** — *gRPC backing done; REST mapping pending*
-  - `GET /.well-known/openid-configuration`: backed by `OIDCService.GetProviderMetadata`.
-  - `GET /jwks.json`: backed by `AuthnService.GetPublicKeys` (public keys from the signing-key manager).
-- [-] **2.2 Authorization & Token Flows** — *gRPC backing done; REST mapping pending*
-  - `GET /authorize`: backed by `OIDCService.Authorize` / `DecideConsent` (also device-code: `StartDeviceAuthorization`, etc.).
-  - `POST /token`: backed by `OIDCService.ExchangeToken` (authorization code + refresh token rotation with family reuse-detection).
-  - `GET /userinfo`: backed by `OIDCService.GetUserInfo` (claims sourced from the `profile` service).
-  - `POST /revoke`: backed by `OIDCService.RevokeToken` (+ `IntrospectToken`).
+- [X] **2.1 Discovery & JWKS** — *REST mapping live in `cmd/gateway-public`*
+  - `GET /.well-known/openid-configuration` → `OIDCService.GetProviderMetadata` (`internal/gatewaypublic/app/oidc.go`).
+  - `GET /.well-known/jwks.json` → `AuthnService.GetPublicKeys` (rendered as a JWKS document).
+- [-] **2.2 Authorization & Token Flows** — *token + userinfo mapped; authorize/device pending*
+  - `POST /oidc/token` → `OIDCService.ExchangeToken` (authorization_code + refresh_token grants; OAuth errors rendered as response data, never gRPC-error leakage).
+  - `GET|POST /oidc/userinfo` → `OIDCService.GetUserInfo` (Bearer access token).
+  - `GET /authorize` (+ `DecideConsent`, device-code `StartDeviceAuthorization`, etc.) and `POST /revoke`/`introspect`: gRPC backing exists; REST mapping still to wire.
 
 ### Phase 3: Google Secret Manager (GSM) Integration
 

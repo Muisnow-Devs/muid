@@ -153,6 +153,38 @@ func (m *MockKVStore) Increment(ctx context.Context, key string) (int64, error) 
 	return n, nil
 }
 
+// IncrementWithTTL increments the counter like Increment and applies ttl only
+// when the key currently has no expiry, atomically with respect to the store
+// mutex.
+func (m *MockKVStore) IncrementWithTTL(
+	ctx context.Context,
+	key string,
+	ttl time.Duration,
+) (int64, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	var n int64
+	var exp time.Time
+	if item, ok := m.get(key); ok {
+		parsed, err := strconv.ParseInt(string(item.value), 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		n = parsed
+		exp = item.expiration
+	}
+	n++
+	if exp.IsZero() && ttl > 0 {
+		exp = time.Now().Add(ttl)
+	}
+	m.store[key] = mockItem{
+		value:      []byte(strconv.FormatInt(n, 10)),
+		expiration: exp,
+	}
+	return n, nil
+}
+
 // CompareAndDelete deletes the key only if its current value equals expected.
 // Returns true when the key was found and deleted.
 func (m *MockKVStore) CompareAndDelete(

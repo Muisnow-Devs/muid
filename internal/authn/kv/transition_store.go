@@ -163,11 +163,10 @@ func (k *KVAuthTransitionStore) IncrementAttempts(
 		return 0, session.ErrSessionNotFound
 	}
 
-	attempts, err := k.client.Increment(ctx, k.attemptsKey(idStr))
+	attempts, err := k.client.IncrementWithTTL(ctx, k.attemptsKey(idStr), ttl)
 	if err != nil {
 		return 0, err
 	}
-	k.client.Expire(ctx, k.attemptsKey(idStr), ttl)
 
 	return attempts, nil
 }

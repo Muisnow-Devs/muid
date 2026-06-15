@@ -23,6 +23,12 @@ services:
             - 8081:8081
             - 8082:8082
             - 8083:8083
+            # Gateways. Defaults are 8080-8082 (production: one container each),
+            # but those collide with the in-container backends here, so the dev
+            # gateways run on 9080-9082.
+            - 9080:9080
+            - 9081:9081
+            - 9082:9082
         depends_on:
             - postgres
             - nats
@@ -63,6 +69,24 @@ services:
 
             # ── mailer ───────────────────────────────────────────────────────
             MAILER_NATS_URL: "nats://nats:4222"
+
+            # ── gateways (run manually inside the devcontainer) ──────────────
+            # public: untrusted-internet edge fronting OIDC REST + JWKS.
+            GATEWAY_PUBLIC_PORT: "9080"
+            GATEWAY_PUBLIC_AUTHN_GRPC_ADDR: "localhost:8080"
+            GATEWAY_PUBLIC_REDIS_ADDR: "redis:6379"
+            # services: trusted gRPC BFF edge (mTLS + JWT + rate limiting).
+            GATEWAY_SERVICES_PORT: "9081"
+            GATEWAY_SERVICES_AUTHN_GRPC_ADDR: "localhost:8080"
+            GATEWAY_SERVICES_PROFILE_GRPC_ADDR: "localhost:8081"
+            GATEWAY_SERVICES_REDIS_ADDR: "redis:6379"
+            GATEWAY_SERVICES_SESSION_ACCESS_TOKEN_ISSUER: "http://localhost:9080"
+            # internal: ops/admin edge onto the internal gRPC admin surfaces.
+            GATEWAY_INTERNAL_PORT: "9082"
+            GATEWAY_INTERNAL_AUTHN_GRPC_ADDR: "localhost:8080"
+            GATEWAY_INTERNAL_AUTHZ_INTERNAL_GRPC_ADDR: "localhost:8083"
+            GATEWAY_INTERNAL_REDIS_ADDR: "redis:6379"
+            GATEWAY_INTERNAL_SESSION_ACCESS_TOKEN_ISSUER: "http://localhost:9080"
         networks:
             - muid-dev
 

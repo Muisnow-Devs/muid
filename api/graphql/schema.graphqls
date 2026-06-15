@@ -1,0 +1,182 @@
+# Public gateway GraphQL schema — the app-facing API the IdP frontend uses to
+# drive authentication flows. It is the contract (kept here under api/ alongside
+# the protobuf definitions); the generated code and resolvers live in the public
+# gateway. The narrow, predefined schema is the security boundary: clients can
+# only reach the operations declared here, and in production they may only invoke
+# pre-registered ("persisted") operations from the trusted-documents manifest.
+#
+# It maps onto the client-facing subset of authn's AuthnService:
+#   startAuth/continueAuth          -> StartAuthSession / ContinueAuthSession
+#   refreshSession/issueAccessToken -> ExtendSession / IssueAccessToken
+#   logout/unlinkFederatedIdentity  -> RevokeSession / RevokeFederatedIdentity
+#   viewerSession                   -> GetAuthorizedSession
+# Admin/internal/OIDC-provider RPCs are deliberately NOT exposed here (the OIDC
+# provider surface lives on the REST routes under /oidc and /.well-known).
+#
+# The opaque session (refresh) token is never carried in GraphQL request/response
+# bodies: on a successful login it is set in an httpOnly cookie, and the gateway
+# replays it to authn as the "Session <token>" authorization metadata header.
+
+type Query {
+  "Liveness probe."
+  health: Health!
+  "The session bound to the caller's session cookie; null when unauthenticated."
+  viewerSession: Session
+}
+
+type Mutation {
+  "Begin an auth session for the given method/identifier/intent (e.g. email-OTP login)."
+  startAuth(input: StartAuthInput!): StartAuthPayload!
+  "Advance an in-flight auth session by submitting a proof (an OTP code, OAuth callback, passkey response, or an OTP resend)."
+  continueAuth(input: ContinueAuthInput!): ContinueAuthPayload!
+  "Extend the cookie-bound session; rotates the session + access-token cookies."
+  refreshSession: Session!
+  "Revoke the cookie-bound session and clear the session + access-token cookies."
+  logout: Boolean!
+  "Unlink a federated (OAuth) identity from the cookie-bound account."
+  unlinkFederatedIdentity(input: UnlinkFederatedIdentityInput!): Boolean!
+}
+
+"Authentication method used to start a session."
+enum AuthMethod {
+  EMAIL_OTP
+  USERNAME_OTP
+  OAUTH
+  PASSKEY
+}
+
+"Why a session is being started."
+enum AuthIntent {
+  LOGIN
+  LINK_ACCOUNT
+  REAUTHENTICATE
+}
+
+"Progress of an auth session."
+enum AuthStatus {
+  PENDING
+  CHALLENGE_REQUIRED
+  AUTHENTICATED
+}
+
+"Assurance level of an authenticated session."
+enum AuthLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+"Which WebAuthn ceremony a passkey challenge expects."
+enum PasskeyCeremony {
+  AUTHENTICATION
+  REGISTRATION
+}
+
+input StartAuthInput {
+  "The authentication method to use."
+  method: AuthMethod!
+  "The identifier to authenticate (e.g. email or username); ignored for some methods."
+  identifier: String!
+  "Defaults to LOGIN. LINK_ACCOUNT / REAUTHENTICATE require an existing session cookie."
+  intent: AuthIntent = LOGIN
+  "Cloudflare Turnstile token; required when CAPTCHA is enforced."
+  captchaToken: String
+}
+
+type StartAuthPayload {
+  transitionId: ID!
+  challenge: AuthChallenge!
+}
+
+input ContinueAuthInput {
+  transitionId: ID!
+  proof: AuthProofInput!
+}
+
+"A proof for the in-flight challenge. Exactly one variant must be set."
+input AuthProofInput {
+  email: EmailProofInput
+  oauth: OAuthProofInput
+  passkey: PasskeyProofInput
+}
+
+"For email/username OTP: submit the code, or request a resend (set resend: true)."
+input EmailProofInput {
+  "The one-time code. Required unless resend is true."
+  otpCode: String
+  "Set true to re-send the one-time code instead of submitting one."
+  resend: Boolean
+}
+
+"For OAuth: the authorization-code callback parameters."
+input OAuthProofInput {
+  code: String!
+  state: String!
+}
+
+"For passkey: the WebAuthn response JSON for the active ceremony."
+input PasskeyProofInput {
+  "PublicKeyCredential JSON for an AUTHENTICATION ceremony."
+  assertionResponseJson: String
+  "PublicKeyCredential JSON for a REGISTRATION ceremony."
+  creationResponseJson: String
+}
+
+type ContinueAuthPayload {
+  transitionId: ID!
+  status: AuthStatus!
+  "Present when status is AUTHENTICATED. The session token is set as an httpOnly cookie, not returned here."
+  session: Session
+  "Present when a further challenge is required."
+  challenge: AuthChallenge
+}
+
+type AuthChallenge {
+  challengeId: ID!
+  issuedAt: String
+  expiresAt: String
+  "The method-specific challenge detail."
+  detail: AuthChallengeDetail!
+}
+
+"Polymorphic challenge detail, mirroring authn's AuthChallenge oneof."
+union AuthChallengeDetail = EmailChallenge | OAuthChallenge | PasskeyChallenge
+
+type EmailChallenge {
+  emailMasked: String!
+  resendCooldownMillis: Int!
+}
+
+type OAuthChallenge {
+  provider: String!
+  authUrl: String!
+}
+
+type PasskeyChallenge {
+  state: String!
+  ceremony: PasskeyCeremony!
+  "WebAuthn options JSON for the active ceremony (request options for AUTHENTICATION, creation options for REGISTRATION)."
+  optionsJson: String!
+  timeoutMillis: Int!
+}
+
+input UnlinkFederatedIdentityInput {
+  "The federated provider to unlink (e.g. \"google\")."
+  provider: String!
+}
+
+"""
+Session metadata for an authenticated caller. Tokens are NEVER exposed here:
+the opaque session (refresh) token and the short-lived access-token JWT both
+live in httpOnly cookies set by the gateway. userId is absent on refreshSession
+(the backend returns only session context there).
+"""
+type Session {
+  userId: ID
+  authLevel: AuthLevel
+  expiresAt: String
+}
+
+type Health {
+  status: String!
+}

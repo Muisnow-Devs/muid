@@ -1,7 +1,6 @@
 // Package mtls builds *tls.Config values that require and verify client
-// certificates for the services gateway (fronted by trusted edges such as
-// Cloudflare Workers). The trust anchor is a RootProvider so pinned edge public
-// keys can be swapped in later without touching the listener wiring.
+// certificates. The trust anchor is a RootProvider so pinned edge public keys
+// can be swapped in later without touching the listener wiring.
 package mtls
 
 import (

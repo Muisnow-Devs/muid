@@ -15,8 +15,8 @@ import (
 	"sanzi.io/muid/infra/redis"
 	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/gateway/jwtauth"
-	"sanzi.io/muid/pkg/gateway/mtls"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/kv"
 )
 

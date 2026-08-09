@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"sanzi.io/muid/pkg/gateway/mtls"
+	"sanzi.io/muid/pkg/mtls"
 )
 
 type certPair struct {

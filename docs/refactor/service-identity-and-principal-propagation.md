@@ -6,130 +6,201 @@ Classification: S/B (protocol and trust-boundary redesign)
 
 # Problem
 
-Backend services accept a caller-controlled-shaped `x-user-id` string over
-plaintext gRPC connections. They cannot cryptographically distinguish a trusted
-gateway from another reachable client. The services gateway's optional mTLS
-accepts any certificate chaining to its CA without binding an expected workload
-identity.
+Backend services accept `x-user-id` over plaintext gRPC and cannot prove which
+workload asserted it. The services gateway's current mTLS verifies a CA chain
+but does not bind the peer to one recognized workload identity.
 
 # Evidence
 
-- Gateway bootstrap files call `grpcutils.DialInsecureClient` for Authn, Authz,
-  and Profile connections:
-  `internal/gatewaypublic/app/bootstrap.go`,
+- `internal/gatewaypublic/app/bootstrap.go`,
   `internal/gatewayinternal/app/bootstrap.go`, and
-  `internal/gatewayservices/app/bootstrap.go`.
-- `internal/authz/grpc/identity_interceptor.go` defines
-  `UserIDMetadataKey = "x-user-id"` and installs it in context.
+  `internal/gatewayservices/app/bootstrap.go` call
+  `grpcutils.DialInsecureClient` for backend connections.
+- `internal/authz/grpc/identity_interceptor.go` treats `x-user-id` as the caller
+  identity without an authenticated workload.
 - `internal/gatewaypublic/reqctx/reqctx.go`,
   `internal/gatewayservices/grpc/handler.go`, and
-  `internal/gatewayinternal/app/admin.go` append that metadata.
-- `internal/profile/grpc/request_ctx.go` derives request identity from metadata
-  and, for some methods, request IDs.
-- `internal/gatewayservices/app/config.go` exposes a client CA/cert/key trio;
-  `pkg/gateway/mtls` verifies chains but does not define an expected SAN/SPIFFE
-  identity policy.
-- Authz and Profile listeners are separately reachable processes and cannot
-  prove that metadata originated at the intended gateway.
+  `internal/gatewayinternal/app/admin.go` write that metadata.
+- `internal/profile/grpc/request_ctx.go` has separate request/user parsing rules.
+- `pkg/gateway/mtls` verifies certificates but does not enforce one recognized
+  SPIFFE URI SAN per peer.
 
 # Current Design
 
-Edge gateways authenticate bearer tokens, then assert a UUID in metadata.
-Backend channels are insecure. Network placement is the effective protection.
-For the services BFF, possession of any CA-issued client certificate is treated
-as sufficient client identity.
+Gateways authenticate users and assert UUID metadata, but backend transport and
+caller workload are not authenticated. Network placement is the effective trust
+boundary. Identity parsing is duplicated and method authorization is implicit.
 
 # Why This Is a Problem
 
-Any process that can reach a backend can impersonate any user. A compromised
-workload can become a confused deputy, and an on-path actor can observe or alter
-RPC traffic. A broad client CA also makes unrelated certificate holders valid
-BFF clients.
+Any process that reaches a backend can impersonate any user. Broad CA trust can
+admit an unrelated workload, duplicated parsing can disagree on malformed or
+duplicate metadata, and service-only methods cannot prove that no user was
+delegated.
 
 # Proposed Design
 
-Use workload mTLS on every gateway-to-backend and service-to-service connection.
-Authorize the peer identity from an exact URI SAN (prefer SPIFFE-style IDs) or
-explicit DNS SAN policy per listener. Carry delegated user identity in a signed,
-short-lived `DelegatedPrincipal` credential bound to issuer, audience, workload,
-subject, authentication time/level, expiry, and unique ID. Backend interceptors
-verify both TLS peer and delegated credential, strip external identity metadata,
-and place a typed principal in context.
+Every internal gRPC connection uses mutual TLS. A workload certificate contains
+exactly one recognized URI SAN:
 
-For direct service calls without a user, use typed workload identity only.
-Admin calls additionally require the authority described in the internal-admin
-plan. Do not let services mint arbitrary delegated users merely because they
-hold a workload certificate.
+`spiffe://muid/service/<workload>`
 
-# Proposed API / Protocol Changes
+Recognized workload names are `gateway-public`, `gateway-services`,
+`gateway-internal`, `authn`, `authz`, `profile`, and `admin-ingress`. Peer
+verification requires a valid configured chain, clientAuth EKU for client
+certificates, TLS 1.2 or newer, and exactly one recognized URI SAN. Client dials
+perform normal DNS/IP server-name verification and never set
+`InsecureSkipVerify`.
 
-Define an internal authentication contract, for example:
+After TLS authentication, one shared interceptor constructs:
 
-```proto
-message DelegatedPrincipal {
-  string user_id = 1;
-  string issuer = 2;
-  string audience = 3;
-  string gateway_id = 4;
-  google.protobuf.Timestamp authenticated_at = 5;
-  google.protobuf.Timestamp expires_at = 6;
-  string token_id = 7;
-  repeated string authentication_methods = 8;
+```go
+type WorkloadID string
+
+type RequestPrincipal struct {
+    Workload WorkloadID
+    UserID   uuid.UUID
+    HasUser  bool
 }
 ```
 
-Wrap the serialized message in `SignedDelegatedPrincipal { bytes payload,
-string key_id, bytes ed25519_signature }` and transmit it only in the binary
-gRPC metadata key `muid-delegated-principal-bin`. Backend configuration trusts
-explicit gateway public keys by key ID and audience. Remove `x-user-id`
-authentication. Keep non-security trace/client metadata separate.
+Each full gRPC method has an explicit allowed-workload set and one user mode:
+
+- `UserForbidden`: reject every `x-user-id` value;
+- `UserOptional`: accept zero or one canonical non-zero UUID;
+- `UserRequired`: require exactly one canonical non-zero UUID.
+
+All modes reject duplicate, malformed, whitespace-padded, or zero UUID values.
+Handlers read only `grpcutils.RequestPrincipal` from context. Legacy service
+interceptors and request-ID-derived identity are removed.
+
+## TLS configuration groups
+
+Envconfig applies the normal process prefix to every field.
+
+- Authn, Authz, and Profile inbound server group:
+  `GRPC_TLS_CERT_PATH`, `GRPC_TLS_KEY_PATH`, `GRPC_MTLS_CLIENT_CA_PATH`.
+- Authn, Authz, and Profile outbound client group:
+  `GRPC_CLIENT_CERT_PATH`, `GRPC_CLIENT_KEY_PATH`, `GRPC_ROOT_CA_PATH`.
+- Gateway Public uses the outbound client group only.
+- Gateway Services uses the outbound client group and retains ingress
+  `MTLS_CLIENT_CA_PATH`, `TLS_CERT_PATH`, `TLS_KEY_PATH`.
+- Gateway Internal uses the outbound client group plus ingress
+  `MTLS_CLIENT_CA_PATH`, `TLS_CERT_PATH`, `TLS_KEY_PATH`.
+
+A partial group fails validation in every mode. Every applicable group is
+required in production; debug may omit only a complete group. Configuring an
+optional downstream address in production still requires the outbound client
+group. Certificate, key, and CA material is parsed at startup.
+
+## Service authorization matrix
+
+| Server/API | Allowed workloads | User mode / additional policy |
+| --- | --- | --- |
+| Authn authentication flows | `gateway-public` | Forbidden |
+| Authn public/signing keys | `gateway-public`, `gateway-services`, `gateway-internal` | Forbidden |
+| Authn OIDC service | `gateway-public` | Forbidden |
+| Authn OIDC admin | `gateway-internal` | Required; platform permission and existing organization permission both required |
+| Authz public user/organization APIs | `gateway-public` | Required |
+| Authz internal authorization APIs | `authn`, `profile` | Forbidden |
+| Authz platform permission check | `gateway-internal`, plus Authn for OIDC-admin backend recheck | Forbidden on transport; target user is an explicit validated request field |
+| Authz admin | `gateway-internal` | Required; matching platform permission required |
+| Profile create user profile | `authn` | Forbidden |
+| Profile get profile | `authn`, `gateway-public`, `gateway-services` | Authn: Forbidden; gateways: Optional or Required according to the existing public/self method semantics, made explicit per full method |
+| Profile user update/avatar APIs | `gateway-public` | Required |
+| Profile create organization profile | `authz` | Forbidden |
+| Profile organization get/update | `gateway-public` | Required |
+
+Methods not present in the matrix fail closed until assigned a policy.
+
+# Proposed API / Protocol Changes
+
+- Move the general mTLS package from `pkg/gateway/mtls` to `pkg/mtls`.
+- Add shared TLS server/client constructors and a TLS gRPC dialer under
+  `pkg/grpc_utils`.
+- Add `WorkloadID`, `RequestPrincipal`, context accessors, `UserMode`, and a
+  method authorization table/interceptor under `pkg/grpc_utils`.
+- Retain `x-user-id` only as the internal delegated-user transport field; it has
+  no authority without an allowed mTLS workload and method policy.
+- Add Authz platform policy and RPC described in the administrator record.
 
 # Dependency / Flow Changes
 
-`client credential -> gateway verification -> signed delegated principal ->
-mTLS backend channel -> peer authorization + delegation verification -> typed
-request context -> domain authorization`.
+`verified client credential -> gateway user authentication -> mTLS backend dial
+with SPIFFE workload -> method workload policy -> strict x-user-id parsing ->
+typed RequestPrincipal -> domain authorization`.
+
+Service-only flows omit user metadata and are rejected if it is present.
 
 # Security Implications
 
 Finding classification: `Architectural Security Risk`.
 
-- Threat: user impersonation, metadata tampering, internal confused deputy.
-- Precondition: backend reachability, compromised workload, or broad CA access.
-- Impact: profile data access/mutation and authorization operations as any user.
-- Existing protection: gateway JWT checks and network assumptions.
-- Insufficiency: neither authenticates the backend caller or protects metadata.
-- Correction: mutually authenticated transport plus audience/workload-bound
-  delegation and per-listener peer policy.
+- Threat: user impersonation, metadata spoofing, or internal confused deputy.
+- Precondition: backend reachability, compromised unrelated workload, or broad
+  certificate issuance.
+- Impact: profile/account/authorization operations as another user.
+- Existing protection: edge JWT checks and network placement.
+- Insufficiency: neither authenticates the backend caller nor constrains which
+  workload may assert a user on a method.
+- Correction: strict workload mTLS, typed principal parsing, and fail-closed
+  per-method workload/user policy.
 
 # Affected Code
 
-- `pkg/grpcutils` dial/server credential helpers
-- `pkg/gateway/mtls`, gateway config/bootstrap packages
-- Authn/Authz/Profile app listener configuration and interceptors
-- `pkg/gateway/httpmeta`, gateway request-context/handler packages
-- deployment certificates/secrets and end-to-end tests
+- `pkg/gateway/mtls`, new `pkg/mtls`, and `pkg/grpc_utils`
+- Authn/Authz/Profile app config, bootstrap, server, and identity interceptors
+- all three gateway config/bootstrap/client paths
+- `pkg/gateway/httpmeta` and gateway request-context/handler metadata writers
+- Authz policy schema/RPC/client from the administrator record
+- deployment certificates, environment configuration, tests, and documentation
 
 # Implementation Steps
 
-1. Inventory each listener and assign allowed workload URI SANs and delegation
-   audiences.
-2. Add shared TLS client/server configuration with exact peer authorization.
-3. Define delegated-principal signing, verification, rotation, expiry, and replay
-   expectations.
-4. Install verification interceptors before request-context and authorization
-   interceptors.
-5. Migrate gateways and legitimate service clients one listener at a time.
-6. Remove insecure dials and raw identity metadata readers/writers.
-7. Restrict network policies as an independent supporting control.
+The following rows are atomic merge/validation units. Do not leave a row half
+cut over.
+
+1. Add characterization tests for current caller/user behavior and every RPC
+   family in the authorization matrix.
+2. Move `pkg/gateway/mtls` to `pkg/mtls` and update imports without behavior
+   change.
+3. Add strict TLS server/client loaders and the verified TLS gRPC dialer,
+   including SPIFFE SAN parsing and startup config validation.
+4. Add typed `RequestPrincipal`, user modes, and the fail-closed method policy
+   interceptor.
+5. Consolidate Authz/Profile identity parsing onto the shared principal and
+   remove duplicate/lenient parsers.
+6. Add Authz static `platform_roles` and `platform_bindings` policy loading.
+7. Add `CheckPlatformPermission` protocol, Authz implementation, and typed
+   client used by Gateway Internal and Authn admin authorization.
+8. Cut over Authz public, internal, platform-check, and admin listeners to mTLS
+   and the complete method matrix.
+9. Cut over Authn inbound listeners and outbound Authz client; preserve forbidden
+   user mode on service-only calls.
+10. Cut over Profile inbound listeners and outbound Authz client in parallel
+    with row 9 only after shared prerequisites pass.
+11. Cut over Gateway Public outbound clients and strict delegated-user metadata.
+12. Cut over Gateway Services ingress identity plus outbound clients.
+13. Cut over Gateway Internal `admin-ingress` mTLS, outbound clients, and replace
+    the UUID allowlist with Authz platform permission checks.
+14. Remove insecure dial/server paths and obsolete identity interceptors, then
+    run end-to-end rollout validation and update deployment/engineering docs.
 
 # Validation Criteria
 
-- Plaintext, unknown CA, wrong SAN, wrong audience, expired, altered, and
-  unauthorized-workload delegations fail before handlers.
-- A trusted workload without a delegated user cannot impersonate one.
-- Direct service operations use workload identity and do not require fake user
-  metadata.
-- Searches find no security use of `x-user-id` or gateway backend
-  `DialInsecureClient`.
-- Integration tests cover certificate rotation and valid delegated calls.
+- Certificate tests reject plaintext, unknown CA, TLS below 1.2, wrong/missing/
+  multiple/unrecognized URI SANs, wrong client EKU, and DNS/IP name mismatch.
+- No code uses `InsecureSkipVerify`; production has no plaintext or incomplete
+  TLS-group fallback.
+- Matrix tests cover every full method, allowed and denied workload, and its
+  forbidden/optional/required user mode.
+- Duplicate, malformed, padded, zero, missing-required, and present-forbidden
+  `x-user-id` values fail before handlers.
+- Service-only Authn/Authz/Profile calls succeed only without user metadata.
+- Admin end-to-end tests cover platform permission and OIDC dual authorization.
+- Searches find no gateway/backend `DialInsecureClient`, legacy identity
+  interceptor, or unclassified RPC.
+- Coordinated production rollout proves all certificates/config are present
+  before plaintext paths are removed; debug may omit complete groups only.
+- `make check`, full tests, affected `-race` suites, vet, build, Buf/generation
+  checks, and root/API vulnerability scans pass.

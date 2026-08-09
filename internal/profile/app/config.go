@@ -9,6 +9,7 @@ import (
 	"sanzi.io/muid/internal/profile/core"
 	"sanzi.io/muid/internal/profile/ent"
 	"sanzi.io/muid/pkg/authzclient"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -43,6 +44,22 @@ type Config struct {
 	R2UploadBucket string `envconfig:"R2_UPLOAD_BUCKET"     default:""`
 	// R2AssetsBucket stores processed WebP avatars served via PublicAssetURL.
 	R2AssetsBucket string `envconfig:"R2_ASSETS_BUCKET"     default:""`
+
+	GRPCTLSCertPath      string `envconfig:"GRPC_TLS_CERT_PATH"`
+	GRPCTLSKeyPath       string `envconfig:"GRPC_TLS_KEY_PATH"`
+	GRPCMTLSClientCAPath string `envconfig:"GRPC_MTLS_CLIENT_CA_PATH"`
+
+	GRPCClientCertPath string `envconfig:"GRPC_CLIENT_CERT_PATH"`
+	GRPCClientKeyPath  string `envconfig:"GRPC_CLIENT_KEY_PATH"`
+	GRPCRootCAPath     string `envconfig:"GRPC_ROOT_CA_PATH"`
+}
+
+func (c Config) serverTLSConfigured() bool {
+	return mtls.PathGroupConfigured(c.GRPCTLSCertPath, c.GRPCTLSKeyPath, c.GRPCMTLSClientCAPath)
+}
+
+func (c Config) clientTLSConfigured() bool {
+	return mtls.PathGroupConfigured(c.GRPCClientCertPath, c.GRPCClientKeyPath, c.GRPCRootCAPath)
 }
 
 type InfraDependencies struct {

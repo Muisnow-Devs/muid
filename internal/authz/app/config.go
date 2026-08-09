@@ -10,6 +10,7 @@ import (
 	authzent "sanzi.io/muid/internal/authz/ent"
 	"sanzi.io/muid/internal/authz/policy"
 	"sanzi.io/muid/pkg/errutil"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
@@ -93,27 +94,18 @@ func (c Config) Validate() error {
 }
 
 func validateTLSPathGroup(name string, required bool, values ...string) error {
-	configured := 0
-	for _, value := range values {
-		if strings.TrimSpace(value) != "" {
-			configured++
-		}
-	}
-	if configured != 0 && configured != len(values) {
-		return fmt.Errorf("authz: %s must all be set", name)
-	}
-	if required && configured == 0 {
-		return fmt.Errorf("authz: %s are required in production", name)
+	if err := mtls.ValidatePathGroup(required, values...); err != nil {
+		return fmt.Errorf("authz: %s: %w", name, err)
 	}
 	return nil
 }
 
 func (c Config) serverTLSConfigured() bool {
-	return strings.TrimSpace(c.GRPCTLSCertPath) != ""
+	return mtls.PathGroupConfigured(c.GRPCTLSCertPath, c.GRPCTLSKeyPath, c.GRPCMTLSClientCAPath)
 }
 
 func (c Config) clientTLSConfigured() bool {
-	return strings.TrimSpace(c.GRPCClientCertPath) != ""
+	return mtls.PathGroupConfigured(c.GRPCClientCertPath, c.GRPCClientKeyPath, c.GRPCRootCAPath)
 }
 
 type InfraDependencies struct {

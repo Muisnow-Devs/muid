@@ -19,9 +19,19 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 		{
 			name: "debug false rejects missing critical env",
 			cfg: Config{
-				DatabaseURL: "postgres://user:pass@db.example.com:5432/profile",
-				NATSURL:     "nats://nats.example.com:4222",
-				R2AccountID: "account",
+				Port:                      5324,
+				DatabaseURL:               "postgres://user:pass@db.example.com:5432/profile",
+				NATSURL:                   "nats://nats.example.com:4222",
+				RequestTimeoutSeconds:     10,
+				AuthzRoleCacheTTLSeconds:  300,
+				AuthzPolicyRefreshSeconds: 300,
+				R2AccountID:               "account",
+				GRPCTLSCertPath:           "server.pem",
+				GRPCTLSKeyPath:            "server-key.pem",
+				GRPCMTLSClientCAPath:      "clients.pem",
+				GRPCClientCertPath:        "client.pem",
+				GRPCClientKeyPath:         "client-key.pem",
+				GRPCRootCAPath:            "servers.pem",
 			},
 			env:     profileEnvWithout("PROFILE_PUBLIC_ASSETS_URL"),
 			wantErr: true,
@@ -29,10 +39,14 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 		{
 			name: "debug true allows missing critical env",
 			cfg: Config{
-				Debug:       true,
-				DatabaseURL: "postgres://user:pass@db.example.com:5432/profile",
-				NATSURL:     "nats://nats.example.com:4222",
-				R2AccountID: "account",
+				Debug:                     true,
+				Port:                      5324,
+				DatabaseURL:               "postgres://user:pass@db.example.com:5432/profile",
+				NATSURL:                   "nats://nats.example.com:4222",
+				RequestTimeoutSeconds:     10,
+				AuthzRoleCacheTTLSeconds:  300,
+				AuthzPolicyRefreshSeconds: 300,
+				R2AccountID:               "account",
 			},
 			env:     map[string]string{},
 			wantErr: false,
@@ -40,10 +54,20 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 		{
 			name: "production env present allowed without debug",
 			cfg: Config{
-				DatabaseURL:    "postgres://user:pass@db.example.com:5432/profile",
-				NATSURL:        "nats://nats.example.com:4222",
-				PublicAssetURL: "https://assets.example.com",
-				R2AccountID:    "account",
+				Port:                      5324,
+				DatabaseURL:               "postgres://user:pass@db.example.com:5432/profile",
+				NATSURL:                   "nats://nats.example.com:4222",
+				RequestTimeoutSeconds:     10,
+				AuthzRoleCacheTTLSeconds:  300,
+				AuthzPolicyRefreshSeconds: 300,
+				PublicAssetURL:            "https://assets.example.com",
+				R2AccountID:               "account",
+				GRPCTLSCertPath:           "server.pem",
+				GRPCTLSKeyPath:            "server-key.pem",
+				GRPCMTLSClientCAPath:      "clients.pem",
+				GRPCClientCertPath:        "client.pem",
+				GRPCClientKeyPath:         "client-key.pem",
+				GRPCRootCAPath:            "servers.pem",
 			},
 			env:     profileEnv(),
 			wantErr: false,
@@ -51,10 +75,20 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 		{
 			name: "default-looking localhost value allowed when env is explicit",
 			cfg: Config{
-				DatabaseURL:    "postgres://user:pass@db.example.com:5432/profile",
-				NATSURL:        "nats://nats.example.com:4222",
-				PublicAssetURL: "http://localhost:8080/assets",
-				R2AccountID:    "account",
+				Port:                      5324,
+				DatabaseURL:               "postgres://user:pass@db.example.com:5432/profile",
+				NATSURL:                   "nats://nats.example.com:4222",
+				RequestTimeoutSeconds:     10,
+				AuthzRoleCacheTTLSeconds:  300,
+				AuthzPolicyRefreshSeconds: 300,
+				PublicAssetURL:            "http://localhost:8080/assets",
+				R2AccountID:               "account",
+				GRPCTLSCertPath:           "server.pem",
+				GRPCTLSKeyPath:            "server-key.pem",
+				GRPCMTLSClientCAPath:      "clients.pem",
+				GRPCClientCertPath:        "client.pem",
+				GRPCClientKeyPath:         "client-key.pem",
+				GRPCRootCAPath:            "servers.pem",
 			},
 			env: profileEnvWith(map[string]string{
 				"PROFILE_PUBLIC_ASSETS_URL": "http://localhost:8080/assets",
@@ -77,6 +111,31 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 				t.Fatalf("Validate() error = %v", err)
 			}
 		})
+	}
+}
+
+func TestConfigValidateTLSGroups(t *testing.T) {
+	t.Parallel()
+
+	base := Config{
+		Debug:                     true,
+		Port:                      5324,
+		DatabaseURL:               "postgres://profile",
+		NATSURL:                   "nats://localhost:4222",
+		RequestTimeoutSeconds:     10,
+		AuthzRoleCacheTTLSeconds:  300,
+		AuthzPolicyRefreshSeconds: 300,
+	}
+	partial := base
+	partial.GRPCTLSCertPath = "server.pem"
+	if err := partial.validate(mapLookup(nil)); err == nil {
+		t.Fatal("partial inbound TLS group was accepted")
+	}
+
+	production := base
+	production.Debug = false
+	if err := production.validate(mapLookup(profileEnv())); err == nil {
+		t.Fatal("production without TLS groups was accepted")
 	}
 }
 

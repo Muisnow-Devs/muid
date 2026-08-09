@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -10,11 +11,13 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	pb "sanzi.io/muid/api/proto/profile/v1"
 	profilegrpc "sanzi.io/muid/internal/profile/grpc"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
@@ -29,6 +32,14 @@ func NewProfileGRPC(
 	orgHandler pb.OrganizationProfileServiceServer,
 	tracer tracing.Tracer,
 ) (*ProfileGRPC, error) {
+	if err := mtls.ValidatePathGroup(
+		!config.Debug,
+		config.GRPCTLSCertPath,
+		config.GRPCTLSKeyPath,
+		config.GRPCMTLSClientCAPath,
+	); err != nil {
+		return nil, fmt.Errorf("profile inbound gRPC TLS: %w", err)
+	}
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
 	}
@@ -41,14 +52,31 @@ func NewProfileGRPC(
 	if err != nil {
 		return nil, err
 	}
+	principal, err := grpcutils.NewRequestPrincipalInterceptor(profilePrincipalPolicies())
+	if err != nil {
+		return nil, err
+	}
 
-	grpcServer := grpc.NewServer(
+	var serverTLS *tls.Config
+	if config.serverTLSConfigured() {
+		serverTLS, err = mtls.LoadServerTLSConfig(
+			config.GRPCTLSCertPath,
+			config.GRPCTLSKeyPath,
+			config.GRPCMTLSClientCAPath,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("profile gRPC TLS: %w", err)
+		}
+	}
+
+	serverOptions := []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
 			grpcutils.TraceMetadataInterceptor,
 			grpcutils.TracerContextInterceptor(tracer),
 			protovalidate.UnaryServerInterceptor(pvValidator),
+			principal,
 			profilegrpc.ProfileRequestContextInterceptor(),
 			grpcutils.LoggingInterceptor(),
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
@@ -56,7 +84,11 @@ func NewProfileGRPC(
 				recovery.WithRecoveryHandlerContext(grpcutils.PanicRecoveryHandler),
 			),
 		),
-	)
+	}
+	if serverTLS != nil {
+		serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
+	}
+	grpcServer := grpc.NewServer(serverOptions...)
 	pb.RegisterProfileServiceServer(grpcServer, handler)
 	pb.RegisterOrganizationProfileServiceServer(grpcServer, orgHandler)
 
@@ -64,6 +96,53 @@ func NewProfileGRPC(
 		grpcServer: grpcServer,
 		listener:   listener,
 	}, nil
+}
+
+func profilePrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
+	return map[string]grpcutils.MethodPrincipalPolicy{
+		pb.ProfileService_CreateProfile_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadAuthn: grpcutils.UserForbidden,
+			},
+		},
+		pb.ProfileService_GetProfile_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadAuthn:           grpcutils.UserOptional,
+				grpcutils.WorkloadGatewayPublic:   grpcutils.UserOptional,
+				grpcutils.WorkloadGatewayServices: grpcutils.UserRequired,
+			},
+		},
+		pb.ProfileService_UpdateProfile_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserRequired,
+			},
+		},
+		pb.ProfileService_StartAvatarUpload_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserRequired,
+			},
+		},
+		pb.ProfileService_CompleteAvatarUpload_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserRequired,
+			},
+		},
+		pb.OrganizationProfileService_CreateOrganizationProfile_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadAuthz: grpcutils.UserForbidden,
+			},
+		},
+		pb.OrganizationProfileService_GetOrganizationProfile_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserRequired,
+			},
+		},
+		pb.OrganizationProfileService_UpdateOrganizationProfile_FullMethodName: {
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserRequired,
+			},
+		},
+	}
 }
 
 func (s *ProfileGRPC) Start(ctx context.Context) error {

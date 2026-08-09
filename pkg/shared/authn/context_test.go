@@ -71,3 +71,20 @@ func TestRequiredAuthenticatedUserIDFromContext_missing(t *testing.T) {
 		t.Fatalf("message: got %q", status.Convert(err).Message())
 	}
 }
+
+func TestAuthenticatedUserIDContextHelpers_ignoreZeroID(t *testing.T) {
+	t.Parallel()
+
+	ctx := WithAuthenticatedUserID(context.Background(), uuid.Nil)
+	if _, ok := AuthenticatedUserIDFromContext(ctx); ok {
+		t.Fatal("AuthenticatedUserIDFromContext unexpectedly found a zero user")
+	}
+
+	_, err := RequiredAuthenticatedUserIDFromContext(ctx)
+	if status.Code(err) != codes.Internal {
+		t.Fatalf("code: got %v want Internal", status.Code(err))
+	}
+	if status.Convert(err).Message() != MsgMissingAuthenticatedUserIDContext {
+		t.Fatalf("message: got %q", status.Convert(err).Message())
+	}
+}

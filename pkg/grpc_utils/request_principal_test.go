@@ -50,6 +50,44 @@ func TestRequestPrincipalInterceptor(t *testing.T) {
 	}
 }
 
+func TestRequestUserIDContextHelpers(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	workload := WorkloadGatewayPublic
+	ctx := context.WithValue(context.Background(), requestPrincipalContextKey{}, RequestPrincipal{
+		Workload: workload,
+	})
+	ctx = WithRequestUserID(ctx, userID)
+
+	principal, ok := RequestPrincipalFromContext(ctx)
+	if !ok {
+		t.Fatal("RequestPrincipalFromContext returned no principal")
+	}
+	if principal.Workload != workload {
+		t.Errorf("workload = %q, want %q", principal.Workload, workload)
+	}
+	if !principal.HasUser || principal.UserID != userID {
+		t.Errorf("principal user = (%v, %v), want (%v, true)", principal.UserID, principal.HasUser, userID)
+	}
+
+	got, ok := RequestUserIDFromContext(ctx)
+	if !ok || got != userID {
+		t.Errorf("RequestUserIDFromContext = (%v, %v), want (%v, true)", got, ok, userID)
+	}
+	if _, ok := RequestUserIDFromContext(context.Background()); ok {
+		t.Error("RequestUserIDFromContext unexpectedly found an absent user")
+	}
+
+	withoutUser := WithRequestUserID(context.Background(), uuid.Nil)
+	if withoutUser == nil {
+		t.Fatal("WithRequestUserID returned nil context")
+	}
+	if _, ok := RequestUserIDFromContext(withoutUser); ok {
+		t.Error("RequestUserIDFromContext unexpectedly found a zero user")
+	}
+}
+
 func TestRequestPrincipalInterceptorRejectsInvalidRequests(t *testing.T) {
 	t.Parallel()
 

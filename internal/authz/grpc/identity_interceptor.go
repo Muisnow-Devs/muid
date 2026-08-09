@@ -12,6 +12,7 @@ import (
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
 	"sanzi.io/muid/pkg/audit"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
 )
 
@@ -20,8 +21,6 @@ import (
 // Authz never verifies tokens itself, so the public listener must only be
 // reachable through the gateway.
 const UserIDMetadataKey = "x-user-id"
-
-type userIDContextKey struct{}
 
 // publicServicePrefixes are the full-method prefixes of the RPC surfaces
 // that require a gateway-attached user identity.
@@ -54,7 +53,7 @@ func UserIdentityInterceptor() grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "user identity required")
 		}
 
-		ctx = context.WithValue(ctx, userIDContextKey{}, userID)
+		ctx = grpcutils.WithRequestUserID(ctx, userID)
 		ctx = log.WithAttrs(ctx, log.UserID(userID))
 		ctx = audit.WithActor(ctx, userID)
 		return handler(ctx, req)
@@ -73,6 +72,5 @@ func requiresUserIdentity(fullMethod string) bool {
 // UserIDFromContext returns the gateway-verified caller id placed by
 // UserIdentityInterceptor.
 func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
-	id, ok := ctx.Value(userIDContextKey{}).(uuid.UUID)
-	return id, ok
+	return grpcutils.RequestUserIDFromContext(ctx)
 }

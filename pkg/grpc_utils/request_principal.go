@@ -67,6 +67,29 @@ func RequestPrincipalFromContext(ctx context.Context) (RequestPrincipal, bool) {
 	return principal, ok
 }
 
+// WithRequestUserID attaches a nonzero authenticated user identity to ctx. If
+// ctx already carries a workload principal, its workload is preserved.
+func WithRequestUserID(ctx context.Context, userID uuid.UUID) context.Context {
+	if ctx == nil || userID == uuid.Nil {
+		return ctx
+	}
+
+	principal, _ := RequestPrincipalFromContext(ctx)
+	principal.UserID = userID
+	principal.HasUser = true
+	return context.WithValue(ctx, requestPrincipalContextKey{}, principal)
+}
+
+// RequestUserIDFromContext returns the authenticated user identity attached to
+// ctx, when one is present.
+func RequestUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
+	principal, ok := RequestPrincipalFromContext(ctx)
+	if !ok || !principal.HasUser || principal.UserID == uuid.Nil {
+		return uuid.Nil, false
+	}
+	return principal.UserID, true
+}
+
 // NewRequestPrincipalInterceptor constructs a fail-closed interceptor from
 // exact full-method policies. The supplied policies are copied before use.
 func NewRequestPrincipalInterceptor(

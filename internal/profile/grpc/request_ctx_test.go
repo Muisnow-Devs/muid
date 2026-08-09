@@ -109,6 +109,58 @@ func TestCurrentProfileRequestContextInterceptorAcceptsUnauthenticatedUserIDMeta
 	}
 }
 
+func TestProfileRequestContextInterceptor_preservesLegacyPrincipalParsing(t *testing.T) {
+	t.Parallel()
+
+	interceptor := ProfileRequestContextInterceptor()
+	metadataID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+	secondMetadataID := uuid.MustParse("e1e7e564-9102-4c94-815c-eaaf2c4da7b2")
+	requestID := uuid.MustParse("f80f6e2c-5928-4ea3-9a80-d01156130141")
+
+	t.Run("first trimmed metadata value is used when request id is empty", func(t *testing.T) {
+		ctx := metadata.NewIncomingContext(context.Background(), metadata.Pairs(
+			sharedauthn.AuthenticatedUserIDMetadataKey, " "+metadataID.String()+" ",
+			sharedauthn.AuthenticatedUserIDMetadataKey, secondMetadataID.String(),
+		))
+		req := &pb.GetProfileRequest{}
+
+		_, err := interceptor(ctx, req, &grpc.UnaryServerInfo{
+			FullMethod: pb.ProfileService_GetProfile_FullMethodName,
+		}, func(ctx context.Context, _ any) (any, error) {
+			got, ok := sharedauthn.AuthenticatedUserIDFromContext(ctx)
+			if !ok || got != metadataID {
+				t.Errorf("authenticated user = (%v, %v), want (%v, true)", got, ok, metadataID)
+			}
+			return nil, nil
+		})
+		if err != nil {
+			t.Fatalf("interceptor error = %v", err)
+		}
+	})
+
+	t.Run("trimmed request id overrides metadata", func(t *testing.T) {
+		ctx := metadata.NewIncomingContext(
+			context.Background(),
+			metadata.Pairs(sharedauthn.AuthenticatedUserIDMetadataKey, metadataID.String()),
+		)
+		req := &pb.GetProfileRequest{}
+		req.SetId(" \t" + requestID.String() + "\n")
+
+		_, err := interceptor(ctx, req, &grpc.UnaryServerInfo{
+			FullMethod: pb.ProfileService_GetProfile_FullMethodName,
+		}, func(ctx context.Context, _ any) (any, error) {
+			got, ok := sharedauthn.AuthenticatedUserIDFromContext(ctx)
+			if !ok || got != requestID {
+				t.Errorf("authenticated user = (%v, %v), want (%v, true)", got, ok, requestID)
+			}
+			return nil, nil
+		})
+		if err != nil {
+			t.Fatalf("interceptor error = %v", err)
+		}
+	})
+}
+
 func TestProfileRequestContextInterceptor_updateProfile(t *testing.T) {
 	t.Parallel()
 

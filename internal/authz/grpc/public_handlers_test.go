@@ -14,11 +14,12 @@ import (
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
 	"sanzi.io/muid/internal/authz/policy"
+	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
 // ctxAsUser injects the caller id the way UserIdentityInterceptor does.
 func ctxAsUser(userID uuid.UUID) context.Context {
-	return context.WithValue(context.Background(), userIDContextKey{}, userID)
+	return grpcutils.WithRequestUserID(context.Background(), userID)
 }
 
 func wantCode(t *testing.T, err error, want codes.Code) {
@@ -62,6 +63,12 @@ func TestUserIdentityInterceptor(t *testing.T) {
 			name:       "malformed user id",
 			fullMethod: publicMethod,
 			md:         metadata.Pairs(UserIDMetadataKey, "not-a-uuid"),
+			wantErr:    codes.Unauthenticated,
+		},
+		{
+			name:       "zero user id",
+			fullMethod: publicMethod,
+			md:         metadata.Pairs(UserIDMetadataKey, uuid.Nil.String()),
 			wantErr:    codes.Unauthenticated,
 		},
 		{

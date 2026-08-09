@@ -1,7 +1,9 @@
 # gqlgen config for the public gateway GraphQL surface. The schema contract is
 # kept under api/graphql; the generated exec/model and the resolvers live here
 # in the gateway (the api module stays a pure contract). Regenerate with:
-#   cd internal/gatewaypublic && go run github.com/99designs/gqlgen generate
+#   make graphql
+# gqlgen is declared as a Go tool in the root go.mod, so generation always
+# uses the same version as the checked-in runtime dependency.
 schema:
   - ../../api/graphql/*.graphqls
 
@@ -18,6 +20,7 @@ resolver:
   dir: graph
   package: graph
   filename_template: "{name}.resolvers.go"
+  preserve_resolver: true
 
 omit_getters: true
 

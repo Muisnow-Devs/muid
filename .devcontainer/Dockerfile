@@ -11,10 +11,11 @@
 #   • goose (optional) – if you add SQL migrations later
 #   • Common dev tools: git, curl, bash, make, jq
 # ---------------------------------------------------------------------------
-FROM golang:1.26.2-bookworm
+FROM golang:1.26.5-bookworm
 
-ARG BUF_VERSION=1.54.0
+ARG BUF_VERSION=1.69.0
 ARG GOLANGCI_VERSION=2.1.6
+ARG TARGETARCH=amd64
 
 # ── System packages ─────────────────────────────────────────────────────────
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -28,8 +29,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # ── Buf CLI ─────────────────────────────────────────────────────────────────
-RUN curl -sSL \
-        "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-x86_64" \
+RUN case "${TARGETARCH}" in \
+        amd64) buf_arch="x86_64" ;; \
+        arm64) buf_arch="aarch64" ;; \
+        *) echo "unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac \
+    && curl -sSL \
+        "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-${buf_arch}" \
         -o /usr/local/bin/buf \
     && chmod +x /usr/local/bin/buf
 

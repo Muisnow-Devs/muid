@@ -5,13 +5,15 @@ managed:
         - file_option: go_package
           module: buf.build/bufbuild/protovalidate
 plugins:
-    - remote: buf.build/protocolbuffers/go
+    - remote: buf.build/protocolbuffers/go:v1.36.11
+      revision: 1
       out: api
       opt:
           - module=sanzi.io/muid/api
           - default_api_level=API_OPAQUE
 
-    - remote: buf.build/grpc/go
+    - remote: buf.build/grpc/go:v1.6.2
+      revision: 1
       out: api
       opt:
           - module=sanzi.io/muid/api

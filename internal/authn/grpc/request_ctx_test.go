@@ -245,7 +245,7 @@ func TestAuthnSessionPrincipalInterceptor_missingToken(t *testing.T) {
 	}
 }
 
-func TestCurrentAuthnSessionPrincipalInterceptorRejectsGatewayInternalOIDCAdminIdentity(t *testing.T) {
+func TestAuthnSessionPrincipalInterceptorLeavesOIDCAdminIdentityToWorkloadAuth(t *testing.T) {
 	t.Parallel()
 
 	ctx := metadata.NewIncomingContext(
@@ -262,11 +262,11 @@ func TestCurrentAuthnSessionPrincipalInterceptorRejectsGatewayInternalOIDCAdminI
 			return nil, nil
 		},
 	)
-	if status.Code(err) != codes.Unauthenticated {
-		t.Fatalf("status code = %v, want Unauthenticated", status.Code(err))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
-	if called {
-		t.Fatal("OIDC admin handler ran without an opaque session token")
+	if !called {
+		t.Fatal("OIDC admin handler did not run after workload authentication")
 	}
 }
 

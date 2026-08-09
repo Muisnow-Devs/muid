@@ -89,9 +89,10 @@ Envconfig applies the normal process prefix to every field.
   `MTLS_CLIENT_CA_PATH`, `TLS_CERT_PATH`, `TLS_KEY_PATH`.
 
 A partial group fails validation in every mode. Every applicable group is
-required in production; debug may omit only a complete group. Configuring an
-optional downstream address in production still requires the outbound client
-group. Certificate, key, and CA material is parsed at startup.
+required in every mode because a plaintext debug connection cannot prove its
+workload identity or safely enforce the method matrix. Configuring an optional
+downstream address still requires the outbound client group. Certificate, key,
+and CA material is parsed at startup.
 
 ## Service authorization matrix
 
@@ -190,7 +191,7 @@ cut over.
 
 - Certificate tests reject plaintext, unknown CA, TLS below 1.2, wrong/missing/
   multiple/unrecognized URI SANs, wrong client EKU, and DNS/IP name mismatch.
-- No code uses `InsecureSkipVerify`; production has no plaintext or incomplete
+- No code uses `InsecureSkipVerify`; no mode has a plaintext or incomplete
   TLS-group fallback.
 - Matrix tests cover every full method, allowed and denied workload, and its
   forbidden/optional/required user mode.
@@ -201,6 +202,6 @@ cut over.
 - Searches find no gateway/backend `DialInsecureClient`, legacy identity
   interceptor, or unclassified RPC.
 - Coordinated production rollout proves all certificates/config are present
-  before plaintext paths are removed; debug may omit complete groups only.
+  before plaintext paths are removed.
 - `make check`, full tests, affected `-race` suites, vet, build, Buf/generation
   checks, and root/API vulnerability scans pass.

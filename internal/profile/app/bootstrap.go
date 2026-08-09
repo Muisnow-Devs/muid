@@ -26,7 +26,7 @@ import (
 
 func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 	if err := mtls.ValidatePathGroup(
-		!cfg.Debug,
+		true,
 		cfg.GRPCClientCertPath,
 		cfg.GRPCClientKeyPath,
 		cfg.GRPCRootCAPath,

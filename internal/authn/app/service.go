@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -10,12 +11,15 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	"sanzi.io/muid/internal/identity/issuer"
+	"sanzi.io/muid/pkg/authzclient"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
@@ -30,10 +34,40 @@ func NewAuthnGRPC(
 	oidcHandler pb.OIDCServiceServer,
 	oidcAdminHandler pb.OIDCClientAdminServiceServer,
 	iss issuer.SessionIssuer,
+	platformAuthz *authzclient.PlatformChecker,
 	tracer tracing.Tracer,
 ) (*AuthnGRPC, error) {
+	if err := mtls.ValidatePathGroup(
+		true,
+		config.GRPCTLSCertPath,
+		config.GRPCTLSKeyPath,
+		config.GRPCMTLSClientCAPath,
+	); err != nil {
+		return nil, fmt.Errorf("authn inbound gRPC TLS: %w", err)
+	}
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
+	}
+
+	pvValidator, err := grpcutils.ProtovalidateValidator()
+	if err != nil {
+		return nil, err
+	}
+	principal, err := grpcutils.NewRequestPrincipalInterceptor(authnPrincipalPolicies())
+	if err != nil {
+		return nil, err
+	}
+
+	var serverTLS *tls.Config
+	if config.serverTLSConfigured() {
+		serverTLS, err = mtls.LoadServerTLSConfig(
+			config.GRPCTLSCertPath,
+			config.GRPCTLSKeyPath,
+			config.GRPCMTLSClientCAPath,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("authn gRPC TLS: %w", err)
+		}
 	}
 
 	listener, err := net.Listen("tcp", ":"+fmt.Sprint(config.Port))
@@ -41,12 +75,7 @@ func NewAuthnGRPC(
 		return nil, err
 	}
 
-	pvValidator, err := grpcutils.ProtovalidateValidator()
-	if err != nil {
-		return nil, err
-	}
-
-	grpcServer := grpc.NewServer(
+	serverOptions := []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			grpcutils.TraceUnaryInterceptor,
@@ -54,15 +83,21 @@ func NewAuthnGRPC(
 			grpcutils.TracerContextInterceptor(tracer),
 			grpcutils.SessionTokenInterceptor(),
 			protovalidate.UnaryServerInterceptor(pvValidator),
+			principal,
+			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
 			authngrpc.AuthnRequestContextInterceptor(),
 			authngrpc.AuthnSessionPrincipalInterceptor(iss),
+			authngrpc.OIDCAdminPlatformAuthorizationInterceptor(platformAuthz),
 			grpcutils.LoggingInterceptor(),
-			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
 			recovery.UnaryServerInterceptor(
 				recovery.WithRecoveryHandlerContext(grpcutils.PanicRecoveryHandler),
 			),
 		),
-	)
+	}
+	if serverTLS != nil {
+		serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
+	}
+	grpcServer := grpc.NewServer(serverOptions...)
 	pb.RegisterAuthnServiceServer(grpcServer, handler)
 	pb.RegisterOIDCServiceServer(grpcServer, oidcHandler)
 	pb.RegisterOIDCClientAdminServiceServer(grpcServer, oidcAdminHandler)
@@ -71,6 +106,39 @@ func NewAuthnGRPC(
 		grpcServer: grpcServer,
 		listener:   listener,
 	}, nil
+}
+
+func authnPrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
+	policies := make(map[string]grpcutils.MethodPrincipalPolicy)
+	for _, method := range pb.AuthnService_ServiceDesc.Methods {
+		policies["/"+pb.AuthnService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,
+			},
+		}
+	}
+	policies[pb.AuthnService_GetPublicKeys_FullMethodName] = grpcutils.MethodPrincipalPolicy{
+		Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+			grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
+			grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
+			grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
+		},
+	}
+	for _, method := range pb.OIDCService_ServiceDesc.Methods {
+		policies["/"+pb.OIDCService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,
+			},
+		}
+	}
+	for _, method := range pb.OIDCClientAdminService_ServiceDesc.Methods {
+		policies["/"+pb.OIDCClientAdminService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayInternal: grpcutils.UserRequired,
+			},
+		}
+	}
+	return policies
 }
 
 func (s *AuthnGRPC) Start(ctx context.Context) error {

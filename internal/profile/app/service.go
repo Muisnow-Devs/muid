@@ -33,7 +33,7 @@ func NewProfileGRPC(
 	tracer tracing.Tracer,
 ) (*ProfileGRPC, error) {
 	if err := mtls.ValidatePathGroup(
-		!config.Debug,
+		true,
 		config.GRPCTLSCertPath,
 		config.GRPCTLSKeyPath,
 		config.GRPCMTLSClientCAPath,

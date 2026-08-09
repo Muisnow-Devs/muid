@@ -18,6 +18,7 @@ import (
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/authzclient"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/kv"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
@@ -118,6 +119,14 @@ type Config struct {
 	// AuthzPolicyRefreshSeconds is the periodic full resync of the authn
 	// namespace policies (drift safety net for missed events).
 	AuthzPolicyRefreshSeconds int `envconfig:"AUTHZ_POLICY_REFRESH_SECONDS" default:"300"`
+
+	GRPCTLSCertPath      string `envconfig:"GRPC_TLS_CERT_PATH"`
+	GRPCTLSKeyPath       string `envconfig:"GRPC_TLS_KEY_PATH"`
+	GRPCMTLSClientCAPath string `envconfig:"GRPC_MTLS_CLIENT_CA_PATH"`
+
+	GRPCClientCertPath string `envconfig:"GRPC_CLIENT_CERT_PATH"`
+	GRPCClientKeyPath  string `envconfig:"GRPC_CLIENT_KEY_PATH"`
+	GRPCRootCAPath     string `envconfig:"GRPC_ROOT_CA_PATH"`
 }
 
 // OIDCProviderEnabled reports whether the OIDC provider surface is configured.
@@ -134,6 +143,14 @@ func (c Config) SessionAccessTokenEnabled() bool {
 // SignatureConfigured reports whether the JWT signing key secret is configured.
 func (c Config) SignatureConfigured() bool {
 	return strings.TrimSpace(c.SignatureSecretName) != ""
+}
+
+func (c Config) serverTLSConfigured() bool {
+	return mtls.PathGroupConfigured(c.GRPCTLSCertPath, c.GRPCTLSKeyPath, c.GRPCMTLSClientCAPath)
+}
+
+func (c Config) clientTLSConfigured() bool {
+	return mtls.PathGroupConfigured(c.GRPCClientCertPath, c.GRPCClientKeyPath, c.GRPCRootCAPath)
 }
 
 // InfraDependencies holds the runtime dependencies for the authn app.
@@ -160,6 +177,7 @@ type InfraDependencies struct {
 	// AuthzEnforcer is the service-local casbin enforcer replicating authn's
 	// permission relations from authz (pkg/authzclient).
 	AuthzEnforcer *authzclient.Enforcer
+	PlatformAuthz *authzclient.PlatformChecker
 	OIDCCodes     *oidcstore.KVCodeStore
 	OIDCPendings  *oidcstore.KVPendingStore
 	OIDCDevices   *oidcstore.KVDeviceStore

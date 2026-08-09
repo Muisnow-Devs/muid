@@ -77,7 +77,7 @@ func (c Config) Validate() error {
 	}
 	if err := validateTLSPathGroup(
 		"GRPC_TLS_CERT_PATH, GRPC_TLS_KEY_PATH and GRPC_MTLS_CLIENT_CA_PATH",
-		!c.Debug,
+		true,
 		c.GRPCTLSCertPath,
 		c.GRPCTLSKeyPath,
 		c.GRPCMTLSClientCAPath,
@@ -86,7 +86,7 @@ func (c Config) Validate() error {
 	}
 	return validateTLSPathGroup(
 		"GRPC_CLIENT_CERT_PATH, GRPC_CLIENT_KEY_PATH and GRPC_ROOT_CA_PATH",
-		!c.Debug,
+		true,
 		c.GRPCClientCertPath,
 		c.GRPCClientKeyPath,
 		c.GRPCRootCAPath,

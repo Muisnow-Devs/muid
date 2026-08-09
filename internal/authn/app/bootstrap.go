@@ -26,11 +26,20 @@ import (
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/kv"
 )
 
 // NewAuthnInfra wires Redis-backed OTP / transition stores, NATS, Ent, optional Profile gRPC, and WebAuthn.
 func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	); err != nil {
+		return nil, fmt.Errorf("authn outbound gRPC TLS: %w", err)
+	}
 	redisKV := redis.NewRedisKVStore(cfg.RedisAddr, cfg.RedisDatabase)
 
 	otpSecret, err := hex.DecodeString(cfg.OTPSecretKey)
@@ -73,7 +82,7 @@ func NewAuthnInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	var profileConn *grpc.ClientConn
 	var profileCli profilepb.ProfileServiceClient
 	if addr := strings.TrimSpace(cfg.ProfileGRPCAddr); addr != "" {
-		profileConn, err = grpcutils.DialInsecureClient(addr, profileGRPCResilience(cfg))
+		profileConn, err = dialAuthnBackend(cfg, addr, profileGRPCResilience(cfg))
 		if err != nil {
 			errutil.Close(entClient)
 			errutil.CloseIf(pubSub)
@@ -232,14 +241,15 @@ func wireOIDCProviderInfra(
 		return fmt.Errorf("AUTHN_AUTHZ_GRPC_ADDR is required when AUTHN_OIDC_ISSUER is set")
 	}
 
-	authzConn, err := grpcutils.DialInsecureClient(authzAddr, authzGRPCResilience(cfg))
+	authzConn, err := dialAuthnBackend(cfg, authzAddr, authzGRPCResilience(cfg))
 	if err != nil {
 		return fmt.Errorf("authz grpc dial: %w", err)
 	}
 
+	authzClient := authzpb.NewAuthzServiceClient(authzConn)
 	enforcer, err := authzclient.NewEnforcer(authzclient.Config{
 		Namespace:       "organization",
-		Client:          authzpb.NewAuthzServiceClient(authzConn),
+		Client:          authzClient,
 		PubSub:          deps.PubSub,
 		KV:              redisKV,
 		RoleCacheTTL:    time.Duration(cfg.AuthzRoleCacheTTLSeconds) * time.Second,
@@ -249,6 +259,12 @@ func wireOIDCProviderInfra(
 		errutil.Close(authzConn)
 		return fmt.Errorf("authz enforcer: %w", err)
 	}
+	platformAuthz, err := authzclient.NewPlatformChecker(authzClient)
+	if err != nil {
+		errutil.Discard(enforcer.Close())
+		errutil.Close(authzConn)
+		return fmt.Errorf("platform authz client: %w", err)
+	}
 	err = enforcer.Start(ctx)
 	if err != nil {
 		errutil.Close(authzConn)
@@ -256,11 +272,31 @@ func wireOIDCProviderInfra(
 	}
 
 	deps.AuthzEnforcer = enforcer
+	deps.PlatformAuthz = platformAuthz
 	deps.OIDCCodes = oidcstore.NewKVCodeStore(redisKV)
 	deps.OIDCPendings = oidcstore.NewKVPendingStore(redisKV)
 	deps.OIDCDevices = oidcstore.NewKVDeviceStore(redisKV)
 	deps.authzConn = authzConn
 	return nil
+}
+
+func dialAuthnBackend(
+	cfg Config,
+	target string,
+	resilience grpcutils.ClientResilienceConfig,
+) (*grpc.ClientConn, error) {
+	if !cfg.clientTLSConfigured() {
+		return grpcutils.DialInsecureClient(target, resilience)
+	}
+	clientTLS, err := mtls.LoadClientTLSConfig(
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return grpcutils.DialTLSClient(target, clientTLS, resilience)
 }
 
 // authzGRPCResilience reuses the Profile outbound resilience settings with a

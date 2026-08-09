@@ -30,17 +30,17 @@ func NewOIDCAdminHandler(admin *oidc.Admin) pb.OIDCClientAdminServiceServer {
 	return &OIDCAdminHandler{admin: admin}
 }
 
-// actor resolves the acting user; the session principal interceptor enforces
-// presence for every admin route.
+// actor resolves the acting user authenticated by the internal gateway's
+// workload principal. Organization authorization remains in the domain layer.
 func (h *OIDCAdminHandler) actor(ctx context.Context) (uuid.UUID, error) {
 	if h.admin == nil {
 		return uuid.Nil, errOIDCUnavailable
 	}
-	resolved, ok := ResolvedSessionFromContext(ctx)
+	userID, ok := grpcutils.RequestUserIDFromContext(ctx)
 	if !ok {
-		return uuid.Nil, status.Error(codes.Unauthenticated, "session token required")
+		return uuid.Nil, status.Error(codes.Unauthenticated, "user identity required")
 	}
-	return resolved.UserID, nil
+	return userID, nil
 }
 
 func adminDomainError(ctx context.Context, op string, err error) error {

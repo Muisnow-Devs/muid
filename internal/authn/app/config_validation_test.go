@@ -108,6 +108,81 @@ func TestLoadConfigDecodesStructuredAuthnConfig(t *testing.T) {
 	}
 }
 
+func TestConfigValidateTLSGroups(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		mutate func(*Config)
+		debug  bool
+	}{
+		{
+			name: "partial inbound in debug",
+			mutate: func(cfg *Config) {
+				cfg.GRPCTLSKeyPath = ""
+			},
+			debug: true,
+		},
+		{
+			name: "missing inbound in production",
+			mutate: func(cfg *Config) {
+				cfg.GRPCTLSCertPath = ""
+				cfg.GRPCTLSKeyPath = ""
+				cfg.GRPCMTLSClientCAPath = ""
+			},
+		},
+		{
+			name: "missing inbound in debug",
+			mutate: func(cfg *Config) {
+				cfg.GRPCTLSCertPath = ""
+				cfg.GRPCTLSKeyPath = ""
+				cfg.GRPCMTLSClientCAPath = ""
+			},
+			debug: true,
+		},
+		{
+			name: "partial outbound in debug",
+			mutate: func(cfg *Config) {
+				cfg.GRPCRootCAPath = ""
+			},
+			debug: true,
+		},
+		{
+			name: "missing outbound in production",
+			mutate: func(cfg *Config) {
+				cfg.GRPCClientCertPath = ""
+				cfg.GRPCClientKeyPath = ""
+				cfg.GRPCRootCAPath = ""
+			},
+		},
+		{
+			name: "missing outbound in debug",
+			mutate: func(cfg *Config) {
+				cfg.GRPCClientCertPath = ""
+				cfg.GRPCClientKeyPath = ""
+				cfg.GRPCRootCAPath = ""
+			},
+			debug: true,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			cfg := validProductionConfig()
+			cfg.Debug = test.debug
+			test.mutate(&cfg)
+			lookup := mapLookup(productionEnv())
+			if test.debug {
+				lookup = mapLookup(nil)
+			}
+			if err := cfg.validate(lookup); err == nil {
+				t.Fatal("invalid TLS group was accepted")
+			}
+		})
+	}
+}
+
 func validProductionConfig() Config {
 	return Config{
 		DatabaseURL:           "postgres://user:pass@db.example.com:5432/authn",
@@ -118,6 +193,12 @@ func validProductionConfig() Config {
 		ProfileGRPCAddr:       "profile.example.com:443",
 		OTPSecretKey:          "00112233445566778899aabbccddeeff",
 		ProfileGRPCMaxRetries: 2,
+		GRPCTLSCertPath:       "server.pem",
+		GRPCTLSKeyPath:        "server-key.pem",
+		GRPCMTLSClientCAPath:  "clients.pem",
+		GRPCClientCertPath:    "client.pem",
+		GRPCClientKeyPath:     "client-key.pem",
+		GRPCRootCAPath:        "servers.pem",
 	}
 }
 

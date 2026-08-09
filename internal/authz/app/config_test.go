@@ -13,36 +13,53 @@ func TestConfigValidateTLSGroups(t *testing.T) {
 		NATSURL:               "nats://localhost:4222",
 		PolicyReloadSeconds:   300,
 		RequestTimeoutSeconds: 10,
+		GRPCTLSCertPath:       "server.pem",
+		GRPCTLSKeyPath:        "server-key.pem",
+		GRPCMTLSClientCAPath:  "clients.pem",
+		GRPCClientCertPath:    "client.pem",
+		GRPCClientKeyPath:     "client-key.pem",
+		GRPCRootCAPath:        "servers.pem",
 	}
 	validProduction := validDebug
 	validProduction.Debug = false
-	validProduction.GRPCTLSCertPath = "server.pem"
-	validProduction.GRPCTLSKeyPath = "server-key.pem"
-	validProduction.GRPCMTLSClientCAPath = "clients.pem"
-	validProduction.GRPCClientCertPath = "client.pem"
-	validProduction.GRPCClientKeyPath = "client-key.pem"
-	validProduction.GRPCRootCAPath = "servers.pem"
 
 	tests := []struct {
 		name    string
 		config  Config
 		wantErr bool
 	}{
-		{name: "debug plaintext", config: validDebug},
+		{name: "debug mutual TLS", config: validDebug},
+		{name: "debug plaintext", config: func() Config {
+			config := validDebug
+			config.GRPCTLSCertPath = ""
+			config.GRPCTLSKeyPath = ""
+			config.GRPCMTLSClientCAPath = ""
+			config.GRPCClientCertPath = ""
+			config.GRPCClientKeyPath = ""
+			config.GRPCRootCAPath = ""
+			return config
+		}(), wantErr: true},
 		{name: "production mutual TLS", config: validProduction},
 		{name: "production missing groups", config: func() Config {
-			config := validDebug
+			config := Config{
+				Port:                  5315,
+				InternalPort:          5316,
+				DatabaseURL:           "postgres://authz",
+				NATSURL:               "nats://localhost:4222",
+				PolicyReloadSeconds:   300,
+				RequestTimeoutSeconds: 10,
+			}
 			config.Debug = false
 			return config
 		}(), wantErr: true},
 		{name: "partial server group", config: func() Config {
 			config := validDebug
-			config.GRPCTLSCertPath = "server.pem"
+			config.GRPCTLSKeyPath = ""
 			return config
 		}(), wantErr: true},
 		{name: "partial client group", config: func() Config {
 			config := validDebug
-			config.GRPCClientCertPath = "client.pem"
+			config.GRPCRootCAPath = ""
 			return config
 		}(), wantErr: true},
 		{name: "same listeners", config: func() Config {

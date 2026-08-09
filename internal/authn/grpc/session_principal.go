@@ -101,8 +101,5 @@ func AuthnSessionPrincipalInterceptor(iss issuer.SessionIssuer) grpc.UnaryServer
 		pb.OIDCService_ListGrantedConsents_FullMethodName:        required,
 		pb.OIDCService_RevokeConsent_FullMethodName:              required,
 	}
-	for _, method := range pb.OIDCClientAdminService_ServiceDesc.Methods {
-		routes["/"+pb.OIDCClientAdminService_ServiceDesc.ServiceName+"/"+method.MethodName] = required
-	}
 	return grpcutils.UnaryRequestContextInterceptor(routes)
 }

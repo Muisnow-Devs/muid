@@ -37,7 +37,7 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "debug true allows missing critical env",
+			name: "debug true allows missing critical env with mutual TLS",
 			cfg: Config{
 				Debug:                     true,
 				Port:                      5324,
@@ -47,6 +47,12 @@ func TestConfigValidateDefaultValues(t *testing.T) {
 				AuthzRoleCacheTTLSeconds:  300,
 				AuthzPolicyRefreshSeconds: 300,
 				R2AccountID:               "account",
+				GRPCTLSCertPath:           "server.pem",
+				GRPCTLSKeyPath:            "server-key.pem",
+				GRPCMTLSClientCAPath:      "clients.pem",
+				GRPCClientCertPath:        "client.pem",
+				GRPCClientKeyPath:         "client-key.pem",
+				GRPCRootCAPath:            "servers.pem",
 			},
 			env:     map[string]string{},
 			wantErr: false,

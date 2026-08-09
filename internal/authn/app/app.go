@@ -51,6 +51,7 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 		authngrpc.NewOIDCHandler(oidcProvider),
 		authngrpc.NewOIDCAdminHandler(newOIDCAdmin(infra)),
 		iss,
+		infra.PlatformAuthz,
 		nil,
 	)
 	if err != nil {

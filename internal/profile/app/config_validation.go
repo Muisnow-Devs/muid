@@ -33,7 +33,7 @@ func (cfg Config) validate(lookup shared.EnvLookup) error {
 		return fmt.Errorf("profile: AUTHZ_POLICY_REFRESH_SECONDS must be nonnegative")
 	}
 	if err := mtls.ValidatePathGroup(
-		!cfg.Debug,
+		true,
 		cfg.GRPCTLSCertPath,
 		cfg.GRPCTLSKeyPath,
 		cfg.GRPCMTLSClientCAPath,
@@ -41,7 +41,7 @@ func (cfg Config) validate(lookup shared.EnvLookup) error {
 		return fmt.Errorf("profile: inbound gRPC TLS configuration: %w", err)
 	}
 	if err := mtls.ValidatePathGroup(
-		!cfg.Debug,
+		true,
 		cfg.GRPCClientCertPath,
 		cfg.GRPCClientKeyPath,
 		cfg.GRPCRootCAPath,

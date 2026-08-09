@@ -50,13 +50,22 @@ func (s staticKeySource) Keys(context.Context) (map[string]*rsa.PublicKey, error
 }
 
 func mintToken(t *testing.T, key *rsa.PrivateKey, kid, sub string) string {
+	return mintTokenWithExpiration(t, key, kid, sub, time.Now().Add(2*time.Minute))
+}
+
+func mintTokenWithExpiration(
+	t *testing.T,
+	key *rsa.PrivateKey,
+	kid, sub string,
+	expiresAt time.Time,
+) string {
 	t.Helper()
 	claims := jwt.MapClaims{
 		"token_use": "session",
 		"sub":       sub,
 		"iss":       testIssuer,
 		"iat":       jwt.NewNumericDate(time.Now()),
-		"exp":       jwt.NewNumericDate(time.Now().Add(2 * time.Minute)),
+		"exp":       jwt.NewNumericDate(expiresAt),
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	token.Header["typ"] = "muid-session+jwt"
@@ -184,5 +193,69 @@ func TestAdminEmptyAllowlistFailsClosed(t *testing.T) {
 
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("admin with empty allowlist = %d, want 403", rec.Code)
+	}
+}
+
+func TestCurrentAdminAuthenticationOutcomes(t *testing.T) {
+	t.Parallel()
+
+	authz := &fakeAuthzAdmin{}
+	adminUserID := uuid.NewString()
+	h, key, kid := buildHandler(t, authz, []string{adminUserID})
+	path := "/admin/authz/casbin-rules"
+
+	tests := []struct {
+		name       string
+		token      string
+		wantStatus int
+	}{
+		{
+			name:       "missing token",
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "invalid token",
+			token:      "not-a-jwt",
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name: "expired token",
+			token: mintTokenWithExpiration(
+				t,
+				key,
+				kid,
+				adminUserID,
+				time.Now().Add(-time.Minute),
+			),
+			wantStatus: http.StatusUnauthorized,
+		},
+		{
+			name:       "valid non-allowlisted token",
+			token:      mintToken(t, key, kid, uuid.NewString()),
+			wantStatus: http.StatusForbidden,
+		},
+		{
+			name:       "valid allowlisted token",
+			token:      mintToken(t, key, kid, adminUserID),
+			wantStatus: http.StatusOK,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, path, nil)
+			if tc.token != "" {
+				req.Header.Set("Authorization", "Bearer "+tc.token)
+			}
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != tc.wantStatus {
+				t.Fatalf("status = %d body=%s, want %d", rec.Code, rec.Body.String(), tc.wantStatus)
+			}
+		})
+	}
+
+	if authz.gotUserID != adminUserID {
+		t.Fatalf("allowlisted JWT subject forwarded as %q, want %q", authz.gotUserID, adminUserID)
 	}
 }

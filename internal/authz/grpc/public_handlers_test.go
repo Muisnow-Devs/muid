@@ -118,6 +118,37 @@ func TestUserIdentityInterceptor(t *testing.T) {
 	}
 }
 
+func TestCurrentUserIdentityInterceptorAcceptsForgedUserIDMetadata(t *testing.T) {
+	t.Parallel()
+
+	forgedUserID := uuid.MustParse("4c29a0d6-91b4-4a4f-8c39-6f3dd35a57ea")
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(UserIDMetadataKey, forgedUserID.String()),
+	)
+
+	var gotUserID uuid.UUID
+	_, err := UserIdentityInterceptor()(
+		ctx,
+		nil,
+		&grpc.UnaryServerInfo{FullMethod: pb.AuthzUserService_CheckMyPermission_FullMethodName},
+		func(ctx context.Context, _ any) (any, error) {
+			var ok bool
+			gotUserID, ok = UserIDFromContext(ctx)
+			if !ok {
+				t.Fatal("handler did not receive the metadata identity")
+			}
+			return nil, nil
+		},
+	)
+	if err != nil {
+		t.Fatalf("interceptor error = %v, want nil", err)
+	}
+	if gotUserID != forgedUserID {
+		t.Fatalf("handler user id = %v, want forged metadata id %v", gotUserID, forgedUserID)
+	}
+}
+
 func TestOrgAdminHandlerAuthorization(t *testing.T) {
 	fixture := newOrgFixture(t, "authzorgadminhandler")
 	handler := NewOrgAdminHandler(HandlerConfig{Manager: fixture.manager})

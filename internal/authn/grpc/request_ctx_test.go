@@ -245,6 +245,31 @@ func TestAuthnSessionPrincipalInterceptor_missingToken(t *testing.T) {
 	}
 }
 
+func TestCurrentAuthnSessionPrincipalInterceptorRejectsGatewayInternalOIDCAdminIdentity(t *testing.T) {
+	t.Parallel()
+
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs("x-user-id", uuid.NewString()),
+	)
+	called := false
+	_, err := AuthnSessionPrincipalInterceptor(&mockSessionIssuer{})(
+		ctx,
+		nil,
+		&grpc.UnaryServerInfo{FullMethod: pb.OIDCClientAdminService_ListOIDCClients_FullMethodName},
+		func(context.Context, any) (any, error) {
+			called = true
+			return nil, nil
+		},
+	)
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("status code = %v, want Unauthenticated", status.Code(err))
+	}
+	if called {
+		t.Fatal("OIDC admin handler ran without an opaque session token")
+	}
+}
+
 func TestAuthnSessionPrincipalInterceptor_sessionExpired(t *testing.T) {
 	t.Parallel()
 

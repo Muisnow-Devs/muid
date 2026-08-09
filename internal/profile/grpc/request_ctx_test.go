@@ -77,6 +77,38 @@ func TestProfileRequestContextInterceptor_getProfileDefaultsToAuthenticatedUser(
 	}
 }
 
+func TestCurrentProfileRequestContextInterceptorAcceptsUnauthenticatedUserIDMetadata(t *testing.T) {
+	t.Parallel()
+
+	forgedUserID := uuid.MustParse("4c29a0d6-91b4-4a4f-8c39-6f3dd35a57ea")
+	ctx := metadata.NewIncomingContext(
+		context.Background(),
+		metadata.Pairs(sharedauthn.AuthenticatedUserIDMetadataKey, forgedUserID.String()),
+	)
+	req := &pb.GetProfileRequest{}
+
+	var gotUserID uuid.UUID
+	_, err := ProfileRequestContextInterceptor()(
+		ctx,
+		req,
+		&grpc.UnaryServerInfo{FullMethod: pb.ProfileService_GetProfile_FullMethodName},
+		func(ctx context.Context, _ any) (any, error) {
+			var ok bool
+			gotUserID, ok = sharedauthn.AuthenticatedUserIDFromContext(ctx)
+			if !ok {
+				t.Fatal("handler did not receive the metadata identity")
+			}
+			return nil, nil
+		},
+	)
+	if err != nil {
+		t.Fatalf("interceptor error = %v, want nil", err)
+	}
+	if gotUserID != forgedUserID {
+		t.Fatalf("handler user id = %v, want forged metadata id %v", gotUserID, forgedUserID)
+	}
+}
+
 func TestProfileRequestContextInterceptor_updateProfile(t *testing.T) {
 	t.Parallel()
 

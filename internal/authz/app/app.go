@@ -21,6 +21,9 @@ func NewAuthzApp(ctx context.Context, infra *InfraDependencies) (*AuthzApp, erro
 		User:     authzgrpc.NewUserHandler(handlerCfg),
 		OrgAdmin: authzgrpc.NewOrgAdminHandler(handlerCfg),
 		Admin:    authzgrpc.NewAdminHandler(handlerCfg),
+		AdminAuthorization: authzgrpc.AdminAuthorizationInterceptor(
+			infra.PolicyManager,
+		),
 	}
 	service, err := NewAuthzGRPC(infra.GlobalConfig, handlers, nil)
 	if err != nil {

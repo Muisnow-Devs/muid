@@ -1,6 +1,9 @@
 package app
 
 import (
+	"fmt"
+	"strings"
+
 	"google.golang.org/grpc"
 
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
@@ -39,6 +42,78 @@ type Config struct {
 	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR"`
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"10"`
+
+	GRPCTLSCertPath      string `envconfig:"GRPC_TLS_CERT_PATH"`
+	GRPCTLSKeyPath       string `envconfig:"GRPC_TLS_KEY_PATH"`
+	GRPCMTLSClientCAPath string `envconfig:"GRPC_MTLS_CLIENT_CA_PATH"`
+
+	GRPCClientCertPath string `envconfig:"GRPC_CLIENT_CERT_PATH"`
+	GRPCClientKeyPath  string `envconfig:"GRPC_CLIENT_KEY_PATH"`
+	GRPCRootCAPath     string `envconfig:"GRPC_ROOT_CA_PATH"`
+}
+
+func (c Config) Validate() error {
+	if strings.TrimSpace(c.DatabaseURL) == "" {
+		return fmt.Errorf("authz: DATABASE_URL is required")
+	}
+	if strings.TrimSpace(c.NATSURL) == "" {
+		return fmt.Errorf("authz: NATS_URL is required")
+	}
+	if c.Port < 1 || c.Port > 65535 {
+		return fmt.Errorf("authz: PORT must be between 1 and 65535")
+	}
+	if c.InternalPort < 1 || c.InternalPort > 65535 {
+		return fmt.Errorf("authz: INTERNAL_PORT must be between 1 and 65535")
+	}
+	if c.Port == c.InternalPort {
+		return fmt.Errorf("authz: PORT and INTERNAL_PORT must differ")
+	}
+	if c.PolicyReloadSeconds < 0 {
+		return fmt.Errorf("authz: POLICY_RELOAD_SECONDS must be nonnegative")
+	}
+	if c.RequestTimeoutSeconds <= 0 {
+		return fmt.Errorf("authz: REQUEST_TIMEOUT_SECONDS must be positive")
+	}
+	if err := validateTLSPathGroup(
+		"GRPC_TLS_CERT_PATH, GRPC_TLS_KEY_PATH and GRPC_MTLS_CLIENT_CA_PATH",
+		!c.Debug,
+		c.GRPCTLSCertPath,
+		c.GRPCTLSKeyPath,
+		c.GRPCMTLSClientCAPath,
+	); err != nil {
+		return err
+	}
+	return validateTLSPathGroup(
+		"GRPC_CLIENT_CERT_PATH, GRPC_CLIENT_KEY_PATH and GRPC_ROOT_CA_PATH",
+		!c.Debug,
+		c.GRPCClientCertPath,
+		c.GRPCClientKeyPath,
+		c.GRPCRootCAPath,
+	)
+}
+
+func validateTLSPathGroup(name string, required bool, values ...string) error {
+	configured := 0
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			configured++
+		}
+	}
+	if configured != 0 && configured != len(values) {
+		return fmt.Errorf("authz: %s must all be set", name)
+	}
+	if required && configured == 0 {
+		return fmt.Errorf("authz: %s are required in production", name)
+	}
+	return nil
+}
+
+func (c Config) serverTLSConfigured() bool {
+	return strings.TrimSpace(c.GRPCTLSCertPath) != ""
+}
+
+func (c Config) clientTLSConfigured() bool {
+	return strings.TrimSpace(c.GRPCClientCertPath) != ""
 }
 
 type InfraDependencies struct {

@@ -16,9 +16,13 @@ import (
 	"sanzi.io/muid/pkg/entpostgres"
 	"sanzi.io/muid/pkg/errutil"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/mtls"
 )
 
 func NewAuthzInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
 	pubSub, err := nats.NewNATSPubSub(cfg.NATSURL)
 	if err != nil {
 		return nil, fmt.Errorf("nats: %w", err)
@@ -69,7 +73,22 @@ func NewAuthzInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	var profileConn *grpc.ClientConn
 	var profileClient profilepb.OrganizationProfileServiceClient
 	if addr := strings.TrimSpace(cfg.ProfileGRPCAddr); addr != "" {
-		profileConn, err = grpcutils.DialInsecureClient(addr, grpcutils.ClientResilienceConfig{})
+		if cfg.clientTLSConfigured() {
+			clientTLS, tlsErr := mtls.LoadClientTLSConfig(
+				cfg.GRPCClientCertPath,
+				cfg.GRPCClientKeyPath,
+				cfg.GRPCRootCAPath,
+			)
+			if tlsErr != nil {
+				errutil.Discard(manager.Close())
+				errutil.Close(entClient)
+				errutil.CloseIf(pubSub)
+				return nil, fmt.Errorf("profile grpc TLS: %w", tlsErr)
+			}
+			profileConn, err = grpcutils.DialTLSClient(addr, clientTLS, grpcutils.ClientResilienceConfig{})
+		} else {
+			profileConn, err = grpcutils.DialInsecureClient(addr, grpcutils.ClientResilienceConfig{})
+		}
 		if err != nil {
 			errutil.Discard(manager.Close())
 			errutil.Close(entClient)

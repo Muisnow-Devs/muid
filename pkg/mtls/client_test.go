@@ -58,6 +58,40 @@ func TestLoadClientTLSConfigRejectsInvalidRoots(t *testing.T) {
 	}
 }
 
+func TestLoadServerTLSConfig(t *testing.T) {
+	t.Parallel()
+
+	server := makeCA(t, "server")
+	client := makeCA(t, "client")
+	certPath, keyPath := writeCertificatePair(t, server)
+	clientCAPath := filepath.Join(t.TempDir(), "client-ca.pem")
+	if err := os.WriteFile(clientCAPath, client.caPEM, 0o600); err != nil {
+		t.Fatalf("write client CA: %v", err)
+	}
+
+	serverConfig, err := mtls.LoadServerTLSConfig(certPath, keyPath, clientCAPath)
+	if err != nil {
+		t.Fatalf("LoadServerTLSConfig: %v", err)
+	}
+	clientRoots, err := mtls.NewStaticRootsFromPEM(server.caPEM)
+	if err != nil {
+		t.Fatalf("server roots: %v", err)
+	}
+	rootPool, err := clientRoots.Roots(t.Context())
+	if err != nil {
+		t.Fatalf("server root pool: %v", err)
+	}
+	clientConfig := &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{client.tls},
+		RootCAs:      rootPool,
+		ServerName:   "localhost",
+	}
+	if err = handshake(t, serverConfig, clientConfig); err != nil {
+		t.Fatalf("verified mTLS handshake: %v", err)
+	}
+}
+
 func writeCertificatePair(t *testing.T, pair certPair) (string, string) {
 	t.Helper()
 	dir := t.TempDir()

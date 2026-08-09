@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -11,11 +12,13 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
 	authzgrpc "sanzi.io/muid/internal/authz/grpc"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/tracing"
 )
 
@@ -27,6 +30,8 @@ type Handlers struct {
 	User     pb.AuthzUserServiceServer
 	OrgAdmin pb.AuthzOrganizationAdminServiceServer
 	Admin    pb.AuthzAdminServiceServer
+
+	AdminAuthorization grpc.UnaryServerInterceptor
 }
 
 // AuthzGRPC runs the two gRPC listeners: the public surface on Config.Port
@@ -43,6 +48,9 @@ func NewAuthzGRPC(
 	handlers Handlers,
 	tracer tracing.Tracer,
 ) (*AuthzGRPC, error) {
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: config.Debug})
 	}
@@ -50,6 +58,26 @@ func NewAuthzGRPC(
 	pvValidator, err := grpcutils.ProtovalidateValidator()
 	if err != nil {
 		return nil, err
+	}
+	publicPrincipal, err := grpcutils.NewRequestPrincipalInterceptor(authzPublicPrincipalPolicies())
+	if err != nil {
+		return nil, err
+	}
+	internalPrincipal, err := grpcutils.NewRequestPrincipalInterceptor(authzInternalPrincipalPolicies())
+	if err != nil {
+		return nil, err
+	}
+
+	var serverTLS *tls.Config
+	if config.serverTLSConfigured() {
+		serverTLS, err = mtls.LoadServerTLSConfig(
+			config.GRPCTLSCertPath,
+			config.GRPCTLSKeyPath,
+			config.GRPCMTLSClientCAPath,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("authz gRPC TLS: %w", err)
+		}
 	}
 
 	publicListener, err := net.Listen("tcp", ":"+fmt.Sprint(config.Port))
@@ -64,22 +92,38 @@ func NewAuthzGRPC(
 
 	// The public chain additionally extracts the gateway-attached user
 	// identity right after validation.
-	publicServer := grpc.NewServer(
+	publicOptions := []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			chainInterceptors(config, tracer, pvValidator,
-				authzgrpc.UserIdentityInterceptor())...,
+				publicPrincipal,
+				authzgrpc.PrincipalAuditInterceptor())...,
 		),
-	)
+	}
+	if serverTLS != nil {
+		publicOptions = append(publicOptions, grpc.Creds(credentials.NewTLS(serverTLS.Clone())))
+	}
+	publicServer := grpc.NewServer(publicOptions...)
 	pb.RegisterAuthzUserServiceServer(publicServer, handlers.User)
 	pb.RegisterAuthzOrganizationAdminServiceServer(publicServer, handlers.OrgAdmin)
 
-	internalServer := grpc.NewServer(
+	internalExtras := []grpc.UnaryServerInterceptor{
+		internalPrincipal,
+		authzgrpc.PrincipalAuditInterceptor(),
+	}
+	if handlers.AdminAuthorization != nil {
+		internalExtras = append(internalExtras, handlers.AdminAuthorization)
+	}
+	internalOptions := []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
-			chainInterceptors(config, tracer, pvValidator)...,
+			chainInterceptors(config, tracer, pvValidator, internalExtras...)...,
 		),
-	)
+	}
+	if serverTLS != nil {
+		internalOptions = append(internalOptions, grpc.Creds(credentials.NewTLS(serverTLS.Clone())))
+	}
+	internalServer := grpc.NewServer(internalOptions...)
 	pb.RegisterAuthzServiceServer(internalServer, handlers.Service)
 	pb.RegisterAuthzAdminServiceServer(internalServer, handlers.Admin)
 
@@ -89,6 +133,51 @@ func NewAuthzGRPC(
 		internalServer:   internalServer,
 		internalListener: internalListener,
 	}, nil
+}
+
+func authzPublicPrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
+	policies := make(map[string]grpcutils.MethodPrincipalPolicy)
+	for _, service := range []*grpc.ServiceDesc{
+		&pb.AuthzUserService_ServiceDesc,
+		&pb.AuthzOrganizationAdminService_ServiceDesc,
+	} {
+		for _, method := range service.Methods {
+			policies["/"+service.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+				Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+					grpcutils.WorkloadGatewayPublic: grpcutils.UserRequired,
+				},
+			}
+		}
+	}
+	return policies
+}
+
+func authzInternalPrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
+	serviceWorkloads := map[grpcutils.WorkloadID]grpcutils.UserMode{
+		grpcutils.WorkloadAuthn:   grpcutils.UserForbidden,
+		grpcutils.WorkloadProfile: grpcutils.UserForbidden,
+	}
+	policies := make(map[string]grpcutils.MethodPrincipalPolicy)
+	for _, method := range pb.AuthzService_ServiceDesc.Methods {
+		workloads := serviceWorkloads
+		if method.MethodName == "CheckPlatformPermission" {
+			workloads = map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadAuthn:           grpcutils.UserForbidden,
+				grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
+			}
+		}
+		policies["/"+pb.AuthzService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: workloads,
+		}
+	}
+	for _, method := range pb.AuthzAdminService_ServiceDesc.Methods {
+		policies["/"+pb.AuthzAdminService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayInternal: grpcutils.UserRequired,
+			},
+		}
+	}
+	return policies
 }
 
 // chainInterceptors builds the standard interceptor chain, splicing extra

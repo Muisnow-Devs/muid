@@ -31,6 +31,9 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
+	if err = cfg.Validate(); err != nil {
+		return fmt.Errorf("validate config: %w", err)
+	}
 
 	infra, err := app.NewAuthzInfra(ctx, cfg)
 	if err != nil {

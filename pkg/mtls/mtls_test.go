@@ -18,9 +18,10 @@ import (
 )
 
 type certPair struct {
-	tls   tls.Certificate
-	leaf  *x509.Certificate
-	caPEM []byte
+	tls    tls.Certificate
+	leaf   *x509.Certificate
+	caPEM  []byte
+	keyPEM []byte
 }
 
 // makeCA creates a self-signed CA usable both as the server cert and as the
@@ -60,7 +61,7 @@ func makeCA(t *testing.T, cn string) certPair {
 	if err != nil {
 		t.Fatalf("x509 pair: %v", err)
 	}
-	return certPair{tls: pair, leaf: leaf, caPEM: certPEM}
+	return certPair{tls: pair, leaf: leaf, caPEM: certPEM, keyPEM: keyPEM}
 }
 
 func handshake(t *testing.T, serverCfg *tls.Config, clientCfg *tls.Config) error {

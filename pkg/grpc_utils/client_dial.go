@@ -1,10 +1,12 @@
 package grpcutils
 
 import (
+	"crypto/tls"
 	"fmt"
 	"strings"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 
 	"sanzi.io/muid/pkg/log"
@@ -15,6 +17,30 @@ import (
 func DialInsecureClient(
 	target string,
 	resilience ClientResilienceConfig,
+	extraOpts ...grpc.DialOption,
+) (*grpc.ClientConn, error) {
+	return dialClient(target, resilience, insecure.NewCredentials(), extraOpts...)
+}
+
+// DialTLSClient dials target with a cloned TLS config, trace forwarding, and
+// optional circuit breaker and retry interceptors. TLS verification is left to
+// the standard gRPC transport credentials, including normal DNS/IP SAN checks.
+func DialTLSClient(
+	target string,
+	tlsConfig *tls.Config,
+	resilience ClientResilienceConfig,
+	extraOpts ...grpc.DialOption,
+) (*grpc.ClientConn, error) {
+	if tlsConfig == nil {
+		return nil, fmt.Errorf("grpcutils: nil TLS config")
+	}
+	return dialClient(target, resilience, credentials.NewTLS(tlsConfig.Clone()), extraOpts...)
+}
+
+func dialClient(
+	target string,
+	resilience ClientResilienceConfig,
+	transportCredentials credentials.TransportCredentials,
 	extraOpts ...grpc.DialOption,
 ) (*grpc.ClientConn, error) {
 	target = strings.TrimSpace(target)
@@ -40,7 +66,7 @@ func DialInsecureClient(
 	}
 
 	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithTransportCredentials(transportCredentials),
 		grpc.WithChainUnaryInterceptor(interceptors...),
 	}
 	opts = append(opts, extraOpts...)

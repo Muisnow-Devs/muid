@@ -18,6 +18,25 @@ func TestConfigValidate(t *testing.T) {
 	}{
 		{name: "valid production config", env: publicProductionEnv()},
 		{
+			name: "missing outbound TLS group in debug",
+			mutate: func(cfg *Config) {
+				cfg.Debug = true
+				cfg.GRPCClientCertPath = ""
+				cfg.GRPCClientKeyPath = ""
+				cfg.GRPCRootCAPath = ""
+			},
+			env:         map[string]string{},
+			wantErrPart: "outbound gRPC TLS",
+		},
+		{
+			name: "partial outbound TLS group",
+			mutate: func(cfg *Config) {
+				cfg.GRPCRootCAPath = ""
+			},
+			env:         publicProductionEnv(),
+			wantErrPart: "outbound gRPC TLS",
+		},
+		{
 			name:        "missing explicit production setting",
 			env:         publicProductionEnvWithout("GATEWAY_PUBLIC_TRUST_FORWARD_HEADER"),
 			wantErrPart: "GATEWAY_PUBLIC_TRUST_FORWARD_HEADER",
@@ -226,6 +245,9 @@ func validPublicConfig() Config {
 		JWKSCacheTTLSeconds:      300,
 		AccessTokenCookieName:    "__Secure-muid_at",
 		AccessTokenCookieDomain:  "example.com",
+		GRPCClientCertPath:       "client.pem",
+		GRPCClientKeyPath:        "client-key.pem",
+		GRPCRootCAPath:           "servers.pem",
 	}
 }
 

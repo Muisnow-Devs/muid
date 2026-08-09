@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared"
 )
 
@@ -24,6 +25,14 @@ func (cfg Config) Validate() error {
 }
 
 func (cfg Config) validate(lookup shared.EnvLookup) error {
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	); err != nil {
+		return fmt.Errorf("gateway public outbound gRPC TLS configuration: %w", err)
+	}
 	err := shared.ValidateRequiredEnvInProduction(cfg.Debug, "GATEWAY_PUBLIC_DEBUG", lookup, []string{
 		"GATEWAY_PUBLIC_CSRF_SECRET",
 		"GATEWAY_PUBLIC_TURNSTILE_SECRET",

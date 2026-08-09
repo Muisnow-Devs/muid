@@ -8,6 +8,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/metadata"
 
 	"sanzi.io/muid/pkg/gateway/httpmeta"
@@ -37,26 +38,27 @@ func FactsFromContext(ctx context.Context) (Facts, bool) {
 // metadata for a downstream backend call. Trace id is forwarded separately by
 // the dial interceptor.
 func OutgoingMetadata(ctx context.Context) context.Context {
-	f, ok := FactsFromContext(ctx)
-	if !ok {
-		return ctx
-	}
-	return httpmeta.WithOutgoing(ctx, httpmeta.Fields{
+	return httpmeta.WithOutgoing(ctx, outgoingFields(ctx, uuid.Nil))
+}
+
+func outgoingFields(ctx context.Context, userID uuid.UUID) httpmeta.Fields {
+	f, _ := FactsFromContext(ctx)
+	fields := httpmeta.Fields{
 		ClientIP:   f.ClientIP,
 		GeoCountry: f.GeoCountry,
-	})
+	}
+	if userID != uuid.Nil {
+		fields.UserID = userID.String()
+	}
+	return fields
 }
 
 // OutgoingAuthenticated is OutgoingMetadata plus the gateway-verified caller id
 // under the unified identity key httpmeta.UserIDKey ("x-user-id"). authz and
 // profile both read this single key (pkg/shared/authn.AuthenticatedUserIDMetadataKey
 // is unified to the same value), so one ctx works for either data-plane backend.
-func OutgoingAuthenticated(ctx context.Context, userID string) context.Context {
-	ctx = OutgoingMetadata(ctx)
-	if userID == "" {
-		return ctx
-	}
-	return metadata.AppendToOutgoingContext(ctx, httpmeta.UserIDKey, userID)
+func OutgoingAuthenticated(ctx context.Context, userID uuid.UUID) context.Context {
+	return httpmeta.WithOutgoing(ctx, outgoingFields(ctx, userID))
 }
 
 // OutgoingMetadataWithSession is OutgoingMetadata plus the opaque session token
@@ -65,10 +67,16 @@ func OutgoingAuthenticated(ctx context.Context, userID string) context.Context {
 // it is safe to call for unauthenticated flows (e.g. login).
 func OutgoingMetadataWithSession(ctx context.Context, sessionToken string) context.Context {
 	ctx = OutgoingMetadata(ctx)
-	if sessionToken == "" {
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok && sessionToken == "" {
 		return ctx
 	}
-	return metadata.AppendToOutgoingContext(ctx, grpcutils.AuthorizationMetadataKey, "Session "+sessionToken)
+	md = md.Copy()
+	md.Delete(grpcutils.AuthorizationMetadataKey)
+	if sessionToken != "" {
+		md.Set(grpcutils.AuthorizationMetadataKey, "Session "+sessionToken)
+	}
+	return metadata.NewOutgoingContext(ctx, md)
 }
 
 type httpKey struct{}

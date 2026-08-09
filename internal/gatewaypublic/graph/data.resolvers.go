@@ -16,7 +16,6 @@ import (
 	profilepb "sanzi.io/muid/api/proto/profile/v1"
 	"sanzi.io/muid/internal/gatewaypublic/graph/generated"
 	"sanzi.io/muid/internal/gatewaypublic/graph/model"
-	"sanzi.io/muid/internal/gatewaypublic/reqctx"
 )
 
 // UpdateProfile is the resolver for the updateProfile field.
@@ -236,9 +235,13 @@ func (r *mutationResolver) ChangeMemberRole(ctx context.Context, input model.Cha
 
 // Profile is the resolver for the Organization.profile field.
 func (r *organizationResolver) Profile(ctx context.Context, obj *model.Organization) (*model.OrganizationProfile, error) {
+	_, outCtx, err := r.authed(ctx)
+	if err != nil {
+		return nil, err
+	}
 	req := &profilepb.GetOrganizationProfileRequest{}
 	req.SetOrganizationId(obj.ID)
-	resp, err := r.OrgProfile.GetOrganizationProfile(reqctx.OutgoingMetadata(ctx), req)
+	resp, err := r.OrgProfile.GetOrganizationProfile(outCtx, req)
 	if err != nil {
 		return nil, mapBackendError(err)
 	}

@@ -281,7 +281,7 @@ func (r *Resolver) resolveCaller(ctx context.Context) (uuid.UUID, context.Contex
 	}
 	if raw := r.accessTokenFromCookie(ctx); raw != "" {
 		if claims, err := r.Verifier.Verify(ctx, raw); err == nil {
-			return claims.UserID, reqctx.OutgoingAuthenticated(ctx, claims.UserID.String()), nil
+			return claims.UserID, reqctx.OutgoingAuthenticated(ctx, claims.UserID), nil
 		}
 	}
 	claims, err := r.MintAccessToken(ctx)
@@ -291,7 +291,7 @@ func (r *Resolver) resolveCaller(ctx context.Context) (uuid.UUID, context.Contex
 		}
 		return uuid.Nil, ctx, err
 	}
-	return claims.UserID, reqctx.OutgoingAuthenticated(ctx, claims.UserID.String()), nil
+	return claims.UserID, reqctx.OutgoingAuthenticated(ctx, claims.UserID), nil
 }
 
 // ---- auth-flow mappers (Phase 1) ----

@@ -90,4 +90,8 @@ type Config struct {
 	// Domain) plus an optional parent Domain (e.g. ".muid.io"; empty = host-only).
 	AccessTokenCookieName   string `envconfig:"ACCESS_TOKEN_COOKIE_NAME" default:"__Secure-muid_at"`
 	AccessTokenCookieDomain string `envconfig:"ACCESS_TOKEN_COOKIE_DOMAIN"`
+
+	GRPCClientCertPath string `envconfig:"GRPC_CLIENT_CERT_PATH"`
+	GRPCClientKeyPath  string `envconfig:"GRPC_CLIENT_KEY_PATH"`
+	GRPCRootCAPath     string `envconfig:"GRPC_ROOT_CA_PATH"`
 }

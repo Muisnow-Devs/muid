@@ -114,3 +114,36 @@ func TestWithOutgoingSkipsEmpty(t *testing.T) {
 		t.Fatal("expected no outgoing metadata for empty fields")
 	}
 }
+
+func TestWithOutgoingReplacesManagedMetadata(t *testing.T) {
+	t.Parallel()
+
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+		httpmeta.UserIDKey, "attacker",
+		httpmeta.UserIDKey, "duplicate",
+		httpmeta.ClientIPKey, "198.51.100.1",
+		httpmeta.GeoCountryKey, "ZZ",
+		"x-unrelated", "preserved",
+	))
+	ctx = httpmeta.WithOutgoing(ctx, httpmeta.Fields{
+		UserID:   "11111111-1111-1111-1111-111111111111",
+		ClientIP: "203.0.113.7",
+	})
+
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		t.Fatal("expected outgoing metadata")
+	}
+	if got := md.Get(httpmeta.UserIDKey); len(got) != 1 || got[0] != "11111111-1111-1111-1111-111111111111" {
+		t.Fatalf("user id metadata = %v", got)
+	}
+	if got := md.Get(httpmeta.ClientIPKey); len(got) != 1 || got[0] != "203.0.113.7" {
+		t.Fatalf("client ip metadata = %v", got)
+	}
+	if got := md.Get(httpmeta.GeoCountryKey); len(got) != 0 {
+		t.Fatalf("geo metadata = %v, want removed", got)
+	}
+	if got := md.Get("x-unrelated"); len(got) != 1 || got[0] != "preserved" {
+		t.Fatalf("unrelated metadata = %v", got)
+	}
+}

@@ -3,7 +3,7 @@
 // gateway-verified user id, and resolved geo facts, and attaches them so the
 // backends (e.g. authz's UserIdentityInterceptor) can consume them.
 //
-// Trace propagation is handled separately by grpcutils.DialInsecureClient via
+// Trace propagation is handled separately by the grpcutils client dialer via
 // log.UnaryClientInterceptor, so it is not duplicated here.
 package httpmeta
 
@@ -90,22 +90,29 @@ type Fields struct {
 	GeoCountry string
 }
 
-// WithOutgoing appends the non-empty Fields to ctx's outgoing gRPC metadata.
+// WithOutgoing replaces the gateway-owned outgoing metadata fields. Existing
+// values are removed first so an inherited context cannot smuggle duplicate or
+// stale identity and client facts to a backend.
 func WithOutgoing(ctx context.Context, f Fields) context.Context {
-	pairs := make([]string, 0, 6)
-	if v := strings.TrimSpace(f.UserID); v != "" {
-		pairs = append(pairs, UserIDKey, v)
-	}
-	if v := strings.TrimSpace(f.ClientIP); v != "" {
-		pairs = append(pairs, ClientIPKey, v)
-	}
-	if v := strings.TrimSpace(f.GeoCountry); v != "" {
-		pairs = append(pairs, GeoCountryKey, v)
-	}
-	if len(pairs) == 0 {
+	userID := strings.TrimSpace(f.UserID)
+	clientIP := strings.TrimSpace(f.ClientIP)
+	geoCountry := strings.TrimSpace(f.GeoCountry)
+	md, ok := metadata.FromOutgoingContext(ctx)
+	if !ok && userID == "" && clientIP == "" && geoCountry == "" {
 		return ctx
 	}
-	return metadata.AppendToOutgoingContext(ctx, pairs...)
+	md = md.Copy()
+	replace(md, UserIDKey, userID)
+	replace(md, ClientIPKey, clientIP)
+	replace(md, GeoCountryKey, geoCountry)
+	return metadata.NewOutgoingContext(ctx, md)
+}
+
+func replace(md metadata.MD, key, value string) {
+	md.Delete(key)
+	if value != "" {
+		md.Set(key, value)
+	}
 }
 
 // BearerToken extracts the token from an "Authorization: Bearer <token>" value

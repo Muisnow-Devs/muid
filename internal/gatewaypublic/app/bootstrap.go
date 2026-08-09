@@ -21,6 +21,7 @@ import (
 	"sanzi.io/muid/pkg/gateway/jwtauth"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/kv"
 )
 
@@ -57,22 +58,38 @@ type InfraDependencies struct {
 // drivers. External drivers (Turnstile, MaxMind) fall back to no-op/mock
 // behaviour when not configured, so the gateway runs locally without secrets.
 func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	); err != nil {
+		return nil, fmt.Errorf("gateway public outbound gRPC TLS: %w", err)
+	}
+	clientTLS, err := mtls.LoadClientTLSConfig(
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("gateway public outbound gRPC TLS: %w", err)
+	}
 	redisKV := redis.NewRedisKVStore(cfg.RedisAddr, cfg.RedisDatabase)
 
-	authnConn, err := grpcutils.DialInsecureClient(cfg.AuthnGRPCAddr, grpcutils.DefaultClientResilienceConfig())
+	authnConn, err := grpcutils.DialTLSClient(cfg.AuthnGRPCAddr, clientTLS, grpcutils.DefaultClientResilienceConfig())
 	if err != nil {
 		errutil.CloseIf(redisKV)
 		return nil, fmt.Errorf("authn grpc dial: %w", err)
 	}
 
-	authzConn, err := grpcutils.DialInsecureClient(cfg.AuthzGRPCAddr, grpcutils.DefaultClientResilienceConfig())
+	authzConn, err := grpcutils.DialTLSClient(cfg.AuthzGRPCAddr, clientTLS, grpcutils.DefaultClientResilienceConfig())
 	if err != nil {
 		errutil.CloseIf(authnConn)
 		errutil.CloseIf(redisKV)
 		return nil, fmt.Errorf("authz grpc dial: %w", err)
 	}
 
-	profileConn, err := grpcutils.DialInsecureClient(cfg.ProfileGRPCAddr, grpcutils.DefaultClientResilienceConfig())
+	profileConn, err := grpcutils.DialTLSClient(cfg.ProfileGRPCAddr, clientTLS, grpcutils.DefaultClientResilienceConfig())
 	if err != nil {
 		errutil.CloseIf(authzConn)
 		errutil.CloseIf(authnConn)

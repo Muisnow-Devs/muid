@@ -104,6 +104,26 @@ type fakeProfile struct {
 	updateErr error
 }
 
+type fakeOrgProfile struct {
+	profilepb.OrganizationProfileServiceClient
+	gotUserIDs []string
+}
+
+func (f *fakeOrgProfile) GetOrganizationProfile(
+	ctx context.Context,
+	req *profilepb.GetOrganizationProfileRequest,
+	_ ...grpc.CallOption,
+) (*profilepb.GetOrganizationProfileResponse, error) {
+	md, _ := metadata.FromOutgoingContext(ctx)
+	f.gotUserIDs = append([]string(nil), md.Get("x-user-id")...)
+	profile := &profilepb.OrganizationProfileView{}
+	profile.SetOrganizationId(req.GetOrganizationId())
+	profile.SetSlug("acme")
+	resp := &profilepb.GetOrganizationProfileResponse{}
+	resp.SetProfile(profile)
+	return resp, nil
+}
+
 func (f *fakeProfile) GetProfile(_ context.Context, req *profilepb.GetProfileRequest, _ ...grpc.CallOption) (*profilepb.GetProfileResponse, error) {
 	atomic.AddInt32(&f.getCalls, 1)
 	resp := &profilepb.GetProfileResponse{}
@@ -198,6 +218,34 @@ func TestDataPlaneRequiresAuthentication(t *testing.T) {
 	_, out = postGraphQL(t, h, `mutation { createMyOrganization(input:{name:"X"}) { id } }`, "")
 	if _, ok := out["errors"]; !ok {
 		t.Fatalf("expected authentication error, got %v", out)
+	}
+}
+
+func TestOrganizationProfileRequiresAuthenticationAndInjectsOneUserID(t *testing.T) {
+	t.Parallel()
+
+	userID := uuid.New()
+	organizationID := uuid.NewString()
+	infra := dataInfra(t, &fakeVerifier{userID: userID}, &fakeAuthzUser{}, &fakeAuthzOrg{}, &fakeProfile{})
+	orgProfile := &fakeOrgProfile{}
+	infra.OrgProfileClient = orgProfile
+	h := newHandler(infra)
+	query := `query { organization(id:"` + organizationID + `") { profile { organizationId slug } } }`
+
+	_, out := postGraphQL(t, h, query, "")
+	if _, ok := out["errors"]; !ok {
+		t.Fatalf("unauthenticated organization profile query succeeded: %v", out)
+	}
+	if len(orgProfile.gotUserIDs) != 0 {
+		t.Fatalf("unauthenticated backend call carried user ids: %v", orgProfile.gotUserIDs)
+	}
+
+	_, out = postGraphQL(t, h, query, "", &http.Cookie{Name: atCookieName, Value: "any"})
+	if errs, ok := out["errors"]; ok {
+		t.Fatalf("authenticated organization profile query errored: %v", errs)
+	}
+	if len(orgProfile.gotUserIDs) != 1 || orgProfile.gotUserIDs[0] != userID.String() {
+		t.Fatalf("backend user ids = %v, want [%q]", orgProfile.gotUserIDs, userID)
 	}
 }
 

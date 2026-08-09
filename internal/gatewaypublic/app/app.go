@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/gateway/httpx"
@@ -17,9 +18,10 @@ type App struct {
 // NewApp wires the routed handler and HTTP server from infra.
 func NewApp(infra *InfraDependencies) (*App, error) {
 	server, err := httpx.NewServer(httpx.Config{
-		Name:    "gateway-public",
-		Addr:    fmt.Sprintf(":%d", infra.GlobalConfig.Port),
-		Handler: newHandler(infra),
+		Name:           "gateway-public",
+		Addr:           fmt.Sprintf(":%d", infra.GlobalConfig.Port),
+		Handler:        newHandler(infra),
+		RequestTimeout: time.Duration(infra.GlobalConfig.RequestTimeoutSeconds) * time.Second,
 	})
 	if err != nil {
 		return nil, err
@@ -27,14 +29,13 @@ func NewApp(infra *InfraDependencies) (*App, error) {
 	return &App{server: server, infra: infra}, nil
 }
 
-// Start launches background workers then serves until ctx is cancelled.
-func (a *App) Start(ctx context.Context) error {
-	a.infra.StartBackground(ctx)
-	return a.server.Start(ctx)
-}
+// Run launches background workers, serves until cancellation or failure, drains
+// the HTTP server, and then releases all infrastructure owned by the app.
+func (a *App) Run(ctx context.Context) error {
+	runCtx, cancel := context.WithCancel(ctx)
+	defer errutil.Close(a.infra)
+	defer cancel()
 
-// Stop drains the server and releases infrastructure.
-func (a *App) Stop() {
-	errutil.Discard(a.server.Stop())
-	errutil.Discard(a.infra.Close())
+	a.infra.StartBackground(runCtx)
+	return a.server.Run(runCtx)
 }

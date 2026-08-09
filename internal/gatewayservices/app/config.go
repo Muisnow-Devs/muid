@@ -31,7 +31,8 @@ type Config struct {
 	SessionAccessTokenIssuer string `envconfig:"SESSION_ACCESS_TOKEN_ISSUER" required:"true"`
 	JWKSCacheTTLSeconds      int    `envconfig:"JWKS_CACHE_TTL_SECONDS" default:"300"`
 
-	// Rate limiting (fixed window per caller).
+	// Rate limiting (fixed window per caller). A zero limit disables rate
+	// limiting in debug; production requires a positive limit.
 	RateLimit              int64 `envconfig:"RATE_LIMIT" default:"1200"`
 	RateLimitWindowSeconds int   `envconfig:"RATE_LIMIT_WINDOW_SECONDS" default:"60"`
 

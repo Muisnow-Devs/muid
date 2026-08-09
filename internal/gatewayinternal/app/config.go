@@ -32,12 +32,13 @@ type Config struct {
 	JWKSCacheTTLSeconds      int    `envconfig:"JWKS_CACHE_TTL_SECONDS" default:"300"`
 
 	// AdminUserIDs is the allowlist of user ids permitted to use the admin
-	// surface. Required (explicit) in production; an empty list in debug allows
-	// any authenticated caller. The session JWT carries no admin role, so this is
-	// the gateway's authorization gate (the backends do not re-check).
+	// surface. It must contain unique, non-zero UUIDs in every mode. The session
+	// JWT carries no admin role, so this is the gateway's authorization gate (the
+	// backends do not re-check).
 	AdminUserIDs []string `envconfig:"ADMIN_USER_IDS"`
 
-	// Rate limiting (fixed window per admin user).
+	// Rate limiting (fixed window per admin user). A zero limit disables rate
+	// limiting in debug; production requires a positive limit.
 	RateLimit              int64 `envconfig:"RATE_LIMIT" default:"300"`
 	RateLimitWindowSeconds int   `envconfig:"RATE_LIMIT_WINDOW_SECONDS" default:"60"`
 

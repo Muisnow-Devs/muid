@@ -2,6 +2,7 @@ package app
 
 import (
 	"net/http"
+	"time"
 
 	"sanzi.io/muid/pkg/gateway/httpx"
 	"sanzi.io/muid/pkg/gateway/risk"
@@ -36,7 +37,10 @@ func newHandler(deps *InfraDependencies) http.Handler {
 	root.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		httpx.JSON(w, r, http.StatusOK, map[string]string{"status": "ok"})
 	})
-	root.Handle("/", protected)
+	root.Handle("/", httpx.Budget(httpx.BudgetConfig{
+		RequestTimeout: time.Duration(cfg.RequestTimeoutSeconds) * time.Second,
+		MaxConcurrent:  httpx.DefaultMaxConcurrentRequests,
+	})(protected))
 
 	return httpx.Chain(root,
 		httpx.TraceID,

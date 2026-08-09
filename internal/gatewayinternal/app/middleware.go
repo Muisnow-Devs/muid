@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"sanzi.io/muid/pkg/gateway/httpmeta"
 	"sanzi.io/muid/pkg/gateway/httpx"
 	"sanzi.io/muid/pkg/gateway/jwtauth"
@@ -17,13 +19,13 @@ import (
 
 // requireAuth verifies a Bearer session token and authorizes the caller against
 // the admin allowlist. The session JWT carries no admin role, so the allowlist
-// is the gateway's authorization gate; an empty allowlist (debug only) permits
-// any authenticated caller. The internal admin surface never permits anonymous
-// access.
+// is the gateway's authorization gate. Invalid or empty allowlists fail closed.
+// The internal admin surface never permits anonymous access.
 func requireAuth(verifier *jwtauth.Verifier, adminUserIDs []string) httpx.Middleware {
-	admins := make(map[string]struct{}, len(adminUserIDs))
-	for _, id := range adminUserIDs {
-		if id = strings.TrimSpace(id); id != "" {
+	admins := make(map[uuid.UUID]struct{}, len(adminUserIDs))
+	for _, value := range adminUserIDs {
+		id, err := uuid.Parse(strings.TrimSpace(value))
+		if err == nil && id != uuid.Nil {
 			admins[id] = struct{}{}
 		}
 	}
@@ -43,11 +45,9 @@ func requireAuth(verifier *jwtauth.Verifier, adminUserIDs []string) httpx.Middle
 				httpx.Error(w, http.StatusUnauthorized, "invalid_token", "invalid admin token")
 				return
 			}
-			if len(admins) > 0 {
-				if _, ok := admins[claims.UserID.String()]; !ok {
-					httpx.Error(w, http.StatusForbidden, "forbidden", "not an administrator")
-					return
-				}
+			if _, ok := admins[claims.UserID]; !ok {
+				httpx.Error(w, http.StatusForbidden, "forbidden", "not an administrator")
+				return
 			}
 			next.ServeHTTP(w, r.WithContext(jwtauth.WithClaims(r.Context(), claims)))
 		})

@@ -68,7 +68,7 @@ func mintToken(t *testing.T, key *rsa.PrivateKey, kid, sub string) string {
 	return signed
 }
 
-func buildHandler(t *testing.T, authz *fakeAuthzAdmin) (http.Handler, *rsa.PrivateKey, string) {
+func buildHandler(t *testing.T, authz *fakeAuthzAdmin, adminUserIDs []string) (http.Handler, *rsa.PrivateKey, string) {
 	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -80,7 +80,7 @@ func buildHandler(t *testing.T, authz *fakeAuthzAdmin) (http.Handler, *rsa.Priva
 		jwtauth.Config{Issuer: testIssuer},
 	)
 	infra := &InfraDependencies{
-		GlobalConfig: Config{Port: 8082, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 100, SessionAccessTokenIssuer: testIssuer},
+		GlobalConfig: Config{Port: 8082, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 100, SessionAccessTokenIssuer: testIssuer, AdminUserIDs: adminUserIDs},
 		Redis:        mocked.NewMockKVStore(),
 		Verifier:     verifier,
 		OIDCAdmin:    &fakeOIDCAdmin{},
@@ -92,7 +92,7 @@ func buildHandler(t *testing.T, authz *fakeAuthzAdmin) (http.Handler, *rsa.Priva
 func TestHealthIsOpen(t *testing.T) {
 	t.Parallel()
 
-	h, _, _ := buildHandler(t, &fakeAuthzAdmin{})
+	h, _, _ := buildHandler(t, &fakeAuthzAdmin{}, []string{uuid.NewString()})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 	if rec.Code != http.StatusOK {
@@ -103,7 +103,7 @@ func TestHealthIsOpen(t *testing.T) {
 func TestAdminRequiresToken(t *testing.T) {
 	t.Parallel()
 
-	h, _, _ := buildHandler(t, &fakeAuthzAdmin{})
+	h, _, _ := buildHandler(t, &fakeAuthzAdmin{}, []string{uuid.NewString()})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules", nil))
 	if rec.Code != http.StatusUnauthorized {
@@ -156,8 +156,8 @@ func TestAdminForwardsIdentity(t *testing.T) {
 	t.Parallel()
 
 	authz := &fakeAuthzAdmin{}
-	h, key, kid := buildHandler(t, authz)
 	sub := uuid.NewString()
+	h, key, kid := buildHandler(t, authz, []string{sub})
 	token := mintToken(t, key, kid, sub)
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules?domain=*", nil)
@@ -170,5 +170,19 @@ func TestAdminForwardsIdentity(t *testing.T) {
 	}
 	if authz.gotUserID != sub {
 		t.Fatalf("authz received x-user-id %q, want %q", authz.gotUserID, sub)
+	}
+}
+
+func TestAdminEmptyAllowlistFailsClosed(t *testing.T) {
+	t.Parallel()
+
+	h, key, kid := buildHandler(t, &fakeAuthzAdmin{}, nil)
+	req := httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules", nil)
+	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, uuid.NewString()))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("admin with empty allowlist = %d, want 403", rec.Code)
 	}
 }

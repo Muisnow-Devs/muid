@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -74,7 +75,10 @@ func newHandler(deps *InfraDependencies) http.Handler {
 	root.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
 		httpx.JSON(w, r, http.StatusOK, map[string]string{"status": "ok"})
 	})
-	root.Handle("/", protect.Middleware(appMux))
+	root.Handle("/", httpx.Budget(httpx.BudgetConfig{
+		RequestTimeout: time.Duration(cfg.RequestTimeoutSeconds) * time.Second,
+		MaxConcurrent:  httpx.DefaultMaxConcurrentRequests,
+	})(protect.Middleware(appMux)))
 
 	// Cheap, always-on middleware wrap every route including health.
 	middlewares := []httpx.Middleware{
@@ -84,9 +88,12 @@ func newHandler(deps *InfraDependencies) http.Handler {
 		httpx.SecurityHeaders,
 	}
 	if len(cfg.CORSAllowedOrigins) > 0 {
-		middlewares = append(middlewares, httpx.CORS(httpx.CORSConfig{AllowedOrigins: cfg.CORSAllowedOrigins, AllowCredentials: true}))
+		middlewares = append(middlewares, httpx.CORS(httpx.CORSConfig{
+			AllowedOrigins:   cfg.CORSAllowedOrigins,
+			AllowedHeaders:   []string{"Content-Type", "Authorization", "X-CSRF-Token"},
+			AllowCredentials: true,
+		}))
 	}
-
 	return httpx.Chain(root, middlewares...)
 }
 

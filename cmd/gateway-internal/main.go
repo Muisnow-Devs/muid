@@ -7,6 +7,7 @@ import (
 	"syscall"
 
 	"sanzi.io/muid/internal/gatewayinternal/app"
+	"sanzi.io/muid/pkg/errutil"
 	"sanzi.io/muid/pkg/log"
 	"sanzi.io/muid/pkg/shared"
 )
@@ -25,8 +26,6 @@ func run() error {
 	)
 	defer cancel()
 
-	errChan := make(chan error, 1)
-
 	cfg, err := shared.LoadConfig[app.Config](app.ConfigEnvPrefix)
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
@@ -43,20 +42,8 @@ func run() error {
 
 	gateway, err := app.NewApp(infra)
 	if err != nil {
-		infra.Close()
+		errutil.Close(infra)
 		return fmt.Errorf("create app: %w", err)
 	}
-
-	go func() {
-		errChan <- gateway.Start(ctx)
-	}()
-
-	select {
-	case <-ctx.Done():
-		log.Println("Shutting down gracefully...")
-		gateway.Stop()
-		return nil
-	case err := <-errChan:
-		return err
-	}
+	return gateway.Run(ctx)
 }

@@ -27,7 +27,8 @@ type Config struct {
 	// TrustForwardHeader is set, because the proxy overwrites it (unspoofable).
 	RealIPHeader string `envconfig:"REAL_IP_HEADER" default:"CF-Connecting-IP"`
 
-	// Rate limiting (fixed window per client IP).
+	// Rate limiting (fixed window per client IP). A zero limit disables rate
+	// limiting in debug; production requires a positive limit.
 	RateLimit              int64 `envconfig:"RATE_LIMIT" default:"600"`
 	RateLimitWindowSeconds int   `envconfig:"RATE_LIMIT_WINDOW_SECONDS" default:"60"`
 
@@ -39,7 +40,7 @@ type Config struct {
 	// Proof-of-work difficulty (leading zero bits) for RequirePoW decisions.
 	PoWDifficulty int `envconfig:"POW_DIFFICULTY" default:"20"`
 
-	// CSRF signing secret; empty disables the CSRF endpoints/enforcement.
+	// CSRF signing secret; empty is permitted only in debug mode.
 	CSRFSecret     string `envconfig:"CSRF_SECRET"`
 	CSRFTTLSeconds int    `envconfig:"CSRF_TTL_SECONDS" default:"43200"`
 

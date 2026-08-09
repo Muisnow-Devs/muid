@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -20,10 +21,19 @@ import (
 
 // ServicesGRPC runs the services gateway's gRPC listener.
 type ServicesGRPC struct {
-	server   *grpc.Server
-	listener net.Listener
-	mtls     bool
+	server          grpcServer
+	listener        net.Listener
+	mtls            bool
+	shutdownTimeout time.Duration
 }
+
+type grpcServer interface {
+	Serve(net.Listener) error
+	GracefulStop()
+	Stop()
+}
+
+const defaultGRPCShutdownTimeout = 15 * time.Second
 
 // NewServicesGRPC builds the gRPC server with the standard interceptor chain,
 // the gateway's JWT-auth + rate-limit interceptors, and mTLS credentials when
@@ -74,11 +84,26 @@ func NewServicesGRPC(
 	server := grpc.NewServer(opts...)
 	gatewaypb.RegisterServicesGatewayServiceServer(server, handler)
 
-	return &ServicesGRPC{server: server, listener: listener, mtls: deps.TLSConfig != nil}, nil
+	return &ServicesGRPC{
+		server:          server,
+		listener:        listener,
+		mtls:            deps.TLSConfig != nil,
+		shutdownTimeout: grpcShutdownTimeout(cfg.RequestTimeoutSeconds),
+	}, nil
 }
 
-// Start serves until ctx is cancelled, then stops gracefully.
-func (s *ServicesGRPC) Start(ctx context.Context) error {
+func grpcShutdownTimeout(requestTimeoutSeconds int) time.Duration {
+	timeout := time.Duration(requestTimeoutSeconds)*time.Second + 5*time.Second
+	if timeout < defaultGRPCShutdownTimeout {
+		return defaultGRPCShutdownTimeout
+	}
+	return timeout
+}
+
+// Run serves until ctx is cancelled or serving fails. Cancellation performs a
+// bounded graceful drain and forcibly stops remaining RPCs when the budget is
+// exhausted.
+func (s *ServicesGRPC) Run(ctx context.Context) error {
 	errCh := make(chan error, 1)
 	go func() {
 		log.Printf("gateway-services (gRPC) is listening on %s (mtls=%t)", s.listener.Addr().String(), s.mtls)
@@ -87,14 +112,39 @@ func (s *ServicesGRPC) Start(ctx context.Context) error {
 
 	select {
 	case <-ctx.Done():
-		s.server.GracefulStop()
-		return nil
+		s.shutdown()
+		return normalizeGRPCServeError(<-errCh)
 	case err := <-errCh:
-		return err
+		serveErr := normalizeGRPCServeError(err)
+		if serveErr == nil {
+			return nil
+		}
+		s.shutdown()
+		return serveErr
 	}
 }
 
-// Stop gracefully drains the server.
-func (s *ServicesGRPC) Stop() {
-	s.server.GracefulStop()
+func (s *ServicesGRPC) shutdown() {
+	done := make(chan struct{})
+	go func() {
+		s.server.GracefulStop()
+		close(done)
+	}()
+
+	timer := time.NewTimer(s.shutdownTimeout)
+	defer timer.Stop()
+	select {
+	case <-done:
+		return
+	case <-timer.C:
+		s.server.Stop()
+		<-done
+	}
+}
+
+func normalizeGRPCServeError(err error) error {
+	if errors.Is(err, grpc.ErrServerStopped) {
+		return nil
+	}
+	return err
 }

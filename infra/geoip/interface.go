@@ -33,6 +33,7 @@ type Resolver interface {
 type Watcher interface {
 	Resolver
 	// StartWatch begins polling the database file for updates until ctx is
-	// cancelled. It returns immediately.
+	// cancelled. It returns immediately, is idempotent, and Close cancels and
+	// joins the watcher before releasing the active database.
 	StartWatch(ctx context.Context)
 }

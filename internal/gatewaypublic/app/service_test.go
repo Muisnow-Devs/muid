@@ -185,6 +185,34 @@ func TestAccessTokenRequiresAllowedOrigin(t *testing.T) {
 	}
 }
 
+func TestCORSPreflightAllowsCSRFTokenHeader(t *testing.T) {
+	t.Parallel()
+
+	cfg := defaultConfig()
+	cfg.CORSAllowedOrigins = []string{"https://app.example"}
+	h := newHandler(testInfra(t, cfg, geoip.GeoInfo{CountryCode: "US", Resolved: true}))
+
+	req := httptest.NewRequest(http.MethodOptions, "/graphql", nil)
+	req.Header.Set("Origin", "https://app.example")
+	req.Header.Set("Access-Control-Request-Method", http.MethodPost)
+	req.Header.Set("Access-Control-Request-Headers", "Content-Type, X-CSRF-Token")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("CORS preflight status = %d, want %d", rec.Code, http.StatusNoContent)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Origin"); got != "https://app.example" {
+		t.Errorf("Access-Control-Allow-Origin = %q, want %q", got, "https://app.example")
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Credentials"); got != "true" {
+		t.Errorf("Access-Control-Allow-Credentials = %q, want true", got)
+	}
+	if got := rec.Header().Get("Access-Control-Allow-Headers"); !strings.Contains(got, "X-CSRF-Token") {
+		t.Errorf("Access-Control-Allow-Headers = %q, want X-CSRF-Token", got)
+	}
+}
+
 func TestCSRFEndpoint(t *testing.T) {
 	t.Parallel()
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	servicesgrpc "sanzi.io/muid/internal/gatewayservices/grpc"
+	"sanzi.io/muid/pkg/errutil"
 )
 
 // App is the services gateway application.
@@ -22,13 +23,9 @@ func NewApp(infra *InfraDependencies) (*App, error) {
 	return &App{server: server, infra: infra}, nil
 }
 
-// Start serves until ctx is cancelled.
-func (a *App) Start(ctx context.Context) error {
-	return a.server.Start(ctx)
-}
-
-// Stop drains the server and releases infrastructure.
-func (a *App) Stop() {
-	a.server.Stop()
-	a.infra.Close()
+// Run serves until cancellation or failure, drains the gRPC server, and then
+// releases all infrastructure owned by the app.
+func (a *App) Run(ctx context.Context) error {
+	defer errutil.Close(a.infra)
+	return a.server.Run(ctx)
 }

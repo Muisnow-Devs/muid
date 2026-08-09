@@ -39,6 +39,15 @@ type MaxMindResolver struct {
 
 	mu      sync.Mutex
 	current atomic.Pointer[loaded]
+	closed  atomic.Bool
+
+	watchMu     sync.Mutex
+	watchCancel context.CancelFunc
+	watchDone   chan struct{}
+
+	closeOnce sync.Once
+	closeDone chan struct{}
+	closeErr  error
 }
 
 // Config configures a MaxMindResolver.
@@ -61,9 +70,10 @@ func newResolver(cfg Config, open opener) (*MaxMindResolver, error) {
 		cfg.ReloadInterval = 6 * time.Hour
 	}
 	r := &MaxMindResolver{
-		path:     cfg.Path,
-		interval: cfg.ReloadInterval,
-		open:     open,
+		path:      cfg.Path,
+		interval:  cfg.ReloadInterval,
+		open:      open,
+		closeDone: make(chan struct{}),
 	}
 	if err := r.reload(); err != nil {
 		return nil, err
@@ -92,20 +102,33 @@ func (r *MaxMindResolver) Resolve(ip string) (GeoInfo, error) {
 // StartWatch polls the database file and reloads it when its modification time
 // advances, until ctx is cancelled.
 func (r *MaxMindResolver) StartWatch(ctx context.Context) {
-	go func() {
-		ticker := time.NewTicker(r.interval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				if err := r.reload(); err != nil {
-					log.Logger(ctx).Warn("geoip reload failed", "error", err.Error(), "path", r.path)
-				}
+	r.watchMu.Lock()
+	defer r.watchMu.Unlock()
+	if r.closed.Load() || r.watchDone != nil {
+		return
+	}
+
+	watchCtx, cancel := context.WithCancel(ctx)
+	done := make(chan struct{})
+	r.watchCancel = cancel
+	r.watchDone = done
+	go r.watch(watchCtx, done)
+}
+
+func (r *MaxMindResolver) watch(ctx context.Context, done chan<- struct{}) {
+	defer close(done)
+	ticker := time.NewTicker(r.interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := r.reload(); err != nil && ctx.Err() == nil {
+				log.Logger(ctx).Warn("geoip reload failed", "error", err.Error(), "path", r.path)
 			}
 		}
-	}()
+	}
 }
 
 // reload swaps in a freshly-opened database when the file's modtime has changed
@@ -113,6 +136,9 @@ func (r *MaxMindResolver) StartWatch(ctx context.Context) {
 func (r *MaxMindResolver) reload() error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.closed.Load() {
+		return ErrUnavailable
+	}
 
 	info, err := os.Stat(r.path)
 	if err != nil {
@@ -128,6 +154,10 @@ func (r *MaxMindResolver) reload() error {
 	if err != nil {
 		return err
 	}
+	if r.closed.Load() {
+		errutil.Close(handle)
+		return ErrUnavailable
+	}
 
 	old := r.current.Swap(&loaded{handle: handle, modTime: mod})
 	if old != nil && old.handle != nil {
@@ -138,10 +168,30 @@ func (r *MaxMindResolver) reload() error {
 
 // Close releases the loaded database.
 func (r *MaxMindResolver) Close() error {
-	if cur := r.current.Swap(nil); cur != nil && cur.handle != nil {
-		return cur.handle.Close()
-	}
-	return nil
+	r.closeOnce.Do(func() {
+		r.closed.Store(true)
+
+		r.watchMu.Lock()
+		cancel := r.watchCancel
+		done := r.watchDone
+		r.watchMu.Unlock()
+		if cancel != nil {
+			cancel()
+		}
+		if done != nil {
+			<-done
+		}
+
+		r.mu.Lock()
+		cur := r.current.Swap(nil)
+		r.mu.Unlock()
+		if cur != nil && cur.handle != nil {
+			r.closeErr = cur.handle.Close()
+		}
+		close(r.closeDone)
+	})
+	<-r.closeDone
+	return r.closeErr
 }
 
 // realOpen is the production opener backed by geoip2.

@@ -12,6 +12,7 @@ service AuthzService {
   /// internal listener only.
   rpc CheckOrganizationMembership(CheckOrganizationMembershipRequest) returns (CheckOrganizationMembershipResponse);
   rpc CheckOrganizationPermission(CheckOrganizationPermissionRequest) returns (CheckOrganizationPermissionResponse);
+  rpc CheckPlatformPermission(CheckPlatformPermissionRequest) returns (CheckPlatformPermissionResponse);
 
   /// Relation loading for per-service local enforcers (pkg/authzclient):
   /// the policy rules of one service namespace plus the wildcard role
@@ -45,6 +46,20 @@ message CheckOrganizationPermissionRequest {
 message CheckOrganizationPermissionResponse {
   bool allowed = 1;
   bool is_member = 2;
+}
+
+message CheckPlatformPermissionRequest {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  // "namespace/resource.action" permission string, e.g.
+  // "platform/organization.write".
+  string permission = 2 [(buf.validate.field).string = {
+    pattern: "^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$"
+    max_len: 128
+  }];
+}
+
+message CheckPlatformPermissionResponse {
+  bool allowed = 1;
 }
 
 // PolicyRule mirrors one casbin rule row.

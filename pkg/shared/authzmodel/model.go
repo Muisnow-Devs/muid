@@ -29,7 +29,7 @@ g = _, _, _
 e = some(where (p.eft == allow))
 
 [matchers]
-m = g(r.sub, p.sub, r.dom) && (p.dom == r.dom || p.dom == "*") && p.obj == r.obj && p.act == r.act
+m = g(r.sub, p.sub, r.dom) && (p.dom == r.dom || (p.dom == "*" && r.dom != "platform")) && p.obj == r.obj && p.act == r.act
 `
 
 const (
@@ -40,6 +40,9 @@ const (
 	// WildcardDomain is the domain used by rules that apply to every
 	// organization (system-role grants and the role hierarchy).
 	WildcardDomain = "*"
+	// PlatformDomain isolates platform-administration rules from organization
+	// rules, including wildcard system-role grants.
+	PlatformDomain = "platform"
 )
 
 // NewSyncedEnforcer returns a synced enforcer on the shared model with

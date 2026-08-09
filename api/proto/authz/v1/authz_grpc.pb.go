@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	AuthzService_CheckOrganizationMembership_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationMembership"
 	AuthzService_CheckOrganizationPermission_FullMethodName = "/muid.authz.v1.AuthzService/CheckOrganizationPermission"
+	AuthzService_CheckPlatformPermission_FullMethodName     = "/muid.authz.v1.AuthzService/CheckPlatformPermission"
 	AuthzService_ListNamespacePolicies_FullMethodName       = "/muid.authz.v1.AuthzService/ListNamespacePolicies"
 	AuthzService_ListUserOrganizationRoles_FullMethodName   = "/muid.authz.v1.AuthzService/ListUserOrganizationRoles"
 )
@@ -34,6 +35,7 @@ type AuthzServiceClient interface {
 	// / internal listener only.
 	CheckOrganizationMembership(ctx context.Context, in *CheckOrganizationMembershipRequest, opts ...grpc.CallOption) (*CheckOrganizationMembershipResponse, error)
 	CheckOrganizationPermission(ctx context.Context, in *CheckOrganizationPermissionRequest, opts ...grpc.CallOption) (*CheckOrganizationPermissionResponse, error)
+	CheckPlatformPermission(ctx context.Context, in *CheckPlatformPermissionRequest, opts ...grpc.CallOption) (*CheckPlatformPermissionResponse, error)
 	// / Relation loading for per-service local enforcers (pkg/authzclient):
 	// / the policy rules of one service namespace plus the wildcard role
 	// / hierarchy, and a user's direct roles in one organization.
@@ -69,6 +71,16 @@ func (c *authzServiceClient) CheckOrganizationPermission(ctx context.Context, in
 	return out, nil
 }
 
+func (c *authzServiceClient) CheckPlatformPermission(ctx context.Context, in *CheckPlatformPermissionRequest, opts ...grpc.CallOption) (*CheckPlatformPermissionResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckPlatformPermissionResponse)
+	err := c.cc.Invoke(ctx, AuthzService_CheckPlatformPermission_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *authzServiceClient) ListNamespacePolicies(ctx context.Context, in *ListNamespacePoliciesRequest, opts ...grpc.CallOption) (*ListNamespacePoliciesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListNamespacePoliciesResponse)
@@ -98,6 +110,7 @@ type AuthzServiceServer interface {
 	// / internal listener only.
 	CheckOrganizationMembership(context.Context, *CheckOrganizationMembershipRequest) (*CheckOrganizationMembershipResponse, error)
 	CheckOrganizationPermission(context.Context, *CheckOrganizationPermissionRequest) (*CheckOrganizationPermissionResponse, error)
+	CheckPlatformPermission(context.Context, *CheckPlatformPermissionRequest) (*CheckPlatformPermissionResponse, error)
 	// / Relation loading for per-service local enforcers (pkg/authzclient):
 	// / the policy rules of one service namespace plus the wildcard role
 	// / hierarchy, and a user's direct roles in one organization.
@@ -118,6 +131,9 @@ func (UnimplementedAuthzServiceServer) CheckOrganizationMembership(context.Conte
 }
 func (UnimplementedAuthzServiceServer) CheckOrganizationPermission(context.Context, *CheckOrganizationPermissionRequest) (*CheckOrganizationPermissionResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CheckOrganizationPermission not implemented")
+}
+func (UnimplementedAuthzServiceServer) CheckPlatformPermission(context.Context, *CheckPlatformPermissionRequest) (*CheckPlatformPermissionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckPlatformPermission not implemented")
 }
 func (UnimplementedAuthzServiceServer) ListNamespacePolicies(context.Context, *ListNamespacePoliciesRequest) (*ListNamespacePoliciesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListNamespacePolicies not implemented")
@@ -182,6 +198,24 @@ func _AuthzService_CheckOrganizationPermission_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthzService_CheckPlatformPermission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckPlatformPermissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthzServiceServer).CheckPlatformPermission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AuthzService_CheckPlatformPermission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthzServiceServer).CheckPlatformPermission(ctx, req.(*CheckPlatformPermissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _AuthzService_ListNamespacePolicies_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListNamespacePoliciesRequest)
 	if err := dec(in); err != nil {
@@ -232,6 +266,10 @@ var AuthzService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckOrganizationPermission",
 			Handler:    _AuthzService_CheckOrganizationPermission_Handler,
+		},
+		{
+			MethodName: "CheckPlatformPermission",
+			Handler:    _AuthzService_CheckPlatformPermission_Handler,
 		},
 		{
 			MethodName: "ListNamespacePolicies",

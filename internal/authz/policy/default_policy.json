@@ -9,6 +9,14 @@
       "role.write",
       "oidc_client.read",
       "oidc_client.write"
+    ],
+    "platform": [
+      "organization.write",
+      "policy.read",
+      "policy.write",
+      "policy.reload",
+      "oidc_client.read",
+      "oidc_client.write"
     ]
   },
   "system_roles": ["owner", "admin", "manager", "member"],
@@ -34,5 +42,16 @@
     "owner": [
       "organization/setting.write"
     ]
-  }
+  },
+  "platform_roles": {
+    "platform_admin": [
+      "platform/organization.write",
+      "platform/policy.read",
+      "platform/policy.write",
+      "platform/policy.reload",
+      "platform/oidc_client.read",
+      "platform/oidc_client.write"
+    ]
+  },
+  "platform_bindings": {}
 }

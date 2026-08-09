@@ -309,6 +309,136 @@ func (b0 CheckOrganizationPermissionResponse_builder) Build() *CheckOrganization
 	return m0
 }
 
+type CheckPlatformPermissionRequest struct {
+	state                 protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId     string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_Permission string                 `protobuf:"bytes,2,opt,name=permission,proto3"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *CheckPlatformPermissionRequest) Reset() {
+	*x = CheckPlatformPermissionRequest{}
+	mi := &file_authz_v1_authz_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckPlatformPermissionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckPlatformPermissionRequest) ProtoMessage() {}
+
+func (x *CheckPlatformPermissionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authz_v1_authz_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CheckPlatformPermissionRequest) GetUserId() string {
+	if x != nil {
+		return x.xxx_hidden_UserId
+	}
+	return ""
+}
+
+func (x *CheckPlatformPermissionRequest) GetPermission() string {
+	if x != nil {
+		return x.xxx_hidden_Permission
+	}
+	return ""
+}
+
+func (x *CheckPlatformPermissionRequest) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *CheckPlatformPermissionRequest) SetPermission(v string) {
+	x.xxx_hidden_Permission = v
+}
+
+type CheckPlatformPermissionRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId string
+	// "namespace/resource.action" permission string, e.g.
+	// "platform/organization.write".
+	Permission string
+}
+
+func (b0 CheckPlatformPermissionRequest_builder) Build() *CheckPlatformPermissionRequest {
+	m0 := &CheckPlatformPermissionRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_Permission = b.Permission
+	return m0
+}
+
+type CheckPlatformPermissionResponse struct {
+	state              protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Allowed bool                   `protobuf:"varint,1,opt,name=allowed,proto3"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *CheckPlatformPermissionResponse) Reset() {
+	*x = CheckPlatformPermissionResponse{}
+	mi := &file_authz_v1_authz_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckPlatformPermissionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckPlatformPermissionResponse) ProtoMessage() {}
+
+func (x *CheckPlatformPermissionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authz_v1_authz_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *CheckPlatformPermissionResponse) GetAllowed() bool {
+	if x != nil {
+		return x.xxx_hidden_Allowed
+	}
+	return false
+}
+
+func (x *CheckPlatformPermissionResponse) SetAllowed(v bool) {
+	x.xxx_hidden_Allowed = v
+}
+
+type CheckPlatformPermissionResponse_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	Allowed bool
+}
+
+func (b0 CheckPlatformPermissionResponse_builder) Build() *CheckPlatformPermissionResponse {
+	m0 := &CheckPlatformPermissionResponse{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_Allowed = b.Allowed
+	return m0
+}
+
 // PolicyRule mirrors one casbin rule row.
 type PolicyRule struct {
 	state             protoimpl.MessageState `protogen:"opaque.v1"`
@@ -320,7 +450,7 @@ type PolicyRule struct {
 
 func (x *PolicyRule) Reset() {
 	*x = PolicyRule{}
-	mi := &file_authz_v1_authz_proto_msgTypes[4]
+	mi := &file_authz_v1_authz_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -332,7 +462,7 @@ func (x *PolicyRule) String() string {
 func (*PolicyRule) ProtoMessage() {}
 
 func (x *PolicyRule) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_authz_proto_msgTypes[4]
+	mi := &file_authz_v1_authz_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -395,7 +525,7 @@ type ListNamespacePoliciesRequest struct {
 
 func (x *ListNamespacePoliciesRequest) Reset() {
 	*x = ListNamespacePoliciesRequest{}
-	mi := &file_authz_v1_authz_proto_msgTypes[5]
+	mi := &file_authz_v1_authz_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +537,7 @@ func (x *ListNamespacePoliciesRequest) String() string {
 func (*ListNamespacePoliciesRequest) ProtoMessage() {}
 
 func (x *ListNamespacePoliciesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_authz_proto_msgTypes[5]
+	mi := &file_authz_v1_authz_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -483,7 +613,7 @@ type ListNamespacePoliciesResponse struct {
 
 func (x *ListNamespacePoliciesResponse) Reset() {
 	*x = ListNamespacePoliciesResponse{}
-	mi := &file_authz_v1_authz_proto_msgTypes[6]
+	mi := &file_authz_v1_authz_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -495,7 +625,7 @@ func (x *ListNamespacePoliciesResponse) String() string {
 func (*ListNamespacePoliciesResponse) ProtoMessage() {}
 
 func (x *ListNamespacePoliciesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_authz_proto_msgTypes[6]
+	mi := &file_authz_v1_authz_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -571,7 +701,7 @@ type ListUserOrganizationRolesRequest struct {
 
 func (x *ListUserOrganizationRolesRequest) Reset() {
 	*x = ListUserOrganizationRolesRequest{}
-	mi := &file_authz_v1_authz_proto_msgTypes[7]
+	mi := &file_authz_v1_authz_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -583,7 +713,7 @@ func (x *ListUserOrganizationRolesRequest) String() string {
 func (*ListUserOrganizationRolesRequest) ProtoMessage() {}
 
 func (x *ListUserOrganizationRolesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_authz_proto_msgTypes[7]
+	mi := &file_authz_v1_authz_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -642,7 +772,7 @@ type ListUserOrganizationRolesResponse struct {
 
 func (x *ListUserOrganizationRolesResponse) Reset() {
 	*x = ListUserOrganizationRolesResponse{}
-	mi := &file_authz_v1_authz_proto_msgTypes[8]
+	mi := &file_authz_v1_authz_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -654,7 +784,7 @@ func (x *ListUserOrganizationRolesResponse) String() string {
 func (*ListUserOrganizationRolesResponse) ProtoMessage() {}
 
 func (x *ListUserOrganizationRolesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authz_v1_authz_proto_msgTypes[8]
+	mi := &file_authz_v1_authz_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -723,7 +853,14 @@ const file_authz_v1_authz_proto_rawDesc = "" +
 	"permission\"\\\n" +
 	"#CheckOrganizationPermissionResponse\x12\x18\n" +
 	"\aallowed\x18\x01 \x01(\bR\aallowed\x12\x1b\n" +
-	"\tis_member\x18\x02 \x01(\bR\bisMember\"Z\n" +
+	"\tis_member\x18\x02 \x01(\bR\bisMember\"\xa1\x01\n" +
+	"\x1eCheckPlatformPermissionRequest\x12!\n" +
+	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12\\\n" +
+	"\n" +
+	"permission\x18\x02 \x01(\tB<\xbaH9r7\x18\x80\x0122^[a-z][a-z0-9_]*/[a-z][a-z0-9_]*\\.[a-z][a-z0-9_]*$R\n" +
+	"permission\";\n" +
+	"\x1fCheckPlatformPermissionResponse\x12\x18\n" +
+	"\aallowed\x18\x01 \x01(\bR\aallowed\"Z\n" +
 	"\n" +
 	"PolicyRule\x12!\n" +
 	"\x05ptype\x18\x01 \x01(\tB\v\xbaH\br\x06R\x01pR\x01gR\x05ptype\x12)\n" +
@@ -744,42 +881,47 @@ const file_authz_v1_authz_proto_rawDesc = "" +
 	"\x0forganization_id\x18\x02 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x0eorganizationId\"V\n" +
 	"!ListUserOrganizationRolesResponse\x12\x14\n" +
 	"\x05roles\x18\x01 \x03(\tR\x05roles\x12\x1b\n" +
-	"\tis_member\x18\x02 \x01(\bR\bisMember2\x90\x04\n" +
+	"\tis_member\x18\x02 \x01(\bR\bisMember2\x8a\x05\n" +
 	"\fAuthzService\x12\x84\x01\n" +
 	"\x1bCheckOrganizationMembership\x121.muid.authz.v1.CheckOrganizationMembershipRequest\x1a2.muid.authz.v1.CheckOrganizationMembershipResponse\x12\x84\x01\n" +
-	"\x1bCheckOrganizationPermission\x121.muid.authz.v1.CheckOrganizationPermissionRequest\x1a2.muid.authz.v1.CheckOrganizationPermissionResponse\x12r\n" +
+	"\x1bCheckOrganizationPermission\x121.muid.authz.v1.CheckOrganizationPermissionRequest\x1a2.muid.authz.v1.CheckOrganizationPermissionResponse\x12x\n" +
+	"\x17CheckPlatformPermission\x12-.muid.authz.v1.CheckPlatformPermissionRequest\x1a..muid.authz.v1.CheckPlatformPermissionResponse\x12r\n" +
 	"\x15ListNamespacePolicies\x12+.muid.authz.v1.ListNamespacePoliciesRequest\x1a,.muid.authz.v1.ListNamespacePoliciesResponse\x12~\n" +
 	"\x19ListUserOrganizationRoles\x12/.muid.authz.v1.ListUserOrganizationRolesRequest\x1a0.muid.authz.v1.ListUserOrganizationRolesResponseB\x9d\x01\n" +
 	"\x11com.muid.authz.v1B\n" +
 	"AuthzProtoP\x01Z&sanzi.io/muid/api/proto/authz/v1;authz\xa2\x02\x03MAX\xaa\x02\rMuid.Authz.V1\xca\x02\rMuid\\Authz\\V1\xe2\x02\x19Muid\\Authz\\V1\\GPBMetadata\xea\x02\x0fMuid::Authz::V1b\x06proto3"
 
-var file_authz_v1_authz_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_authz_v1_authz_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_authz_v1_authz_proto_goTypes = []any{
 	(*CheckOrganizationMembershipRequest)(nil),  // 0: muid.authz.v1.CheckOrganizationMembershipRequest
 	(*CheckOrganizationMembershipResponse)(nil), // 1: muid.authz.v1.CheckOrganizationMembershipResponse
 	(*CheckOrganizationPermissionRequest)(nil),  // 2: muid.authz.v1.CheckOrganizationPermissionRequest
 	(*CheckOrganizationPermissionResponse)(nil), // 3: muid.authz.v1.CheckOrganizationPermissionResponse
-	(*PolicyRule)(nil),                          // 4: muid.authz.v1.PolicyRule
-	(*ListNamespacePoliciesRequest)(nil),        // 5: muid.authz.v1.ListNamespacePoliciesRequest
-	(*ListNamespacePoliciesResponse)(nil),       // 6: muid.authz.v1.ListNamespacePoliciesResponse
-	(*ListUserOrganizationRolesRequest)(nil),    // 7: muid.authz.v1.ListUserOrganizationRolesRequest
-	(*ListUserOrganizationRolesResponse)(nil),   // 8: muid.authz.v1.ListUserOrganizationRolesResponse
+	(*CheckPlatformPermissionRequest)(nil),      // 4: muid.authz.v1.CheckPlatformPermissionRequest
+	(*CheckPlatformPermissionResponse)(nil),     // 5: muid.authz.v1.CheckPlatformPermissionResponse
+	(*PolicyRule)(nil),                          // 6: muid.authz.v1.PolicyRule
+	(*ListNamespacePoliciesRequest)(nil),        // 7: muid.authz.v1.ListNamespacePoliciesRequest
+	(*ListNamespacePoliciesResponse)(nil),       // 8: muid.authz.v1.ListNamespacePoliciesResponse
+	(*ListUserOrganizationRolesRequest)(nil),    // 9: muid.authz.v1.ListUserOrganizationRolesRequest
+	(*ListUserOrganizationRolesResponse)(nil),   // 10: muid.authz.v1.ListUserOrganizationRolesResponse
 }
 var file_authz_v1_authz_proto_depIdxs = []int32{
-	4, // 0: muid.authz.v1.ListNamespacePoliciesResponse.rules:type_name -> muid.authz.v1.PolicyRule
-	0, // 1: muid.authz.v1.AuthzService.CheckOrganizationMembership:input_type -> muid.authz.v1.CheckOrganizationMembershipRequest
-	2, // 2: muid.authz.v1.AuthzService.CheckOrganizationPermission:input_type -> muid.authz.v1.CheckOrganizationPermissionRequest
-	5, // 3: muid.authz.v1.AuthzService.ListNamespacePolicies:input_type -> muid.authz.v1.ListNamespacePoliciesRequest
-	7, // 4: muid.authz.v1.AuthzService.ListUserOrganizationRoles:input_type -> muid.authz.v1.ListUserOrganizationRolesRequest
-	1, // 5: muid.authz.v1.AuthzService.CheckOrganizationMembership:output_type -> muid.authz.v1.CheckOrganizationMembershipResponse
-	3, // 6: muid.authz.v1.AuthzService.CheckOrganizationPermission:output_type -> muid.authz.v1.CheckOrganizationPermissionResponse
-	6, // 7: muid.authz.v1.AuthzService.ListNamespacePolicies:output_type -> muid.authz.v1.ListNamespacePoliciesResponse
-	8, // 8: muid.authz.v1.AuthzService.ListUserOrganizationRoles:output_type -> muid.authz.v1.ListUserOrganizationRolesResponse
-	5, // [5:9] is the sub-list for method output_type
-	1, // [1:5] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	6,  // 0: muid.authz.v1.ListNamespacePoliciesResponse.rules:type_name -> muid.authz.v1.PolicyRule
+	0,  // 1: muid.authz.v1.AuthzService.CheckOrganizationMembership:input_type -> muid.authz.v1.CheckOrganizationMembershipRequest
+	2,  // 2: muid.authz.v1.AuthzService.CheckOrganizationPermission:input_type -> muid.authz.v1.CheckOrganizationPermissionRequest
+	4,  // 3: muid.authz.v1.AuthzService.CheckPlatformPermission:input_type -> muid.authz.v1.CheckPlatformPermissionRequest
+	7,  // 4: muid.authz.v1.AuthzService.ListNamespacePolicies:input_type -> muid.authz.v1.ListNamespacePoliciesRequest
+	9,  // 5: muid.authz.v1.AuthzService.ListUserOrganizationRoles:input_type -> muid.authz.v1.ListUserOrganizationRolesRequest
+	1,  // 6: muid.authz.v1.AuthzService.CheckOrganizationMembership:output_type -> muid.authz.v1.CheckOrganizationMembershipResponse
+	3,  // 7: muid.authz.v1.AuthzService.CheckOrganizationPermission:output_type -> muid.authz.v1.CheckOrganizationPermissionResponse
+	5,  // 8: muid.authz.v1.AuthzService.CheckPlatformPermission:output_type -> muid.authz.v1.CheckPlatformPermissionResponse
+	8,  // 9: muid.authz.v1.AuthzService.ListNamespacePolicies:output_type -> muid.authz.v1.ListNamespacePoliciesResponse
+	10, // 10: muid.authz.v1.AuthzService.ListUserOrganizationRoles:output_type -> muid.authz.v1.ListUserOrganizationRolesResponse
+	6,  // [6:11] is the sub-list for method output_type
+	1,  // [1:6] is the sub-list for method input_type
+	1,  // [1:1] is the sub-list for extension type_name
+	1,  // [1:1] is the sub-list for extension extendee
+	0,  // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_authz_v1_authz_proto_init() }
@@ -793,7 +935,7 @@ func file_authz_v1_authz_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authz_v1_authz_proto_rawDesc), len(file_authz_v1_authz_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

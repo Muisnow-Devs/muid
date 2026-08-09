@@ -79,6 +79,33 @@ func (m *Manager) CheckPermission(
 	return allowed, isMember, nil
 }
 
+// CheckPlatformPermission evaluates a cataloged permission against the
+// isolated platform domain. An unbound user is denied without error.
+func (m *Manager) CheckPlatformPermission(
+	ctx context.Context,
+	userID uuid.UUID,
+	permission string,
+) (bool, error) {
+	if !authzmodel.ValidPermission(permission) ||
+		permissionNamespace(permission) != authzmodel.PlatformDomain ||
+		!m.cfg.HasPermission(permission) {
+		return false, ErrUnknownPermission
+	}
+	if userID == uuid.Nil {
+		return false, nil
+	}
+	obj, act, err := authzmodel.SplitPermission(permission)
+	if err != nil {
+		return false, ErrUnknownPermission
+	}
+	return m.enforcer.Enforce(
+		authzmodel.UserSubject(userID),
+		authzmodel.PlatformDomain,
+		obj,
+		act,
+	)
+}
+
 // UserRoles returns a user's direct role names in an organization.
 func (m *Manager) UserRoles(
 	ctx context.Context,
@@ -165,9 +192,16 @@ func (m *Manager) NamespacePolicies(
 	if !authzmodel.ValidNamespace(namespace) {
 		return nil, "", uuid.Nil, ErrInvalidRule
 	}
+	// Platform policy is evaluated only by the central authz service. It is
+	// never replicated to service-local namespace enforcers.
+	if namespace == authzmodel.PlatformDomain {
+		revision, err = m.Revision(ctx)
+		return nil, "", revision, err
+	}
 	pred := casbinrule.Or(
 		casbinrule.And(
 			casbinrule.Ptype("p"),
+			casbinrule.V1NEQ(authzmodel.PlatformDomain),
 			casbinrule.V2HasPrefix(authzmodel.NamespaceObjPrefix(namespace)),
 		),
 		casbinrule.And(

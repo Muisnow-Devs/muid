@@ -108,3 +108,39 @@ func TestWildcardDomainRules(t *testing.T) {
 		})
 	}
 }
+
+func TestPlatformDomainIsolatedFromWildcardRules(t *testing.T) {
+	t.Parallel()
+
+	e, err := NewSyncedEnforcer()
+	if err != nil {
+		t.Fatalf("NewSyncedEnforcer() error = %v", err)
+	}
+	if _, err := e.AddPolicies([][]string{
+		{"role:member", WildcardDomain, "organization/settings", "write"},
+		{"role:platform_admin", PlatformDomain, "platform/policy", "read"},
+	}); err != nil {
+		t.Fatalf("AddPolicies() error = %v", err)
+	}
+	if _, err := e.AddGroupingPolicies([][]string{
+		{"user:organization-owner", "role:member", "org-1"},
+		{"user:platform-admin", "role:platform_admin", PlatformDomain},
+	}); err != nil {
+		t.Fatalf("AddGroupingPolicies() error = %v", err)
+	}
+
+	allowed, err := e.Enforce("user:organization-owner", PlatformDomain, "organization/settings", "write")
+	if err != nil {
+		t.Fatalf("Enforce wildcard role in platform domain: %v", err)
+	}
+	if allowed {
+		t.Error("organization wildcard grant leaked into platform domain")
+	}
+	allowed, err = e.Enforce("user:platform-admin", PlatformDomain, "platform/policy", "read")
+	if err != nil {
+		t.Fatalf("Enforce platform role: %v", err)
+	}
+	if !allowed {
+		t.Error("platform-domain grant was not applied")
+	}
+}

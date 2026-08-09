@@ -2,6 +2,7 @@ package policy
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -23,14 +24,20 @@ const policyRevisionRowID = 1
 // the delta to the in-memory enforcer after commit, and publishes a
 // PolicyChangedEvent.
 type Manager struct {
-	db       *authzent.Client
-	enforcer *casbin.SyncedEnforcer
-	pubsub   pubsub.PubSub
-	cfg      StaticConfig
+	db          *authzent.Client
+	enforcer    *casbin.SyncedEnforcer
+	pubsub      pubsub.PubSub
+	cfg         StaticConfig
+	reconcileMu sync.Mutex
 	// instance identifies this process in published events so replicas can
 	// skip self-notifications.
 	instance uuid.UUID
 }
+
+// reconcileDatabaseMu keeps SQLite's table-level locks from making unit tests
+// flaky. Production serialization is the PolicyRevision row lock acquired in
+// Reconcile's transaction and therefore spans processes and replicas.
+var reconcileDatabaseMu sync.Mutex
 
 // ManagerConfig configures NewManager. PubSub may be nil (no events are
 // published and replica sync is unavailable; used in tests).
@@ -47,7 +54,8 @@ type ManagerConfig struct {
 // the casbin_rule adapter, and loads the current policy. Call Close to stop
 // the periodic reload.
 func NewManager(cfg ManagerConfig) (*Manager, error) {
-	err := cfg.Config.Validate()
+	staticConfig := cloneStaticConfig(cfg.Config)
+	err := staticConfig.Validate()
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +80,7 @@ func NewManager(cfg ManagerConfig) (*Manager, error) {
 		db:       cfg.DB,
 		enforcer: e,
 		pubsub:   cfg.PubSub,
-		cfg:      cfg.Config,
+		cfg:      staticConfig,
 		instance: shared.UUIDV7(),
 	}, nil
 }
@@ -87,7 +95,7 @@ func (m *Manager) Close() error {
 
 // Config returns the validated static configuration.
 func (m *Manager) Config() StaticConfig {
-	return m.cfg
+	return cloneStaticConfig(m.cfg)
 }
 
 // bumpRevision writes a fresh policy snapshot id inside the mutation

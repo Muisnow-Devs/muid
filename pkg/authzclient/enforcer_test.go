@@ -47,6 +47,12 @@ func (f *fakeAuthzClient) CheckOrganizationPermission(
 	panic("not used")
 }
 
+func (f *fakeAuthzClient) CheckPlatformPermission(
+	context.Context, *authzpb.CheckPlatformPermissionRequest, ...grpc.CallOption,
+) (*authzpb.CheckPlatformPermissionResponse, error) {
+	panic("not used")
+}
+
 func (f *fakeAuthzClient) ListNamespacePolicies(
 	_ context.Context,
 	req *authzpb.ListNamespacePoliciesRequest,

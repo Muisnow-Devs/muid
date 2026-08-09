@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 
@@ -110,7 +111,7 @@ func TestReconcileIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("count rules: %v", err)
 	}
-	rules, err := m.cfg.WildcardRules()
+	rules, err := m.cfg.StaticRules()
 	if err != nil {
 		t.Fatalf("WildcardRules() error = %v", err)
 	}
@@ -185,6 +186,9 @@ func TestOrganizationLifecycleAndHierarchy(t *testing.T) {
 		t.Fatalf("ImplicitPermissions(owner) error = %v", err)
 	}
 	for permission := range m.cfg.Catalog() {
+		if !strings.HasPrefix(permission, "organization/") {
+			continue
+		}
 		if !slices.Contains(permissions, permission) {
 			t.Errorf("ImplicitPermissions(owner) missing %q (got %v)", permission, permissions)
 		}
@@ -522,6 +526,157 @@ func TestNamespacePolicies(t *testing.T) {
 	}
 }
 
+func TestCheckPlatformPermission(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+	cfg, err := LoadStaticConfig("", `{
+"permissions":{"platform":["policy.read"]},
+"system_roles":["owner"],"role_inheritance":[],"grants":{},
+"platform_roles":{"platform_admin":["platform/policy.read"]},
+"platform_bindings":{"550e8400-e29b-41d4-a716-446655440000":["platform_admin"]}
+}`)
+	if err != nil {
+		t.Fatalf("LoadStaticConfig() error = %v", err)
+	}
+	client := enttest.Open(t, "sqlite3", "file:authzplatform?mode=memory&cache=shared&_fk=1")
+	t.Cleanup(func() { client.Close() })
+	m, err := NewManager(ManagerConfig{DB: client, Config: cfg})
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+	t.Cleanup(func() { m.Close() })
+	if _, _, err := m.Reconcile(ctx); err != nil {
+		t.Fatalf("Reconcile() error = %v", err)
+	}
+
+	allowed, err := m.CheckPlatformPermission(ctx, userID, "platform/policy.read")
+	if err != nil || !allowed {
+		t.Fatalf("CheckPlatformPermission(bound user) = (%v, %v), want (true, nil)", allowed, err)
+	}
+	allowed, err = m.CheckPlatformPermission(ctx, uuid.New(), "platform/policy.read")
+	if err != nil || allowed {
+		t.Fatalf("CheckPlatformPermission(unbound user) = (%v, %v), want (false, nil)", allowed, err)
+	}
+	_, err = m.CheckPlatformPermission(ctx, userID, "platform/policy.write")
+	if !errors.Is(err, ErrUnknownPermission) {
+		t.Fatalf("CheckPlatformPermission(unknown) error = %v, want ErrUnknownPermission", err)
+	}
+	_, err = m.CheckPlatformPermission(ctx, userID, "organization/setting.read")
+	if !errors.Is(err, ErrUnknownPermission) {
+		t.Fatalf("CheckPlatformPermission(non-platform) error = %v, want ErrUnknownPermission", err)
+	}
+	if err := insertRules(ctx, client.CasbinRule, []Rule{{
+		Ptype: "p", Values: []string{"role:leak", "platform", "organization/setting", "read"},
+	}}); err != nil {
+		t.Fatalf("insert platform cross-namespace rule: %v", err)
+	}
+	organizationRules, _, _, err := m.NamespacePolicies(ctx, "organization", 100, "")
+	if err != nil {
+		t.Fatalf("NamespacePolicies(organization) error = %v", err)
+	}
+	for _, rule := range organizationRules {
+		if rule.Ptype == "p" && len(rule.Values) > 1 && rule.Values[1] == "platform" {
+			t.Fatalf("cross-namespace platform rule leaked into NamespacePolicies: %v", rule)
+		}
+	}
+	platformRules, _, _, err := m.NamespacePolicies(ctx, "platform", 100, "")
+	if err != nil {
+		t.Fatalf("NamespacePolicies(platform) error = %v", err)
+	}
+	for _, rule := range platformRules {
+		if rule.Ptype == "p" && len(rule.Values) > 1 && rule.Values[1] == "platform" {
+			t.Fatalf("platform rule leaked into NamespacePolicies: %v", rule)
+		}
+	}
+}
+
+func TestManagerConfigDefensiveCopy(t *testing.T) {
+	ctx := context.Background()
+	userID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
+	cfg, err := LoadStaticConfig("", `{
+"permissions":{"platform":["policy.read"]},
+"system_roles":["owner"],"role_inheritance":[],"grants":{},
+"platform_roles":{"platform_admin":["platform/policy.read"]},
+"platform_bindings":{"550e8400-e29b-41d4-a716-446655440000":["platform_admin"]}
+}`)
+	if err != nil {
+		t.Fatalf("LoadStaticConfig() error = %v", err)
+	}
+	client := enttest.Open(t, "sqlite3", "file:authzconfigcopy?mode=memory&cache=shared&_fk=1")
+	t.Cleanup(func() { client.Close() })
+	m, err := NewManager(ManagerConfig{DB: client, Config: cfg})
+	if err != nil {
+		t.Fatalf("NewManager() error = %v", err)
+	}
+	t.Cleanup(func() { m.Close() })
+	cfg.PlatformRoles["platform_admin"][0] = "platform/policy.write"
+	got := m.Config()
+	got.PlatformBindings[userID.String()][0] = "mutated"
+	if _, _, err := m.Reconcile(ctx); err != nil {
+		t.Fatalf("Reconcile() error = %v", err)
+	}
+	allowed, err := m.CheckPlatformPermission(ctx, userID, "platform/policy.read")
+	if err != nil || !allowed {
+		t.Fatalf("CheckPlatformPermission() = (%v, %v), want (true, nil)", allowed, err)
+	}
+}
+
+func TestReconcileSerializesConcurrentCalls(t *testing.T) {
+	m, _, _ := newTestManager(t, "authzreconcileconcurrent")
+
+	const callers = 8
+	errs := make(chan error, callers)
+	var wg sync.WaitGroup
+	for range callers {
+		wg.Go(func() {
+			_, _, err := m.Reconcile(context.Background())
+			errs <- err
+		})
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("concurrent Reconcile() error = %v", err)
+		}
+	}
+}
+
+func TestReconcileSerializesAcrossManagers(t *testing.T) {
+	m1, client, _ := newTestManager(t, "authzreconcilemanagers")
+	cfg := m1.Config()
+	m2, err := NewManager(ManagerConfig{DB: client, Config: cfg})
+	if err != nil {
+		t.Fatalf("NewManager(second replica) error = %v", err)
+	}
+	t.Cleanup(func() { m2.Close() })
+
+	errs := make(chan error, 2)
+	var wg sync.WaitGroup
+	for _, manager := range []*Manager{m1, m2} {
+		manager := manager
+		wg.Go(func() { _, _, err := manager.Reconcile(context.Background()); errs <- err })
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		if err != nil {
+			t.Fatalf("replica Reconcile() error = %v", err)
+		}
+	}
+	rules, err := cfg.StaticRules()
+	if err != nil {
+		t.Fatalf("StaticRules() error = %v", err)
+	}
+	count, err := client.CasbinRule.Query().Count(context.Background())
+	if err != nil {
+		t.Fatalf("count rules: %v", err)
+	}
+	if count != len(rules) {
+		t.Fatalf("stored static rule count = %d, want %d", count, len(rules))
+	}
+}
+
 func TestStaticConfigValidation(t *testing.T) {
 	t.Parallel()
 
@@ -548,6 +703,30 @@ func TestStaticConfigValidation(t *testing.T) {
 		{
 			name: "malformed inheritance pair",
 			json: `{"permissions":{},"system_roles":["owner"],"role_inheritance":[["owner"]],"grants":{}}`,
+		},
+		{
+			name: "platform role overlaps system role",
+			json: `{"permissions":{"platform":["policy.read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{},"platform_roles":{"owner":["platform/policy.read"]}}`,
+		},
+		{
+			name: "platform grant outside catalog",
+			json: `{"permissions":{},"system_roles":["owner"],"role_inheritance":[],"grants":{},"platform_roles":{"platform_admin":["platform/policy.read"]}}`,
+		},
+		{
+			name: "platform binding noncanonical user id",
+			json: `{"permissions":{"platform":["policy.read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{},"platform_roles":{"platform_admin":["platform/policy.read"]},"platform_bindings":{"550E8400-E29B-41D4-A716-446655440000":["platform_admin"]}}`,
+		},
+		{
+			name: "platform binding duplicate role",
+			json: `{"permissions":{"platform":["policy.read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{},"platform_roles":{"platform_admin":["platform/policy.read"]},"platform_bindings":{"550e8400-e29b-41d4-a716-446655440000":["platform_admin","platform_admin"]}}`,
+		},
+		{
+			name: "organization grant contains platform permission",
+			json: `{"permissions":{"platform":["policy.read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{"owner":["platform/policy.read"]}}`,
+		},
+		{
+			name: "platform grant contains organization permission",
+			json: `{"permissions":{"organization":["setting.read"]},"system_roles":["owner"],"role_inheritance":[],"grants":{},"platform_roles":{"platform_admin":["organization/setting.read"]}}`,
 		},
 	}
 

@@ -82,6 +82,25 @@ func (g *GRPCHandler) CheckOrganizationPermission(
 	return out, nil
 }
 
+func (g *GRPCHandler) CheckPlatformPermission(
+	ctx context.Context,
+	req *pb.CheckPlatformPermissionRequest,
+) (*pb.CheckPlatformPermissionResponse, error) {
+	userID, err := parseCanonicalUserID(req.GetUserId())
+	if err != nil {
+		return nil, err
+	}
+
+	allowed, err := g.manager.CheckPlatformPermission(ctx, userID, req.GetPermission())
+	if err != nil {
+		return nil, mapPolicyError(ctx, "authz check platform permission", err)
+	}
+
+	out := &pb.CheckPlatformPermissionResponse{}
+	out.SetAllowed(allowed)
+	return out, nil
+}
+
 func (g *GRPCHandler) ListNamespacePolicies(
 	ctx context.Context,
 	req *pb.ListNamespacePoliciesRequest,
@@ -136,6 +155,14 @@ func parseOrganizationAndUser(rawOrgID, rawUserID string) (uuid.UUID, uuid.UUID,
 		return uuid.Nil, uuid.Nil, status.Error(codes.InvalidArgument, "invalid user id")
 	}
 	return organizationID, userID, nil
+}
+
+func parseCanonicalUserID(rawUserID string) (uuid.UUID, error) {
+	userID, err := uuid.Parse(rawUserID)
+	if err != nil || userID == uuid.Nil || userID.String() != rawUserID {
+		return uuid.Nil, status.Error(codes.InvalidArgument, "invalid user id")
+	}
+	return userID, nil
 }
 
 // rulesToProto converts policy rules to wire PolicyRule messages.

@@ -24,8 +24,7 @@ func TestRequestPrincipalInterceptor(t *testing.T) {
 	userID := uuid.New()
 	interceptor := mustPrincipalInterceptor(t, map[string]MethodPrincipalPolicy{
 		principalTestMethod: {
-			AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic},
-			UserMode:         UserRequired,
+			Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserRequired},
 		},
 	})
 
@@ -47,6 +46,39 @@ func TestRequestPrincipalInterceptor(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("interceptor: %v", err)
+	}
+}
+
+func TestRequestPrincipalInterceptorUsesPerWorkloadUserMode(t *testing.T) {
+	t.Parallel()
+
+	interceptor := mustPrincipalInterceptor(t, map[string]MethodPrincipalPolicy{
+		principalTestMethod: {
+			Workloads: map[WorkloadID]UserMode{
+				WorkloadAuthn:           UserOptional,
+				WorkloadGatewayServices: UserRequired,
+			},
+		},
+	})
+
+	_, err := interceptor(
+		principalContext(t, WorkloadAuthn),
+		nil,
+		&grpc.UnaryServerInfo{FullMethod: principalTestMethod},
+		allowPrincipalRequest,
+	)
+	if err != nil {
+		t.Fatalf("optional workload without user: %v", err)
+	}
+
+	_, err = interceptor(
+		principalContext(t, WorkloadGatewayServices),
+		nil,
+		&grpc.UnaryServerInfo{FullMethod: principalTestMethod},
+		allowPrincipalRequest,
+	)
+	if got := status.Code(err); got != codes.Unauthenticated {
+		t.Fatalf("required workload without user code = %v, want %v", got, codes.Unauthenticated)
 	}
 }
 
@@ -101,49 +133,49 @@ func TestRequestPrincipalInterceptorRejectsInvalidRequests(t *testing.T) {
 	}{
 		{
 			name:     "unknown method",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserOptional},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserOptional}},
 			method:   "unknown",
 			ctx:      principalContext(t, WorkloadGatewayPublic),
 			wantCode: codes.PermissionDenied,
 		},
 		{
 			name:     "missing TLS peer",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserOptional},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserOptional}},
 			method:   principalTestMethod,
 			ctx:      context.Background(),
 			wantCode: codes.Unauthenticated,
 		},
 		{
 			name:     "disallowed workload",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserOptional},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserOptional}},
 			method:   principalTestMethod,
 			ctx:      principalContext(t, WorkloadAuthn),
 			wantCode: codes.PermissionDenied,
 		},
 		{
 			name:     "required user missing",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserRequired},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserRequired}},
 			method:   principalTestMethod,
 			ctx:      principalContext(t, WorkloadGatewayPublic),
 			wantCode: codes.Unauthenticated,
 		},
 		{
 			name:     "forbidden user present",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserForbidden},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserForbidden}},
 			method:   principalTestMethod,
 			ctx:      metadata.NewIncomingContext(principalContext(t, WorkloadGatewayPublic), metadata.Pairs(userIDMetadataKey, userID.String())),
 			wantCode: codes.PermissionDenied,
 		},
 		{
 			name:     "noncanonical user",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserRequired},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserRequired}},
 			method:   principalTestMethod,
 			ctx:      metadata.NewIncomingContext(principalContext(t, WorkloadGatewayPublic), metadata.Pairs(userIDMetadataKey, userID.String()[0:8])),
 			wantCode: codes.Unauthenticated,
 		},
 		{
 			name:     "duplicate user",
-			policy:   MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserOptional},
+			policy:   MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserOptional}},
 			method:   principalTestMethod,
 			ctx:      metadata.NewIncomingContext(principalContext(t, WorkloadGatewayPublic), metadata.Pairs(userIDMetadataKey, userID.String(), userIDMetadataKey, userID.String())),
 			wantCode: codes.Unauthenticated,
@@ -165,7 +197,7 @@ func TestRequestPrincipalInterceptorRejectsInvalidWorkloadURI(t *testing.T) {
 	t.Parallel()
 
 	interceptor := mustPrincipalInterceptor(t, map[string]MethodPrincipalPolicy{
-		principalTestMethod: {AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserOptional},
+		principalTestMethod: {Workloads: map[WorkloadID]UserMode{WorkloadGatewayPublic: UserOptional}},
 	})
 	ctx := principalContextForURIs(t, "spiffe://muid/service/gateway-public", "spiffe://muid/service/authn")
 	_, err := interceptor(ctx, nil, &grpc.UnaryServerInfo{FullMethod: principalTestMethod}, allowPrincipalRequest)
@@ -177,11 +209,14 @@ func TestRequestPrincipalInterceptorRejectsInvalidWorkloadURI(t *testing.T) {
 func TestNewRequestPrincipalInterceptorCopiesPolicies(t *testing.T) {
 	t.Parallel()
 
+	workloads := map[WorkloadID]UserMode{WorkloadGatewayPublic: UserOptional}
 	policies := map[string]MethodPrincipalPolicy{
-		principalTestMethod: {AllowedWorkloads: []WorkloadID{WorkloadGatewayPublic}, UserMode: UserOptional},
+		principalTestMethod: {Workloads: workloads},
 	}
 	interceptor := mustPrincipalInterceptor(t, policies)
-	policies[principalTestMethod] = MethodPrincipalPolicy{AllowedWorkloads: []WorkloadID{WorkloadAuthn}, UserMode: UserForbidden}
+	delete(workloads, WorkloadGatewayPublic)
+	workloads[WorkloadAuthn] = UserForbidden
+	policies[principalTestMethod] = MethodPrincipalPolicy{Workloads: map[WorkloadID]UserMode{WorkloadAuthn: UserForbidden}}
 
 	_, err := interceptor(principalContext(t, WorkloadGatewayPublic), nil, &grpc.UnaryServerInfo{FullMethod: principalTestMethod}, allowPrincipalRequest)
 	if err != nil {
@@ -197,11 +232,10 @@ func TestNewRequestPrincipalInterceptorRejectsInvalidPolicies(t *testing.T) {
 		policies map[string]MethodPrincipalPolicy
 	}{
 		{name: "empty", policies: nil},
-		{name: "empty method", policies: map[string]MethodPrincipalPolicy{" ": {AllowedWorkloads: []WorkloadID{WorkloadAuthn}, UserMode: UserOptional}}},
-		{name: "no workloads", policies: map[string]MethodPrincipalPolicy{"/method": {UserMode: UserOptional}}},
-		{name: "unknown workload", policies: map[string]MethodPrincipalPolicy{"/method": {AllowedWorkloads: []WorkloadID{"unknown"}, UserMode: UserOptional}}},
-		{name: "duplicate workload", policies: map[string]MethodPrincipalPolicy{"/method": {AllowedWorkloads: []WorkloadID{WorkloadAuthn, WorkloadAuthn}, UserMode: UserOptional}}},
-		{name: "invalid user mode", policies: map[string]MethodPrincipalPolicy{"/method": {AllowedWorkloads: []WorkloadID{WorkloadAuthn}, UserMode: UserMode(99)}}},
+		{name: "empty method", policies: map[string]MethodPrincipalPolicy{" ": {Workloads: map[WorkloadID]UserMode{WorkloadAuthn: UserOptional}}}},
+		{name: "no workloads", policies: map[string]MethodPrincipalPolicy{"/method": {}}},
+		{name: "unknown workload", policies: map[string]MethodPrincipalPolicy{"/method": {Workloads: map[WorkloadID]UserMode{"unknown": UserOptional}}}},
+		{name: "invalid user mode", policies: map[string]MethodPrincipalPolicy{"/method": {Workloads: map[WorkloadID]UserMode{WorkloadAuthn: UserMode(99)}}}},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

@@ -51,8 +51,7 @@ const (
 // MethodPrincipalPolicy defines the workloads and user identity mode accepted
 // by one full gRPC method name.
 type MethodPrincipalPolicy struct {
-	AllowedWorkloads []WorkloadID
-	UserMode         UserMode
+	Workloads map[WorkloadID]UserMode
 }
 
 type requestPrincipalContextKey struct{}
@@ -115,11 +114,12 @@ func NewRequestPrincipalInterceptor(
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := policy.allowedWorkloads[workload]; !ok {
+		userMode, ok := policy.workloads[workload]
+		if !ok {
 			return nil, status.Error(codes.PermissionDenied, "workload not permitted")
 		}
 
-		principal, err := principalFromMetadata(ctx, policy.userMode)
+		principal, err := principalFromMetadata(ctx, userMode)
 		if err != nil {
 			return nil, err
 		}
@@ -129,8 +129,7 @@ func NewRequestPrincipalInterceptor(
 }
 
 type principalPolicy struct {
-	allowedWorkloads map[WorkloadID]struct{}
-	userMode         UserMode
+	workloads map[WorkloadID]UserMode
 }
 
 func clonePrincipalPolicies(policies map[string]MethodPrincipalPolicy) (map[string]principalPolicy, error) {
@@ -143,24 +142,21 @@ func clonePrincipalPolicies(policies map[string]MethodPrincipalPolicy) (map[stri
 		if strings.TrimSpace(method) == "" {
 			return nil, fmt.Errorf("grpcutils: request principal policy has empty method")
 		}
-		if !validUserMode(policy.UserMode) {
-			return nil, fmt.Errorf("grpcutils: request principal policy for %q has invalid user mode", method)
-		}
-		if len(policy.AllowedWorkloads) == 0 {
+		if len(policy.Workloads) == 0 {
 			return nil, fmt.Errorf("grpcutils: request principal policy for %q has no workloads", method)
 		}
 
-		allowed := make(map[WorkloadID]struct{}, len(policy.AllowedWorkloads))
-		for _, workload := range policy.AllowedWorkloads {
+		workloads := make(map[WorkloadID]UserMode, len(policy.Workloads))
+		for workload, userMode := range policy.Workloads {
 			if !validWorkload(workload) {
 				return nil, fmt.Errorf("grpcutils: request principal policy for %q has invalid workload", method)
 			}
-			if _, exists := allowed[workload]; exists {
-				return nil, fmt.Errorf("grpcutils: request principal policy for %q has duplicate workload", method)
+			if !validUserMode(userMode) {
+				return nil, fmt.Errorf("grpcutils: request principal policy for %q has invalid user mode", method)
 			}
-			allowed[workload] = struct{}{}
+			workloads[workload] = userMode
 		}
-		cloned[method] = principalPolicy{allowedWorkloads: allowed, userMode: policy.UserMode}
+		cloned[method] = principalPolicy{workloads: workloads}
 	}
 	return cloned, nil
 }

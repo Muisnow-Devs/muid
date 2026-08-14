@@ -32,7 +32,7 @@ alwaysApply: true
 ## Transition store typing
 
 - **`internal/session`**: `SessionStore` discriminates with **`AuthFlowKind`** (`email_otp`, `oidc`, `passkey`) and typed pointers **`Email`**, **`OIDC`**, **`Passkey`** — not `map[string]any` for transition state.
-- Redis implementation: **`internal/authn/kv`**. **`internal/identity`**: `IdentityProvider`; routing in **`internal/authn/app`** (e.g. `ContinueAuthSession`).
+- Redis implementation: **`internal/authn/kv`**. **`internal/identity`**: `IdentityProvider`; routing in **`internal/authn/app`** (e.g. `AuthenticationFlowService.ContinueLogin`).
 
 ## Account service and Profile gRPC
 

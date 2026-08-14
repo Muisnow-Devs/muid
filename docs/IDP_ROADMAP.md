@@ -15,7 +15,7 @@ Mark | Description
 ## 1. Architecture Overview
 
 - **Gateways** — *implemented as three independent binaries* (`cmd/gateway-public`, `cmd/gateway-services`, `cmd/gateway-internal`):
-  - **Public gateway**: untrusted-internet entry point. Serves the app-facing **GraphQL** API for authentication flows (`startLogin`/`continueLogin`/`resendLoginOtp` → authn's `StartAuthSession`/`ContinueAuthSession`) and maps the OIDC REST + JWKS surface, all behind the abuse-protection middleware (rate limiting, risk model, CSRF, Turnstile CAPTCHA, MaxMind IP-resolve). The GraphQL schema contract lives at `api/graphql/schema.graphqls`.
+  - **Public gateway**: untrusted-internet entry point. Serves the app-facing **GraphQL** API for authentication flows (`startLogin`/`continueLogin`/`resendLoginOtp` → `AuthenticationFlowService.StartLogin`/`ContinueLogin`) and maps the OIDC REST + JWKS surface, all behind the abuse-protection middleware (rate limiting, risk model, CSRF, Turnstile CAPTCHA, MaxMind IP-resolve). The GraphQL schema contract lives at `api/graphql/schema.graphqls`.
   - **Services gateway (gRPC BFF)**: the trusted frontend BFF — a gRPC server over the curated `ServicesGatewayService` proto (the predefined schema is the security boundary, e.g. `GetMe` → `profilev1.GetProfile`), terminating mTLS from the edge, verifying session-access-token JWTs locally, and delegating to backends with the verified identity attached.
   - **Internal gateway**: ops/admin edge onto the internal admin gRPC surfaces; never internet-exposed.
   - Shared capabilities: `pkg/gateway/{risk,ratelimit,pow,csrf,httpmeta,jwtauth,mtls,httpx}`; external drivers `infra/geoip` (MaxMind, hot-reload) + `infra/turnstile`.
@@ -46,7 +46,7 @@ The gateways must safely route traffic to backend services: the public gateway s
   - gRPC clients to `authn`/`profile`/`authz` are dialled via `grpcutils.DialInsecureClient` with resilience config; a graceful HTTP server wrapper lives in `pkg/gateway/httpx`.
   - Shared HTTP middleware (CORS, Trace ID injection, structured `pkg/log` logging, panic recovery, security headers) in `pkg/gateway/httpx`.
 - [-] **1.2 App API (GraphQL on public, gRPC BFF on services — both predefined schemas)**
-  - Public gateway: gqlgen GraphQL at `/graphql` over `api/graphql/schema.graphqls` (generated code + resolvers in `internal/gatewaypublic/graph`). Covers the basic email-OTP login flow — `startLogin`/`continueLogin`/`resendLoginOtp` → authn's `StartAuthSession`/`ContinueAuthSession`; CSRF-enforced, Turnstile-verified on start, auth failures fed back into the risk tracker. Broader coverage (passkey/OAuth methods, profile/settings) still to add.
+  - Public gateway: gqlgen GraphQL at `/graphql` over `api/graphql/schema.graphqls` (generated code + resolvers in `internal/gatewaypublic/graph`). Covers the basic email-OTP login flow — `startLogin`/`continueLogin`/`resendLoginOtp` → `AuthenticationFlowService.StartLogin`/`ContinueLogin`; CSRF-enforced, Turnstile-verified on start, auth failures fed back into the risk tracker. Broader coverage (passkey/OAuth methods, profile/settings) still to add.
   - Services gateway: a gRPC server over the curated `ServicesGatewayService` proto (`api/proto/gateway/v1/services.proto`); `GetMe` → `profilev1.GetProfile` forwarding the JWT-verified `x-user-id`. Both narrow, predefined schemas are the security boundary.
 - [X] **1.3 Gateway Security & Context Middleware**
   - Redis-backed rate limiting (`pkg/gateway/ratelimit`), risk model with PoW/block decisions (`pkg/gateway/risk` + `pow`), CSRF validation (`pkg/gateway/csrf`), strict security headers, and a context provider (`pkg/gateway/httpmeta` + `internal/gatewaypublic/reqctx` / `internal/gatewayservices/authctx`) injecting verified identity/IP/geo into request + outgoing gRPC metadata.
@@ -59,7 +59,7 @@ Beyond the curated gRPC BFF, an IdP *must* support standard OAuth2/OIDC REST int
 
 - [X] **2.1 Discovery & JWKS** — *REST mapping live in `cmd/gateway-public`*
   - `GET /.well-known/openid-configuration` → `OIDCService.GetProviderMetadata` (`internal/gatewaypublic/app/oidc.go`).
-  - `GET /.well-known/jwks.json` → `AuthnService.GetPublicKeys` (rendered as a JWKS document).
+  - `GET /.well-known/jwks.json` → `SigningKeyService.GetPublicKeys` (rendered as a JWKS document).
 - [-] **2.2 Authorization & Token Flows** — *token + userinfo mapped; authorize/device pending*
   - `POST /oidc/token` → `OIDCService.ExchangeToken` (authorization_code + refresh_token grants; OAuth errors rendered as response data, never gRPC-error leakage).
   - `GET|POST /oidc/userinfo` → `OIDCService.GetUserInfo` (Bearer access token).
@@ -138,7 +138,7 @@ An internal admin gateway/dashboard is necessary to monitor IdP health, analyze 
 > **Design change:** Audit was implemented as **per-service, immutable, same-transaction tables** instead of a standalone async NATS-consumer service. Each of `authn`, `authz`, and `profile` owns an append-only `AuditLog` Ent table (all fields immutable, mirroring the `UserAvatar` append-only pattern). The audit row is INSERTed inside the **same `enttx.Run` transaction** as the mutation it describes, so a record can never outlive a rolled-back change nor a change escape unrecorded. The shared contract (action vocabulary, change-payload encoding, actor/trace plumbing) lives in `pkg/audit`; per-service glue in `internal/authz/policy/audit.go`, `internal/profile/core/audit.go`, and `internal/authn/authnaudit`. Secrets/hashes/tokens are never written to the change payload.
 
 - [-] **8.1 Audit Persistence**
-  - Done as per-service append-only Postgres tables (not a standalone `cmd/audit` service): authz mutations (org/role/member/raw-rule), profile mutations (profile, org-profile, avatar), and authn OIDC-client admin + `RevokeFederatedIdentity`/`RevokeConsent`.
+  - Done as per-service append-only Postgres tables (not a standalone `cmd/audit` service): authz mutations (org/role/member/raw-rule), profile mutations (profile, org-profile, avatar), and authn OIDC-client admin + `LinkedIdentityService.RevokeLinkedIdentity`/`RevokeConsent`.
   - Intentionally **not yet audited** in `authn` (they flow through abstractions that own their own persistence): `RevokeSession`, `RevokeToken`, and login-path `session.create` / `identity.link`.
 - [ ] **8.2 Async Event Sourcing (NATS) Aggregation** — *deliberately deferred*
   - The current design writes audit records synchronously in-transaction. A future enhancement could additionally emit lightweight NATS events for an external SIEM/aggregator (the original "separate audit consumer" plan).

@@ -4,7 +4,7 @@ sequenceDiagram
     participant F as Flow
     participant I as Identity Provider
 
-    U ->> F: StartAuthSession
+    U ->> F: AuthenticationFlowService.StartLogin
     F ->> I: Start (StepStart)
     I ->> F: Auth Challenge (StepContinue)
     F ->> U: Auth Challenge

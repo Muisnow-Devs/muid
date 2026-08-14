@@ -28,9 +28,10 @@ func newHandler(deps *InfraDependencies) http.Handler {
 	})
 
 	protected := httpx.Chain(adminMux,
-		requireAuth(deps.Verifier, cfg.AdminUserIDs),
+		requireAuth(deps.Verifier),
 		rateLimit(limiter),
 		riskCheck(tracker, evaluator, cfg.TrustForwardHeader, cfg.RealIPHeader),
+		requirePlatformPermission(deps.PlatformAuthz),
 	)
 
 	root := http.NewServeMux()

@@ -13,6 +13,7 @@ import (
 
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/shared/authzmodel"
 )
 
 type fakePlatformPermissionChecker struct {
@@ -39,19 +40,19 @@ func TestOIDCAdminPlatformPermissionMapping(t *testing.T) {
 		method     string
 		permission string
 	}{
-		{pb.OIDCClientAdminService_GetOIDCClient_FullMethodName, platformOIDCClientRead},
-		{pb.OIDCClientAdminService_ListOIDCClients_FullMethodName, platformOIDCClientRead},
-		{pb.OIDCClientAdminService_ListOIDCClientSecrets_FullMethodName, platformOIDCClientRead},
-		{pb.OIDCClientAdminService_ListOIDCClientAccessGrants_FullMethodName, platformOIDCClientRead},
-		{pb.OIDCClientAdminService_CreateOIDCClient_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_UpdateOIDCClient_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_SetOIDCClientPublishStatus_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_AddOIDCClientRedirectURI_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_RemoveOIDCClientRedirectURI_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_CreateOIDCClientSecret_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_RevokeOIDCClientSecret_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_AddOIDCClientAccessGrant_FullMethodName, platformOIDCClientWrite},
-		{pb.OIDCClientAdminService_RemoveOIDCClientAccessGrant_FullMethodName, platformOIDCClientWrite},
+		{pb.OIDCClientAdminService_GetOIDCClient_FullMethodName, authzmodel.PlatformPermissionOIDCClientRead},
+		{pb.OIDCClientAdminService_ListOIDCClients_FullMethodName, authzmodel.PlatformPermissionOIDCClientRead},
+		{pb.OIDCClientAdminService_ListOIDCClientSecrets_FullMethodName, authzmodel.PlatformPermissionOIDCClientRead},
+		{pb.OIDCClientAdminService_ListOIDCClientAccessGrants_FullMethodName, authzmodel.PlatformPermissionOIDCClientRead},
+		{pb.OIDCClientAdminService_CreateOIDCClient_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_UpdateOIDCClient_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_SetOIDCClientPublishStatus_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_AddOIDCClientRedirectURI_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_RemoveOIDCClientRedirectURI_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_CreateOIDCClientSecret_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_RevokeOIDCClientSecret_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_AddOIDCClientAccessGrant_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
+		{pb.OIDCClientAdminService_RemoveOIDCClientAccessGrant_FullMethodName, authzmodel.PlatformPermissionOIDCClientWrite},
 	}
 
 	for _, test := range tests {
@@ -85,7 +86,7 @@ func TestOIDCAdminPlatformAuthorizationInterceptor(t *testing.T) {
 			method:      pb.OIDCClientAdminService_ListOIDCClients_FullMethodName,
 			wantCode:    codes.OK,
 			wantCalled:  true,
-			permission: platformOIDCClientRead,
+			permission: authzmodel.PlatformPermissionOIDCClientRead,
 		},
 		{
 			name:       "denied",

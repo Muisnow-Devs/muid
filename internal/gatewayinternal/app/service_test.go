@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -19,20 +20,19 @@ import (
 	"sanzi.io/muid/infra/mocked"
 	"sanzi.io/muid/pkg/gateway/httpmeta"
 	"sanzi.io/muid/pkg/gateway/jwtauth"
+	"sanzi.io/muid/pkg/shared/authzmodel"
 )
 
 const testIssuer = "https://id.test"
 
 type fakeAuthzAdmin struct {
 	authzpb.AuthzAdminServiceClient
-	gotUserID string
+	gotUserIDs []string
 }
 
 func (f *fakeAuthzAdmin) ListCasbinRules(ctx context.Context, _ *authzpb.ListCasbinRulesRequest, _ ...grpc.CallOption) (*authzpb.ListCasbinRulesResponse, error) {
 	if md, ok := metadata.FromOutgoingContext(ctx); ok {
-		if v := md.Get(httpmeta.UserIDKey); len(v) == 1 {
-			f.gotUserID = v[0]
-		}
+		f.gotUserIDs = append([]string(nil), md.Get(httpmeta.UserIDKey)...)
 	}
 	resp := &authzpb.ListCasbinRulesResponse{}
 	resp.SetRevisionId("rev-1")
@@ -41,6 +41,27 @@ func (f *fakeAuthzAdmin) ListCasbinRules(ctx context.Context, _ *authzpb.ListCas
 
 type fakeOIDCAdmin struct {
 	authnpb.OIDCClientAdminServiceClient
+}
+
+type fakePlatformChecker struct {
+	allowed        bool
+	err            error
+	gotUserID      uuid.UUID
+	gotPermission  string
+	gotMetadataIDs []string
+}
+
+func (f *fakePlatformChecker) CheckPermission(
+	ctx context.Context,
+	userID uuid.UUID,
+	permission string,
+) (bool, error) {
+	f.gotUserID = userID
+	f.gotPermission = permission
+	if md, ok := metadata.FromOutgoingContext(ctx); ok {
+		f.gotMetadataIDs = append([]string(nil), md.Get(httpmeta.UserIDKey)...)
+	}
+	return f.allowed, f.err
 }
 
 type staticKeySource struct{ keys map[string]*rsa.PublicKey }
@@ -77,7 +98,11 @@ func mintTokenWithExpiration(
 	return signed
 }
 
-func buildHandler(t *testing.T, authz *fakeAuthzAdmin, adminUserIDs []string) (http.Handler, *rsa.PrivateKey, string) {
+func buildHandler(
+	t *testing.T,
+	authz *fakeAuthzAdmin,
+	checker platformPermissionChecker,
+) (http.Handler, *rsa.PrivateKey, string) {
 	t.Helper()
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -89,19 +114,20 @@ func buildHandler(t *testing.T, authz *fakeAuthzAdmin, adminUserIDs []string) (h
 		jwtauth.Config{Issuer: testIssuer},
 	)
 	infra := &InfraDependencies{
-		GlobalConfig: Config{Port: 8082, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 100, SessionAccessTokenIssuer: testIssuer, AdminUserIDs: adminUserIDs},
+		GlobalConfig: Config{Port: 8082, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 100, SessionAccessTokenIssuer: testIssuer},
 		Redis:        mocked.NewMockKVStore(),
 		Verifier:     verifier,
 		OIDCAdmin:    &fakeOIDCAdmin{},
 		AuthzAdmin:   authz,
+		PlatformAuthz: checker,
 	}
 	return newHandler(infra), key, kid
 }
 
-func TestHealthIsOpen(t *testing.T) {
+func TestHealthRequiresNoUserJWT(t *testing.T) {
 	t.Parallel()
 
-	h, _, _ := buildHandler(t, &fakeAuthzAdmin{}, []string{uuid.NewString()})
+	h, _, _ := buildHandler(t, &fakeAuthzAdmin{}, nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/healthz", nil))
 	if rec.Code != http.StatusOK {
@@ -109,10 +135,21 @@ func TestHealthIsOpen(t *testing.T) {
 	}
 }
 
+func TestNewAppRequiresIngressMTLS(t *testing.T) {
+	t.Parallel()
+
+	if _, err := NewApp(nil); err == nil {
+		t.Fatal("NewApp(nil) accepted missing ingress mTLS")
+	}
+	if _, err := NewApp(&InfraDependencies{}); err == nil {
+		t.Fatal("NewApp accepted a nil ingress TLS config")
+	}
+}
+
 func TestAdminRequiresToken(t *testing.T) {
 	t.Parallel()
 
-	h, _, _ := buildHandler(t, &fakeAuthzAdmin{}, []string{uuid.NewString()})
+	h, _, _ := buildHandler(t, &fakeAuthzAdmin{}, &fakePlatformChecker{allowed: true})
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules", nil))
 	if rec.Code != http.StatusUnauthorized {
@@ -120,44 +157,41 @@ func TestAdminRequiresToken(t *testing.T) {
 	}
 }
 
-func TestAdminAllowlistRejectsNonAdmin(t *testing.T) {
+func TestAdminUsesLivePlatformAuthorization(t *testing.T) {
 	t.Parallel()
 
-	key, err := rsa.GenerateKey(rand.Reader, 2048)
-	if err != nil {
-		t.Fatalf("key: %v", err)
-	}
-	kid := uuid.NewString()
-	verifier := jwtauth.NewVerifier(
-		staticKeySource{keys: map[string]*rsa.PublicKey{kid: &key.PublicKey}},
-		jwtauth.Config{Issuer: testIssuer},
-	)
-	admin := uuid.NewString()
-	infra := &InfraDependencies{
-		GlobalConfig: Config{Port: 8082, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 100, SessionAccessTokenIssuer: testIssuer, AdminUserIDs: []string{admin}},
-		Redis:        mocked.NewMockKVStore(),
-		Verifier:     verifier,
-		OIDCAdmin:    &fakeOIDCAdmin{},
-		AuthzAdmin:   &fakeAuthzAdmin{},
-	}
-	h := newHandler(infra)
-
-	// An authenticated but non-allowlisted caller is forbidden.
+	checker := &fakePlatformChecker{}
+	authz := &fakeAuthzAdmin{}
+	h, key, kid := buildHandler(t, authz, checker)
+	userID := uuid.New()
 	req := httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules", nil)
-	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, uuid.NewString()))
+	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, userID.String()))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusForbidden {
-		t.Fatalf("non-admin = %d, want 403", rec.Code)
+		t.Fatalf("denied platform user = %d, want 403", rec.Code)
+	}
+	if len(authz.gotUserIDs) != 0 {
+		t.Fatalf("denied request reached backend with identities %v", authz.gotUserIDs)
 	}
 
-	// The allowlisted admin passes.
+	checker.allowed = true
 	req = httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules", nil)
-	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, admin))
+	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, userID.String()))
+	req = req.WithContext(metadata.NewOutgoingContext(req.Context(), metadata.Pairs(
+		httpmeta.UserIDKey, uuid.NewString(),
+		httpmeta.UserIDKey, uuid.NewString(),
+	)))
 	rec = httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
-		t.Fatalf("allowlisted admin = %d body=%s, want 200", rec.Code, rec.Body.String())
+		t.Fatalf("authorized platform user = %d body=%s, want 200", rec.Code, rec.Body.String())
+	}
+	if checker.gotUserID != userID || checker.gotPermission != authzmodel.PlatformPermissionPolicyRead {
+		t.Fatalf("platform check = (%v, %q), want (%v, %q)", checker.gotUserID, checker.gotPermission, userID, authzmodel.PlatformPermissionPolicyRead)
+	}
+	if len(checker.gotMetadataIDs) != 0 {
+		t.Fatalf("platform authorization transport carried delegated identities %v", checker.gotMetadataIDs)
 	}
 }
 
@@ -166,7 +200,7 @@ func TestAdminForwardsIdentity(t *testing.T) {
 
 	authz := &fakeAuthzAdmin{}
 	sub := uuid.NewString()
-	h, key, kid := buildHandler(t, authz, []string{sub})
+	h, key, kid := buildHandler(t, authz, &fakePlatformChecker{allowed: true})
 	token := mintToken(t, key, kid, sub)
 
 	req := httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules?domain=*", nil)
@@ -177,22 +211,22 @@ func TestAdminForwardsIdentity(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("admin with token = %d body=%s", rec.Code, rec.Body.String())
 	}
-	if authz.gotUserID != sub {
-		t.Fatalf("authz received x-user-id %q, want %q", authz.gotUserID, sub)
+	if len(authz.gotUserIDs) != 1 || authz.gotUserIDs[0] != sub {
+		t.Fatalf("authz received x-user-id values %v, want [%q]", authz.gotUserIDs, sub)
 	}
 }
 
-func TestAdminEmptyAllowlistFailsClosed(t *testing.T) {
+func TestAdminAuthorizationUnavailableFailsClosed(t *testing.T) {
 	t.Parallel()
 
-	h, key, kid := buildHandler(t, &fakeAuthzAdmin{}, nil)
+	h, key, kid := buildHandler(t, &fakeAuthzAdmin{}, &fakePlatformChecker{err: errors.New("authz down")})
 	req := httptest.NewRequest(http.MethodGet, "/admin/authz/casbin-rules", nil)
 	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, uuid.NewString()))
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusForbidden {
-		t.Fatalf("admin with empty allowlist = %d, want 403", rec.Code)
+	if rec.Code != http.StatusServiceUnavailable {
+		t.Fatalf("admin with unavailable authorization = %d, want 503", rec.Code)
 	}
 }
 
@@ -201,7 +235,7 @@ func TestCurrentAdminAuthenticationOutcomes(t *testing.T) {
 
 	authz := &fakeAuthzAdmin{}
 	adminUserID := uuid.NewString()
-	h, key, kid := buildHandler(t, authz, []string{adminUserID})
+	h, key, kid := buildHandler(t, authz, &fakePlatformChecker{allowed: true})
 	path := "/admin/authz/casbin-rules"
 
 	tests := []struct {
@@ -230,12 +264,7 @@ func TestCurrentAdminAuthenticationOutcomes(t *testing.T) {
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
-			name:       "valid non-allowlisted token",
-			token:      mintToken(t, key, kid, uuid.NewString()),
-			wantStatus: http.StatusForbidden,
-		},
-		{
-			name:       "valid allowlisted token",
+			name:       "valid platform-authorized token",
 			token:      mintToken(t, key, kid, adminUserID),
 			wantStatus: http.StatusOK,
 		},
@@ -255,7 +284,43 @@ func TestCurrentAdminAuthenticationOutcomes(t *testing.T) {
 		})
 	}
 
-	if authz.gotUserID != adminUserID {
-		t.Fatalf("allowlisted JWT subject forwarded as %q, want %q", authz.gotUserID, adminUserID)
+	if len(authz.gotUserIDs) != 1 || authz.gotUserIDs[0] != adminUserID {
+		t.Fatalf("authorized JWT subject forwarded as %v, want [%q]", authz.gotUserIDs, adminUserID)
+	}
+}
+
+func TestAdminRoutePermissionMapping(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		method     string
+		path       string
+		permission string
+	}{
+		{http.MethodGet, "/admin/authz/casbin-rules", authzmodel.PlatformPermissionPolicyRead},
+		{http.MethodPost, "/admin/authz/reload-policy", authzmodel.PlatformPermissionPolicyReload},
+		{http.MethodGet, "/admin/oidc/clients", authzmodel.PlatformPermissionOIDCClientRead},
+	}
+	for _, test := range tests {
+		permission, ok := adminRoutePermission(test.method, test.path)
+		if !ok || permission != test.permission {
+			t.Errorf("permission for %s %s = (%q, %v), want (%q, true)", test.method, test.path, permission, ok, test.permission)
+		}
+	}
+	if _, ok := adminRoutePermission(http.MethodPost, "/admin/future"); ok {
+		t.Fatal("unknown admin route was assigned a permission")
+	}
+}
+
+func TestUnknownAdminRouteFailsClosed(t *testing.T) {
+	t.Parallel()
+
+	h, key, kid := buildHandler(t, &fakeAuthzAdmin{}, &fakePlatformChecker{allowed: true})
+	req := httptest.NewRequest(http.MethodPost, "/admin/future", nil)
+	req.Header.Set("Authorization", "Bearer "+mintToken(t, key, kid, uuid.NewString()))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("unknown admin route = %d, want 403", rec.Code)
 	}
 }

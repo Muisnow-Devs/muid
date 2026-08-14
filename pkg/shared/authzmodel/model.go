@@ -43,6 +43,13 @@ const (
 	// PlatformDomain isolates platform-administration rules from organization
 	// rules, including wildcard system-role grants.
 	PlatformDomain = "platform"
+
+	PlatformPermissionOrganizationWrite = "platform/organization.write"
+	PlatformPermissionPolicyRead        = "platform/policy.read"
+	PlatformPermissionPolicyWrite       = "platform/policy.write"
+	PlatformPermissionPolicyReload      = "platform/policy.reload"
+	PlatformPermissionOIDCClientRead    = "platform/oidc_client.read"
+	PlatformPermissionOIDCClientWrite   = "platform/oidc_client.write"
 )
 
 // NewSyncedEnforcer returns a synced enforcer on the shared model with

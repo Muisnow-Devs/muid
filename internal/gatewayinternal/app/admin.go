@@ -31,10 +31,11 @@ func newAdminHandlers(deps *InfraDependencies) *adminHandlers {
 
 // outgoing attaches the verified admin's user id to the outbound gRPC metadata.
 func outgoing(ctx context.Context) context.Context {
+	fields := httpmeta.Fields{}
 	if claims, ok := jwtauth.ClaimsFromContext(ctx); ok {
-		return httpmeta.WithOutgoing(ctx, httpmeta.Fields{UserID: claims.UserID.String()})
+		fields.UserID = claims.UserID.String()
 	}
-	return ctx
+	return httpmeta.WithOutgoing(ctx, fields)
 }
 
 // listCasbinRules GET /admin/authz/casbin-rules?domain=&ptype=

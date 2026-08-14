@@ -2,7 +2,7 @@ package grpcutils
 
 import (
 	"context"
-	"crypto/x509"
+	"crypto/tls"
 	"fmt"
 	"net/url"
 	"strings"
@@ -171,22 +171,28 @@ func verifiedWorkload(ctx context.Context) (WorkloadID, error) {
 		return "", status.Error(codes.Unauthenticated, "authentication required")
 	}
 	tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo)
-	if !ok || len(tlsInfo.State.VerifiedChains) == 0 || len(tlsInfo.State.VerifiedChains[0]) == 0 {
+	if !ok {
 		return "", status.Error(codes.Unauthenticated, "authentication required")
 	}
-
-	return workloadFromCertificate(tlsInfo.State.VerifiedChains[0][0])
-}
-
-func workloadFromCertificate(cert *x509.Certificate) (WorkloadID, error) {
-	if cert == nil || len(cert.URIs) != 1 {
-		return "", status.Error(codes.Unauthenticated, "authentication required")
-	}
-	workload, ok := workloadFromURI(cert.URIs[0])
+	workload, ok := VerifiedWorkloadFromTLSState(tlsInfo.State)
 	if !ok {
 		return "", status.Error(codes.Unauthenticated, "authentication required")
 	}
 	return workload, nil
+}
+
+// VerifiedWorkloadFromTLSState returns the exact recognized SPIFFE workload in
+// a TLS state whose peer chain has already been verified. It is shared by gRPC
+// and HTTP mTLS ingress boundaries.
+func VerifiedWorkloadFromTLSState(state tls.ConnectionState) (WorkloadID, bool) {
+	if len(state.VerifiedChains) == 0 || len(state.VerifiedChains[0]) == 0 {
+		return "", false
+	}
+	cert := state.VerifiedChains[0][0]
+	if cert == nil || len(cert.URIs) != 1 {
+		return "", false
+	}
+	return workloadFromURI(cert.URIs[0])
 }
 
 func workloadFromURI(uri *url.URL) (WorkloadID, bool) {

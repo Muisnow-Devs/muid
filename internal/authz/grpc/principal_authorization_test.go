@@ -12,6 +12,7 @@ import (
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
+	"sanzi.io/muid/pkg/shared/authzmodel"
 )
 
 type fakePlatformPermissionChecker struct {
@@ -50,7 +51,7 @@ func TestAdminAuthorizationInterceptor(t *testing.T) {
 			method:         pb.AuthzAdminService_CreateOrganization_FullMethodName,
 			withUser:       true,
 			allowed:        true,
-			wantPermission: platformOrganizationWrite,
+			wantPermission: authzmodel.PlatformPermissionOrganizationWrite,
 			wantCode:       codes.OK,
 			wantCalled:     true,
 		},
@@ -58,7 +59,7 @@ func TestAdminAuthorizationInterceptor(t *testing.T) {
 			name:           "policy read denied",
 			method:         pb.AuthzAdminService_ListCasbinRules_FullMethodName,
 			withUser:       true,
-			wantPermission: platformPolicyRead,
+			wantPermission: authzmodel.PlatformPermissionPolicyRead,
 			wantCode:       codes.PermissionDenied,
 		},
 		{
@@ -66,7 +67,7 @@ func TestAdminAuthorizationInterceptor(t *testing.T) {
 			method:         pb.AuthzAdminService_AddRawPolicies_FullMethodName,
 			withUser:       true,
 			checkerErr:     errors.New("lookup failed"),
-			wantPermission: platformPolicyWrite,
+			wantPermission: authzmodel.PlatformPermissionPolicyWrite,
 			wantCode:       codes.Internal,
 		},
 		{

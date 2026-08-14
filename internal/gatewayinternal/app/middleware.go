@@ -1,10 +1,10 @@
 package app
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,20 +15,16 @@ import (
 	"sanzi.io/muid/pkg/gateway/ratelimit"
 	"sanzi.io/muid/pkg/gateway/risk"
 	"sanzi.io/muid/pkg/log"
+	"sanzi.io/muid/pkg/shared/authzmodel"
 )
 
-// requireAuth verifies a Bearer session token and authorizes the caller against
-// the admin allowlist. The session JWT carries no admin role, so the allowlist
-// is the gateway's authorization gate. Invalid or empty allowlists fail closed.
-// The internal admin surface never permits anonymous access.
-func requireAuth(verifier *jwtauth.Verifier, adminUserIDs []string) httpx.Middleware {
-	admins := make(map[uuid.UUID]struct{}, len(adminUserIDs))
-	for _, value := range adminUserIDs {
-		id, err := uuid.Parse(strings.TrimSpace(value))
-		if err == nil && id != uuid.Nil {
-			admins[id] = struct{}{}
-		}
-	}
+type platformPermissionChecker interface {
+	CheckPermission(context.Context, uuid.UUID, string) (bool, error)
+}
+
+// requireAuth verifies a Bearer session token and attaches its user identity.
+// Administrator authority is resolved live from Authz by requirePlatformPermission.
+func requireAuth(verifier *jwtauth.Verifier) httpx.Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			raw := httpmeta.BearerToken(r.Header.Get("Authorization"))
@@ -45,12 +41,57 @@ func requireAuth(verifier *jwtauth.Verifier, adminUserIDs []string) httpx.Middle
 				httpx.Error(w, http.StatusUnauthorized, "invalid_token", "invalid admin token")
 				return
 			}
-			if _, ok := admins[claims.UserID]; !ok {
+			next.ServeHTTP(w, r.WithContext(jwtauth.WithClaims(r.Context(), claims)))
+		})
+	}
+}
+
+// requirePlatformPermission checks the live Authz platform binding for the
+// concrete route. Unknown admin routes fail closed until explicitly mapped.
+func requirePlatformPermission(checker platformPermissionChecker) httpx.Middleware {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			permission, ok := adminRoutePermission(r.Method, r.URL.Path)
+			if !ok {
+				httpx.Error(w, http.StatusForbidden, "forbidden", "admin route is not permitted")
+				return
+			}
+			claims, ok := jwtauth.ClaimsFromContext(r.Context())
+			if !ok || claims.UserID == uuid.Nil {
+				httpx.Error(w, http.StatusUnauthorized, "unauthorized", "admin token required")
+				return
+			}
+			if checker == nil {
+				httpx.Error(w, http.StatusServiceUnavailable, "unavailable", "authorization unavailable")
+				return
+			}
+
+			checkCtx := httpmeta.WithOutgoing(r.Context(), httpmeta.Fields{})
+			allowed, err := checker.CheckPermission(checkCtx, claims.UserID, permission)
+			if err != nil {
+				log.LogUnexpected(r.Context(), "gateway-internal platform authorization", err.Error(), log.UserID(claims.UserID))
+				httpx.Error(w, http.StatusServiceUnavailable, "unavailable", "authorization unavailable")
+				return
+			}
+			if !allowed {
 				httpx.Error(w, http.StatusForbidden, "forbidden", "not an administrator")
 				return
 			}
-			next.ServeHTTP(w, r.WithContext(jwtauth.WithClaims(r.Context(), claims)))
+			next.ServeHTTP(w, r.WithContext(checkCtx))
 		})
+	}
+}
+
+func adminRoutePermission(method, path string) (string, bool) {
+	switch {
+	case method == http.MethodGet && path == "/admin/authz/casbin-rules":
+		return authzmodel.PlatformPermissionPolicyRead, true
+	case method == http.MethodPost && path == "/admin/authz/reload-policy":
+		return authzmodel.PlatformPermissionPolicyReload, true
+	case method == http.MethodGet && path == "/admin/oidc/clients":
+		return authzmodel.PlatformPermissionOIDCClientRead, true
+	default:
+		return "", false
 	}
 }
 

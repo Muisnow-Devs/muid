@@ -12,11 +12,7 @@ import (
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
-)
-
-const (
-	platformOIDCClientRead  = "platform/oidc_client.read"
-	platformOIDCClientWrite = "platform/oidc_client.write"
+	"sanzi.io/muid/pkg/shared/authzmodel"
 )
 
 type platformPermissionChecker interface {
@@ -68,7 +64,7 @@ func oidcAdminPlatformPermission(fullMethod string) (string, bool) {
 		pb.OIDCClientAdminService_ListOIDCClients_FullMethodName,
 		pb.OIDCClientAdminService_ListOIDCClientSecrets_FullMethodName,
 		pb.OIDCClientAdminService_ListOIDCClientAccessGrants_FullMethodName:
-		return platformOIDCClientRead, true
+		return authzmodel.PlatformPermissionOIDCClientRead, true
 	case pb.OIDCClientAdminService_CreateOIDCClient_FullMethodName,
 		pb.OIDCClientAdminService_UpdateOIDCClient_FullMethodName,
 		pb.OIDCClientAdminService_SetOIDCClientPublishStatus_FullMethodName,
@@ -78,7 +74,7 @@ func oidcAdminPlatformPermission(fullMethod string) (string, bool) {
 		pb.OIDCClientAdminService_RevokeOIDCClientSecret_FullMethodName,
 		pb.OIDCClientAdminService_AddOIDCClientAccessGrant_FullMethodName,
 		pb.OIDCClientAdminService_RemoveOIDCClientAccessGrant_FullMethodName:
-		return platformOIDCClientWrite, true
+		return authzmodel.PlatformPermissionOIDCClientWrite, true
 	default:
 		return "", false
 	}

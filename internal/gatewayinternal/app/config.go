@@ -31,11 +31,17 @@ type Config struct {
 	SessionAccessTokenIssuer string `envconfig:"SESSION_ACCESS_TOKEN_ISSUER" required:"true"`
 	JWKSCacheTTLSeconds      int    `envconfig:"JWKS_CACHE_TTL_SECONDS" default:"300"`
 
-	// AdminUserIDs is the allowlist of user ids permitted to use the admin
-	// surface. It must contain unique, non-zero UUIDs in every mode. The session
-	// JWT carries no admin role, so this is the gateway's authorization gate (the
-	// backends do not re-check).
-	AdminUserIDs []string `envconfig:"ADMIN_USER_IDS"`
+	// Ingress mTLS accepts only the admin-ingress SPIFFE workload. The full group
+	// is mandatory in every mode.
+	MTLSClientCAPath string `envconfig:"MTLS_CLIENT_CA_PATH"`
+	TLSCertPath      string `envconfig:"TLS_CERT_PATH"`
+	TLSKeyPath       string `envconfig:"TLS_KEY_PATH"`
+
+	// Backend mTLS presents the gateway-internal workload certificate and
+	// verifies Authn/Authz server names against the configured roots.
+	GRPCClientCertPath string `envconfig:"GRPC_CLIENT_CERT_PATH"`
+	GRPCClientKeyPath  string `envconfig:"GRPC_CLIENT_KEY_PATH"`
+	GRPCRootCAPath     string `envconfig:"GRPC_ROOT_CA_PATH"`
 
 	// Rate limiting (fixed window per admin user). A zero limit disables rate
 	// limiting in debug; production requires a positive limit.

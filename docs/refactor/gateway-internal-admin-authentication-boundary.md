@@ -36,12 +36,12 @@ of the calling workload or current platform policy.
 
 # Proposed Design
 
-Gateway Internal serves HTTPS with mandatory client certificates in production.
+Gateway Internal serves HTTPS with mandatory client certificates in every mode.
 Its ingress TLS group is `MTLS_CLIENT_CA_PATH`, `TLS_CERT_PATH`, and
 `TLS_KEY_PATH`; the only recognized client workload is
 `spiffe://muid/service/admin-ingress`. The TLS group is parsed at startup,
-requires TLS 1.2+, rejects partial configuration in every mode, and is required
-in production. `/healthz` requires valid `admin-ingress` mTLS but no user JWT.
+requires TLS 1.2+, and rejects missing or partial configuration in every mode.
+`/healthz` requires valid `admin-ingress` mTLS but no user JWT.
 Every `/admin` route requires both that workload and a valid user JWT.
 
 The JWT establishes user identity only and contains no platform roles. Gateway
@@ -57,14 +57,12 @@ The static Authz policy schema adds:
 ```yaml
 platform_roles:
   platform_admin:
-    permissions:
-      - platform.authz.rules.read
-      - platform.authz.policy.reload
-      - platform.oidc.clients.read
-      - platform.oidc.clients.manage
+    - platform/policy.read
+    - platform/policy.reload
+    - platform/oidc_client.read
+    - platform/oidc_client.write
 platform_bindings:
-  - user_id: "<uuid>"
-    roles: [platform_admin]
+  "<uuid>": [platform_admin]
 ```
 
 Unknown roles/permissions, duplicate bindings, malformed/nil user IDs, and
@@ -74,7 +72,7 @@ atomically and increments its revision.
 # Proposed API / Protocol Changes
 
 ```proto
-service PlatformAuthorizationService {
+service AuthzService {
   rpc CheckPlatformPermission(CheckPlatformPermissionRequest)
       returns (CheckPlatformPermissionResponse);
 }
@@ -86,7 +84,6 @@ message CheckPlatformPermissionRequest {
 
 message CheckPlatformPermissionResponse {
   bool allowed = 1;
-  uint64 policy_revision = 2;
 }
 ```
 
@@ -96,10 +93,10 @@ request field. Gateway route/RPC permission mapping is:
 
 | Operation | Required permission |
 | --- | --- |
-| `GET /admin/authz/casbin-rules` / list-rules RPC | `platform.authz.rules.read` |
-| `POST /admin/authz/reload-policy` / reload RPC | `platform.authz.policy.reload` |
-| `GET /admin/oidc/clients` / list OIDC clients | `platform.oidc.clients.read` |
-| OIDC client mutations | `platform.oidc.clients.manage` plus existing organization permission |
+| `GET /admin/authz/casbin-rules` / list-rules RPC | `platform/policy.read` |
+| `POST /admin/authz/reload-policy` / reload RPC | `platform/policy.reload` |
+| `GET /admin/oidc/clients` / list OIDC clients | `platform/oidc_client.read` |
+| OIDC client mutations | `platform/oidc_client.write` plus existing organization permission |
 
 Gateway and backend both check the permission for the concrete route/RPC.
 Denied platform authority maps to HTTP 403 / gRPC `PermissionDenied`; invalid

@@ -17,10 +17,14 @@ type App struct {
 
 // NewApp wires the admin router and HTTP server from infra.
 func NewApp(infra *InfraDependencies) (*App, error) {
+	if infra == nil || infra.TLSConfig == nil {
+		return nil, fmt.Errorf("gateway internal ingress mTLS is required")
+	}
 	server, err := httpx.NewServer(httpx.Config{
 		Name:           "gateway-internal",
 		Addr:           fmt.Sprintf(":%d", infra.GlobalConfig.Port),
 		Handler:        newHandler(infra),
+		TLSConfig:      infra.TLSConfig,
 		RequestTimeout: time.Duration(infra.GlobalConfig.RequestTimeoutSeconds) * time.Second,
 	})
 	if err != nil {

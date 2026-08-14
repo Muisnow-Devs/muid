@@ -5,14 +5,13 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/uuid"
-
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared"
 )
 
 // Validate checks the internal gateway configuration for required production
-// settings. Debug mode relaxes only the explicit production environment checks;
-// the admin allowlist and semantic safety checks always apply.
+// settings. Ingress and backend mTLS are required in every mode; Authz owns
+// administrator authority rather than a gateway-local allowlist.
 func (cfg Config) Validate() error {
 	return cfg.validate(os.LookupEnv)
 }
@@ -20,7 +19,6 @@ func (cfg Config) Validate() error {
 func (cfg Config) validate(lookup shared.EnvLookup) error {
 	err := shared.ValidateRequiredEnvInProduction(cfg.Debug, "GATEWAY_INTERNAL_DEBUG", lookup, []string{
 		"GATEWAY_INTERNAL_TRUST_FORWARD_HEADER",
-		"GATEWAY_INTERNAL_ADMIN_USER_IDS",
 	})
 	if err != nil {
 		return err
@@ -29,6 +27,22 @@ func (cfg Config) validate(lookup shared.EnvLookup) error {
 }
 
 func (cfg Config) validateValues() error {
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.MTLSClientCAPath,
+		cfg.TLSCertPath,
+		cfg.TLSKeyPath,
+	); err != nil {
+		return fmt.Errorf("gateway internal ingress mTLS configuration: %w", err)
+	}
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	); err != nil {
+		return fmt.Errorf("gateway internal outbound gRPC TLS configuration: %w", err)
+	}
 	for _, field := range []struct {
 		name  string
 		value string
@@ -62,24 +76,6 @@ func (cfg Config) validateValues() error {
 	}
 	if cfg.TrustForwardHeader && strings.TrimSpace(cfg.RealIPHeader) == "" {
 		return fmt.Errorf("gateway internal REAL_IP_HEADER must not be empty when forwarding headers are trusted")
-	}
-	return validateAdminUserIDs(cfg.AdminUserIDs)
-}
-
-func validateAdminUserIDs(values []string) error {
-	if len(values) == 0 {
-		return fmt.Errorf("gateway internal ADMIN_USER_IDS must not be empty")
-	}
-	seen := make(map[uuid.UUID]struct{}, len(values))
-	for _, value := range values {
-		id, err := uuid.Parse(strings.TrimSpace(value))
-		if err != nil || id == uuid.Nil {
-			return fmt.Errorf("gateway internal ADMIN_USER_IDS contains invalid UUID %q", value)
-		}
-		if _, ok := seen[id]; ok {
-			return fmt.Errorf("gateway internal ADMIN_USER_IDS contains duplicate UUID %q", value)
-		}
-		seen[id] = struct{}{}
 	}
 	return nil
 }

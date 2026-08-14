@@ -4,15 +4,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
-
 	"sanzi.io/muid/pkg/shared"
 )
 
 func TestConfigValidate(t *testing.T) {
 	t.Parallel()
 
-	adminID := uuid.NewString()
 	tests := []struct {
 		name        string
 		mutate      func(*Config)
@@ -21,42 +18,42 @@ func TestConfigValidate(t *testing.T) {
 	}{
 		{name: "valid production config", env: internalProductionEnv()},
 		{
-			name: "empty admin allowlist fails closed in debug",
+			name: "debug rejects missing ingress mTLS",
 			mutate: func(cfg *Config) {
 				cfg.Debug = true
-				cfg.AdminUserIDs = nil
+				cfg.MTLSClientCAPath = ""
+				cfg.TLSCertPath = ""
+				cfg.TLSKeyPath = ""
 			},
 			env:         map[string]string{},
-			wantErrPart: "must not be empty",
+			wantErrPart: "ingress mTLS",
 		},
 		{
-			name: "invalid admin UUID",
+			name: "partial ingress mTLS",
 			mutate: func(cfg *Config) {
-				cfg.AdminUserIDs = []string{"not-a-uuid"}
+				cfg.TLSKeyPath = ""
 			},
 			env:         internalProductionEnv(),
-			wantErrPart: "invalid UUID",
+			wantErrPart: "ingress mTLS",
 		},
 		{
-			name: "nil admin UUID",
+			name: "debug rejects missing outbound mTLS",
 			mutate: func(cfg *Config) {
-				cfg.AdminUserIDs = []string{uuid.Nil.String()}
+				cfg.Debug = true
+				cfg.GRPCClientCertPath = ""
+				cfg.GRPCClientKeyPath = ""
+				cfg.GRPCRootCAPath = ""
+			},
+			env:         map[string]string{},
+			wantErrPart: "outbound gRPC TLS",
+		},
+		{
+			name: "partial outbound mTLS",
+			mutate: func(cfg *Config) {
+				cfg.GRPCRootCAPath = ""
 			},
 			env:         internalProductionEnv(),
-			wantErrPart: "invalid UUID",
-		},
-		{
-			name: "duplicate canonical admin UUID",
-			mutate: func(cfg *Config) {
-				cfg.AdminUserIDs = []string{adminID, strings.ToUpper(adminID)}
-			},
-			env:         internalProductionEnv(),
-			wantErrPart: "duplicate UUID",
-		},
-		{
-			name:        "missing explicit production allowlist",
-			env:         internalProductionEnvWithout("GATEWAY_INTERNAL_ADMIN_USER_IDS"),
-			wantErrPart: "GATEWAY_INTERNAL_ADMIN_USER_IDS",
+			wantErrPart: "outbound gRPC TLS",
 		},
 		{
 			name: "empty required address",
@@ -114,7 +111,7 @@ func TestConfigValidate(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			cfg := validInternalConfig(adminID)
+			cfg := validInternalConfig()
 			if test.mutate != nil {
 				test.mutate(&cfg)
 			}
@@ -132,7 +129,7 @@ func TestConfigValidate(t *testing.T) {
 	}
 }
 
-func validInternalConfig(adminID string) Config {
+func validInternalConfig() Config {
 	return Config{
 		Port:                     8082,
 		AuthnGRPCAddr:            "authn.example.com:443",
@@ -141,7 +138,12 @@ func validInternalConfig(adminID string) Config {
 		RealIPHeader:             "CF-Connecting-IP",
 		SessionAccessTokenIssuer: "https://id.example.com",
 		JWKSCacheTTLSeconds:      300,
-		AdminUserIDs:             []string{adminID},
+		MTLSClientCAPath:         "certs/admin-ingress-ca.pem",
+		TLSCertPath:              "certs/server.pem",
+		TLSKeyPath:               "certs/server-key.pem",
+		GRPCClientCertPath:       "certs/client.pem",
+		GRPCClientKeyPath:        "certs/client-key.pem",
+		GRPCRootCAPath:           "certs/server-ca.pem",
 		RateLimit:                300,
 		RateLimitWindowSeconds:   60,
 		RiskPoWThreshold:         60,
@@ -153,14 +155,7 @@ func validInternalConfig(adminID string) Config {
 func internalProductionEnv() map[string]string {
 	return map[string]string{
 		"GATEWAY_INTERNAL_TRUST_FORWARD_HEADER": "false",
-		"GATEWAY_INTERNAL_ADMIN_USER_IDS":       "set",
 	}
-}
-
-func internalProductionEnvWithout(name string) map[string]string {
-	env := internalProductionEnv()
-	delete(env, name)
-	return env
 }
 
 func internalMapLookup(env map[string]string) shared.EnvLookup {

@@ -12,13 +12,7 @@ import (
 	"sanzi.io/muid/pkg/audit"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
-)
-
-const (
-	platformOrganizationWrite = "platform/organization.write"
-	platformPolicyRead        = "platform/policy.read"
-	platformPolicyWrite       = "platform/policy.write"
-	platformPolicyReload      = "platform/policy.reload"
+	"sanzi.io/muid/pkg/shared/authzmodel"
 )
 
 type platformPermissionChecker interface {
@@ -81,14 +75,14 @@ func adminPlatformPermission(fullMethod string) (string, bool) {
 	case pb.AuthzAdminService_CreateOrganization_FullMethodName,
 		pb.AuthzAdminService_DeleteOrganization_FullMethodName,
 		pb.AuthzAdminService_SetOrganizationMember_FullMethodName:
-		return platformOrganizationWrite, true
+		return authzmodel.PlatformPermissionOrganizationWrite, true
 	case pb.AuthzAdminService_ListCasbinRules_FullMethodName:
-		return platformPolicyRead, true
+		return authzmodel.PlatformPermissionPolicyRead, true
 	case pb.AuthzAdminService_AddRawPolicies_FullMethodName,
 		pb.AuthzAdminService_RemoveRawPolicies_FullMethodName:
-		return platformPolicyWrite, true
+		return authzmodel.PlatformPermissionPolicyWrite, true
 	case pb.AuthzAdminService_ReloadPolicyConfig_FullMethodName:
-		return platformPolicyReload, true
+		return authzmodel.PlatformPermissionPolicyReload, true
 	default:
 		return "", false
 	}

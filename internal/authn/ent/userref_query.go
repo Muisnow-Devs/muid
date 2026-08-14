@@ -480,12 +480,12 @@ func (_q *UserRefQuery) WithOidcAccessGrants(opts ...func(*OIDCClientAccessGrant
 // Example:
 //
 //	var v []struct {
-//		LastLoginAt time.Time `json:"last_login_at,omitempty"`
+//		Status userref.Status `json:"status,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.UserRef.Query().
-//		GroupBy(userref.FieldLastLoginAt).
+//		GroupBy(userref.FieldStatus).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (_q *UserRefQuery) GroupBy(field string, fields ...string) *UserRefGroupBy {
@@ -503,11 +503,11 @@ func (_q *UserRefQuery) GroupBy(field string, fields ...string) *UserRefGroupBy 
 // Example:
 //
 //	var v []struct {
-//		LastLoginAt time.Time `json:"last_login_at,omitempty"`
+//		Status userref.Status `json:"status,omitempty"`
 //	}
 //
 //	client.UserRef.Query().
-//		Select(userref.FieldLastLoginAt).
+//		Select(userref.FieldStatus).
 //		Scan(ctx, &v)
 func (_q *UserRefQuery) Select(fields ...string) *UserRefSelect {
 	_q.ctx.Fields = append(_q.ctx.Fields, fields...)

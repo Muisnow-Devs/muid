@@ -511,6 +511,7 @@ var (
 	// UserRefsColumns holds the columns for the "user_refs" table.
 	UserRefsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
+		{Name: "status", Type: field.TypeEnum, Enums: []string{"active", "disabled", "pending_deletion"}, Default: "active"},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

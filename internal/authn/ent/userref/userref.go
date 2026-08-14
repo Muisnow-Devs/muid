@@ -3,6 +3,7 @@
 package userref
 
 import (
+	"fmt"
 	"time"
 
 	"entgo.io/ent/dialect/sql"
@@ -14,6 +15,8 @@ const (
 	Label = "user_ref"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldStatus holds the string denoting the status field in the database.
+	FieldStatus = "status"
 	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
 	FieldLastLoginAt = "last_login_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -81,6 +84,7 @@ const (
 // Columns holds all SQL columns for userref fields.
 var Columns = []string{
 	FieldID,
+	FieldStatus,
 	FieldLastLoginAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -105,12 +109,44 @@ var (
 	UpdateDefaultUpdatedAt func() time.Time
 )
 
+// Status defines the type for the "status" enum field.
+type Status string
+
+// StatusActive is the default value of the Status enum.
+const DefaultStatus = StatusActive
+
+// Status values.
+const (
+	StatusActive          Status = "active"
+	StatusDisabled        Status = "disabled"
+	StatusPendingDeletion Status = "pending_deletion"
+)
+
+func (s Status) String() string {
+	return string(s)
+}
+
+// StatusValidator is a validator for the "status" field enum values. It is called by the builders before save.
+func StatusValidator(s Status) error {
+	switch s {
+	case StatusActive, StatusDisabled, StatusPendingDeletion:
+		return nil
+	default:
+		return fmt.Errorf("userref: invalid enum value for status field: %q", s)
+	}
+}
+
 // OrderOption defines the ordering options for the UserRef queries.
 type OrderOption func(*sql.Selector)
 
 // ByID orders the results by the id field.
 func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
+}
+
+// ByStatus orders the results by the status field.
+func ByStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldStatus, opts...).ToFunc()
 }
 
 // ByLastLoginAt orders the results by the last_login_at field.

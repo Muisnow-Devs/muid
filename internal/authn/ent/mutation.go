@@ -10892,6 +10892,7 @@ type UserRefMutation struct {
 	op                         Op
 	typ                        string
 	id                         *uuid.UUID
+	status                     *userref.Status
 	last_login_at              *time.Time
 	created_at                 *time.Time
 	updated_at                 *time.Time
@@ -11021,6 +11022,42 @@ func (m *UserRefMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
+}
+
+// SetStatus sets the "status" field.
+func (m *UserRefMutation) SetStatus(u userref.Status) {
+	m.status = &u
+}
+
+// Status returns the value of the "status" field in the mutation.
+func (m *UserRefMutation) Status() (r userref.Status, exists bool) {
+	v := m.status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldStatus returns the old "status" field's value of the UserRef entity.
+// If the UserRef object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserRefMutation) OldStatus(ctx context.Context) (v userref.Status, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldStatus: %w", err)
+	}
+	return oldValue.Status, nil
+}
+
+// ResetStatus resets all changes to the "status" field.
+func (m *UserRefMutation) ResetStatus() {
+	m.status = nil
 }
 
 // SetLastLoginAt sets the "last_login_at" field.
@@ -11502,7 +11539,10 @@ func (m *UserRefMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserRefMutation) Fields() []string {
-	fields := make([]string, 0, 3)
+	fields := make([]string, 0, 4)
+	if m.status != nil {
+		fields = append(fields, userref.FieldStatus)
+	}
 	if m.last_login_at != nil {
 		fields = append(fields, userref.FieldLastLoginAt)
 	}
@@ -11520,6 +11560,8 @@ func (m *UserRefMutation) Fields() []string {
 // schema.
 func (m *UserRefMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case userref.FieldStatus:
+		return m.Status()
 	case userref.FieldLastLoginAt:
 		return m.LastLoginAt()
 	case userref.FieldCreatedAt:
@@ -11535,6 +11577,8 @@ func (m *UserRefMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *UserRefMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case userref.FieldStatus:
+		return m.OldStatus(ctx)
 	case userref.FieldLastLoginAt:
 		return m.OldLastLoginAt(ctx)
 	case userref.FieldCreatedAt:
@@ -11550,6 +11594,13 @@ func (m *UserRefMutation) OldField(ctx context.Context, name string) (ent.Value,
 // type.
 func (m *UserRefMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case userref.FieldStatus:
+		v, ok := value.(userref.Status)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetStatus(v)
+		return nil
 	case userref.FieldLastLoginAt:
 		v, ok := value.(time.Time)
 		if !ok {
@@ -11629,6 +11680,9 @@ func (m *UserRefMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *UserRefMutation) ResetField(name string) error {
 	switch name {
+	case userref.FieldStatus:
+		m.ResetStatus()
+		return nil
 	case userref.FieldLastLoginAt:
 		m.ResetLastLoginAt()
 		return nil

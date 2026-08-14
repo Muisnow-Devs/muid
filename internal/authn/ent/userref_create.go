@@ -27,6 +27,20 @@ type UserRefCreate struct {
 	hooks    []Hook
 }
 
+// SetStatus sets the "status" field.
+func (_c *UserRefCreate) SetStatus(v userref.Status) *UserRefCreate {
+	_c.mutation.SetStatus(v)
+	return _c
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_c *UserRefCreate) SetNillableStatus(v *userref.Status) *UserRefCreate {
+	if v != nil {
+		_c.SetStatus(*v)
+	}
+	return _c
+}
+
 // SetLastLoginAt sets the "last_login_at" field.
 func (_c *UserRefCreate) SetLastLoginAt(v time.Time) *UserRefCreate {
 	_c.mutation.SetLastLoginAt(v)
@@ -200,6 +214,10 @@ func (_c *UserRefCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *UserRefCreate) defaults() {
+	if _, ok := _c.mutation.Status(); !ok {
+		v := userref.DefaultStatus
+		_c.mutation.SetStatus(v)
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := userref.DefaultCreatedAt()
 		_c.mutation.SetCreatedAt(v)
@@ -212,6 +230,14 @@ func (_c *UserRefCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (_c *UserRefCreate) check() error {
+	if _, ok := _c.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "UserRef.status"`)}
+	}
+	if v, ok := _c.mutation.Status(); ok {
+		if err := userref.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserRef.status": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "UserRef.created_at"`)}
 	}
@@ -252,6 +278,10 @@ func (_c *UserRefCreate) createSpec() (*UserRef, *sqlgraph.CreateSpec) {
 	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
+	}
+	if value, ok := _c.mutation.Status(); ok {
+		_spec.SetField(userref.FieldStatus, field.TypeEnum, value)
+		_node.Status = value
 	}
 	if value, ok := _c.mutation.LastLoginAt(); ok {
 		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)

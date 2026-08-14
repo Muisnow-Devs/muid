@@ -20,6 +20,10 @@ func (UserRef) Fields() []ent.Field {
 	return []ent.Field{
 		field.UUID("id", uuid.UUID{}).Immutable(),
 
+		field.Enum("status").
+			Values("active", "disabled", "pending_deletion").
+			Default("active"),
+
 		field.Time("last_login_at").Optional(),
 
 		field.Time("created_at").Default(time.Now).Immutable(),

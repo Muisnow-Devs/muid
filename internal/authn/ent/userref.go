@@ -18,6 +18,8 @@ type UserRef struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID uuid.UUID `json:"id,omitempty"`
+	// Status holds the value of the "status" field.
+	Status userref.Status `json:"status,omitempty"`
 	// LastLoginAt holds the value of the "last_login_at" field.
 	LastLoginAt time.Time `json:"last_login_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -108,6 +110,8 @@ func (*UserRef) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
+		case userref.FieldStatus:
+			values[i] = new(sql.NullString)
 		case userref.FieldLastLoginAt, userref.FieldCreatedAt, userref.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		case userref.FieldID:
@@ -132,6 +136,12 @@ func (_m *UserRef) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				_m.ID = *value
+			}
+		case userref.FieldStatus:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field status", values[i])
+			} else if value.Valid {
+				_m.Status = userref.Status(value.String)
 			}
 		case userref.FieldLastLoginAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -217,6 +227,9 @@ func (_m *UserRef) String() string {
 	var builder strings.Builder
 	builder.WriteString("UserRef(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
+	builder.WriteString("status=")
+	builder.WriteString(fmt.Sprintf("%v", _m.Status))
+	builder.WriteString(", ")
 	builder.WriteString("last_login_at=")
 	builder.WriteString(_m.LastLoginAt.Format(time.ANSIC))
 	builder.WriteString(", ")

@@ -35,6 +35,20 @@ func (_u *UserRefUpdate) Where(ps ...predicate.UserRef) *UserRefUpdate {
 	return _u
 }
 
+// SetStatus sets the "status" field.
+func (_u *UserRefUpdate) SetStatus(v userref.Status) *UserRefUpdate {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *UserRefUpdate) SetNillableStatus(v *userref.Status) *UserRefUpdate {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
 // SetLastLoginAt sets the "last_login_at" field.
 func (_u *UserRefUpdate) SetLastLoginAt(v time.Time) *UserRefUpdate {
 	_u.mutation.SetLastLoginAt(v)
@@ -318,7 +332,20 @@ func (_u *UserRefUpdate) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *UserRefUpdate) check() error {
+	if v, ok := _u.mutation.Status(); ok {
+		if err := userref.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserRef.status": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(userref.Table, userref.Columns, sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID))
 	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -326,6 +353,9 @@ func (_u *UserRefUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(userref.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.LastLoginAt(); ok {
 		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)
@@ -626,6 +656,20 @@ type UserRefUpdateOne struct {
 	mutation *UserRefMutation
 }
 
+// SetStatus sets the "status" field.
+func (_u *UserRefUpdateOne) SetStatus(v userref.Status) *UserRefUpdateOne {
+	_u.mutation.SetStatus(v)
+	return _u
+}
+
+// SetNillableStatus sets the "status" field if the given value is not nil.
+func (_u *UserRefUpdateOne) SetNillableStatus(v *userref.Status) *UserRefUpdateOne {
+	if v != nil {
+		_u.SetStatus(*v)
+	}
+	return _u
+}
+
 // SetLastLoginAt sets the "last_login_at" field.
 func (_u *UserRefUpdateOne) SetLastLoginAt(v time.Time) *UserRefUpdateOne {
 	_u.mutation.SetLastLoginAt(v)
@@ -922,7 +966,20 @@ func (_u *UserRefUpdateOne) defaults() {
 	}
 }
 
+// check runs all checks and user-defined validators on the builder.
+func (_u *UserRefUpdateOne) check() error {
+	if v, ok := _u.mutation.Status(); ok {
+		if err := userref.StatusValidator(v); err != nil {
+			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "UserRef.status": %w`, err)}
+		}
+	}
+	return nil
+}
+
 func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
+	}
 	_spec := sqlgraph.NewUpdateSpec(userref.Table, userref.Columns, sqlgraph.NewFieldSpec(userref.FieldID, field.TypeUUID))
 	id, ok := _u.mutation.ID()
 	if !ok {
@@ -947,6 +1004,9 @@ func (_u *UserRefUpdateOne) sqlSave(ctx context.Context) (_node *UserRef, err er
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := _u.mutation.Status(); ok {
+		_spec.SetField(userref.FieldStatus, field.TypeEnum, value)
 	}
 	if value, ok := _u.mutation.LastLoginAt(); ok {
 		_spec.SetField(userref.FieldLastLoginAt, field.TypeTime, value)

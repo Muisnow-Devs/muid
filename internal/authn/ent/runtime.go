@@ -466,11 +466,11 @@ func init() {
 	userrefFields := schema.UserRef{}.Fields()
 	_ = userrefFields
 	// userrefDescCreatedAt is the schema descriptor for created_at field.
-	userrefDescCreatedAt := userrefFields[2].Descriptor()
+	userrefDescCreatedAt := userrefFields[3].Descriptor()
 	// userref.DefaultCreatedAt holds the default value on creation for the created_at field.
 	userref.DefaultCreatedAt = userrefDescCreatedAt.Default.(func() time.Time)
 	// userrefDescUpdatedAt is the schema descriptor for updated_at field.
-	userrefDescUpdatedAt := userrefFields[3].Descriptor()
+	userrefDescUpdatedAt := userrefFields[4].Descriptor()
 	// userref.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	userref.DefaultUpdatedAt = userrefDescUpdatedAt.Default.(func() time.Time)
 	// userref.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

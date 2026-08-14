@@ -71,6 +71,26 @@ func UpdatedAt(v time.Time) predicate.UserRef {
 	return predicate.UserRef(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
+// StatusEQ applies the EQ predicate on the "status" field.
+func StatusEQ(v Status) predicate.UserRef {
+	return predicate.UserRef(sql.FieldEQ(FieldStatus, v))
+}
+
+// StatusNEQ applies the NEQ predicate on the "status" field.
+func StatusNEQ(v Status) predicate.UserRef {
+	return predicate.UserRef(sql.FieldNEQ(FieldStatus, v))
+}
+
+// StatusIn applies the In predicate on the "status" field.
+func StatusIn(vs ...Status) predicate.UserRef {
+	return predicate.UserRef(sql.FieldIn(FieldStatus, vs...))
+}
+
+// StatusNotIn applies the NotIn predicate on the "status" field.
+func StatusNotIn(vs ...Status) predicate.UserRef {
+	return predicate.UserRef(sql.FieldNotIn(FieldStatus, vs...))
+}
+
 // LastLoginAtEQ applies the EQ predicate on the "last_login_at" field.
 func LastLoginAtEQ(v time.Time) predicate.UserRef {
 	return predicate.UserRef(sql.FieldEQ(FieldLastLoginAt, v))

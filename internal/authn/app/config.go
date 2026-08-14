@@ -18,7 +18,6 @@ import (
 	"sanzi.io/muid/internal/session"
 	"sanzi.io/muid/internal/signature"
 	"sanzi.io/muid/pkg/authzclient"
-	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared/kv"
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
@@ -143,14 +142,6 @@ func (c Config) SessionAccessTokenEnabled() bool {
 // SignatureConfigured reports whether the JWT signing key secret is configured.
 func (c Config) SignatureConfigured() bool {
 	return strings.TrimSpace(c.SignatureSecretName) != ""
-}
-
-func (c Config) serverTLSConfigured() bool {
-	return mtls.PathGroupConfigured(c.GRPCTLSCertPath, c.GRPCTLSKeyPath, c.GRPCMTLSClientCAPath)
-}
-
-func (c Config) clientTLSConfigured() bool {
-	return mtls.PathGroupConfigured(c.GRPCClientCertPath, c.GRPCClientKeyPath, c.GRPCRootCAPath)
 }
 
 // InfraDependencies holds the runtime dependencies for the authn app.

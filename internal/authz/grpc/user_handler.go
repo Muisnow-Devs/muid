@@ -13,7 +13,7 @@ import (
 )
 
 // UserHandler implements AuthzUserService, the default end-user surface on
-// the public listener. Caller identity comes from UserIdentityInterceptor.
+// the public listener. Caller identity comes from the verified request principal.
 type UserHandler struct {
 	pb.UnimplementedAuthzUserServiceServer
 

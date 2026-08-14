@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -58,16 +57,13 @@ func NewAuthnGRPC(
 		return nil, err
 	}
 
-	var serverTLS *tls.Config
-	if config.serverTLSConfigured() {
-		serverTLS, err = mtls.LoadServerTLSConfig(
-			config.GRPCTLSCertPath,
-			config.GRPCTLSKeyPath,
-			config.GRPCMTLSClientCAPath,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("authn gRPC TLS: %w", err)
-		}
+	serverTLS, err := mtls.LoadServerTLSConfig(
+		config.GRPCTLSCertPath,
+		config.GRPCTLSKeyPath,
+		config.GRPCMTLSClientCAPath,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("authn gRPC TLS: %w", err)
 	}
 
 	listener, err := net.Listen("tcp", ":"+fmt.Sprint(config.Port))
@@ -94,9 +90,7 @@ func NewAuthnGRPC(
 			),
 		),
 	}
-	if serverTLS != nil {
-		serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
-	}
+	serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
 	grpcServer := grpc.NewServer(serverOptions...)
 	pb.RegisterAuthnServiceServer(grpcServer, handler)
 	pb.RegisterOIDCServiceServer(grpcServer, oidcHandler)

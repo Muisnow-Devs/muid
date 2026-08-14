@@ -24,13 +24,3 @@ func TestDialTLSClientRejectsEmptyTarget(t *testing.T) {
 		t.Fatal("DialTLSClient succeeded with empty target")
 	}
 }
-
-func TestDialInsecureClientRejectsEmptyTarget(t *testing.T) {
-	t.Parallel()
-
-	conn, err := DialInsecureClient("  ", ClientResilienceConfig{})
-	if err == nil {
-		conn.Close()
-		t.Fatal("DialInsecureClient succeeded with empty target")
-	}
-}

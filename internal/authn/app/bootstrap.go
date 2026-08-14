@@ -285,9 +285,6 @@ func dialAuthnBackend(
 	target string,
 	resilience grpcutils.ClientResilienceConfig,
 ) (*grpc.ClientConn, error) {
-	if !cfg.clientTLSConfigured() {
-		return grpcutils.DialInsecureClient(target, resilience)
-	}
 	clientTLS, err := mtls.LoadClientTLSConfig(
 		cfg.GRPCClientCertPath,
 		cfg.GRPCClientKeyPath,

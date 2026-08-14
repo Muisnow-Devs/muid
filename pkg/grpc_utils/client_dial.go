@@ -7,20 +7,9 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/credentials/insecure"
 
 	"sanzi.io/muid/pkg/log"
 )
-
-// DialInsecureClient dials target with trace forwarding, optional circuit breaker (outer) and retry (inner).
-// extraOpts are appended after the standard transport and interceptor options.
-func DialInsecureClient(
-	target string,
-	resilience ClientResilienceConfig,
-	extraOpts ...grpc.DialOption,
-) (*grpc.ClientConn, error) {
-	return dialClient(target, resilience, insecure.NewCredentials(), extraOpts...)
-}
 
 // DialTLSClient dials target with a cloned TLS config, trace forwarding, and
 // optional circuit breaker and retry interceptors. TLS verification is left to

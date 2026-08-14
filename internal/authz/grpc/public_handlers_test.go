@@ -7,9 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
 	pb "sanzi.io/muid/api/proto/authz/v1"
@@ -17,7 +15,7 @@ import (
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 )
 
-// ctxAsUser injects the caller id the way UserIdentityInterceptor does.
+// ctxAsUser injects the caller id established by the workload-principal interceptor.
 func ctxAsUser(userID uuid.UUID) context.Context {
 	return grpcutils.WithRequestUserID(context.Background(), userID)
 }
@@ -30,129 +28,6 @@ func wantCode(t *testing.T, err error, want codes.Code) {
 	}
 	if st.Code() != want {
 		t.Fatalf("status code = %v, want %v (err: %v)", st.Code(), want, err)
-	}
-}
-
-func TestUserIdentityInterceptor(t *testing.T) {
-	t.Parallel()
-
-	interceptor := UserIdentityInterceptor()
-	publicMethod := "/" + pb.AuthzUserService_ServiceDesc.ServiceName + "/CheckMyPermission"
-	internalMethod := "/" + pb.AuthzService_ServiceDesc.ServiceName + "/CheckOrganizationPermission"
-	userID := uuid.New()
-
-	tests := []struct {
-		name       string
-		fullMethod string
-		md         metadata.MD
-		wantErr    codes.Code
-		wantUser   bool
-	}{
-		{
-			name:       "valid identity",
-			fullMethod: publicMethod,
-			md:         metadata.Pairs(UserIDMetadataKey, userID.String()),
-			wantUser:   true,
-		},
-		{
-			name:       "missing metadata",
-			fullMethod: publicMethod,
-			wantErr:    codes.Unauthenticated,
-		},
-		{
-			name:       "malformed user id",
-			fullMethod: publicMethod,
-			md:         metadata.Pairs(UserIDMetadataKey, "not-a-uuid"),
-			wantErr:    codes.Unauthenticated,
-		},
-		{
-			name:       "zero user id",
-			fullMethod: publicMethod,
-			md:         metadata.Pairs(UserIDMetadataKey, uuid.Nil.String()),
-			wantErr:    codes.Unauthenticated,
-		},
-		{
-			name:       "duplicated header",
-			fullMethod: publicMethod,
-			md: metadata.Pairs(
-				UserIDMetadataKey, userID.String(),
-				UserIDMetadataKey, uuid.New().String(),
-			),
-			wantErr: codes.Unauthenticated,
-		},
-		{
-			name:       "internal method passes through without identity",
-			fullMethod: internalMethod,
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			ctx := context.Background()
-			if tc.md != nil {
-				ctx = metadata.NewIncomingContext(ctx, tc.md)
-			}
-
-			var gotUser uuid.UUID
-			var gotOK bool
-			handler := func(ctx context.Context, _ any) (any, error) {
-				gotUser, gotOK = UserIDFromContext(ctx)
-				return nil, nil
-			}
-
-			_, err := interceptor(
-				ctx,
-				nil,
-				&grpc.UnaryServerInfo{FullMethod: tc.fullMethod},
-				handler,
-			)
-			if tc.wantErr != codes.OK {
-				wantCode(t, err, tc.wantErr)
-				return
-			}
-			if err != nil {
-				t.Fatalf("interceptor error = %v, want nil", err)
-			}
-			if gotOK != tc.wantUser {
-				t.Fatalf("handler saw identity = %v, want %v", gotOK, tc.wantUser)
-			}
-			if tc.wantUser && gotUser != userID {
-				t.Errorf("handler user id = %v, want %v", gotUser, userID)
-			}
-		})
-	}
-}
-
-func TestCurrentUserIdentityInterceptorAcceptsForgedUserIDMetadata(t *testing.T) {
-	t.Parallel()
-
-	forgedUserID := uuid.MustParse("4c29a0d6-91b4-4a4f-8c39-6f3dd35a57ea")
-	ctx := metadata.NewIncomingContext(
-		context.Background(),
-		metadata.Pairs(UserIDMetadataKey, forgedUserID.String()),
-	)
-
-	var gotUserID uuid.UUID
-	_, err := UserIdentityInterceptor()(
-		ctx,
-		nil,
-		&grpc.UnaryServerInfo{FullMethod: pb.AuthzUserService_CheckMyPermission_FullMethodName},
-		func(ctx context.Context, _ any) (any, error) {
-			var ok bool
-			gotUserID, ok = UserIDFromContext(ctx)
-			if !ok {
-				t.Fatal("handler did not receive the metadata identity")
-			}
-			return nil, nil
-		},
-	)
-	if err != nil {
-		t.Fatalf("interceptor error = %v, want nil", err)
-	}
-	if gotUserID != forgedUserID {
-		t.Fatalf("handler user id = %v, want forged metadata id %v", gotUserID, forgedUserID)
 	}
 }
 

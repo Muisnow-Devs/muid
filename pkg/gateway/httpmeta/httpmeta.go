@@ -1,7 +1,7 @@
 // Package httpmeta bridges untrusted HTTP request attributes onto outgoing gRPC
 // metadata for downstream muid services. It extracts the client IP, the
 // gateway-verified user id, and resolved geo facts, and attaches them so the
-// backends (e.g. authz's UserIdentityInterceptor) can consume them.
+// backends can consume after their workload-principal interceptor verifies the caller.
 //
 // Trace propagation is handled separately by the grpcutils client dialer via
 // log.UnaryClientInterceptor, so it is not duplicated here.

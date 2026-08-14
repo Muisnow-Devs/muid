@@ -38,9 +38,9 @@ func enrichRequiredPrincipal(ctx context.Context, _ string, _ any) (context.Cont
 	return log.WithAttrs(ctx, log.ProfileID(id)), nil
 }
 
-// enrichRequiredUser requires an authenticated caller (x-authn-user-id) without
-// treating the id as a profile id; used by organization-profile RPCs where the
-// caller is acting on an organization, not their own profile.
+// enrichRequiredUser requires a verified authenticated caller without treating
+// the id as a profile id; used by organization-profile RPCs where the caller is
+// acting on an organization, not their own profile.
 func enrichRequiredUser(ctx context.Context, _ string, _ any) (context.Context, error) {
 	ctx, _, err := sharedauthn.EnrichRequiredAuthenticatedUser(ctx)
 	return ctx, err
@@ -70,7 +70,5 @@ func enrichProfileUserID(ctx context.Context, raw, invalidMsg string) (context.C
 		return ctx, status.Error(codes.InvalidArgument, invalidMsg)
 	}
 
-	ctx = log.WithAttrs(ctx, log.UserID(id), log.ProfileID(id))
-	ctx = sharedauthn.WithAuthenticatedUserID(ctx, id)
-	return ctx, nil
+	return log.WithAttrs(ctx, log.ProfileID(id)), nil
 }

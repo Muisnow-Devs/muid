@@ -100,14 +100,6 @@ func validateTLSPathGroup(name string, required bool, values ...string) error {
 	return nil
 }
 
-func (c Config) serverTLSConfigured() bool {
-	return mtls.PathGroupConfigured(c.GRPCTLSCertPath, c.GRPCTLSKeyPath, c.GRPCMTLSClientCAPath)
-}
-
-func (c Config) clientTLSConfigured() bool {
-	return mtls.PathGroupConfigured(c.GRPCClientCertPath, c.GRPCClientKeyPath, c.GRPCRootCAPath)
-}
-
 type InfraDependencies struct {
 	GlobalConfig Config
 

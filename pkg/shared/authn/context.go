@@ -20,14 +20,14 @@ func AuthenticatedUserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	return grpcutils.RequestUserIDFromContext(ctx)
 }
 
-// EnrichRequiredAuthenticatedUser parses x-authn-user-id metadata, attaches log.UserID, and stores the id on ctx.
+// EnrichRequiredAuthenticatedUser enriches a verified request principal with
+// logging and audit context.
 func EnrichRequiredAuthenticatedUser(ctx context.Context) (context.Context, uuid.UUID, error) {
-	id, err := authenticatedUserIDFromMetadata(ctx)
-	if err != nil {
-		return ctx, uuid.Nil, err
+	id, ok := grpcutils.RequestUserIDFromContext(ctx)
+	if !ok {
+		return ctx, uuid.Nil, GRPCMissingAuthenticatedPrincipal()
 	}
 	ctx = log.WithAttrs(ctx, log.UserID(id))
-	ctx = WithAuthenticatedUserID(ctx, id)
 	ctx = audit.WithActor(ctx, id)
 	return ctx, id, nil
 }

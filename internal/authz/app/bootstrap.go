@@ -73,22 +73,18 @@ func NewAuthzInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) 
 	var profileConn *grpc.ClientConn
 	var profileClient profilepb.OrganizationProfileServiceClient
 	if addr := strings.TrimSpace(cfg.ProfileGRPCAddr); addr != "" {
-		if cfg.clientTLSConfigured() {
-			clientTLS, tlsErr := mtls.LoadClientTLSConfig(
-				cfg.GRPCClientCertPath,
-				cfg.GRPCClientKeyPath,
-				cfg.GRPCRootCAPath,
-			)
-			if tlsErr != nil {
-				errutil.Discard(manager.Close())
-				errutil.Close(entClient)
-				errutil.CloseIf(pubSub)
-				return nil, fmt.Errorf("profile grpc TLS: %w", tlsErr)
-			}
-			profileConn, err = grpcutils.DialTLSClient(addr, clientTLS, grpcutils.ClientResilienceConfig{})
-		} else {
-			profileConn, err = grpcutils.DialInsecureClient(addr, grpcutils.ClientResilienceConfig{})
+		clientTLS, tlsErr := mtls.LoadClientTLSConfig(
+			cfg.GRPCClientCertPath,
+			cfg.GRPCClientKeyPath,
+			cfg.GRPCRootCAPath,
+		)
+		if tlsErr != nil {
+			errutil.Discard(manager.Close())
+			errutil.Close(entClient)
+			errutil.CloseIf(pubSub)
+			return nil, fmt.Errorf("profile grpc TLS: %w", tlsErr)
 		}
+		profileConn, err = grpcutils.DialTLSClient(addr, clientTLS, grpcutils.ClientResilienceConfig{})
 		if err != nil {
 			errutil.Discard(manager.Close())
 			errutil.Close(entClient)

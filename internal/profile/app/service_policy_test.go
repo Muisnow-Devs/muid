@@ -14,7 +14,7 @@ func TestProfilePrincipalPolicies(t *testing.T) {
 	assertProfileWorkloadMode(t, policies, pb.ProfileService_CreateProfile_FullMethodName,
 		grpcutils.WorkloadAuthn, grpcutils.UserForbidden)
 	assertProfileWorkloadMode(t, policies, pb.ProfileService_GetProfile_FullMethodName,
-		grpcutils.WorkloadAuthn, grpcutils.UserOptional)
+		grpcutils.WorkloadAuthn, grpcutils.UserForbidden)
 	assertProfileWorkloadMode(t, policies, pb.ProfileService_GetProfile_FullMethodName,
 		grpcutils.WorkloadGatewayPublic, grpcutils.UserOptional)
 	assertProfileWorkloadMode(t, policies, pb.ProfileService_GetProfile_FullMethodName,

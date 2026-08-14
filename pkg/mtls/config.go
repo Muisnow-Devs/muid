@@ -27,16 +27,3 @@ func ValidatePathGroup(required bool, paths ...string) error {
 	}
 	return nil
 }
-
-// PathGroupConfigured reports whether a validated path group is configured.
-func PathGroupConfigured(paths ...string) bool {
-	if len(paths) == 0 {
-		return false
-	}
-	for _, path := range paths {
-		if strings.TrimSpace(path) == "" {
-			return false
-		}
-	}
-	return true
-}

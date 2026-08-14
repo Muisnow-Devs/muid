@@ -181,12 +181,3 @@ func TestUnaryCircuitBreakerInterceptorOpen(t *testing.T) {
 		t.Fatalf("message = %q", status.Convert(err).Message())
 	}
 }
-
-func TestDialInsecureClientEmptyTarget(t *testing.T) {
-	t.Parallel()
-
-	_, err := DialInsecureClient("  ", DefaultClientResilienceConfig())
-	if err == nil {
-		t.Fatal("expected error for empty target")
-	}
-}

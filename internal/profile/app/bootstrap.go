@@ -92,21 +92,17 @@ func NewInfra(ctx context.Context, cfg Config) (*InfraDependencies, error) {
 	var authzConn *grpc.ClientConn
 	var authzEnforcer *authzclient.Enforcer
 	if addr := strings.TrimSpace(cfg.AuthzInternalGRPCAddr); addr != "" {
-		if cfg.clientTLSConfigured() {
-			clientTLS, tlsErr := mtls.LoadClientTLSConfig(
-				cfg.GRPCClientCertPath,
-				cfg.GRPCClientKeyPath,
-				cfg.GRPCRootCAPath,
-			)
-			if tlsErr != nil {
-				errutil.Close(client)
-				errutil.CloseIf(pubSub)
-				return nil, fmt.Errorf("authz grpc TLS: %w", tlsErr)
-			}
-			authzConn, err = grpcutils.DialTLSClient(addr, clientTLS, grpcutils.ClientResilienceConfig{})
-		} else {
-			authzConn, err = grpcutils.DialInsecureClient(addr, grpcutils.ClientResilienceConfig{})
+		clientTLS, tlsErr := mtls.LoadClientTLSConfig(
+			cfg.GRPCClientCertPath,
+			cfg.GRPCClientKeyPath,
+			cfg.GRPCRootCAPath,
+		)
+		if tlsErr != nil {
+			errutil.Close(client)
+			errutil.CloseIf(pubSub)
+			return nil, fmt.Errorf("authz grpc TLS: %w", tlsErr)
 		}
+		authzConn, err = grpcutils.DialTLSClient(addr, clientTLS, grpcutils.ClientResilienceConfig{})
 		if err != nil {
 			errutil.Close(client)
 			errutil.CloseIf(pubSub)

@@ -6,22 +6,15 @@ import (
 )
 
 const (
-	// MsgMissingAuthenticatedPrincipal is returned when x-authn-user-id metadata is absent.
+	// MsgMissingAuthenticatedPrincipal is returned when the verified request principal has no user.
 	MsgMissingAuthenticatedPrincipal = "authenticated principal required"
-	// MsgInvalidAuthenticatedPrincipal is returned when x-authn-user-id metadata is not a UUID.
-	MsgInvalidAuthenticatedPrincipal = "invalid authenticated principal"
 	// MsgMissingAuthenticatedUserIDContext is returned when handlers require an id not set by middleware.
 	MsgMissingAuthenticatedUserIDContext = "missing authenticated user id in context"
 )
 
-// GRPCMissingAuthenticatedPrincipal reports missing authenticated principal metadata.
+// GRPCMissingAuthenticatedPrincipal reports a missing authenticated user on the verified principal.
 func GRPCMissingAuthenticatedPrincipal() error {
-	return status.Error(codes.InvalidArgument, MsgMissingAuthenticatedPrincipal)
-}
-
-// GRPCInvalidAuthenticatedPrincipal reports malformed authenticated principal metadata.
-func GRPCInvalidAuthenticatedPrincipal() error {
-	return status.Error(codes.InvalidArgument, MsgInvalidAuthenticatedPrincipal)
+	return status.Error(codes.Unauthenticated, MsgMissingAuthenticatedPrincipal)
 }
 
 // GRPCMissingAuthenticatedUserIDContext reports a missing enriched user id on context.

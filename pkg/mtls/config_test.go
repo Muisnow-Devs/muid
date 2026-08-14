@@ -30,14 +30,3 @@ func TestValidatePathGroup(t *testing.T) {
 		})
 	}
 }
-
-func TestPathGroupConfigured(t *testing.T) {
-	t.Parallel()
-
-	if !mtls.PathGroupConfigured("cert", "key", "roots") {
-		t.Fatal("complete group reported unconfigured")
-	}
-	if mtls.PathGroupConfigured("cert", "", "roots") {
-		t.Fatal("partial group reported configured")
-	}
-}

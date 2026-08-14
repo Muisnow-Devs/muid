@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -68,16 +67,13 @@ func NewAuthzGRPC(
 		return nil, err
 	}
 
-	var serverTLS *tls.Config
-	if config.serverTLSConfigured() {
-		serverTLS, err = mtls.LoadServerTLSConfig(
-			config.GRPCTLSCertPath,
-			config.GRPCTLSKeyPath,
-			config.GRPCMTLSClientCAPath,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("authz gRPC TLS: %w", err)
-		}
+	serverTLS, err := mtls.LoadServerTLSConfig(
+		config.GRPCTLSCertPath,
+		config.GRPCTLSKeyPath,
+		config.GRPCMTLSClientCAPath,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("authz gRPC TLS: %w", err)
 	}
 
 	publicListener, err := net.Listen("tcp", ":"+fmt.Sprint(config.Port))
@@ -100,9 +96,7 @@ func NewAuthzGRPC(
 				authzgrpc.PrincipalAuditInterceptor())...,
 		),
 	}
-	if serverTLS != nil {
-		publicOptions = append(publicOptions, grpc.Creds(credentials.NewTLS(serverTLS.Clone())))
-	}
+	publicOptions = append(publicOptions, grpc.Creds(credentials.NewTLS(serverTLS.Clone())))
 	publicServer := grpc.NewServer(publicOptions...)
 	pb.RegisterAuthzUserServiceServer(publicServer, handlers.User)
 	pb.RegisterAuthzOrganizationAdminServiceServer(publicServer, handlers.OrgAdmin)
@@ -120,9 +114,7 @@ func NewAuthzGRPC(
 			chainInterceptors(config, tracer, pvValidator, internalExtras...)...,
 		),
 	}
-	if serverTLS != nil {
-		internalOptions = append(internalOptions, grpc.Creds(credentials.NewTLS(serverTLS.Clone())))
-	}
+	internalOptions = append(internalOptions, grpc.Creds(credentials.NewTLS(serverTLS.Clone())))
 	internalServer := grpc.NewServer(internalOptions...)
 	pb.RegisterAuthzServiceServer(internalServer, handlers.Service)
 	pb.RegisterAuthzAdminServiceServer(internalServer, handlers.Admin)

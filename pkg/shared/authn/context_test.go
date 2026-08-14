@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -14,10 +13,7 @@ func TestEnrichRequiredAuthenticatedUser(t *testing.T) {
 	t.Parallel()
 
 	id := uuid.MustParse("550e8400-e29b-41d4-a716-446655440000")
-	ctx := metadata.NewIncomingContext(
-		context.Background(),
-		metadata.Pairs(AuthenticatedUserIDMetadataKey, id.String()),
-	)
+	ctx := WithAuthenticatedUserID(context.Background(), id)
 
 	enriched, got, err := EnrichRequiredAuthenticatedUser(ctx)
 	if err != nil {
@@ -32,30 +28,14 @@ func TestEnrichRequiredAuthenticatedUser(t *testing.T) {
 	}
 }
 
-func TestEnrichRequiredAuthenticatedUser_missingMetadata(t *testing.T) {
+func TestEnrichRequiredAuthenticatedUser_missingPrincipal(t *testing.T) {
 	t.Parallel()
 
 	_, _, err := EnrichRequiredAuthenticatedUser(context.Background())
-	if status.Code(err) != codes.InvalidArgument {
-		t.Fatalf("code: got %v want InvalidArgument", status.Code(err))
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("code: got %v want Unauthenticated", status.Code(err))
 	}
 	if status.Convert(err).Message() != MsgMissingAuthenticatedPrincipal {
-		t.Fatalf("message: got %q", status.Convert(err).Message())
-	}
-}
-
-func TestEnrichRequiredAuthenticatedUser_invalidMetadata(t *testing.T) {
-	t.Parallel()
-
-	ctx := metadata.NewIncomingContext(
-		context.Background(),
-		metadata.Pairs(AuthenticatedUserIDMetadataKey, "not-a-uuid"),
-	)
-	_, _, err := EnrichRequiredAuthenticatedUser(ctx)
-	if status.Code(err) != codes.InvalidArgument {
-		t.Fatalf("code: got %v want InvalidArgument", status.Code(err))
-	}
-	if status.Convert(err).Message() != MsgInvalidAuthenticatedPrincipal {
 		t.Fatalf("message: got %q", status.Convert(err).Message())
 	}
 }

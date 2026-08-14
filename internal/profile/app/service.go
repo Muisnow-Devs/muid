@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net"
 	"time"
@@ -57,16 +56,13 @@ func NewProfileGRPC(
 		return nil, err
 	}
 
-	var serverTLS *tls.Config
-	if config.serverTLSConfigured() {
-		serverTLS, err = mtls.LoadServerTLSConfig(
-			config.GRPCTLSCertPath,
-			config.GRPCTLSKeyPath,
-			config.GRPCMTLSClientCAPath,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("profile gRPC TLS: %w", err)
-		}
+	serverTLS, err := mtls.LoadServerTLSConfig(
+		config.GRPCTLSCertPath,
+		config.GRPCTLSKeyPath,
+		config.GRPCMTLSClientCAPath,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("profile gRPC TLS: %w", err)
 	}
 
 	serverOptions := []grpc.ServerOption{
@@ -85,9 +81,7 @@ func NewProfileGRPC(
 			),
 		),
 	}
-	if serverTLS != nil {
-		serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
-	}
+	serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
 	grpcServer := grpc.NewServer(serverOptions...)
 	pb.RegisterProfileServiceServer(grpcServer, handler)
 	pb.RegisterOrganizationProfileServiceServer(grpcServer, orgHandler)
@@ -107,7 +101,7 @@ func profilePrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
 		},
 		pb.ProfileService_GetProfile_FullMethodName: {
 			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
-				grpcutils.WorkloadAuthn:           grpcutils.UserOptional,
+				grpcutils.WorkloadAuthn:           grpcutils.UserForbidden,
 				grpcutils.WorkloadGatewayPublic:   grpcutils.UserOptional,
 				grpcutils.WorkloadGatewayServices: grpcutils.UserRequired,
 			},

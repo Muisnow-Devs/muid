@@ -54,9 +54,9 @@ func outgoingFields(ctx context.Context, userID uuid.UUID) httpmeta.Fields {
 }
 
 // OutgoingAuthenticated is OutgoingMetadata plus the gateway-verified caller id
-// under the unified identity key httpmeta.UserIDKey ("x-user-id"). authz and
-// profile both read this single key (pkg/shared/authn.AuthenticatedUserIDMetadataKey
-// is unified to the same value), so one ctx works for either data-plane backend.
+// under the unified identity key httpmeta.UserIDKey ("x-user-id"). Authz and
+// Profile accept this key only after their workload-principal interceptors
+// verify the calling gateway, so one context works for either backend.
 func OutgoingAuthenticated(ctx context.Context, userID uuid.UUID) context.Context {
 	return httpmeta.WithOutgoing(ctx, outgoingFields(ctx, userID))
 }

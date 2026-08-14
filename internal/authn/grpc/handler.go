@@ -9,6 +9,7 @@ import (
 	basicpb "sanzi.io/muid/api/proto/authn/v1/basic"
 	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/internal/authn/accesstoken"
+	"sanzi.io/muid/internal/authn/account"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/identity/issuer"
@@ -25,7 +26,9 @@ type GRPCHandler struct {
 	pb.UnimplementedSessionServiceServer
 	pb.UnimplementedLinkedIdentityServiceServer
 	pb.UnimplementedSigningKeyServiceServer
+	pb.UnimplementedAccountServiceServer
 
+	accountReader   account.Reader
 	db              *authnent.Client
 	transitionStore session.AuthTransitionStore
 	pubSub          pubsub.PubSub
@@ -48,6 +51,7 @@ func NewGRPCHandler(deps HandlerDependencies) *GRPCHandler {
 		ma = 3
 	}
 	return &GRPCHandler{
+		accountReader:   deps.AccountReader,
 		db:              deps.DB,
 		transitionStore: deps.TransitionStore,
 		pubSub:          deps.PubSub,

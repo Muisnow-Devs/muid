@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"sanzi.io/muid/internal/authn/accesstoken"
+	"sanzi.io/muid/internal/authn/account"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	"sanzi.io/muid/internal/authn/oidc"
 	oidcpolicy "sanzi.io/muid/internal/authn/oidc/policy"
@@ -32,6 +33,7 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 	iss := issuer.NewEntSessionIssuer(infra.entClient, infra.SessionCache)
 
 	handler := authngrpc.NewGRPCHandler(authngrpc.HandlerDependencies{
+		AccountReader:    account.NewManager(infra.entClient),
 		DB:               infra.entClient,
 		TransitionStore:  infra.TransitionStore,
 		PubSub:           infra.PubSub,
@@ -51,6 +53,7 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 		authngrpc.NewOIDCHandler(oidcProvider),
 		authngrpc.NewOIDCAdminHandler(newOIDCAdmin(infra)),
 		iss,
+		newSessionAccessTokenVerifier(infra),
 		infra.PlatformAuthz,
 		nil,
 	)
@@ -62,6 +65,14 @@ func NewAuthnApp(infra *InfraDependencies) (*AuthnApp, error) {
 		server:             service,
 		dependencyInjector: infra,
 	}, nil
+}
+
+func newSessionAccessTokenVerifier(infra *InfraDependencies) *oidctoken.Verifier {
+	cfg := infra.GlobalConfig
+	if !cfg.SessionAccessTokenEnabled() || infra.SignatureManager == nil {
+		return nil
+	}
+	return oidctoken.NewVerifier(infra.SignatureManager, cfg.SessionAccessTokenIssuer)
 }
 
 // newOIDCProvider assembles the OIDC provider domain layer; nil when the OP

@@ -17,6 +17,7 @@ func TestAuthnPrincipalPolicies(t *testing.T) {
 		len(pb.SessionService_ServiceDesc.Methods) +
 		len(pb.LinkedIdentityService_ServiceDesc.Methods) +
 		len(pb.SigningKeyService_ServiceDesc.Methods) +
+		len(pb.AccountService_ServiceDesc.Methods) +
 		len(pb.OIDCService_ServiceDesc.Methods) +
 		len(pb.OIDCClientAdminService_ServiceDesc.Methods)
 	if len(policies) != wantCount {
@@ -33,6 +34,9 @@ func TestAuthnPrincipalPolicies(t *testing.T) {
 		grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
 		grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
 		grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
+	})
+	assertServicePolicy(t, policies, &pb.AccountService_ServiceDesc, map[grpcutils.WorkloadID]grpcutils.UserMode{
+		grpcutils.WorkloadGatewayServices: grpcutils.UserRequired,
 	})
 	assertServicePolicy(t, policies, &pb.OIDCService_ServiceDesc, map[grpcutils.WorkloadID]grpcutils.UserMode{
 		grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,

@@ -15,6 +15,7 @@ import (
 	pb "sanzi.io/muid/api/proto/authn/v1"
 	authngrpc "sanzi.io/muid/internal/authn/grpc"
 	"sanzi.io/muid/internal/identity/issuer"
+	"sanzi.io/muid/internal/oidctoken"
 	"sanzi.io/muid/pkg/authzclient"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
 	"sanzi.io/muid/pkg/log"
@@ -32,6 +33,7 @@ type focusedAuthnServer interface {
 	pb.SessionServiceServer
 	pb.LinkedIdentityServiceServer
 	pb.SigningKeyServiceServer
+	pb.AccountServiceServer
 }
 
 func NewAuthnGRPC(
@@ -40,6 +42,7 @@ func NewAuthnGRPC(
 	oidcHandler pb.OIDCServiceServer,
 	oidcAdminHandler pb.OIDCClientAdminServiceServer,
 	iss issuer.SessionIssuer,
+	accountVerifier *oidctoken.Verifier,
 	platformAuthz *authzclient.PlatformChecker,
 	tracer tracing.Tracer,
 ) (*AuthnGRPC, error) {
@@ -84,10 +87,11 @@ func NewAuthnGRPC(
 			grpcutils.TraceUnaryInterceptor,
 			grpcutils.TraceMetadataInterceptor,
 			grpcutils.TracerContextInterceptor(tracer),
-			grpcutils.SessionTokenInterceptor(),
 			protovalidate.UnaryServerInterceptor(pvValidator),
 			principal,
 			grpcutils.TimeoutInterceptor(time.Duration(config.RequestTimeoutSeconds)*time.Second),
+			authngrpc.AccountDelegationInterceptor(accountVerifier),
+			grpcutils.SessionTokenInterceptor(),
 			authngrpc.AuthnRequestContextInterceptor(),
 			authngrpc.AuthnSessionPrincipalInterceptor(iss),
 			authngrpc.OIDCAdminPlatformAuthorizationInterceptor(platformAuthz),
@@ -103,6 +107,7 @@ func NewAuthnGRPC(
 	pb.RegisterSessionServiceServer(grpcServer, handler)
 	pb.RegisterLinkedIdentityServiceServer(grpcServer, handler)
 	pb.RegisterSigningKeyServiceServer(grpcServer, handler)
+	pb.RegisterAccountServiceServer(grpcServer, handler)
 	pb.RegisterOIDCServiceServer(grpcServer, oidcHandler)
 	pb.RegisterOIDCClientAdminServiceServer(grpcServer, oidcAdminHandler)
 
@@ -134,6 +139,13 @@ func authnPrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
 				grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
 				grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
 				grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
+			},
+		}
+	}
+	for _, method := range pb.AccountService_ServiceDesc.Methods {
+		policies["/"+pb.AccountService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayServices: grpcutils.UserRequired,
 			},
 		}
 	}

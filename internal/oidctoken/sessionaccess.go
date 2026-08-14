@@ -103,8 +103,13 @@ func (s *Signer) CreateSessionAccessToken(
 func (v *Verifier) VerifySessionAccessToken(
 	ctx context.Context,
 	raw string,
+	requiredAudience string,
 ) (SessionAccessTokenClaims, error) {
 	if v == nil || v.signing == nil {
+		return SessionAccessTokenClaims{}, signature.ErrInvalidConfig
+	}
+	requiredAudience = strings.TrimSpace(requiredAudience)
+	if requiredAudience == "" {
 		return SessionAccessTokenClaims{}, signature.ErrInvalidConfig
 	}
 
@@ -143,17 +148,21 @@ func (v *Verifier) VerifySessionAccessToken(
 		return SessionAccessTokenClaims{}, ErrInvalidToken
 	}
 
-	return validateSessionAccessClaims(v.issuer, payload)
+	return validateSessionAccessClaims(v.issuer, requiredAudience, payload)
 }
 
 func validateSessionAccessClaims(
 	issuer string,
+	requiredAudience string,
 	payload sessionAccessJWTClaims,
 ) (SessionAccessTokenClaims, error) {
 	if payload.TokenUse != sessionTokenUse {
 		return SessionAccessTokenClaims{}, ErrInvalidToken
 	}
 	if payload.Issuer != issuer {
+		return SessionAccessTokenClaims{}, ErrInvalidToken
+	}
+	if !hasAudience(payload.Audience, requiredAudience) {
 		return SessionAccessTokenClaims{}, ErrInvalidToken
 	}
 	if payload.ExpiresAt == nil || payload.IssuedAt == nil {
@@ -186,4 +195,13 @@ func validateSessionAccessClaims(
 		claims.JTI = jti
 	}
 	return claims, nil
+}
+
+func hasAudience(audiences jwt.ClaimStrings, required string) bool {
+	for _, audience := range audiences {
+		if audience == required {
+			return true
+		}
+	}
+	return false
 }

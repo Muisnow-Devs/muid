@@ -97,7 +97,7 @@ func TestMintWithProfileClaims(t *testing.T) {
 		t.Fatalf("Mint: %v", err)
 	}
 
-	claims, err := verifier.VerifySessionAccessToken(ctx, tok.GetValue())
+	claims, err := verifier.VerifySessionAccessToken(ctx, tok.GetValue(), "gateway-services")
 	if err != nil {
 		t.Fatalf("VerifySessionAccessToken: %v", err)
 	}
@@ -150,7 +150,7 @@ func TestMintDegradesOnProfileFailure(t *testing.T) {
 				t.Fatalf("Mint: %v", err)
 			}
 
-			claims, err := verifier.VerifySessionAccessToken(ctx, tok.GetValue())
+			claims, err := verifier.VerifySessionAccessToken(ctx, tok.GetValue(), "gateway-services")
 			if err != nil {
 				t.Fatalf("VerifySessionAccessToken: %v", err)
 			}
@@ -191,7 +191,7 @@ func TestNewMinterClampsTTL(t *testing.T) {
 				t.Fatalf("Mint: %v", err)
 			}
 
-			claims, err := verifier.VerifySessionAccessToken(ctx, tok.GetValue())
+			claims, err := verifier.VerifySessionAccessToken(ctx, tok.GetValue(), "gateway-services")
 			if err != nil {
 				t.Fatalf("VerifySessionAccessToken: %v", err)
 			}

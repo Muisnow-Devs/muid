@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 
 	gcpsecretmanager "sanzi.io/muid/infra/secretmanager"
@@ -60,7 +61,7 @@ func TestSessionAccessTokenRoundTrip(t *testing.T) {
 		t.Fatalf("claim %q = %v, want %v", "aud", payload["aud"], wantAudience)
 	}
 
-	claims, err := verifier.VerifySessionAccessToken(ctx, token)
+	claims, err := verifier.VerifySessionAccessToken(ctx, token, sessionAudienceGatewayServices)
 	if err != nil {
 		t.Fatalf("VerifySessionAccessToken: %v", err)
 	}
@@ -89,7 +90,7 @@ func TestSessionAccessTokenClampsTTL(t *testing.T) {
 		t.Fatalf("CreateSessionAccessToken: %v", err)
 	}
 
-	claims, err := verifier.VerifySessionAccessToken(ctx, token)
+	claims, err := verifier.VerifySessionAccessToken(ctx, token, sessionAudienceGatewayServices)
 	if err != nil {
 		t.Fatalf("VerifySessionAccessToken: %v", err)
 	}
@@ -146,14 +147,14 @@ func TestTokenTypeSeparation(t *testing.T) {
 	})
 	t.Run("session verifier rejects oidc access token", func(t *testing.T) {
 		t.Parallel()
-		_, err := verifier.VerifySessionAccessToken(ctx, oidcAccessToken)
+		_, err := verifier.VerifySessionAccessToken(ctx, oidcAccessToken, sessionAudienceGatewayServices)
 		if !errors.Is(err, ErrInvalidToken) {
 			t.Fatalf("VerifySessionAccessToken err = %v, want ErrInvalidToken", err)
 		}
 	})
 	t.Run("session verifier rejects id token", func(t *testing.T) {
 		t.Parallel()
-		_, err := verifier.VerifySessionAccessToken(ctx, idToken)
+		_, err := verifier.VerifySessionAccessToken(ctx, idToken, sessionAudienceGatewayServices)
 		if !errors.Is(err, ErrInvalidToken) {
 			t.Fatalf("VerifySessionAccessToken err = %v, want ErrInvalidToken", err)
 		}
@@ -189,7 +190,7 @@ func TestVerifySessionAccessTokenRejections(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := verifier.VerifySessionAccessToken(ctx, tc.token)
+			_, err := verifier.VerifySessionAccessToken(ctx, tc.token, sessionAudienceGatewayServices)
 			if !errors.Is(err, tc.wantErr) {
 				t.Fatalf("VerifySessionAccessToken err = %v, want %v", err, tc.wantErr)
 			}
@@ -220,8 +221,61 @@ func TestVerifySessionAccessTokenWrongIssuer(t *testing.T) {
 		t.Fatalf("RotateSecret: %v", err)
 	}
 
-	_, err = NewVerifier(manager, "https://other.test").VerifySessionAccessToken(ctx, token)
+	_, err = NewVerifier(manager, "https://other.test").VerifySessionAccessToken(
+		ctx,
+		token,
+		sessionAudienceGatewayServices,
+	)
 	if !errors.Is(err, ErrInvalidToken) {
 		t.Fatalf("VerifySessionAccessToken err = %v, want ErrInvalidToken", err)
+	}
+}
+
+func TestVerifySessionAccessTokenRequiresExactAudience(t *testing.T) {
+	t.Parallel()
+
+	ctx, signer, verifier := newTestSigner(t)
+	now := time.Now()
+	payload := sessionAccessJWTClaims{
+		TokenUse: sessionTokenUse,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   uuid.NewString(),
+			Issuer:    "https://id.test",
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Minute)),
+		},
+	}
+	tokenWithoutAudience, err := signer.signClaims(ctx, payload, sessionAccessTokenTyp)
+	if err != nil {
+		t.Fatalf("signClaims: %v", err)
+	}
+	token, err := signer.CreateSessionAccessToken(ctx, SessionAccessTokenClaims{UserID: uuid.New()})
+	if err != nil {
+		t.Fatalf("CreateSessionAccessToken: %v", err)
+	}
+
+	tests := []struct {
+		name     string
+		token    string
+		audience string
+		wantErr  error
+	}{
+		{name: "gateway services", token: token, audience: sessionAudienceGatewayServices},
+		{name: "authn account", token: token, audience: sessionAudienceAuthnAccount},
+		{name: "blank", token: token, audience: " ", wantErr: signature.ErrInvalidConfig},
+		{name: "missing", token: tokenWithoutAudience, audience: sessionAudienceAuthnAccount, wantErr: ErrInvalidToken},
+		{name: "wrong", token: token, audience: "other", wantErr: ErrInvalidToken},
+		{name: "case sensitive", token: token, audience: "AUTHN-ACCOUNT", wantErr: ErrInvalidToken},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := verifier.VerifySessionAccessToken(ctx, tc.token, tc.audience)
+			if !errors.Is(err, tc.wantErr) {
+				t.Fatalf("VerifySessionAccessToken error = %v, want %v", err, tc.wantErr)
+			}
+		})
 	}
 }

@@ -2,6 +2,7 @@ package authngrpc
 
 import (
 	"sanzi.io/muid/internal/authn/accesstoken"
+	"sanzi.io/muid/internal/authn/account"
 	authnent "sanzi.io/muid/internal/authn/ent"
 	"sanzi.io/muid/internal/identity"
 	"sanzi.io/muid/internal/identity/issuer"
@@ -14,6 +15,7 @@ import (
 
 // HandlerDependencies contains the dependencies for GRPCHandler.
 type HandlerDependencies struct {
+	AccountReader   account.Reader
 	DB              *authnent.Client
 	TransitionStore session.AuthTransitionStore
 	PubSub          pubsub.PubSub

@@ -5,12 +5,13 @@ import (
 	"os"
 	"strings"
 
+	"sanzi.io/muid/pkg/mtls"
 	"sanzi.io/muid/pkg/shared"
 )
 
 // Validate checks the services gateway configuration for required production
-// settings. In debug mode the checks are skipped so the gateway runs locally
-// without mTLS.
+// settings. Both ingress and backend mTLS are required in every mode because
+// neither edge nor backend workload identity exists on plaintext transport.
 func (cfg Config) Validate() error {
 	return cfg.validate(os.LookupEnv)
 }
@@ -29,6 +30,22 @@ func (cfg Config) validate(lookup shared.EnvLookup) error {
 }
 
 func (cfg Config) validateValues() error {
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.MTLSClientCAPath,
+		cfg.TLSCertPath,
+		cfg.TLSKeyPath,
+	); err != nil {
+		return fmt.Errorf("gateway services ingress mTLS configuration: %w", err)
+	}
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	); err != nil {
+		return fmt.Errorf("gateway services outbound gRPC TLS configuration: %w", err)
+	}
 	for _, field := range []struct {
 		name  string
 		value string
@@ -56,18 +73,6 @@ func (cfg Config) validateValues() error {
 	}
 	if cfg.JWKSCacheTTLSeconds <= 0 || cfg.RateLimitWindowSeconds <= 0 || cfg.RequestTimeoutSeconds <= 0 {
 		return fmt.Errorf("gateway services TTL, rate-limit window, and request timeout values must be positive")
-	}
-	configured := 0
-	for _, value := range []string{cfg.MTLSClientCAPath, cfg.TLSCertPath, cfg.TLSKeyPath} {
-		if strings.TrimSpace(value) != "" {
-			configured++
-		}
-	}
-	if configured != 0 && configured != 3 {
-		return fmt.Errorf("gateway services mTLS client CA, certificate, and key must be configured together")
-	}
-	if !cfg.Debug && configured != 3 {
-		return fmt.Errorf("gateway services mTLS client CA, certificate, and key must not be empty in production")
 	}
 	return nil
 }

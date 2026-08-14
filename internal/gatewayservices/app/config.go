@@ -36,12 +36,17 @@ type Config struct {
 	RateLimit              int64 `envconfig:"RATE_LIMIT" default:"1200"`
 	RateLimitWindowSeconds int   `envconfig:"RATE_LIMIT_WINDOW_SECONDS" default:"60"`
 
-	// mTLS: when MTLSClientCAPath is set, the listener requires and verifies
-	// client certs against that CA bundle; TLSCertPath/TLSKeyPath are then the
-	// server's own certificate. All three must be set together.
+	// Ingress mTLS verifies edge client certificates against MTLSClientCAPath.
+	// The full group is mandatory in every mode.
 	MTLSClientCAPath string `envconfig:"MTLS_CLIENT_CA_PATH"`
 	TLSCertPath      string `envconfig:"TLS_CERT_PATH"`
 	TLSKeyPath       string `envconfig:"TLS_KEY_PATH"`
+
+	// Backend mTLS presents the gateway-services workload certificate and
+	// verifies Authn/Profile server names against the configured roots.
+	GRPCClientCertPath string `envconfig:"GRPC_CLIENT_CERT_PATH"`
+	GRPCClientKeyPath  string `envconfig:"GRPC_CLIENT_KEY_PATH"`
+	GRPCRootCAPath     string `envconfig:"GRPC_ROOT_CA_PATH"`
 
 	RequestTimeoutSeconds int `envconfig:"REQUEST_TIMEOUT_SECONDS" default:"15"`
 }

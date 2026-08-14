@@ -28,7 +28,7 @@ func TestConfigValidate(t *testing.T) {
 				cfg.TLSKeyPath = ""
 			},
 			env:         servicesProductionEnv(),
-			wantErrPart: "configured together",
+			wantErrPart: "ingress mTLS",
 		},
 		{
 			name: "partial mTLS config in debug",
@@ -37,17 +37,37 @@ func TestConfigValidate(t *testing.T) {
 				cfg.MTLSClientCAPath = ""
 			},
 			env:         map[string]string{},
-			wantErrPart: "configured together",
+			wantErrPart: "ingress mTLS",
 		},
 		{
-			name: "debug permits mTLS disabled",
+			name: "debug rejects mTLS disabled",
 			mutate: func(cfg *Config) {
 				cfg.Debug = true
 				cfg.MTLSClientCAPath = ""
 				cfg.TLSCertPath = ""
 				cfg.TLSKeyPath = ""
 			},
-			env: map[string]string{},
+			env:         map[string]string{},
+			wantErrPart: "ingress mTLS",
+		},
+		{
+			name: "partial outbound TLS",
+			mutate: func(cfg *Config) {
+				cfg.GRPCRootCAPath = ""
+			},
+			env:         servicesProductionEnv(),
+			wantErrPart: "outbound gRPC TLS",
+		},
+		{
+			name: "debug rejects outbound TLS disabled",
+			mutate: func(cfg *Config) {
+				cfg.Debug = true
+				cfg.GRPCClientCertPath = ""
+				cfg.GRPCClientKeyPath = ""
+				cfg.GRPCRootCAPath = ""
+			},
+			env:         map[string]string{},
+			wantErrPart: "outbound gRPC TLS",
 		},
 		{
 			name: "empty backend address",
@@ -144,6 +164,9 @@ func validServicesConfig() Config {
 		MTLSClientCAPath:         "certs/client-ca.pem",
 		TLSCertPath:              "certs/server.pem",
 		TLSKeyPath:               "certs/server-key.pem",
+		GRPCClientCertPath:       "certs/client.pem",
+		GRPCClientKeyPath:        "certs/client-key.pem",
+		GRPCRootCAPath:           "certs/server-ca.pem",
 		RequestTimeoutSeconds:    15,
 	}
 }

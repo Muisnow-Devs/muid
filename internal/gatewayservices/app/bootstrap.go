@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"os"
-	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -34,17 +32,37 @@ type InfraDependencies struct {
 }
 
 // NewInfra dials authn (JWKS) + profile, opens Redis, builds the JWT verifier,
-// and constructs the mTLS server config when configured.
+// and constructs the mandatory ingress and backend mTLS configurations.
 func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
+	tlsConfig, err := buildMTLS(cfg)
+	if err != nil {
+		return nil, err
+	}
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	); err != nil {
+		return nil, fmt.Errorf("gateway services outbound gRPC TLS: %w", err)
+	}
+	clientTLS, err := mtls.LoadClientTLSConfig(
+		cfg.GRPCClientCertPath,
+		cfg.GRPCClientKeyPath,
+		cfg.GRPCRootCAPath,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("gateway services outbound gRPC TLS: %w", err)
+	}
 	redisKV := redis.NewRedisKVStore(cfg.RedisAddr, cfg.RedisDatabase)
 
-	authnConn, err := grpcutils.DialInsecureClient(cfg.AuthnGRPCAddr, grpcutils.DefaultClientResilienceConfig())
+	authnConn, err := grpcutils.DialTLSClient(cfg.AuthnGRPCAddr, clientTLS, grpcutils.DefaultClientResilienceConfig())
 	if err != nil {
 		errutil.CloseIf(redisKV)
 		return nil, fmt.Errorf("authn grpc dial: %w", err)
 	}
 
-	profileConn, err := grpcutils.DialInsecureClient(cfg.ProfileGRPCAddr, grpcutils.DefaultClientResilienceConfig())
+	profileConn, err := grpcutils.DialTLSClient(cfg.ProfileGRPCAddr, clientTLS, grpcutils.DefaultClientResilienceConfig())
 	if err != nil {
 		errutil.CloseIf(authnConn)
 		errutil.CloseIf(redisKV)
@@ -62,50 +80,33 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 		Redis:        redisKV,
 		Verifier:     verifier,
 		Profile:      profilepb.NewProfileServiceClient(profileConn),
+		TLSConfig:    tlsConfig,
 		authnConn:    authnConn,
 		profileConn:  profileConn,
 	}
 
-	tlsConfig, err := buildMTLS(cfg)
-	if err != nil {
-		deps.Close()
-		return nil, err
-	}
-	if tlsConfig == nil && !cfg.Debug {
-		deps.Close()
-		return nil, fmt.Errorf("mtls: client-cert verification is required in production; set MTLS_CLIENT_CA_PATH, TLS_CERT_PATH and TLS_KEY_PATH (or DEBUG=true for local dev)")
-	}
-	deps.TLSConfig = tlsConfig
-
 	return deps, nil
 }
 
-// buildMTLS returns a client-cert-verifying tls.Config, or nil when mTLS is not
-// configured. Misconfiguration (partial settings) is an error.
+// buildMTLS returns the mandatory client-cert-verifying listener config.
 func buildMTLS(cfg Config) (*tls.Config, error) {
-	caPath := strings.TrimSpace(cfg.MTLSClientCAPath)
-	certPath := strings.TrimSpace(cfg.TLSCertPath)
-	keyPath := strings.TrimSpace(cfg.TLSKeyPath)
-	if caPath == "" && certPath == "" && keyPath == "" {
-		return nil, nil
+	if err := mtls.ValidatePathGroup(
+		true,
+		cfg.MTLSClientCAPath,
+		cfg.TLSCertPath,
+		cfg.TLSKeyPath,
+	); err != nil {
+		return nil, fmt.Errorf("gateway services ingress mTLS: %w", err)
 	}
-	if caPath == "" || certPath == "" || keyPath == "" {
-		return nil, fmt.Errorf("mtls: MTLS_CLIENT_CA_PATH, TLS_CERT_PATH and TLS_KEY_PATH must all be set")
-	}
-
-	caPEM, err := os.ReadFile(caPath)
+	tlsConfig, err := mtls.LoadServerTLSConfig(
+		cfg.TLSCertPath,
+		cfg.TLSKeyPath,
+		cfg.MTLSClientCAPath,
+	)
 	if err != nil {
-		return nil, fmt.Errorf("mtls: read client CA: %w", err)
+		return nil, fmt.Errorf("gateway services ingress mTLS: %w", err)
 	}
-	roots, err := mtls.NewStaticRootsFromPEM(caPEM)
-	if err != nil {
-		return nil, fmt.Errorf("mtls: client CA: %w", err)
-	}
-	serverCert, err := tls.LoadX509KeyPair(certPath, keyPath)
-	if err != nil {
-		return nil, fmt.Errorf("mtls: load server cert: %w", err)
-	}
-	return mtls.ServerTLSConfig(roots, serverCert)
+	return tlsConfig, nil
 }
 
 // Close releases all owned resources.

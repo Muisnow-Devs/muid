@@ -43,6 +43,9 @@ func NewServicesGRPC(
 	handler gatewaypb.ServicesGatewayServiceServer,
 	tracer tracing.Tracer,
 ) (*ServicesGRPC, error) {
+	if deps == nil || deps.TLSConfig == nil {
+		return nil, fmt.Errorf("gateway services ingress mTLS is required")
+	}
 	cfg := deps.GlobalConfig
 	if tracer == nil {
 		tracer = tracing.NewNoopTracer(tracing.NoopConfig{Debug: cfg.Debug})
@@ -77,9 +80,7 @@ func NewServicesGRPC(
 			),
 		),
 	}
-	if deps.TLSConfig != nil {
-		opts = append(opts, grpc.Creds(credentials.NewTLS(deps.TLSConfig)))
-	}
+	opts = append(opts, grpc.Creds(credentials.NewTLS(deps.TLSConfig)))
 
 	server := grpc.NewServer(opts...)
 	gatewaypb.RegisterServicesGatewayServiceServer(server, handler)
@@ -87,7 +88,7 @@ func NewServicesGRPC(
 	return &ServicesGRPC{
 		server:          server,
 		listener:        listener,
-		mtls:            deps.TLSConfig != nil,
+		mtls:            true,
 		shutdownTimeout: grpcShutdownTimeout(cfg.RequestTimeoutSeconds),
 	}, nil
 }

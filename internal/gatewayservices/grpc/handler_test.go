@@ -18,14 +18,12 @@ import (
 
 type fakeProfile struct {
 	profilepb.ProfileServiceClient
-	gotUserID string
+	gotUserIDs []string
 }
 
 func (f *fakeProfile) GetProfile(ctx context.Context, req *profilepb.GetProfileRequest, _ ...grpc.CallOption) (*profilepb.GetProfileResponse, error) {
 	if md, ok := metadata.FromOutgoingContext(ctx); ok {
-		if v := md.Get(httpmeta.UserIDKey); len(v) == 1 {
-			f.gotUserID = v[0]
-		}
+		f.gotUserIDs = append([]string(nil), md.Get(httpmeta.UserIDKey)...)
 	}
 	resp := &profilepb.GetProfileResponse{}
 	resp.SetId(req.GetId())
@@ -51,7 +49,11 @@ func TestGetMeReturnsProfileAndForwardsIdentity(t *testing.T) {
 	profile := &fakeProfile{}
 	h := NewHandler(profile)
 	sub := uuid.New()
-	ctx := jwtauth.WithClaims(context.Background(), jwtauth.Claims{UserID: sub})
+	ctx := metadata.NewOutgoingContext(context.Background(), metadata.Pairs(
+		httpmeta.UserIDKey, uuid.NewString(),
+		httpmeta.UserIDKey, uuid.NewString(),
+	))
+	ctx = jwtauth.WithClaims(ctx, jwtauth.Claims{UserID: sub})
 
 	resp, err := h.GetMe(ctx, &gatewaypb.GetMeRequest{})
 	if err != nil {
@@ -63,7 +65,7 @@ func TestGetMeReturnsProfileAndForwardsIdentity(t *testing.T) {
 	if resp.GetUser().GetUsername() != "alice" {
 		t.Fatalf("username = %q", resp.GetUser().GetUsername())
 	}
-	if profile.gotUserID != sub.String() {
-		t.Fatalf("profile received x-user-id %q, want %q", profile.gotUserID, sub.String())
+	if len(profile.gotUserIDs) != 1 || profile.gotUserIDs[0] != sub.String() {
+		t.Fatalf("profile received x-user-id values %v, want [%q]", profile.gotUserIDs, sub.String())
 	}
 }

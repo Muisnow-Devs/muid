@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package muid.authn.v1;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
+
+service AccountService {
+  rpc GetMyAccount(GetMyAccountRequest) returns (GetMyAccountResponse);
+}
+
+enum AccountStatus {
+  ACCOUNT_STATUS_UNSPECIFIED = 0;
+  ACCOUNT_STATUS_ACTIVE = 1;
+  ACCOUNT_STATUS_DISABLED = 2;
+  ACCOUNT_STATUS_PENDING_DELETION = 3;
+}
+
+message LinkedIdentitySummary {
+  string provider = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+  }];
+  google.protobuf.Timestamp linked_at = 2;
+}
+
+message Account {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  string primary_email = 2 [(buf.validate.field).string = {
+    email: true
+    max_len: 254
+  }];
+  bool primary_email_verified = 3;
+  AccountStatus account_status = 4;
+  google.protobuf.Timestamp created_at = 5;
+  repeated LinkedIdentitySummary linked_identities = 6;
+}
+
+message GetMyAccountRequest {}
+
+message GetMyAccountResponse {
+  Account account = 1;
+}

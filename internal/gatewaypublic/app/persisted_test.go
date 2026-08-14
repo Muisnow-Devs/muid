@@ -16,13 +16,15 @@ import (
 // the given trusted-documents allowlist.
 func persistedInfra(ops map[string]string) *InfraDependencies {
 	return &InfraDependencies{
-		GlobalConfig: Config{Port: 8080, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 90, RiskPoWThreshold: 50, PoWDifficulty: 8},
-		Redis:        mocked.NewMockKVStore(),
-		Geo:          geoip.NewMockResolver(geoip.GeoInfo{CountryCode: "US", Resolved: true}),
-		Turnstile:    turnstile.AlwaysValid(),
-		OIDCClient:   fakeOIDC{},
-		AuthnClient:  fakeAuthnFlow{},
-		PersistedOps: ops,
+		GlobalConfig:         Config{Port: 8080, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 90, RiskPoWThreshold: 50, PoWDifficulty: 8},
+		Redis:                mocked.NewMockKVStore(),
+		Geo:                  geoip.NewMockResolver(geoip.GeoInfo{CountryCode: "US", Resolved: true}),
+		Turnstile:            turnstile.AlwaysValid(),
+		OIDCClient:           fakeOIDC{},
+		AuthFlowClient:       fakeAuthnFlow{},
+		SessionClient:        fakeAuthnFlow{},
+		LinkedIdentityClient: fakeAuthnFlow{},
+		PersistedOps:         ops,
 	}
 }
 

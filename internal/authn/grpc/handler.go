@@ -19,9 +19,12 @@ import (
 	"sanzi.io/muid/pkg/shared/pubsub"
 )
 
-// GRPCHandler implements the AuthnService gRPC server.
+// GRPCHandler implements Authn's focused gRPC services.
 type GRPCHandler struct {
-	pb.UnimplementedAuthnServiceServer
+	pb.UnimplementedAuthenticationFlowServiceServer
+	pb.UnimplementedSessionServiceServer
+	pb.UnimplementedLinkedIdentityServiceServer
+	pb.UnimplementedSigningKeyServiceServer
 
 	db              *authnent.Client
 	transitionStore session.AuthTransitionStore
@@ -39,7 +42,7 @@ type GRPCHandler struct {
 }
 
 // NewGRPCHandler returns a GRPCHandler wired from the provided dependencies.
-func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
+func NewGRPCHandler(deps HandlerDependencies) *GRPCHandler {
 	ma := int64(deps.MaxAuthAttempts)
 	if ma < 1 {
 		ma = 3
@@ -59,15 +62,15 @@ func NewGRPCHandler(deps HandlerDependencies) pb.AuthnServiceServer {
 	}
 }
 
-// continueAuthSuccess builds a successful ContinueAuthSessionResponse.
+// continueAuthSuccess builds a successful ContinueLoginResponse.
 func continueAuthSuccess(
 	tid uuid.UUID,
 	res *sessionpb.AuthenticatedResult,
-) *pb.ContinueAuthSessionResponse {
+) *pb.ContinueLoginResponse {
 	authOK := &sessionpb.AuthSuccess{}
 	authOK.SetResult(res)
 
-	out := &pb.ContinueAuthSessionResponse{}
+	out := &pb.ContinueLoginResponse{}
 	out.SetTransitionId(tid.String())
 	out.SetStatus(basicpb.AuthStatus_AUTH_STATUS_AUTHENTICATED)
 	out.SetAuthSuccess(authOK)

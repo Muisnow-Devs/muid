@@ -131,7 +131,9 @@ const file_authn_v1_signing_key_proto_rawDesc = "" +
 	"\x14GetPublicKeysRequest\"`\n" +
 	"\x15GetPublicKeysResponse\x12G\n" +
 	"\vpublic_keys\x18\x01 \x03(\v2&.muid.authn.v1.certification.PublicKeyR\n" +
-	"publicKeysB\xa2\x01\n" +
+	"publicKeys2o\n" +
+	"\x11SigningKeyService\x12Z\n" +
+	"\rGetPublicKeys\x12#.muid.authn.v1.GetPublicKeysRequest\x1a$.muid.authn.v1.GetPublicKeysResponseB\xa2\x01\n" +
 	"\x11com.muid.authn.v1B\x0fSigningKeyProtoP\x01Z&sanzi.io/muid/api/proto/authn/v1;authn\xa2\x02\x03MAX\xaa\x02\rMuid.Authn.V1\xca\x02\rMuid\\Authn\\V1\xe2\x02\x19Muid\\Authn\\V1\\GPBMetadata\xea\x02\x0fMuid::Authn::V1b\x06proto3"
 
 var file_authn_v1_signing_key_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
@@ -142,8 +144,10 @@ var file_authn_v1_signing_key_proto_goTypes = []any{
 }
 var file_authn_v1_signing_key_proto_depIdxs = []int32{
 	2, // 0: muid.authn.v1.GetPublicKeysResponse.public_keys:type_name -> muid.authn.v1.certification.PublicKey
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
+	0, // 1: muid.authn.v1.SigningKeyService.GetPublicKeys:input_type -> muid.authn.v1.GetPublicKeysRequest
+	1, // 2: muid.authn.v1.SigningKeyService.GetPublicKeys:output_type -> muid.authn.v1.GetPublicKeysResponse
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
 	1, // [1:1] is the sub-list for extension extendee
 	0, // [0:1] is the sub-list for field type_name
@@ -162,7 +166,7 @@ func file_authn_v1_signing_key_proto_init() {
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_authn_v1_signing_key_proto_goTypes,
 		DependencyIndexes: file_authn_v1_signing_key_proto_depIdxs,

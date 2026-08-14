@@ -15,12 +15,12 @@ import (
 // failures are returned as response data (never gRPC-error leakage), matching
 // the proto contract.
 type oidcHandlers struct {
-	oidc  authnpb.OIDCServiceClient
-	authn authnpb.AuthnServiceClient
+	oidc        authnpb.OIDCServiceClient
+	signingKeys authnpb.SigningKeyServiceClient
 }
 
 func newOIDCHandlers(deps *InfraDependencies) *oidcHandlers {
-	return &oidcHandlers{oidc: deps.OIDCClient, authn: deps.AuthnClient}
+	return &oidcHandlers{oidc: deps.OIDCClient, signingKeys: deps.SigningKeyClient}
 }
 
 // discoveryDocument mirrors the OIDC discovery JSON. Field names match the
@@ -78,7 +78,7 @@ type jwk struct {
 }
 
 func (h *oidcHandlers) jwks(w http.ResponseWriter, r *http.Request) {
-	resp, err := h.authn.GetPublicKeys(reqctx.OutgoingMetadata(r.Context()), &authnpb.GetPublicKeysRequest{})
+	resp, err := h.signingKeys.GetPublicKeys(reqctx.OutgoingMetadata(r.Context()), &authnpb.GetPublicKeysRequest{})
 	if err != nil {
 		writeUpstreamError(w, r, err)
 		return

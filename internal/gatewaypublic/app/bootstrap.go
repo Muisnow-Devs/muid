@@ -34,12 +34,15 @@ type InfraDependencies struct {
 	Turnstile turnstile.Verifier
 	CSRF      *csrf.Manager
 
-	OIDCClient  authnpb.OIDCServiceClient
-	AuthnClient authnpb.AuthnServiceClient
+	OIDCClient           authnpb.OIDCServiceClient
+	AuthFlowClient       authnpb.AuthenticationFlowServiceClient
+	SessionClient        authnpb.SessionServiceClient
+	LinkedIdentityClient authnpb.LinkedIdentityServiceClient
+	SigningKeyClient     authnpb.SigningKeyServiceClient
 
 	// Data-plane clients (BFF fan-out) + local access-token JWT verifier.
-	AuthzUserClient authzpb.AuthzUserServiceClient
-	AuthzOrgClient  authzpb.AuthzOrganizationAdminServiceClient
+	AuthzUserClient  authzpb.AuthzUserServiceClient
+	AuthzOrgClient   authzpb.AuthzOrganizationAdminServiceClient
 	ProfileClient    profilepb.ProfileServiceClient
 	OrgProfileClient profilepb.OrganizationProfileServiceClient
 	Verifier         graph.TokenVerifier
@@ -97,17 +100,20 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 		return nil, fmt.Errorf("profile grpc dial: %w", err)
 	}
 
-	authnClient := authnpb.NewAuthnServiceClient(authnConn)
+	signingKeyClient := authnpb.NewSigningKeyServiceClient(authnConn)
 
 	deps := &InfraDependencies{
-		GlobalConfig: cfg,
-		Redis:        redisKV,
-		OIDCClient:   authnpb.NewOIDCServiceClient(authnConn),
-		AuthnClient:  authnClient,
+		GlobalConfig:         cfg,
+		Redis:                redisKV,
+		OIDCClient:           authnpb.NewOIDCServiceClient(authnConn),
+		AuthFlowClient:       authnpb.NewAuthenticationFlowServiceClient(authnConn),
+		SessionClient:        authnpb.NewSessionServiceClient(authnConn),
+		LinkedIdentityClient: authnpb.NewLinkedIdentityServiceClient(authnConn),
+		SigningKeyClient:     signingKeyClient,
 		// authn hosts the JWKS (GetPublicKeys); reuse its connection to verify
 		// session access-token JWTs locally at the edge.
 		Verifier: jwtauth.NewAuthnVerifier(
-			authnClient,
+			signingKeyClient,
 			cfg.SessionAccessTokenIssuer,
 			time.Duration(cfg.JWKSCacheTTLSeconds)*time.Second,
 		),

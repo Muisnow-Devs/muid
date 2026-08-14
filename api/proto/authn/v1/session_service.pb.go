@@ -7,8 +7,10 @@
 package authn
 
 import (
+	_ "buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go/buf/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	session "sanzi.io/muid/api/proto/authn/v1/session"
 	unsafe "unsafe"
@@ -21,199 +23,31 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Session token is passed via the authorization metadata header: "Session <token>".
-type GetAuthorizedSessionRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetAuthorizedSessionRequest) Reset() {
-	*x = GetAuthorizedSessionRequest{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetAuthorizedSessionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetAuthorizedSessionRequest) ProtoMessage() {}
-
-func (x *GetAuthorizedSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-type GetAuthorizedSessionRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-}
-
-func (b0 GetAuthorizedSessionRequest_builder) Build() *GetAuthorizedSessionRequest {
-	m0 := &GetAuthorizedSessionRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	return m0
-}
-
-type GetAuthorizedSessionResponse struct {
-	state              protoimpl.MessageState       `protogen:"opaque.v1"`
-	xxx_hidden_Valid   bool                         `protobuf:"varint,1,opt,name=valid,proto3"`
-	xxx_hidden_Session *session.AuthenticatedResult `protobuf:"bytes,2,opt,name=session,proto3"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
-}
-
-func (x *GetAuthorizedSessionResponse) Reset() {
-	*x = GetAuthorizedSessionResponse{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetAuthorizedSessionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetAuthorizedSessionResponse) ProtoMessage() {}
-
-func (x *GetAuthorizedSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-func (x *GetAuthorizedSessionResponse) GetValid() bool {
-	if x != nil {
-		return x.xxx_hidden_Valid
-	}
-	return false
-}
-
-func (x *GetAuthorizedSessionResponse) GetSession() *session.AuthenticatedResult {
-	if x != nil {
-		return x.xxx_hidden_Session
-	}
-	return nil
-}
-
-func (x *GetAuthorizedSessionResponse) SetValid(v bool) {
-	x.xxx_hidden_Valid = v
-}
-
-func (x *GetAuthorizedSessionResponse) SetSession(v *session.AuthenticatedResult) {
-	x.xxx_hidden_Session = v
-}
-
-func (x *GetAuthorizedSessionResponse) HasSession() bool {
-	if x == nil {
-		return false
-	}
-	return x.xxx_hidden_Session != nil
-}
-
-func (x *GetAuthorizedSessionResponse) ClearSession() {
-	x.xxx_hidden_Session = nil
-}
-
-type GetAuthorizedSessionResponse_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-	Valid   bool
-	Session *session.AuthenticatedResult
-}
-
-func (b0 GetAuthorizedSessionResponse_builder) Build() *GetAuthorizedSessionResponse {
-	m0 := &GetAuthorizedSessionResponse{}
-	b, x := &b0, m0
-	_, _ = b, x
-	x.xxx_hidden_Valid = b.Valid
-	x.xxx_hidden_Session = b.Session
-	return m0
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-type GetAuthenticatedPrincipalRequest struct {
-	state         protoimpl.MessageState `protogen:"opaque.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetAuthenticatedPrincipalRequest) Reset() {
-	*x = GetAuthenticatedPrincipalRequest{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[2]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetAuthenticatedPrincipalRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetAuthenticatedPrincipalRequest) ProtoMessage() {}
-
-func (x *GetAuthenticatedPrincipalRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[2]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-type GetAuthenticatedPrincipalRequest_builder struct {
-	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
-
-}
-
-func (b0 GetAuthenticatedPrincipalRequest_builder) Build() *GetAuthenticatedPrincipalRequest {
-	m0 := &GetAuthenticatedPrincipalRequest{}
-	b, x := &b0, m0
-	_, _ = b, x
-	return m0
-}
-
-type GetAuthenticatedPrincipalResponse struct {
-	state                protoimpl.MessageState          `protogen:"opaque.v1"`
-	xxx_hidden_Valid     bool                            `protobuf:"varint,1,opt,name=valid,proto3"`
-	xxx_hidden_Principal *session.AuthenticatedPrincipal `protobuf:"bytes,2,opt,name=principal,proto3"`
+type SessionPrincipal struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_UserId    string                 `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3"`
+	xxx_hidden_AuthLevel session.AuthLevel      `protobuf:"varint,2,opt,name=auth_level,json=authLevel,proto3,enum=muid.authn.v1.session.AuthLevel"`
+	xxx_hidden_IssuedAt  *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=issued_at,json=issuedAt,proto3"`
+	xxx_hidden_ExpiresAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=expires_at,json=expiresAt,proto3"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
 }
 
-func (x *GetAuthenticatedPrincipalResponse) Reset() {
-	*x = GetAuthenticatedPrincipalResponse{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[3]
+func (x *SessionPrincipal) Reset() {
+	*x = SessionPrincipal{}
+	mi := &file_authn_v1_session_service_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetAuthenticatedPrincipalResponse) String() string {
+func (x *SessionPrincipal) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetAuthenticatedPrincipalResponse) ProtoMessage() {}
+func (*SessionPrincipal) ProtoMessage() {}
 
-func (x *GetAuthenticatedPrincipalResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[3]
+func (x *SessionPrincipal) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_service_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -224,48 +58,211 @@ func (x *GetAuthenticatedPrincipalResponse) ProtoReflect() protoreflect.Message 
 	return mi.MessageOf(x)
 }
 
-func (x *GetAuthenticatedPrincipalResponse) GetValid() bool {
+func (x *SessionPrincipal) GetUserId() string {
+	if x != nil {
+		return x.xxx_hidden_UserId
+	}
+	return ""
+}
+
+func (x *SessionPrincipal) GetAuthLevel() session.AuthLevel {
+	if x != nil {
+		return x.xxx_hidden_AuthLevel
+	}
+	return session.AuthLevel(0)
+}
+
+func (x *SessionPrincipal) GetIssuedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_IssuedAt
+	}
+	return nil
+}
+
+func (x *SessionPrincipal) GetExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.xxx_hidden_ExpiresAt
+	}
+	return nil
+}
+
+func (x *SessionPrincipal) SetUserId(v string) {
+	x.xxx_hidden_UserId = v
+}
+
+func (x *SessionPrincipal) SetAuthLevel(v session.AuthLevel) {
+	x.xxx_hidden_AuthLevel = v
+}
+
+func (x *SessionPrincipal) SetIssuedAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_IssuedAt = v
+}
+
+func (x *SessionPrincipal) SetExpiresAt(v *timestamppb.Timestamp) {
+	x.xxx_hidden_ExpiresAt = v
+}
+
+func (x *SessionPrincipal) HasIssuedAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_IssuedAt != nil
+}
+
+func (x *SessionPrincipal) HasExpiresAt() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ExpiresAt != nil
+}
+
+func (x *SessionPrincipal) ClearIssuedAt() {
+	x.xxx_hidden_IssuedAt = nil
+}
+
+func (x *SessionPrincipal) ClearExpiresAt() {
+	x.xxx_hidden_ExpiresAt = nil
+}
+
+type SessionPrincipal_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	UserId    string
+	AuthLevel session.AuthLevel
+	IssuedAt  *timestamppb.Timestamp
+	ExpiresAt *timestamppb.Timestamp
+}
+
+func (b0 SessionPrincipal_builder) Build() *SessionPrincipal {
+	m0 := &SessionPrincipal{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_UserId = b.UserId
+	x.xxx_hidden_AuthLevel = b.AuthLevel
+	x.xxx_hidden_IssuedAt = b.IssuedAt
+	x.xxx_hidden_ExpiresAt = b.ExpiresAt
+	return m0
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+type GetSessionPrincipalRequest struct {
+	state         protoimpl.MessageState `protogen:"opaque.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSessionPrincipalRequest) Reset() {
+	*x = GetSessionPrincipalRequest{}
+	mi := &file_authn_v1_session_service_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSessionPrincipalRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSessionPrincipalRequest) ProtoMessage() {}
+
+func (x *GetSessionPrincipalRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_service_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+type GetSessionPrincipalRequest_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+}
+
+func (b0 GetSessionPrincipalRequest_builder) Build() *GetSessionPrincipalRequest {
+	m0 := &GetSessionPrincipalRequest{}
+	b, x := &b0, m0
+	_, _ = b, x
+	return m0
+}
+
+type GetSessionPrincipalResponse struct {
+	state                protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_Valid     bool                   `protobuf:"varint,1,opt,name=valid,proto3"`
+	xxx_hidden_Principal *SessionPrincipal      `protobuf:"bytes,2,opt,name=principal,proto3"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GetSessionPrincipalResponse) Reset() {
+	*x = GetSessionPrincipalResponse{}
+	mi := &file_authn_v1_session_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSessionPrincipalResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSessionPrincipalResponse) ProtoMessage() {}
+
+func (x *GetSessionPrincipalResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *GetSessionPrincipalResponse) GetValid() bool {
 	if x != nil {
 		return x.xxx_hidden_Valid
 	}
 	return false
 }
 
-func (x *GetAuthenticatedPrincipalResponse) GetPrincipal() *session.AuthenticatedPrincipal {
+func (x *GetSessionPrincipalResponse) GetPrincipal() *SessionPrincipal {
 	if x != nil {
 		return x.xxx_hidden_Principal
 	}
 	return nil
 }
 
-func (x *GetAuthenticatedPrincipalResponse) SetValid(v bool) {
+func (x *GetSessionPrincipalResponse) SetValid(v bool) {
 	x.xxx_hidden_Valid = v
 }
 
-func (x *GetAuthenticatedPrincipalResponse) SetPrincipal(v *session.AuthenticatedPrincipal) {
+func (x *GetSessionPrincipalResponse) SetPrincipal(v *SessionPrincipal) {
 	x.xxx_hidden_Principal = v
 }
 
-func (x *GetAuthenticatedPrincipalResponse) HasPrincipal() bool {
+func (x *GetSessionPrincipalResponse) HasPrincipal() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_Principal != nil
 }
 
-func (x *GetAuthenticatedPrincipalResponse) ClearPrincipal() {
+func (x *GetSessionPrincipalResponse) ClearPrincipal() {
 	x.xxx_hidden_Principal = nil
 }
 
-type GetAuthenticatedPrincipalResponse_builder struct {
+type GetSessionPrincipalResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Valid     bool
-	Principal *session.AuthenticatedPrincipal
+	Principal *SessionPrincipal
 }
 
-func (b0 GetAuthenticatedPrincipalResponse_builder) Build() *GetAuthenticatedPrincipalResponse {
-	m0 := &GetAuthenticatedPrincipalResponse{}
+func (b0 GetSessionPrincipalResponse_builder) Build() *GetSessionPrincipalResponse {
+	m0 := &GetSessionPrincipalResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Valid = b.Valid
@@ -282,7 +279,7 @@ type RevokeSessionRequest struct {
 
 func (x *RevokeSessionRequest) Reset() {
 	*x = RevokeSessionRequest{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[4]
+	mi := &file_authn_v1_session_service_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -294,7 +291,7 @@ func (x *RevokeSessionRequest) String() string {
 func (*RevokeSessionRequest) ProtoMessage() {}
 
 func (x *RevokeSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[4]
+	mi := &file_authn_v1_session_service_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -326,7 +323,7 @@ type RevokeSessionResponse struct {
 
 func (x *RevokeSessionResponse) Reset() {
 	*x = RevokeSessionResponse{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[5]
+	mi := &file_authn_v1_session_service_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -338,7 +335,7 @@ func (x *RevokeSessionResponse) String() string {
 func (*RevokeSessionResponse) ProtoMessage() {}
 
 func (x *RevokeSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[5]
+	mi := &file_authn_v1_session_service_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -375,27 +372,27 @@ func (b0 RevokeSessionResponse_builder) Build() *RevokeSessionResponse {
 }
 
 // Session token is passed via the authorization metadata header: "Session <token>".
-type ExtendSessionRequest struct {
+type RefreshSessionRequest struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ExtendSessionRequest) Reset() {
-	*x = ExtendSessionRequest{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[6]
+func (x *RefreshSessionRequest) Reset() {
+	*x = RefreshSessionRequest{}
+	mi := &file_authn_v1_session_service_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExtendSessionRequest) String() string {
+func (x *RefreshSessionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExtendSessionRequest) ProtoMessage() {}
+func (*RefreshSessionRequest) ProtoMessage() {}
 
-func (x *ExtendSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[6]
+func (x *RefreshSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_service_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -406,40 +403,40 @@ func (x *ExtendSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-type ExtendSessionRequest_builder struct {
+type RefreshSessionRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 }
 
-func (b0 ExtendSessionRequest_builder) Build() *ExtendSessionRequest {
-	m0 := &ExtendSessionRequest{}
+func (b0 RefreshSessionRequest_builder) Build() *RefreshSessionRequest {
+	m0 := &RefreshSessionRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	return m0
 }
 
-type ExtendSessionResponse struct {
+type RefreshSessionResponse struct {
 	state                     protoimpl.MessageState  `protogen:"opaque.v1"`
 	xxx_hidden_SessionContext *session.SessionContext `protobuf:"bytes,1,opt,name=session_context,json=sessionContext,proto3"`
 	unknownFields             protoimpl.UnknownFields
 	sizeCache                 protoimpl.SizeCache
 }
 
-func (x *ExtendSessionResponse) Reset() {
-	*x = ExtendSessionResponse{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[7]
+func (x *RefreshSessionResponse) Reset() {
+	*x = RefreshSessionResponse{}
+	mi := &file_authn_v1_session_service_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ExtendSessionResponse) String() string {
+func (x *RefreshSessionResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ExtendSessionResponse) ProtoMessage() {}
+func (*RefreshSessionResponse) ProtoMessage() {}
 
-func (x *ExtendSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[7]
+func (x *RefreshSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_authn_v1_session_service_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,36 +447,36 @@ func (x *ExtendSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ExtendSessionResponse) GetSessionContext() *session.SessionContext {
+func (x *RefreshSessionResponse) GetSessionContext() *session.SessionContext {
 	if x != nil {
 		return x.xxx_hidden_SessionContext
 	}
 	return nil
 }
 
-func (x *ExtendSessionResponse) SetSessionContext(v *session.SessionContext) {
+func (x *RefreshSessionResponse) SetSessionContext(v *session.SessionContext) {
 	x.xxx_hidden_SessionContext = v
 }
 
-func (x *ExtendSessionResponse) HasSessionContext() bool {
+func (x *RefreshSessionResponse) HasSessionContext() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_SessionContext != nil
 }
 
-func (x *ExtendSessionResponse) ClearSessionContext() {
+func (x *RefreshSessionResponse) ClearSessionContext() {
 	x.xxx_hidden_SessionContext = nil
 }
 
-type ExtendSessionResponse_builder struct {
+type RefreshSessionResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	SessionContext *session.SessionContext
 }
 
-func (b0 ExtendSessionResponse_builder) Build() *ExtendSessionResponse {
-	m0 := &ExtendSessionResponse{}
+func (b0 RefreshSessionResponse_builder) Build() *RefreshSessionResponse {
+	m0 := &RefreshSessionResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_SessionContext = b.SessionContext
@@ -495,7 +492,7 @@ type IssueAccessTokenRequest struct {
 
 func (x *IssueAccessTokenRequest) Reset() {
 	*x = IssueAccessTokenRequest{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[8]
+	mi := &file_authn_v1_session_service_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -507,7 +504,7 @@ func (x *IssueAccessTokenRequest) String() string {
 func (*IssueAccessTokenRequest) ProtoMessage() {}
 
 func (x *IssueAccessTokenRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[8]
+	mi := &file_authn_v1_session_service_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -539,7 +536,7 @@ type IssueAccessTokenResponse struct {
 
 func (x *IssueAccessTokenResponse) Reset() {
 	*x = IssueAccessTokenResponse{}
-	mi := &file_authn_v1_session_service_proto_msgTypes[9]
+	mi := &file_authn_v1_session_service_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -551,7 +548,7 @@ func (x *IssueAccessTokenResponse) String() string {
 func (*IssueAccessTokenResponse) ProtoMessage() {}
 
 func (x *IssueAccessTokenResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_authn_v1_session_service_proto_msgTypes[9]
+	mi := &file_authn_v1_session_service_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -602,53 +599,70 @@ var File_authn_v1_session_service_proto protoreflect.FileDescriptor
 
 const file_authn_v1_session_service_proto_rawDesc = "" +
 	"\n" +
-	"\x1eauthn/v1/session_service.proto\x12\rmuid.authn.v1\x1a\x16authn/v1/session.proto\"\x1d\n" +
-	"\x1bGetAuthorizedSessionRequest\"z\n" +
-	"\x1cGetAuthorizedSessionResponse\x12\x14\n" +
-	"\x05valid\x18\x01 \x01(\bR\x05valid\x12D\n" +
-	"\asession\x18\x02 \x01(\v2*.muid.authn.v1.session.AuthenticatedResultR\asession\"\"\n" +
-	" GetAuthenticatedPrincipalRequest\"\x86\x01\n" +
-	"!GetAuthenticatedPrincipalResponse\x12\x14\n" +
-	"\x05valid\x18\x01 \x01(\bR\x05valid\x12K\n" +
-	"\tprincipal\x18\x02 \x01(\v2-.muid.authn.v1.session.AuthenticatedPrincipalR\tprincipal\"\x16\n" +
+	"\x1eauthn/v1/session_service.proto\x12\rmuid.authn.v1\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\x1a\x1fgoogle/protobuf/timestamp.proto\"\xea\x01\n" +
+	"\x10SessionPrincipal\x12!\n" +
+	"\auser_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\x06userId\x12?\n" +
+	"\n" +
+	"auth_level\x18\x02 \x01(\x0e2 .muid.authn.v1.session.AuthLevelR\tauthLevel\x127\n" +
+	"\tissued_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\bissuedAt\x129\n" +
+	"\n" +
+	"expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\texpiresAt\"\x1c\n" +
+	"\x1aGetSessionPrincipalRequest\"r\n" +
+	"\x1bGetSessionPrincipalResponse\x12\x14\n" +
+	"\x05valid\x18\x01 \x01(\bR\x05valid\x12=\n" +
+	"\tprincipal\x18\x02 \x01(\v2\x1f.muid.authn.v1.SessionPrincipalR\tprincipal\"\x16\n" +
 	"\x14RevokeSessionRequest\"1\n" +
 	"\x15RevokeSessionResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x16\n" +
-	"\x14ExtendSessionRequest\"g\n" +
-	"\x15ExtendSessionResponse\x12N\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x17\n" +
+	"\x15RefreshSessionRequest\"h\n" +
+	"\x16RefreshSessionResponse\x12N\n" +
 	"\x0fsession_context\x18\x01 \x01(\v2%.muid.authn.v1.session.SessionContextR\x0esessionContext\"\x19\n" +
 	"\x17IssueAccessTokenRequest\"a\n" +
 	"\x18IssueAccessTokenResponse\x12E\n" +
-	"\faccess_token\x18\x01 \x01(\v2\".muid.authn.v1.session.AccessTokenR\vaccessTokenB\xa6\x01\n" +
+	"\faccess_token\x18\x01 \x01(\v2\".muid.authn.v1.session.AccessTokenR\vaccessToken2\x9e\x03\n" +
+	"\x0eSessionService\x12l\n" +
+	"\x13GetSessionPrincipal\x12).muid.authn.v1.GetSessionPrincipalRequest\x1a*.muid.authn.v1.GetSessionPrincipalResponse\x12]\n" +
+	"\x0eRefreshSession\x12$.muid.authn.v1.RefreshSessionRequest\x1a%.muid.authn.v1.RefreshSessionResponse\x12Z\n" +
+	"\rRevokeSession\x12#.muid.authn.v1.RevokeSessionRequest\x1a$.muid.authn.v1.RevokeSessionResponse\x12c\n" +
+	"\x10IssueAccessToken\x12&.muid.authn.v1.IssueAccessTokenRequest\x1a'.muid.authn.v1.IssueAccessTokenResponseB\xa6\x01\n" +
 	"\x11com.muid.authn.v1B\x13SessionServiceProtoP\x01Z&sanzi.io/muid/api/proto/authn/v1;authn\xa2\x02\x03MAX\xaa\x02\rMuid.Authn.V1\xca\x02\rMuid\\Authn\\V1\xe2\x02\x19Muid\\Authn\\V1\\GPBMetadata\xea\x02\x0fMuid::Authn::V1b\x06proto3"
 
-var file_authn_v1_session_service_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_authn_v1_session_service_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_authn_v1_session_service_proto_goTypes = []any{
-	(*GetAuthorizedSessionRequest)(nil),       // 0: muid.authn.v1.GetAuthorizedSessionRequest
-	(*GetAuthorizedSessionResponse)(nil),      // 1: muid.authn.v1.GetAuthorizedSessionResponse
-	(*GetAuthenticatedPrincipalRequest)(nil),  // 2: muid.authn.v1.GetAuthenticatedPrincipalRequest
-	(*GetAuthenticatedPrincipalResponse)(nil), // 3: muid.authn.v1.GetAuthenticatedPrincipalResponse
-	(*RevokeSessionRequest)(nil),              // 4: muid.authn.v1.RevokeSessionRequest
-	(*RevokeSessionResponse)(nil),             // 5: muid.authn.v1.RevokeSessionResponse
-	(*ExtendSessionRequest)(nil),              // 6: muid.authn.v1.ExtendSessionRequest
-	(*ExtendSessionResponse)(nil),             // 7: muid.authn.v1.ExtendSessionResponse
-	(*IssueAccessTokenRequest)(nil),           // 8: muid.authn.v1.IssueAccessTokenRequest
-	(*IssueAccessTokenResponse)(nil),          // 9: muid.authn.v1.IssueAccessTokenResponse
-	(*session.AuthenticatedResult)(nil),       // 10: muid.authn.v1.session.AuthenticatedResult
-	(*session.AuthenticatedPrincipal)(nil),    // 11: muid.authn.v1.session.AuthenticatedPrincipal
-	(*session.SessionContext)(nil),            // 12: muid.authn.v1.session.SessionContext
-	(*session.AccessToken)(nil),               // 13: muid.authn.v1.session.AccessToken
+	(*SessionPrincipal)(nil),            // 0: muid.authn.v1.SessionPrincipal
+	(*GetSessionPrincipalRequest)(nil),  // 1: muid.authn.v1.GetSessionPrincipalRequest
+	(*GetSessionPrincipalResponse)(nil), // 2: muid.authn.v1.GetSessionPrincipalResponse
+	(*RevokeSessionRequest)(nil),        // 3: muid.authn.v1.RevokeSessionRequest
+	(*RevokeSessionResponse)(nil),       // 4: muid.authn.v1.RevokeSessionResponse
+	(*RefreshSessionRequest)(nil),       // 5: muid.authn.v1.RefreshSessionRequest
+	(*RefreshSessionResponse)(nil),      // 6: muid.authn.v1.RefreshSessionResponse
+	(*IssueAccessTokenRequest)(nil),     // 7: muid.authn.v1.IssueAccessTokenRequest
+	(*IssueAccessTokenResponse)(nil),    // 8: muid.authn.v1.IssueAccessTokenResponse
+	(session.AuthLevel)(0),              // 9: muid.authn.v1.session.AuthLevel
+	(*timestamppb.Timestamp)(nil),       // 10: google.protobuf.Timestamp
+	(*session.SessionContext)(nil),      // 11: muid.authn.v1.session.SessionContext
+	(*session.AccessToken)(nil),         // 12: muid.authn.v1.session.AccessToken
 }
 var file_authn_v1_session_service_proto_depIdxs = []int32{
-	10, // 0: muid.authn.v1.GetAuthorizedSessionResponse.session:type_name -> muid.authn.v1.session.AuthenticatedResult
-	11, // 1: muid.authn.v1.GetAuthenticatedPrincipalResponse.principal:type_name -> muid.authn.v1.session.AuthenticatedPrincipal
-	12, // 2: muid.authn.v1.ExtendSessionResponse.session_context:type_name -> muid.authn.v1.session.SessionContext
-	13, // 3: muid.authn.v1.IssueAccessTokenResponse.access_token:type_name -> muid.authn.v1.session.AccessToken
-	4,  // [4:4] is the sub-list for method output_type
-	4,  // [4:4] is the sub-list for method input_type
-	4,  // [4:4] is the sub-list for extension type_name
-	4,  // [4:4] is the sub-list for extension extendee
-	0,  // [0:4] is the sub-list for field type_name
+	9,  // 0: muid.authn.v1.SessionPrincipal.auth_level:type_name -> muid.authn.v1.session.AuthLevel
+	10, // 1: muid.authn.v1.SessionPrincipal.issued_at:type_name -> google.protobuf.Timestamp
+	10, // 2: muid.authn.v1.SessionPrincipal.expires_at:type_name -> google.protobuf.Timestamp
+	0,  // 3: muid.authn.v1.GetSessionPrincipalResponse.principal:type_name -> muid.authn.v1.SessionPrincipal
+	11, // 4: muid.authn.v1.RefreshSessionResponse.session_context:type_name -> muid.authn.v1.session.SessionContext
+	12, // 5: muid.authn.v1.IssueAccessTokenResponse.access_token:type_name -> muid.authn.v1.session.AccessToken
+	1,  // 6: muid.authn.v1.SessionService.GetSessionPrincipal:input_type -> muid.authn.v1.GetSessionPrincipalRequest
+	5,  // 7: muid.authn.v1.SessionService.RefreshSession:input_type -> muid.authn.v1.RefreshSessionRequest
+	3,  // 8: muid.authn.v1.SessionService.RevokeSession:input_type -> muid.authn.v1.RevokeSessionRequest
+	7,  // 9: muid.authn.v1.SessionService.IssueAccessToken:input_type -> muid.authn.v1.IssueAccessTokenRequest
+	2,  // 10: muid.authn.v1.SessionService.GetSessionPrincipal:output_type -> muid.authn.v1.GetSessionPrincipalResponse
+	6,  // 11: muid.authn.v1.SessionService.RefreshSession:output_type -> muid.authn.v1.RefreshSessionResponse
+	4,  // 12: muid.authn.v1.SessionService.RevokeSession:output_type -> muid.authn.v1.RevokeSessionResponse
+	8,  // 13: muid.authn.v1.SessionService.IssueAccessToken:output_type -> muid.authn.v1.IssueAccessTokenResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_authn_v1_session_service_proto_init() }
@@ -662,9 +676,9 @@ func file_authn_v1_session_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_authn_v1_session_service_proto_rawDesc), len(file_authn_v1_session_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_authn_v1_session_service_proto_goTypes,
 		DependencyIndexes: file_authn_v1_session_service_proto_depIdxs,

@@ -11,7 +11,7 @@ type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 	Port  int  `envconfig:"PORT" default:"8082"`
 
-	// AuthnGRPCAddr hosts OIDCClientAdminService and AuthnService.GetPublicKeys (JWKS).
+	// AuthnGRPCAddr hosts OIDCClientAdminService and SigningKeyService.GetPublicKeys (JWKS).
 	AuthnGRPCAddr string `envconfig:"AUTHN_GRPC_ADDR" required:"true"`
 	// AuthzInternalGRPCAddr hosts AuthzAdminService (internal listener).
 	AuthzInternalGRPCAddr string `envconfig:"AUTHZ_INTERNAL_GRPC_ADDR" required:"true"`

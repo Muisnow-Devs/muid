@@ -838,7 +838,7 @@ func (b0 AuthorizationGranted_builder) Build() *AuthorizationGranted {
 }
 
 // LoginRequired asks the gateway to send the user through the first-party
-// login flow (AuthnService) and retry Authorize afterwards.
+// login flow (AuthenticationFlowService) and retry Authorize afterwards.
 type LoginRequired struct {
 	state         protoimpl.MessageState `protogen:"opaque.v1"`
 	unknownFields protoimpl.UnknownFields

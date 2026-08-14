@@ -48,12 +48,12 @@ func (fakeOIDC) ExchangeToken(_ context.Context, req *authnpb.ExchangeTokenReque
 	return resp, nil
 }
 
-// fakeAuthn implements only AuthnServiceClient.GetPublicKeys.
-type fakeAuthn struct {
-	authnpb.AuthnServiceClient
+// fakeSigningKeys implements only SigningKeyServiceClient.GetPublicKeys.
+type fakeSigningKeys struct {
+	authnpb.SigningKeyServiceClient
 }
 
-func (fakeAuthn) GetPublicKeys(context.Context, *authnpb.GetPublicKeysRequest, ...grpc.CallOption) (*authnpb.GetPublicKeysResponse, error) {
+func (fakeSigningKeys) GetPublicKeys(context.Context, *authnpb.GetPublicKeysRequest, ...grpc.CallOption) (*authnpb.GetPublicKeysResponse, error) {
 	return &authnpb.GetPublicKeysResponse{}, nil
 }
 
@@ -64,13 +64,13 @@ func testInfra(t *testing.T, cfg Config, geoInfo geoip.GeoInfo) *InfraDependenci
 		t.Fatalf("csrf: %v", err)
 	}
 	return &InfraDependencies{
-		GlobalConfig: cfg,
-		Redis:        mocked.NewMockKVStore(),
-		Geo:          geoip.NewMockResolver(geoInfo),
-		Turnstile:    turnstile.AlwaysValid(),
-		CSRF:         csrfMgr,
-		OIDCClient:   fakeOIDC{},
-		AuthnClient:  fakeAuthn{},
+		GlobalConfig:     cfg,
+		Redis:            mocked.NewMockKVStore(),
+		Geo:              geoip.NewMockResolver(geoInfo),
+		Turnstile:        turnstile.AlwaysValid(),
+		CSRF:             csrfMgr,
+		OIDCClient:       fakeOIDC{},
+		SigningKeyClient: fakeSigningKeys{},
 	}
 }
 

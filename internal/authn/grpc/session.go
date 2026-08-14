@@ -36,10 +36,10 @@ const (
 	msgTooManyAttempts    = "too many failed attempts"
 )
 
-func (g *GRPCHandler) StartAuthSession(
+func (g *GRPCHandler) StartLogin(
 	ctx context.Context,
-	req *pb.StartAuthSessionRequest,
-) (*pb.StartAuthSessionResponse, error) {
+	req *pb.StartLoginRequest,
+) (*pb.StartLoginResponse, error) {
 	intent := req.GetIntent()
 	if intent == basicpb.AuthIntent_AUTH_INTENT_UNSPECIFIED {
 		return nil, status.Error(codes.InvalidArgument, "missing auth intent")
@@ -111,7 +111,7 @@ func (g *GRPCHandler) StartAuthSession(
 }
 
 func (g *GRPCHandler) resolveMethod(
-	req *pb.StartAuthSessionRequest,
+	req *pb.StartLoginRequest,
 ) (method.IdentityMethod, error) {
 	switch req.GetMethod() {
 	case basicpb.AuthMethod_AUTH_METHOD_EMAIL_OTP:
@@ -133,10 +133,10 @@ func (g *GRPCHandler) resolveMethod(
 	}
 }
 
-func (g *GRPCHandler) ContinueAuthSession(
+func (g *GRPCHandler) ContinueLogin(
 	ctx context.Context,
-	req *pb.ContinueAuthSessionRequest,
-) (*pb.ContinueAuthSessionResponse, error) {
+	req *pb.ContinueLoginRequest,
+) (*pb.ContinueLoginResponse, error) {
 	tidStr := req.GetTransitionId()
 	tid, err := uuid.Parse(tidStr)
 	if err != nil {
@@ -188,7 +188,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 		ch := g.buildAuthChallenge(s.TransitionID.String(), s.Challenge)
 		cr.SetChallenge(ch)
 
-		resp := &pb.ContinueAuthSessionResponse{}
+		resp := &pb.ContinueLoginResponse{}
 		resp.SetTransitionId(tidStr)
 		resp.SetStatus(basicpb.AuthStatus_AUTH_STATUS_CHALLENGE_REQUIRED)
 		resp.SetChallengeRequired(cr)
@@ -208,7 +208,7 @@ func (g *GRPCHandler) ContinueAuthSession(
 // so that handleVerifiedStep sees only the unified VerifiedStep — no type switch.
 func (g *GRPCHandler) verifyProof(
 	ctx context.Context,
-	req *pb.ContinueAuthSessionRequest,
+	req *pb.ContinueLoginRequest,
 	transition session.AuthSession,
 	continueReq method.ContinueRequest,
 ) (method.Step, error) {
@@ -299,7 +299,7 @@ func (g *GRPCHandler) handleFailureStep(
 	ctx context.Context,
 	tid uuid.UUID,
 	s *method.FailureStep,
-) (*pb.ContinueAuthSessionResponse, error) {
+) (*pb.ContinueLoginResponse, error) {
 	// 1. Structural failure — translate to a bare gRPC status code.
 	if s.Err != nil {
 		switch {
@@ -364,7 +364,7 @@ func (g *GRPCHandler) handleVerifiedStep(
 	tid uuid.UUID,
 	wire string,
 	s *method.VerifiedStep,
-) (*pb.ContinueAuthSessionResponse, error) {
+) (*pb.ContinueLoginResponse, error) {
 	transitionData, err := g.transitionStore.Get(ctx, tid)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, msgTransitionNotFound)
@@ -528,12 +528,12 @@ func (g *GRPCHandler) buildAuthChallenge(
 func (g *GRPCHandler) combineStartResponse(
 	step method.Step,
 	identifier string,
-) (*pb.StartAuthSessionResponse, error) {
+) (*pb.StartLoginResponse, error) {
 	if stepFailure, ok := step.(*method.FailureStep); ok {
 		return nil, authFailureStatus(codes.InvalidArgument, stepFailure.Failure)
 	}
 
-	resp := &pb.StartAuthSessionResponse{}
+	resp := &pb.StartLoginResponse{}
 	switch s := step.(type) {
 	case method.ChallengeStep:
 		resp.SetTransitionId(s.TransitionID.String())

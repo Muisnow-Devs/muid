@@ -25,7 +25,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type StartAuthSessionRequest struct {
+type StartLoginRequest struct {
 	state                 protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Method     basic.AuthMethod       `protobuf:"varint,1,opt,name=method,proto3,enum=muid.authn.v1.basic.AuthMethod"`
 	xxx_hidden_Identifier string                 `protobuf:"bytes,2,opt,name=identifier,proto3"`
@@ -34,20 +34,20 @@ type StartAuthSessionRequest struct {
 	sizeCache             protoimpl.SizeCache
 }
 
-func (x *StartAuthSessionRequest) Reset() {
-	*x = StartAuthSessionRequest{}
+func (x *StartLoginRequest) Reset() {
+	*x = StartLoginRequest{}
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StartAuthSessionRequest) String() string {
+func (x *StartLoginRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StartAuthSessionRequest) ProtoMessage() {}
+func (*StartLoginRequest) ProtoMessage() {}
 
-func (x *StartAuthSessionRequest) ProtoReflect() protoreflect.Message {
+func (x *StartLoginRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -59,40 +59,40 @@ func (x *StartAuthSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *StartAuthSessionRequest) GetMethod() basic.AuthMethod {
+func (x *StartLoginRequest) GetMethod() basic.AuthMethod {
 	if x != nil {
 		return x.xxx_hidden_Method
 	}
 	return basic.AuthMethod(0)
 }
 
-func (x *StartAuthSessionRequest) GetIdentifier() string {
+func (x *StartLoginRequest) GetIdentifier() string {
 	if x != nil {
 		return x.xxx_hidden_Identifier
 	}
 	return ""
 }
 
-func (x *StartAuthSessionRequest) GetIntent() basic.AuthIntent {
+func (x *StartLoginRequest) GetIntent() basic.AuthIntent {
 	if x != nil {
 		return x.xxx_hidden_Intent
 	}
 	return basic.AuthIntent(0)
 }
 
-func (x *StartAuthSessionRequest) SetMethod(v basic.AuthMethod) {
+func (x *StartLoginRequest) SetMethod(v basic.AuthMethod) {
 	x.xxx_hidden_Method = v
 }
 
-func (x *StartAuthSessionRequest) SetIdentifier(v string) {
+func (x *StartLoginRequest) SetIdentifier(v string) {
 	x.xxx_hidden_Identifier = v
 }
 
-func (x *StartAuthSessionRequest) SetIntent(v basic.AuthIntent) {
+func (x *StartLoginRequest) SetIntent(v basic.AuthIntent) {
 	x.xxx_hidden_Intent = v
 }
 
-type StartAuthSessionRequest_builder struct {
+type StartLoginRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Method     basic.AuthMethod
@@ -101,8 +101,8 @@ type StartAuthSessionRequest_builder struct {
 	Intent basic.AuthIntent
 }
 
-func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
-	m0 := &StartAuthSessionRequest{}
+func (b0 StartLoginRequest_builder) Build() *StartLoginRequest {
+	m0 := &StartLoginRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Method = b.Method
@@ -111,7 +111,7 @@ func (b0 StartAuthSessionRequest_builder) Build() *StartAuthSessionRequest {
 	return m0
 }
 
-type StartAuthSessionResponse struct {
+type StartLoginResponse struct {
 	state                   protoimpl.MessageState   `protogen:"opaque.v1"`
 	xxx_hidden_TransitionId string                   `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
 	xxx_hidden_Challenge    *challenge.AuthChallenge `protobuf:"bytes,2,opt,name=challenge,proto3"`
@@ -119,20 +119,20 @@ type StartAuthSessionResponse struct {
 	sizeCache               protoimpl.SizeCache
 }
 
-func (x *StartAuthSessionResponse) Reset() {
-	*x = StartAuthSessionResponse{}
+func (x *StartLoginResponse) Reset() {
+	*x = StartLoginResponse{}
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *StartAuthSessionResponse) String() string {
+func (x *StartLoginResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*StartAuthSessionResponse) ProtoMessage() {}
+func (*StartLoginResponse) ProtoMessage() {}
 
-func (x *StartAuthSessionResponse) ProtoReflect() protoreflect.Message {
+func (x *StartLoginResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -144,48 +144,48 @@ func (x *StartAuthSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *StartAuthSessionResponse) GetTransitionId() string {
+func (x *StartLoginResponse) GetTransitionId() string {
 	if x != nil {
 		return x.xxx_hidden_TransitionId
 	}
 	return ""
 }
 
-func (x *StartAuthSessionResponse) GetChallenge() *challenge.AuthChallenge {
+func (x *StartLoginResponse) GetChallenge() *challenge.AuthChallenge {
 	if x != nil {
 		return x.xxx_hidden_Challenge
 	}
 	return nil
 }
 
-func (x *StartAuthSessionResponse) SetTransitionId(v string) {
+func (x *StartLoginResponse) SetTransitionId(v string) {
 	x.xxx_hidden_TransitionId = v
 }
 
-func (x *StartAuthSessionResponse) SetChallenge(v *challenge.AuthChallenge) {
+func (x *StartLoginResponse) SetChallenge(v *challenge.AuthChallenge) {
 	x.xxx_hidden_Challenge = v
 }
 
-func (x *StartAuthSessionResponse) HasChallenge() bool {
+func (x *StartLoginResponse) HasChallenge() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_Challenge != nil
 }
 
-func (x *StartAuthSessionResponse) ClearChallenge() {
+func (x *StartLoginResponse) ClearChallenge() {
 	x.xxx_hidden_Challenge = nil
 }
 
-type StartAuthSessionResponse_builder struct {
+type StartLoginResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	TransitionId string
 	Challenge    *challenge.AuthChallenge
 }
 
-func (b0 StartAuthSessionResponse_builder) Build() *StartAuthSessionResponse {
-	m0 := &StartAuthSessionResponse{}
+func (b0 StartLoginResponse_builder) Build() *StartLoginResponse {
+	m0 := &StartLoginResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_TransitionId = b.TransitionId
@@ -193,7 +193,7 @@ func (b0 StartAuthSessionResponse_builder) Build() *StartAuthSessionResponse {
 	return m0
 }
 
-type ContinueAuthSessionRequest struct {
+type ContinueLoginRequest struct {
 	state                   protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_TransitionId string                 `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
 	xxx_hidden_Proof        *proof.AuthProof       `protobuf:"bytes,2,opt,name=proof,proto3"`
@@ -201,20 +201,20 @@ type ContinueAuthSessionRequest struct {
 	sizeCache               protoimpl.SizeCache
 }
 
-func (x *ContinueAuthSessionRequest) Reset() {
-	*x = ContinueAuthSessionRequest{}
+func (x *ContinueLoginRequest) Reset() {
+	*x = ContinueLoginRequest{}
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ContinueAuthSessionRequest) String() string {
+func (x *ContinueLoginRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ContinueAuthSessionRequest) ProtoMessage() {}
+func (*ContinueLoginRequest) ProtoMessage() {}
 
-func (x *ContinueAuthSessionRequest) ProtoReflect() protoreflect.Message {
+func (x *ContinueLoginRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -226,48 +226,48 @@ func (x *ContinueAuthSessionRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ContinueAuthSessionRequest) GetTransitionId() string {
+func (x *ContinueLoginRequest) GetTransitionId() string {
 	if x != nil {
 		return x.xxx_hidden_TransitionId
 	}
 	return ""
 }
 
-func (x *ContinueAuthSessionRequest) GetProof() *proof.AuthProof {
+func (x *ContinueLoginRequest) GetProof() *proof.AuthProof {
 	if x != nil {
 		return x.xxx_hidden_Proof
 	}
 	return nil
 }
 
-func (x *ContinueAuthSessionRequest) SetTransitionId(v string) {
+func (x *ContinueLoginRequest) SetTransitionId(v string) {
 	x.xxx_hidden_TransitionId = v
 }
 
-func (x *ContinueAuthSessionRequest) SetProof(v *proof.AuthProof) {
+func (x *ContinueLoginRequest) SetProof(v *proof.AuthProof) {
 	x.xxx_hidden_Proof = v
 }
 
-func (x *ContinueAuthSessionRequest) HasProof() bool {
+func (x *ContinueLoginRequest) HasProof() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_Proof != nil
 }
 
-func (x *ContinueAuthSessionRequest) ClearProof() {
+func (x *ContinueLoginRequest) ClearProof() {
 	x.xxx_hidden_Proof = nil
 }
 
-type ContinueAuthSessionRequest_builder struct {
+type ContinueLoginRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	TransitionId string
 	Proof        *proof.AuthProof
 }
 
-func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest {
-	m0 := &ContinueAuthSessionRequest{}
+func (b0 ContinueLoginRequest_builder) Build() *ContinueLoginRequest {
+	m0 := &ContinueLoginRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_TransitionId = b.TransitionId
@@ -275,29 +275,29 @@ func (b0 ContinueAuthSessionRequest_builder) Build() *ContinueAuthSessionRequest
 	return m0
 }
 
-type ContinueAuthSessionResponse struct {
-	state                   protoimpl.MessageState               `protogen:"opaque.v1"`
-	xxx_hidden_TransitionId string                               `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
-	xxx_hidden_Status       basic.AuthStatus                     `protobuf:"varint,2,opt,name=status,proto3,enum=muid.authn.v1.basic.AuthStatus"`
-	xxx_hidden_Result       isContinueAuthSessionResponse_Result `protobuf_oneof:"result"`
+type ContinueLoginResponse struct {
+	state                   protoimpl.MessageState         `protogen:"opaque.v1"`
+	xxx_hidden_TransitionId string                         `protobuf:"bytes,1,opt,name=transition_id,json=transitionId,proto3"`
+	xxx_hidden_Status       basic.AuthStatus               `protobuf:"varint,2,opt,name=status,proto3,enum=muid.authn.v1.basic.AuthStatus"`
+	xxx_hidden_Result       isContinueLoginResponse_Result `protobuf_oneof:"result"`
 	unknownFields           protoimpl.UnknownFields
 	sizeCache               protoimpl.SizeCache
 }
 
-func (x *ContinueAuthSessionResponse) Reset() {
-	*x = ContinueAuthSessionResponse{}
+func (x *ContinueLoginResponse) Reset() {
+	*x = ContinueLoginResponse{}
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ContinueAuthSessionResponse) String() string {
+func (x *ContinueLoginResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ContinueAuthSessionResponse) ProtoMessage() {}
+func (*ContinueLoginResponse) ProtoMessage() {}
 
-func (x *ContinueAuthSessionResponse) ProtoReflect() protoreflect.Message {
+func (x *ContinueLoginResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_authn_v1_authentication_flow_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -309,120 +309,120 @@ func (x *ContinueAuthSessionResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *ContinueAuthSessionResponse) GetTransitionId() string {
+func (x *ContinueLoginResponse) GetTransitionId() string {
 	if x != nil {
 		return x.xxx_hidden_TransitionId
 	}
 	return ""
 }
 
-func (x *ContinueAuthSessionResponse) GetStatus() basic.AuthStatus {
+func (x *ContinueLoginResponse) GetStatus() basic.AuthStatus {
 	if x != nil {
 		return x.xxx_hidden_Status
 	}
 	return basic.AuthStatus(0)
 }
 
-func (x *ContinueAuthSessionResponse) GetChallengeRequired() *session.ChallengeRequired {
+func (x *ContinueLoginResponse) GetChallengeRequired() *session.ChallengeRequired {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_ChallengeRequired); ok {
+		if x, ok := x.xxx_hidden_Result.(*continueLoginResponse_ChallengeRequired); ok {
 			return x.ChallengeRequired
 		}
 	}
 	return nil
 }
 
-func (x *ContinueAuthSessionResponse) GetAuthSuccess() *session.AuthSuccess {
+func (x *ContinueLoginResponse) GetAuthSuccess() *session.AuthSuccess {
 	if x != nil {
-		if x, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthSuccess); ok {
+		if x, ok := x.xxx_hidden_Result.(*continueLoginResponse_AuthSuccess); ok {
 			return x.AuthSuccess
 		}
 	}
 	return nil
 }
 
-func (x *ContinueAuthSessionResponse) SetTransitionId(v string) {
+func (x *ContinueLoginResponse) SetTransitionId(v string) {
 	x.xxx_hidden_TransitionId = v
 }
 
-func (x *ContinueAuthSessionResponse) SetStatus(v basic.AuthStatus) {
+func (x *ContinueLoginResponse) SetStatus(v basic.AuthStatus) {
 	x.xxx_hidden_Status = v
 }
 
-func (x *ContinueAuthSessionResponse) SetChallengeRequired(v *session.ChallengeRequired) {
+func (x *ContinueLoginResponse) SetChallengeRequired(v *session.ChallengeRequired) {
 	if v == nil {
 		x.xxx_hidden_Result = nil
 		return
 	}
-	x.xxx_hidden_Result = &continueAuthSessionResponse_ChallengeRequired{v}
+	x.xxx_hidden_Result = &continueLoginResponse_ChallengeRequired{v}
 }
 
-func (x *ContinueAuthSessionResponse) SetAuthSuccess(v *session.AuthSuccess) {
+func (x *ContinueLoginResponse) SetAuthSuccess(v *session.AuthSuccess) {
 	if v == nil {
 		x.xxx_hidden_Result = nil
 		return
 	}
-	x.xxx_hidden_Result = &continueAuthSessionResponse_AuthSuccess{v}
+	x.xxx_hidden_Result = &continueLoginResponse_AuthSuccess{v}
 }
 
-func (x *ContinueAuthSessionResponse) HasResult() bool {
+func (x *ContinueLoginResponse) HasResult() bool {
 	if x == nil {
 		return false
 	}
 	return x.xxx_hidden_Result != nil
 }
 
-func (x *ContinueAuthSessionResponse) HasChallengeRequired() bool {
+func (x *ContinueLoginResponse) HasChallengeRequired() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_ChallengeRequired)
+	_, ok := x.xxx_hidden_Result.(*continueLoginResponse_ChallengeRequired)
 	return ok
 }
 
-func (x *ContinueAuthSessionResponse) HasAuthSuccess() bool {
+func (x *ContinueLoginResponse) HasAuthSuccess() bool {
 	if x == nil {
 		return false
 	}
-	_, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthSuccess)
+	_, ok := x.xxx_hidden_Result.(*continueLoginResponse_AuthSuccess)
 	return ok
 }
 
-func (x *ContinueAuthSessionResponse) ClearResult() {
+func (x *ContinueLoginResponse) ClearResult() {
 	x.xxx_hidden_Result = nil
 }
 
-func (x *ContinueAuthSessionResponse) ClearChallengeRequired() {
-	if _, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_ChallengeRequired); ok {
+func (x *ContinueLoginResponse) ClearChallengeRequired() {
+	if _, ok := x.xxx_hidden_Result.(*continueLoginResponse_ChallengeRequired); ok {
 		x.xxx_hidden_Result = nil
 	}
 }
 
-func (x *ContinueAuthSessionResponse) ClearAuthSuccess() {
-	if _, ok := x.xxx_hidden_Result.(*continueAuthSessionResponse_AuthSuccess); ok {
+func (x *ContinueLoginResponse) ClearAuthSuccess() {
+	if _, ok := x.xxx_hidden_Result.(*continueLoginResponse_AuthSuccess); ok {
 		x.xxx_hidden_Result = nil
 	}
 }
 
-const ContinueAuthSessionResponse_Result_not_set_case case_ContinueAuthSessionResponse_Result = 0
-const ContinueAuthSessionResponse_ChallengeRequired_case case_ContinueAuthSessionResponse_Result = 3
-const ContinueAuthSessionResponse_AuthSuccess_case case_ContinueAuthSessionResponse_Result = 4
+const ContinueLoginResponse_Result_not_set_case case_ContinueLoginResponse_Result = 0
+const ContinueLoginResponse_ChallengeRequired_case case_ContinueLoginResponse_Result = 3
+const ContinueLoginResponse_AuthSuccess_case case_ContinueLoginResponse_Result = 4
 
-func (x *ContinueAuthSessionResponse) WhichResult() case_ContinueAuthSessionResponse_Result {
+func (x *ContinueLoginResponse) WhichResult() case_ContinueLoginResponse_Result {
 	if x == nil {
-		return ContinueAuthSessionResponse_Result_not_set_case
+		return ContinueLoginResponse_Result_not_set_case
 	}
 	switch x.xxx_hidden_Result.(type) {
-	case *continueAuthSessionResponse_ChallengeRequired:
-		return ContinueAuthSessionResponse_ChallengeRequired_case
-	case *continueAuthSessionResponse_AuthSuccess:
-		return ContinueAuthSessionResponse_AuthSuccess_case
+	case *continueLoginResponse_ChallengeRequired:
+		return ContinueLoginResponse_ChallengeRequired_case
+	case *continueLoginResponse_AuthSuccess:
+		return ContinueLoginResponse_AuthSuccess_case
 	default:
-		return ContinueAuthSessionResponse_Result_not_set_case
+		return ContinueLoginResponse_Result_not_set_case
 	}
 }
 
-type ContinueAuthSessionResponse_builder struct {
+type ContinueLoginResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	TransitionId string
@@ -433,24 +433,24 @@ type ContinueAuthSessionResponse_builder struct {
 	// -- end of xxx_hidden_Result
 }
 
-func (b0 ContinueAuthSessionResponse_builder) Build() *ContinueAuthSessionResponse {
-	m0 := &ContinueAuthSessionResponse{}
+func (b0 ContinueLoginResponse_builder) Build() *ContinueLoginResponse {
+	m0 := &ContinueLoginResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_TransitionId = b.TransitionId
 	x.xxx_hidden_Status = b.Status
 	if b.ChallengeRequired != nil {
-		x.xxx_hidden_Result = &continueAuthSessionResponse_ChallengeRequired{b.ChallengeRequired}
+		x.xxx_hidden_Result = &continueLoginResponse_ChallengeRequired{b.ChallengeRequired}
 	}
 	if b.AuthSuccess != nil {
-		x.xxx_hidden_Result = &continueAuthSessionResponse_AuthSuccess{b.AuthSuccess}
+		x.xxx_hidden_Result = &continueLoginResponse_AuthSuccess{b.AuthSuccess}
 	}
 	return m0
 }
 
-type case_ContinueAuthSessionResponse_Result protoreflect.FieldNumber
+type case_ContinueLoginResponse_Result protoreflect.FieldNumber
 
-func (x case_ContinueAuthSessionResponse_Result) String() string {
+func (x case_ContinueLoginResponse_Result) String() string {
 	md := file_authn_v1_authentication_flow_proto_msgTypes[3].Descriptor()
 	if x == 0 {
 		return "not set"
@@ -458,71 +458,79 @@ func (x case_ContinueAuthSessionResponse_Result) String() string {
 	return protoimpl.X.MessageFieldStringOf(md, protoreflect.FieldNumber(x))
 }
 
-type isContinueAuthSessionResponse_Result interface {
-	isContinueAuthSessionResponse_Result()
+type isContinueLoginResponse_Result interface {
+	isContinueLoginResponse_Result()
 }
 
-type continueAuthSessionResponse_ChallengeRequired struct {
+type continueLoginResponse_ChallengeRequired struct {
 	ChallengeRequired *session.ChallengeRequired `protobuf:"bytes,3,opt,name=challenge_required,json=challengeRequired,proto3,oneof"`
 }
 
-type continueAuthSessionResponse_AuthSuccess struct {
+type continueLoginResponse_AuthSuccess struct {
 	AuthSuccess *session.AuthSuccess `protobuf:"bytes,4,opt,name=auth_success,json=authSuccess,proto3,oneof"` // field 5 (auth_failure) removed: failures are now gRPC errors with AuthFailure as error detail
 }
 
-func (*continueAuthSessionResponse_ChallengeRequired) isContinueAuthSessionResponse_Result() {}
+func (*continueLoginResponse_ChallengeRequired) isContinueLoginResponse_Result() {}
 
-func (*continueAuthSessionResponse_AuthSuccess) isContinueAuthSessionResponse_Result() {}
+func (*continueLoginResponse_AuthSuccess) isContinueLoginResponse_Result() {}
 
 var File_authn_v1_authentication_flow_proto protoreflect.FileDescriptor
 
 const file_authn_v1_authentication_flow_proto_rawDesc = "" +
 	"\n" +
-	"\"authn/v1/authentication_flow.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xb5\x01\n" +
-	"\x17StartAuthSessionRequest\x127\n" +
+	"\"authn/v1/authentication_flow.proto\x12\rmuid.authn.v1\x1a\x14authn/v1/basic.proto\x1a\x18authn/v1/challenge.proto\x1a\x14authn/v1/proof.proto\x1a\x16authn/v1/session.proto\x1a\x1bbuf/validate/validate.proto\"\xaf\x01\n" +
+	"\x11StartLoginRequest\x127\n" +
 	"\x06method\x18\x01 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthMethodR\x06method\x12(\n" +
 	"\n" +
 	"identifier\x18\x02 \x01(\tB\b\xbaH\x05r\x03\x18\x80\x02R\n" +
 	"identifier\x127\n" +
-	"\x06intent\x18\x03 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthIntentR\x06intent\"\x8f\x01\n" +
-	"\x18StartAuthSessionResponse\x12-\n" +
+	"\x06intent\x18\x03 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthIntentR\x06intent\"\x89\x01\n" +
+	"\x12StartLoginResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x12D\n" +
-	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"\x81\x01\n" +
-	"\x1aContinueAuthSessionRequest\x12-\n" +
+	"\tchallenge\x18\x02 \x01(\v2&.muid.authn.v1.challenge.AuthChallengeR\tchallenge\"{\n" +
+	"\x14ContinueLoginRequest\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x124\n" +
-	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xb3\x02\n" +
-	"\x1bContinueAuthSessionResponse\x12-\n" +
+	"\x05proof\x18\x02 \x01(\v2\x1e.muid.authn.v1.proof.AuthProofR\x05proof\"\xad\x02\n" +
+	"\x15ContinueLoginResponse\x12-\n" +
 	"\rtransition_id\x18\x01 \x01(\tB\b\xbaH\x05r\x03\xb0\x01\x01R\ftransitionId\x127\n" +
 	"\x06status\x18\x02 \x01(\x0e2\x1f.muid.authn.v1.basic.AuthStatusR\x06status\x12Y\n" +
 	"\x12challenge_required\x18\x03 \x01(\v2(.muid.authn.v1.session.ChallengeRequiredH\x00R\x11challengeRequired\x12G\n" +
 	"\fauth_success\x18\x04 \x01(\v2\".muid.authn.v1.session.AuthSuccessH\x00R\vauthSuccessB\b\n" +
-	"\x06resultB\xaa\x01\n" +
+	"\x06result2\xca\x01\n" +
+	"\x19AuthenticationFlowService\x12Q\n" +
+	"\n" +
+	"StartLogin\x12 .muid.authn.v1.StartLoginRequest\x1a!.muid.authn.v1.StartLoginResponse\x12Z\n" +
+	"\rContinueLogin\x12#.muid.authn.v1.ContinueLoginRequest\x1a$.muid.authn.v1.ContinueLoginResponseB\xaa\x01\n" +
 	"\x11com.muid.authn.v1B\x17AuthenticationFlowProtoP\x01Z&sanzi.io/muid/api/proto/authn/v1;authn\xa2\x02\x03MAX\xaa\x02\rMuid.Authn.V1\xca\x02\rMuid\\Authn\\V1\xe2\x02\x19Muid\\Authn\\V1\\GPBMetadata\xea\x02\x0fMuid::Authn::V1b\x06proto3"
 
 var file_authn_v1_authentication_flow_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_authn_v1_authentication_flow_proto_goTypes = []any{
-	(*StartAuthSessionRequest)(nil),     // 0: muid.authn.v1.StartAuthSessionRequest
-	(*StartAuthSessionResponse)(nil),    // 1: muid.authn.v1.StartAuthSessionResponse
-	(*ContinueAuthSessionRequest)(nil),  // 2: muid.authn.v1.ContinueAuthSessionRequest
-	(*ContinueAuthSessionResponse)(nil), // 3: muid.authn.v1.ContinueAuthSessionResponse
-	(basic.AuthMethod)(0),               // 4: muid.authn.v1.basic.AuthMethod
-	(basic.AuthIntent)(0),               // 5: muid.authn.v1.basic.AuthIntent
-	(*challenge.AuthChallenge)(nil),     // 6: muid.authn.v1.challenge.AuthChallenge
-	(*proof.AuthProof)(nil),             // 7: muid.authn.v1.proof.AuthProof
-	(basic.AuthStatus)(0),               // 8: muid.authn.v1.basic.AuthStatus
-	(*session.ChallengeRequired)(nil),   // 9: muid.authn.v1.session.ChallengeRequired
-	(*session.AuthSuccess)(nil),         // 10: muid.authn.v1.session.AuthSuccess
+	(*StartLoginRequest)(nil),         // 0: muid.authn.v1.StartLoginRequest
+	(*StartLoginResponse)(nil),        // 1: muid.authn.v1.StartLoginResponse
+	(*ContinueLoginRequest)(nil),      // 2: muid.authn.v1.ContinueLoginRequest
+	(*ContinueLoginResponse)(nil),     // 3: muid.authn.v1.ContinueLoginResponse
+	(basic.AuthMethod)(0),             // 4: muid.authn.v1.basic.AuthMethod
+	(basic.AuthIntent)(0),             // 5: muid.authn.v1.basic.AuthIntent
+	(*challenge.AuthChallenge)(nil),   // 6: muid.authn.v1.challenge.AuthChallenge
+	(*proof.AuthProof)(nil),           // 7: muid.authn.v1.proof.AuthProof
+	(basic.AuthStatus)(0),             // 8: muid.authn.v1.basic.AuthStatus
+	(*session.ChallengeRequired)(nil), // 9: muid.authn.v1.session.ChallengeRequired
+	(*session.AuthSuccess)(nil),       // 10: muid.authn.v1.session.AuthSuccess
 }
 var file_authn_v1_authentication_flow_proto_depIdxs = []int32{
-	4,  // 0: muid.authn.v1.StartAuthSessionRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
-	5,  // 1: muid.authn.v1.StartAuthSessionRequest.intent:type_name -> muid.authn.v1.basic.AuthIntent
-	6,  // 2: muid.authn.v1.StartAuthSessionResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
-	7,  // 3: muid.authn.v1.ContinueAuthSessionRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
-	8,  // 4: muid.authn.v1.ContinueAuthSessionResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
-	9,  // 5: muid.authn.v1.ContinueAuthSessionResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
-	10, // 6: muid.authn.v1.ContinueAuthSessionResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
-	7,  // [7:7] is the sub-list for method output_type
-	7,  // [7:7] is the sub-list for method input_type
+	4,  // 0: muid.authn.v1.StartLoginRequest.method:type_name -> muid.authn.v1.basic.AuthMethod
+	5,  // 1: muid.authn.v1.StartLoginRequest.intent:type_name -> muid.authn.v1.basic.AuthIntent
+	6,  // 2: muid.authn.v1.StartLoginResponse.challenge:type_name -> muid.authn.v1.challenge.AuthChallenge
+	7,  // 3: muid.authn.v1.ContinueLoginRequest.proof:type_name -> muid.authn.v1.proof.AuthProof
+	8,  // 4: muid.authn.v1.ContinueLoginResponse.status:type_name -> muid.authn.v1.basic.AuthStatus
+	9,  // 5: muid.authn.v1.ContinueLoginResponse.challenge_required:type_name -> muid.authn.v1.session.ChallengeRequired
+	10, // 6: muid.authn.v1.ContinueLoginResponse.auth_success:type_name -> muid.authn.v1.session.AuthSuccess
+	0,  // 7: muid.authn.v1.AuthenticationFlowService.StartLogin:input_type -> muid.authn.v1.StartLoginRequest
+	2,  // 8: muid.authn.v1.AuthenticationFlowService.ContinueLogin:input_type -> muid.authn.v1.ContinueLoginRequest
+	1,  // 9: muid.authn.v1.AuthenticationFlowService.StartLogin:output_type -> muid.authn.v1.StartLoginResponse
+	3,  // 10: muid.authn.v1.AuthenticationFlowService.ContinueLogin:output_type -> muid.authn.v1.ContinueLoginResponse
+	9,  // [9:11] is the sub-list for method output_type
+	7,  // [7:9] is the sub-list for method input_type
 	7,  // [7:7] is the sub-list for extension type_name
 	7,  // [7:7] is the sub-list for extension extendee
 	0,  // [0:7] is the sub-list for field type_name
@@ -534,8 +542,8 @@ func file_authn_v1_authentication_flow_proto_init() {
 		return
 	}
 	file_authn_v1_authentication_flow_proto_msgTypes[3].OneofWrappers = []any{
-		(*continueAuthSessionResponse_ChallengeRequired)(nil),
-		(*continueAuthSessionResponse_AuthSuccess)(nil),
+		(*continueLoginResponse_ChallengeRequired)(nil),
+		(*continueLoginResponse_AuthSuccess)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -545,7 +553,7 @@ func file_authn_v1_authentication_flow_proto_init() {
 			NumEnums:      0,
 			NumMessages:   4,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_authn_v1_authentication_flow_proto_goTypes,
 		DependencyIndexes: file_authn_v1_authentication_flow_proto_depIdxs,

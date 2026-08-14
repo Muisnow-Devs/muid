@@ -11,7 +11,7 @@ type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 	Port  int  `envconfig:"PORT" default:"8080"`
 
-	// AuthnGRPCAddr is the authn service address (hosts OIDCService + AuthnService).
+	// AuthnGRPCAddr is the authn service address (hosts OIDC and focused authn services).
 	AuthnGRPCAddr string `envconfig:"AUTHN_GRPC_ADDR" required:"true"`
 
 	// RedisAddr backs rate limiting, risk counters, and proof-of-work challenges.

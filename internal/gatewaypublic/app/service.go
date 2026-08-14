@@ -103,14 +103,16 @@ func newHandler(deps *InfraDependencies) http.Handler {
 func buildResolver(deps *InfraDependencies, tracker *risk.Tracker) *graph.Resolver {
 	cfg := deps.GlobalConfig
 	return &graph.Resolver{
-		Authn:      deps.AuthnClient,
-		AuthzUser:  deps.AuthzUserClient,
-		AuthzOrg:   deps.AuthzOrgClient,
-		Profile:    deps.ProfileClient,
-		OrgProfile: deps.OrgProfileClient,
-		Verifier:   deps.Verifier,
-		Turnstile:  deps.Turnstile,
-		Failures:   tracker,
+		AuthFlow:       deps.AuthFlowClient,
+		Session:        deps.SessionClient,
+		LinkedIdentity: deps.LinkedIdentityClient,
+		AuthzUser:      deps.AuthzUserClient,
+		AuthzOrg:       deps.AuthzOrgClient,
+		Profile:        deps.ProfileClient,
+		OrgProfile:     deps.OrgProfileClient,
+		Verifier:       deps.Verifier,
+		Turnstile:      deps.Turnstile,
+		Failures:       tracker,
 		SessionCookieCfg: graph.SessionCookie{
 			Name:     cfg.SessionCookieName,
 			Secure:   cfg.SessionCookieSecure,

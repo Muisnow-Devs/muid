@@ -23,10 +23,10 @@ import (
 
 const reauthThreshold = 5 * time.Minute
 
-func (g *GRPCHandler) RevokeFederatedIdentity(
+func (g *GRPCHandler) RevokeLinkedIdentity(
 	ctx context.Context,
-	req *pb.RevokeFederatedIdentityRequest,
-) (*pb.RevokeFederatedIdentityResponse, error) {
+	req *pb.RevokeLinkedIdentityRequest,
+) (*pb.RevokeLinkedIdentityResponse, error) {
 	// Session resolved and validated by AuthnSessionPrincipalInterceptor.
 	resolved, _ := ResolvedSessionFromContext(ctx)
 
@@ -99,7 +99,7 @@ func (g *GRPCHandler) RevokeFederatedIdentity(
 		})
 	}
 
-	out := &pb.RevokeFederatedIdentityResponse{}
+	out := &pb.RevokeLinkedIdentityResponse{}
 	out.SetSuccess(true)
 	return out, nil
 }

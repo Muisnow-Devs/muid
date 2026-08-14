@@ -1163,11 +1163,10 @@ input ChangeMemberRoleInput {
 # only reach the operations declared here, and in production they may only invoke
 # pre-registered ("persisted") operations from the trusted-documents manifest.
 #
-# It maps onto the client-facing subset of authn's AuthnService:
-#   startAuth/continueAuth          -> StartAuthSession / ContinueAuthSession
-#   refreshSession/issueAccessToken -> ExtendSession / IssueAccessToken
-#   logout/unlinkFederatedIdentity  -> RevokeSession / RevokeFederatedIdentity
-#   viewerSession                   -> GetAuthorizedSession
+# It maps onto authn's client-facing focused services:
+#   startAuth/continueAuth -> AuthenticationFlowService.StartLogin / ContinueLogin
+#   refreshSession/issueAccessToken/logout/viewerSession -> SessionService
+#   unlinkFederatedIdentity -> LinkedIdentityService.RevokeLinkedIdentity
 # Admin/internal/OIDC-provider RPCs are deliberately NOT exposed here (the OIDC
 # provider surface lives on the REST routes under /oidc and /.well-known).
 #

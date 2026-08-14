@@ -23,10 +23,10 @@ import (
 type InfraDependencies struct {
 	GlobalConfig Config
 
-	Redis      kv.AtomicKVStore
-	Verifier   *jwtauth.Verifier
-	OIDCAdmin  authnpb.OIDCClientAdminServiceClient
-	AuthzAdmin authzpb.AuthzAdminServiceClient
+	Redis         kv.AtomicKVStore
+	Verifier      *jwtauth.Verifier
+	OIDCAdmin     authnpb.OIDCClientAdminServiceClient
+	AuthzAdmin    authzpb.AuthzAdminServiceClient
 	PlatformAuthz platformPermissionChecker
 	TLSConfig     *tls.Config
 
@@ -73,7 +73,7 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 	}
 
 	verifier := jwtauth.NewAuthnVerifier(
-		authnpb.NewAuthnServiceClient(authnConn),
+		authnpb.NewSigningKeyServiceClient(authnConn),
 		cfg.SessionAccessTokenIssuer,
 		time.Duration(cfg.JWKSCacheTTLSeconds)*time.Second,
 	)
@@ -87,15 +87,15 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 	}
 
 	return &InfraDependencies{
-		GlobalConfig: cfg,
-		Redis:        redisKV,
-		Verifier:     verifier,
-		OIDCAdmin:    authnpb.NewOIDCClientAdminServiceClient(authnConn),
-		AuthzAdmin:   authzpb.NewAuthzAdminServiceClient(authzConn),
+		GlobalConfig:  cfg,
+		Redis:         redisKV,
+		Verifier:      verifier,
+		OIDCAdmin:     authnpb.NewOIDCClientAdminServiceClient(authnConn),
+		AuthzAdmin:    authzpb.NewAuthzAdminServiceClient(authzConn),
 		PlatformAuthz: platformAuthz,
 		TLSConfig:     serverTLS,
-		authnConn:    authnConn,
-		authzConn:    authzConn,
+		authnConn:     authnConn,
+		authzConn:     authzConn,
 	}, nil
 }
 

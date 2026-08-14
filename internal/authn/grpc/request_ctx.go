@@ -19,7 +19,7 @@ import (
 type transitionIDKey struct{}
 
 // TransitionIDFromContext returns the transition ID stored by [AuthnRequestContextInterceptor]
-// for [AuthnService.ContinueAuthSession] calls.
+// for [AuthenticationFlowService.ContinueLogin] calls.
 func TransitionIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	if ctx == nil {
 		return uuid.Nil, false
@@ -34,17 +34,17 @@ func TransitionIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 // [AuthnSessionPrincipalInterceptor].
 func AuthnRequestContextInterceptor() grpc.UnaryServerInterceptor {
 	return grpcutils.UnaryRequestContextInterceptor(map[string]grpcutils.RequestContextFunc{
-		pb.AuthnService_StartAuthSession_FullMethodName:    enrichStartAuthSession,
-		pb.AuthnService_ContinueAuthSession_FullMethodName: enrichContinueAuthSession,
+		pb.AuthenticationFlowService_StartLogin_FullMethodName:    enrichStartLogin,
+		pb.AuthenticationFlowService_ContinueLogin_FullMethodName: enrichContinueLogin,
 	})
 }
 
-func enrichStartAuthSession(ctx context.Context, _ string, req any) (context.Context, error) {
-	if _, ok := req.(*pb.StartAuthSessionRequest); !ok {
+func enrichStartLogin(ctx context.Context, _ string, req any) (context.Context, error) {
+	if _, ok := req.(*pb.StartLoginRequest); !ok {
 		log.LogUnexpected(
 			ctx,
 			"authn request context interceptor",
-			"unexpected request type for StartAuthSession",
+			"unexpected request type for StartLogin",
 		)
 		return ctx, status.Errorf(codes.Internal, "internal error")
 	}
@@ -62,13 +62,13 @@ func enrichClientMeta(ctx context.Context) (context.Context, error) {
 	return ctx, err
 }
 
-func enrichContinueAuthSession(ctx context.Context, _ string, req any) (context.Context, error) {
-	r, ok := req.(*pb.ContinueAuthSessionRequest)
+func enrichContinueLogin(ctx context.Context, _ string, req any) (context.Context, error) {
+	r, ok := req.(*pb.ContinueLoginRequest)
 	if !ok {
 		log.LogUnexpected(
 			ctx,
 			"authn request context interceptor",
-			"unexpected request type for ContinueAuthSession",
+			"unexpected request type for ContinueLogin",
 		)
 		return ctx, status.Errorf(codes.Internal, "internal error")
 	}

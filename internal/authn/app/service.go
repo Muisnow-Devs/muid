@@ -27,9 +27,16 @@ type AuthnGRPC struct {
 	listener   net.Listener
 }
 
+type focusedAuthnServer interface {
+	pb.AuthenticationFlowServiceServer
+	pb.SessionServiceServer
+	pb.LinkedIdentityServiceServer
+	pb.SigningKeyServiceServer
+}
+
 func NewAuthnGRPC(
 	config Config,
-	handler pb.AuthnServiceServer,
+	handler focusedAuthnServer,
 	oidcHandler pb.OIDCServiceServer,
 	oidcAdminHandler pb.OIDCClientAdminServiceServer,
 	iss issuer.SessionIssuer,
@@ -92,7 +99,10 @@ func NewAuthnGRPC(
 	}
 	serverOptions = append(serverOptions, grpc.Creds(credentials.NewTLS(serverTLS)))
 	grpcServer := grpc.NewServer(serverOptions...)
-	pb.RegisterAuthnServiceServer(grpcServer, handler)
+	pb.RegisterAuthenticationFlowServiceServer(grpcServer, handler)
+	pb.RegisterSessionServiceServer(grpcServer, handler)
+	pb.RegisterLinkedIdentityServiceServer(grpcServer, handler)
+	pb.RegisterSigningKeyServiceServer(grpcServer, handler)
 	pb.RegisterOIDCServiceServer(grpcServer, oidcHandler)
 	pb.RegisterOIDCClientAdminServiceServer(grpcServer, oidcAdminHandler)
 
@@ -104,19 +114,28 @@ func NewAuthnGRPC(
 
 func authnPrincipalPolicies() map[string]grpcutils.MethodPrincipalPolicy {
 	policies := make(map[string]grpcutils.MethodPrincipalPolicy)
-	for _, method := range pb.AuthnService_ServiceDesc.Methods {
-		policies["/"+pb.AuthnService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
-			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
-				grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,
-			},
+	publicServices := []*grpc.ServiceDesc{
+		&pb.AuthenticationFlowService_ServiceDesc,
+		&pb.SessionService_ServiceDesc,
+		&pb.LinkedIdentityService_ServiceDesc,
+	}
+	for _, service := range publicServices {
+		for _, method := range service.Methods {
+			policies["/"+service.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+				Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+					grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,
+				},
+			}
 		}
 	}
-	policies[pb.AuthnService_GetPublicKeys_FullMethodName] = grpcutils.MethodPrincipalPolicy{
-		Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
-			grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
-			grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
-			grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
-		},
+	for _, method := range pb.SigningKeyService_ServiceDesc.Methods {
+		policies["/"+pb.SigningKeyService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
+			Workloads: map[grpcutils.WorkloadID]grpcutils.UserMode{
+				grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
+				grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
+				grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
+			},
+		}
 	}
 	for _, method := range pb.OIDCService_ServiceDesc.Methods {
 		policies["/"+pb.OIDCService_ServiceDesc.ServiceName+"/"+method.MethodName] = grpcutils.MethodPrincipalPolicy{
@@ -139,7 +158,7 @@ func (s *AuthnGRPC) Start(ctx context.Context) error {
 	errCh := make(chan error, 1)
 
 	go func() {
-		log.Printf("AuthnService is listening on port %d", s.listener.Addr().(*net.TCPAddr).Port)
+		log.Printf("authn gRPC is listening on port %d", s.listener.Addr().(*net.TCPAddr).Port)
 		errCh <- s.grpcServer.Serve(s.listener)
 	}()
 

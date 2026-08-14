@@ -6,14 +6,18 @@ import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
+service LinkedIdentityService {
+  rpc RevokeLinkedIdentity(RevokeLinkedIdentityRequest) returns (RevokeLinkedIdentityResponse);
+}
+
 // Session token is passed via the authorization metadata header: "Session <token>".
-message RevokeFederatedIdentityRequest {
+message RevokeLinkedIdentityRequest {
   string provider = 1 [(buf.validate.field).string = {
     min_len: 1
     max_len: 50
   }];
 }
 
-message RevokeFederatedIdentityResponse {
+message RevokeLinkedIdentityResponse {
   bool success = 1;
 }

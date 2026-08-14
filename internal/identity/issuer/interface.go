@@ -28,7 +28,5 @@ type SessionIssuer interface {
 	) (*sessionpb.AuthenticatedResult, error)
 	ResolveSessionToken(ctx context.Context, wireToken string) (ResolvedSession, error)
 	RevokeSessionToken(ctx context.Context, wireToken string) error
-	ExtendSession(ctx context.Context, wireToken string) (*sessionpb.SessionContext, error)
-	AuthenticatedResultFromResolved(resolved ResolvedSession) *sessionpb.AuthenticatedResult
-	AuthenticatedPrincipalFromResolved(resolved ResolvedSession) *sessionpb.AuthenticatedPrincipal
+	RefreshSession(ctx context.Context, wireToken string) (*sessionpb.SessionContext, error)
 }

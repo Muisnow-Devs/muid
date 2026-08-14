@@ -13,15 +13,26 @@ func TestAuthnPrincipalPolicies(t *testing.T) {
 	t.Parallel()
 
 	policies := authnPrincipalPolicies()
-	wantCount := len(pb.AuthnService_ServiceDesc.Methods) +
+	wantCount := len(pb.AuthenticationFlowService_ServiceDesc.Methods) +
+		len(pb.SessionService_ServiceDesc.Methods) +
+		len(pb.LinkedIdentityService_ServiceDesc.Methods) +
+		len(pb.SigningKeyService_ServiceDesc.Methods) +
 		len(pb.OIDCService_ServiceDesc.Methods) +
 		len(pb.OIDCClientAdminService_ServiceDesc.Methods)
 	if len(policies) != wantCount {
 		t.Fatalf("policy count = %d, want %d", len(policies), wantCount)
 	}
 
-	assertServicePolicy(t, policies, &pb.AuthnService_ServiceDesc, map[grpcutils.WorkloadID]grpcutils.UserMode{
+	publicWorkloads := map[grpcutils.WorkloadID]grpcutils.UserMode{
 		grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,
+	}
+	assertServicePolicy(t, policies, &pb.AuthenticationFlowService_ServiceDesc, publicWorkloads)
+	assertServicePolicy(t, policies, &pb.SessionService_ServiceDesc, publicWorkloads)
+	assertServicePolicy(t, policies, &pb.LinkedIdentityService_ServiceDesc, publicWorkloads)
+	assertServicePolicy(t, policies, &pb.SigningKeyService_ServiceDesc, map[grpcutils.WorkloadID]grpcutils.UserMode{
+		grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
+		grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
+		grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
 	})
 	assertServicePolicy(t, policies, &pb.OIDCService_ServiceDesc, map[grpcutils.WorkloadID]grpcutils.UserMode{
 		grpcutils.WorkloadGatewayPublic: grpcutils.UserForbidden,
@@ -30,11 +41,6 @@ func TestAuthnPrincipalPolicies(t *testing.T) {
 		grpcutils.WorkloadGatewayInternal: grpcutils.UserRequired,
 	})
 
-	assertWorkloads(t, policies[pb.AuthnService_GetPublicKeys_FullMethodName].Workloads, map[grpcutils.WorkloadID]grpcutils.UserMode{
-		grpcutils.WorkloadGatewayPublic:   grpcutils.UserForbidden,
-		grpcutils.WorkloadGatewayServices: grpcutils.UserForbidden,
-		grpcutils.WorkloadGatewayInternal: grpcutils.UserForbidden,
-	})
 }
 
 func assertServicePolicy(
@@ -46,9 +52,6 @@ func assertServicePolicy(
 	t.Helper()
 	for _, method := range service.Methods {
 		fullMethod := "/" + service.ServiceName + "/" + method.MethodName
-		if fullMethod == pb.AuthnService_GetPublicKeys_FullMethodName {
-			continue
-		}
 		policy, ok := policies[fullMethod]
 		if !ok {
 			t.Errorf("missing policy for %s", fullMethod)

@@ -10,7 +10,12 @@ import "buf/validate/validate.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
-message StartAuthSessionRequest {
+service AuthenticationFlowService {
+  rpc StartLogin(StartLoginRequest) returns (StartLoginResponse);
+  rpc ContinueLogin(ContinueLoginRequest) returns (ContinueLoginResponse);
+}
+
+message StartLoginRequest {
   muid.authn.v1.basic.AuthMethod method = 1;
   string identifier = 2 [(buf.validate.field).string.max_len = 256];
   // intent defaults to AUTH_INTENT_LOGIN when unset.
@@ -23,19 +28,19 @@ message StartAuthSessionRequest {
   // AUTHN_LOGIN_ALERT_SECURE_LINK, not client metadata.
 }
 
-message StartAuthSessionResponse {
+message StartLoginResponse {
   string transition_id = 1 [(buf.validate.field).string.uuid = true];
   muid.authn.v1.challenge.AuthChallenge challenge = 2;
 }
 
-message ContinueAuthSessionRequest {
+message ContinueLoginRequest {
   string transition_id = 1 [(buf.validate.field).string.uuid = true];
   muid.authn.v1.proof.AuthProof proof = 2;
   // Session token for AUTH_INTENT_LINK_ACCOUNT is passed via the authorization
   // metadata header: "Session <token>".
 }
 
-message ContinueAuthSessionResponse {
+message ContinueLoginResponse {
   string transition_id = 1 [(buf.validate.field).string.uuid = true];
   muid.authn.v1.basic.AuthStatus status = 2;
 

@@ -85,33 +85,21 @@ func (m *mockSessionIssuer) CreateSession(
 }
 func (m *mockSessionIssuer) RevokeSessionToken(_ context.Context, _ string) error { return nil }
 
-func (m *mockSessionIssuer) ExtendSession(
+func (m *mockSessionIssuer) RefreshSession(
 	_ context.Context,
 	_ string,
 ) (*sessionpb.SessionContext, error) {
 	return nil, nil
 }
 
-func (m *mockSessionIssuer) AuthenticatedResultFromResolved(
-	_ issuer.ResolvedSession,
-) *sessionpb.AuthenticatedResult {
-	return nil
-}
-
-func (m *mockSessionIssuer) AuthenticatedPrincipalFromResolved(
-	_ issuer.ResolvedSession,
-) *sessionpb.AuthenticatedPrincipal {
-	return nil
-}
-
 func TestAuthnRequestContextInterceptor_continueTransitionID(t *testing.T) {
 	t.Parallel()
 
 	interceptor := AuthnRequestContextInterceptor()
-	req := &pb.ContinueAuthSessionRequest{}
+	req := &pb.ContinueLoginRequest{}
 	req.SetTransitionId("550e8400-e29b-41d4-a716-446655440000")
 
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_ContinueAuthSession_FullMethodName}
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthenticationFlowService_ContinueLogin_FullMethodName}
 	_, err := interceptor(
 		context.Background(),
 		req,
@@ -136,7 +124,7 @@ func TestAuthnRequestContextInterceptor_startClientMeta(t *testing.T) {
 	t.Parallel()
 
 	interceptor := AuthnRequestContextInterceptor()
-	req := &pb.StartAuthSessionRequest{}
+	req := &pb.StartLoginRequest{}
 
 	ctx := metadata.NewIncomingContext(
 		context.Background(),
@@ -149,7 +137,7 @@ func TestAuthnRequestContextInterceptor_startClientMeta(t *testing.T) {
 		),
 	)
 
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthenticationFlowService_StartLogin_FullMethodName}
 	_, err := interceptor(
 		ctx,
 		req,
@@ -180,14 +168,14 @@ func TestAuthnRequestContextInterceptor_startInvalidTimezone(t *testing.T) {
 	t.Parallel()
 
 	interceptor := AuthnRequestContextInterceptor()
-	req := &pb.StartAuthSessionRequest{}
+	req := &pb.StartLoginRequest{}
 
 	ctx := metadata.NewIncomingContext(
 		context.Background(),
 		metadata.Pairs(clientmeta.TimezoneMetadataKey, "Invalid/Zone"),
 	)
 
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthenticationFlowService_StartLogin_FullMethodName}
 	_, err := interceptor(ctx, req, info, func(context.Context, any) (any, error) {
 		t.Fatal("handler should not run")
 		return nil, nil
@@ -213,7 +201,7 @@ func TestAuthnSessionPrincipalInterceptor_resolvesSession(t *testing.T) {
 	ic := AuthnSessionPrincipalInterceptor(iss)
 	wire := validWireToken(t)
 	ctx := ctxWithHeaderToken(t, wire)
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_RevokeSession_FullMethodName}
+	info := &grpc.UnaryServerInfo{FullMethod: pb.SessionService_RevokeSession_FullMethodName}
 
 	_, err := ic(ctx, nil, info, func(ctx context.Context, _ any) (any, error) {
 		resolved, ok := ResolvedSessionFromContext(ctx)
@@ -234,7 +222,7 @@ func TestAuthnSessionPrincipalInterceptor_missingToken(t *testing.T) {
 	t.Parallel()
 
 	ic := AuthnSessionPrincipalInterceptor(&mockSessionIssuer{})
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_ExtendSession_FullMethodName}
+	info := &grpc.UnaryServerInfo{FullMethod: pb.SessionService_RefreshSession_FullMethodName}
 
 	_, err := ic(context.Background(), nil, info, func(context.Context, any) (any, error) {
 		t.Fatal("handler must not be called")
@@ -278,7 +266,7 @@ func TestAuthnSessionPrincipalInterceptor_sessionExpired(t *testing.T) {
 	wire := validWireToken(t)
 	ctx := ctxWithHeaderToken(t, wire)
 	info := &grpc.UnaryServerInfo{
-		FullMethod: pb.AuthnService_RevokeFederatedIdentity_FullMethodName,
+		FullMethod: pb.LinkedIdentityService_RevokeLinkedIdentity_FullMethodName,
 	}
 
 	_, err := ic(ctx, nil, info, func(context.Context, any) (any, error) {
@@ -297,7 +285,7 @@ func TestAuthnSessionPrincipalInterceptor_unmappedRoute(t *testing.T) {
 	t.Parallel()
 
 	ic := AuthnSessionPrincipalInterceptor(&mockSessionIssuer{err: errors.New("should not call")})
-	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthnService_StartAuthSession_FullMethodName}
+	info := &grpc.UnaryServerInfo{FullMethod: pb.AuthenticationFlowService_StartLogin_FullMethodName}
 
 	called := false
 	_, err := ic(context.Background(), nil, info, func(context.Context, any) (any, error) {

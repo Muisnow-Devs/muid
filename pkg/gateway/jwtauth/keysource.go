@@ -15,9 +15,8 @@ import (
 	"sanzi.io/muid/pkg/log"
 )
 
-// AuthnPublicKeyClient is the subset of authnpb.AuthnServiceClient used to
-// source JWKS keys; the generated client satisfies it structurally.
-type AuthnPublicKeyClient interface {
+// SigningKeyClient is the narrow client consumed by the JWKS source.
+type SigningKeyClient interface {
 	GetPublicKeys(
 		ctx context.Context,
 		in *authnpb.GetPublicKeysRequest,
@@ -25,13 +24,13 @@ type AuthnPublicKeyClient interface {
 	) (*authnpb.GetPublicKeysResponse, error)
 }
 
-// authnKeySource fetches RSA verification keys from AuthnService.GetPublicKeys.
+// authnKeySource fetches RSA verification keys from SigningKeyService.GetPublicKeys.
 type authnKeySource struct {
-	client AuthnPublicKeyClient
+	client SigningKeyClient
 }
 
 // NewAuthnKeySource builds a KeySource backed by an authn service client.
-func NewAuthnKeySource(client AuthnPublicKeyClient) KeySource {
+func NewAuthnKeySource(client SigningKeyClient) KeySource {
 	return &authnKeySource{client: client}
 }
 
@@ -39,7 +38,7 @@ func NewAuthnKeySource(client AuthnPublicKeyClient) KeySource {
 // GetPublicKeys, with the given expected issuer and key-cache TTL. It is the
 // single constructor the gateways use instead of re-wiring NewVerifier +
 // NewAuthnKeySource + Config each.
-func NewAuthnVerifier(client AuthnPublicKeyClient, issuer string, cacheTTL time.Duration) *Verifier {
+func NewAuthnVerifier(client SigningKeyClient, issuer string, cacheTTL time.Duration) *Verifier {
 	return NewVerifier(NewAuthnKeySource(client), Config{Issuer: issuer, CacheTTL: cacheTTL})
 }
 

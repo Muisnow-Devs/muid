@@ -73,14 +73,16 @@ type AccessTokenCookie struct {
 // Resolver is the GraphQL root resolver and dependency holder for the public
 // gateway's app-facing API and the authz/profile BFF data plane.
 type Resolver struct {
-	Authn      authnpb.AuthnServiceClient
-	AuthzUser  authzpb.AuthzUserServiceClient
-	AuthzOrg   authzpb.AuthzOrganizationAdminServiceClient
-	Profile    profilepb.ProfileServiceClient
-	OrgProfile profilepb.OrganizationProfileServiceClient
-	Verifier   TokenVerifier
-	Turnstile  turnstile.Verifier
-	Failures   AuthFailureRecorder
+	AuthFlow       authnpb.AuthenticationFlowServiceClient
+	Session        authnpb.SessionServiceClient
+	LinkedIdentity authnpb.LinkedIdentityServiceClient
+	AuthzUser      authzpb.AuthzUserServiceClient
+	AuthzOrg       authzpb.AuthzOrganizationAdminServiceClient
+	Profile        profilepb.ProfileServiceClient
+	OrgProfile     profilepb.OrganizationProfileServiceClient
+	Verifier       TokenVerifier
+	Turnstile      turnstile.Verifier
+	Failures       AuthFailureRecorder
 
 	SessionCookieCfg SessionCookie
 	AccessCookieCfg  AccessTokenCookie
@@ -216,7 +218,7 @@ func (r *Resolver) MintAccessToken(ctx context.Context) (jwtauth.Claims, error) 
 	if session == "" {
 		return jwtauth.Claims{}, ErrNoSessionCookie
 	}
-	resp, err := r.Authn.IssueAccessToken(reqctx.OutgoingMetadataWithSession(ctx, session), &authnpb.IssueAccessTokenRequest{})
+	resp, err := r.Session.IssueAccessToken(reqctx.OutgoingMetadataWithSession(ctx, session), &authnpb.IssueAccessTokenRequest{})
 	if err != nil {
 		return jwtauth.Claims{}, mapAuthError(err)
 	}
@@ -362,6 +364,21 @@ func sessionFromResult(result *sessionpb.AuthenticatedResult) *model.Session {
 		userID = &id
 	}
 	return sessionModel(userID, mapAuthLevel(result.GetAuthLevel()), result.GetSessionContext())
+}
+
+func sessionFromPrincipal(principal *authnpb.SessionPrincipal) *model.Session {
+	if principal == nil {
+		return nil
+	}
+	userID := principal.GetUserId()
+	out := &model.Session{
+		UserID:    &userID,
+		AuthLevel: mapAuthLevel(principal.GetAuthLevel()),
+	}
+	if ts := principal.GetExpiresAt(); ts != nil {
+		out.ExpiresAt = rfc3339(ts)
+	}
+	return out
 }
 
 func sessionModel(userID *string, level *model.AuthLevel, sc *sessionpb.SessionContext) *model.Session {

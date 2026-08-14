@@ -231,7 +231,7 @@ func (s *EntSessionIssuer) RevokeSessionToken(ctx context.Context, wireToken str
 	return nil
 }
 
-func (s *EntSessionIssuer) ExtendSession(
+func (s *EntSessionIssuer) RefreshSession(
 	ctx context.Context,
 	wireToken string,
 ) (*sessionpb.SessionContext, error) {
@@ -417,31 +417,4 @@ func (s *EntSessionIssuer) populateCache(
 			ValidatorHash:  sess.ValidatorHash,
 		})
 	}
-}
-
-func (s *EntSessionIssuer) AuthenticatedResultFromResolved(
-	resolved ResolvedSession,
-) *sessionpb.AuthenticatedResult {
-	sctx := &sessionpb.SessionContext{}
-	sctx.SetIssuedAt(timestamppb.New(resolved.IssuedAt.UTC()))
-	sctx.SetExpiresAt(timestamppb.New(resolved.ExpiresAt.UTC()))
-
-	out := &sessionpb.AuthenticatedResult{}
-	out.SetUserId(resolved.UserID.String())
-	out.SetSessionContext(sctx)
-	out.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM)
-
-	return out
-}
-
-func (s *EntSessionIssuer) AuthenticatedPrincipalFromResolved(
-	resolved ResolvedSession,
-) *sessionpb.AuthenticatedPrincipal {
-	out := &sessionpb.AuthenticatedPrincipal{}
-	out.SetUserId(resolved.UserID.String())
-	out.SetEmail(resolved.Email)
-	out.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM)
-	out.SetIssuedAt(timestamppb.New(resolved.IssuedAt.UTC()))
-	out.SetExpiresAt(timestamppb.New(resolved.ExpiresAt.UTC()))
-	return out
 }

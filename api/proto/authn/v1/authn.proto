@@ -2,40 +2,7 @@ syntax = "proto3";
 
 package muid.authn.v1;
 
-import "authn/v1/authentication_flow.proto";
-import "authn/v1/linked_identity.proto";
-import "authn/v1/session_service.proto";
-import "authn/v1/signing_key.proto";
-
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
-service AuthnService {
-  /// authentication APIs
-  rpc StartAuthSession(StartAuthSessionRequest) returns (StartAuthSessionResponse);
-  rpc ContinueAuthSession(ContinueAuthSessionRequest) returns (ContinueAuthSessionResponse);
-
-  /// user related APIs, for user to manage their sessions.
-  rpc RevokeFederatedIdentity(RevokeFederatedIdentityRequest) returns (RevokeFederatedIdentityResponse);
-  // Validates the opaque session token only; JWT access tokens are verified by
-  // callers locally via JWKS (GetPublicKeys) and are never resolvable here.
-  rpc GetAuthorizedSession(GetAuthorizedSessionRequest) returns (GetAuthorizedSessionResponse);
-  // Resolves a session into an authenticated principal for downstream services.
-  // Accepts the opaque session token only, never JWT access tokens.
-  rpc GetAuthenticatedPrincipal(GetAuthenticatedPrincipalRequest) returns (GetAuthenticatedPrincipalResponse);
-
-  // user session management APIs
-  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
-  // Extends the session token expiry up to the absolute 90-day cap. The
-  // response also carries a fresh access token when the feature is configured.
-  rpc ExtendSession(ExtendSessionRequest) returns (ExtendSessionResponse);
-  // Exchanges a valid session token (refresh-token role) for a fresh
-  // short-lived JWT access token. Unavailable when the access-token feature
-  // is not configured.
-  rpc IssueAccessToken(IssueAccessTokenRequest) returns (IssueAccessTokenResponse);
-
-  /// OIDC/JWK infrastructure APIs.
-  // Serves the JWT signing public keys (JWKS source) for session access tokens
-  // and OIDC provider tokens. No authentication required; a gateway maps
-  // GET /.well-known/jwks.json onto this RPC.
-  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
-}
+// Authn's public surface is split into the focused services declared in the
+// sibling proto files. This package marker remains as the stable module entry.

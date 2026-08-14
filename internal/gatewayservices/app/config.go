@@ -12,7 +12,7 @@ type Config struct {
 	Debug bool `envconfig:"DEBUG" default:"false"`
 	Port  int  `envconfig:"PORT" default:"8081"`
 
-	// AuthnGRPCAddr hosts AuthnService.GetPublicKeys (JWKS source for JWT verification).
+	// AuthnGRPCAddr hosts SigningKeyService.GetPublicKeys (JWKS source for JWT verification).
 	AuthnGRPCAddr string `envconfig:"AUTHN_GRPC_ADDR" required:"true"`
 	// ProfileGRPCAddr backs the BFF handlers.
 	ProfileGRPCAddr string `envconfig:"PROFILE_GRPC_ADDR" required:"true"`

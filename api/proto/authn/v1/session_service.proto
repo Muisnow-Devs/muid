@@ -3,23 +3,31 @@ syntax = "proto3";
 package muid.authn.v1;
 
 import "authn/v1/session.proto";
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
-// Session token is passed via the authorization metadata header: "Session <token>".
-message GetAuthorizedSessionRequest {}
+service SessionService {
+  rpc GetSessionPrincipal(GetSessionPrincipalRequest) returns (GetSessionPrincipalResponse);
+  rpc RefreshSession(RefreshSessionRequest) returns (RefreshSessionResponse);
+  rpc RevokeSession(RevokeSessionRequest) returns (RevokeSessionResponse);
+  rpc IssueAccessToken(IssueAccessTokenRequest) returns (IssueAccessTokenResponse);
+}
 
-message GetAuthorizedSessionResponse {
-  bool valid = 1;
-  muid.authn.v1.session.AuthenticatedResult session = 2;
+message SessionPrincipal {
+  string user_id = 1 [(buf.validate.field).string.uuid = true];
+  muid.authn.v1.session.AuthLevel auth_level = 2;
+  google.protobuf.Timestamp issued_at = 3;
+  google.protobuf.Timestamp expires_at = 4;
 }
 
 // Session token is passed via the authorization metadata header: "Session <token>".
-message GetAuthenticatedPrincipalRequest {}
+message GetSessionPrincipalRequest {}
 
-message GetAuthenticatedPrincipalResponse {
+message GetSessionPrincipalResponse {
   bool valid = 1;
-  muid.authn.v1.session.AuthenticatedPrincipal principal = 2;
+  SessionPrincipal principal = 2;
 }
 
 // Session token is passed via the authorization metadata header: "Session <token>".
@@ -30,9 +38,9 @@ message RevokeSessionResponse {
 }
 
 // Session token is passed via the authorization metadata header: "Session <token>".
-message ExtendSessionRequest {}
+message RefreshSessionRequest {}
 
-message ExtendSessionResponse {
+message RefreshSessionResponse {
   muid.authn.v1.session.SessionContext session_context = 1;
 }
 

@@ -22,27 +22,27 @@ const (
 )
 
 // Session token is passed via the authorization metadata header: "Session <token>".
-type RevokeFederatedIdentityRequest struct {
+type RevokeLinkedIdentityRequest struct {
 	state               protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Provider string                 `protobuf:"bytes,1,opt,name=provider,proto3"`
 	unknownFields       protoimpl.UnknownFields
 	sizeCache           protoimpl.SizeCache
 }
 
-func (x *RevokeFederatedIdentityRequest) Reset() {
-	*x = RevokeFederatedIdentityRequest{}
+func (x *RevokeLinkedIdentityRequest) Reset() {
+	*x = RevokeLinkedIdentityRequest{}
 	mi := &file_authn_v1_linked_identity_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RevokeFederatedIdentityRequest) String() string {
+func (x *RevokeLinkedIdentityRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RevokeFederatedIdentityRequest) ProtoMessage() {}
+func (*RevokeLinkedIdentityRequest) ProtoMessage() {}
 
-func (x *RevokeFederatedIdentityRequest) ProtoReflect() protoreflect.Message {
+func (x *RevokeLinkedIdentityRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_authn_v1_linked_identity_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -54,52 +54,52 @@ func (x *RevokeFederatedIdentityRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *RevokeFederatedIdentityRequest) GetProvider() string {
+func (x *RevokeLinkedIdentityRequest) GetProvider() string {
 	if x != nil {
 		return x.xxx_hidden_Provider
 	}
 	return ""
 }
 
-func (x *RevokeFederatedIdentityRequest) SetProvider(v string) {
+func (x *RevokeLinkedIdentityRequest) SetProvider(v string) {
 	x.xxx_hidden_Provider = v
 }
 
-type RevokeFederatedIdentityRequest_builder struct {
+type RevokeLinkedIdentityRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Provider string
 }
 
-func (b0 RevokeFederatedIdentityRequest_builder) Build() *RevokeFederatedIdentityRequest {
-	m0 := &RevokeFederatedIdentityRequest{}
+func (b0 RevokeLinkedIdentityRequest_builder) Build() *RevokeLinkedIdentityRequest {
+	m0 := &RevokeLinkedIdentityRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Provider = b.Provider
 	return m0
 }
 
-type RevokeFederatedIdentityResponse struct {
+type RevokeLinkedIdentityResponse struct {
 	state              protoimpl.MessageState `protogen:"opaque.v1"`
 	xxx_hidden_Success bool                   `protobuf:"varint,1,opt,name=success,proto3"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
 
-func (x *RevokeFederatedIdentityResponse) Reset() {
-	*x = RevokeFederatedIdentityResponse{}
+func (x *RevokeLinkedIdentityResponse) Reset() {
+	*x = RevokeLinkedIdentityResponse{}
 	mi := &file_authn_v1_linked_identity_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *RevokeFederatedIdentityResponse) String() string {
+func (x *RevokeLinkedIdentityResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*RevokeFederatedIdentityResponse) ProtoMessage() {}
+func (*RevokeLinkedIdentityResponse) ProtoMessage() {}
 
-func (x *RevokeFederatedIdentityResponse) ProtoReflect() protoreflect.Message {
+func (x *RevokeLinkedIdentityResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_authn_v1_linked_identity_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -111,25 +111,25 @@ func (x *RevokeFederatedIdentityResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-func (x *RevokeFederatedIdentityResponse) GetSuccess() bool {
+func (x *RevokeLinkedIdentityResponse) GetSuccess() bool {
 	if x != nil {
 		return x.xxx_hidden_Success
 	}
 	return false
 }
 
-func (x *RevokeFederatedIdentityResponse) SetSuccess(v bool) {
+func (x *RevokeLinkedIdentityResponse) SetSuccess(v bool) {
 	x.xxx_hidden_Success = v
 }
 
-type RevokeFederatedIdentityResponse_builder struct {
+type RevokeLinkedIdentityResponse_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
 	Success bool
 }
 
-func (b0 RevokeFederatedIdentityResponse_builder) Build() *RevokeFederatedIdentityResponse {
-	m0 := &RevokeFederatedIdentityResponse{}
+func (b0 RevokeLinkedIdentityResponse_builder) Build() *RevokeLinkedIdentityResponse {
+	m0 := &RevokeLinkedIdentityResponse{}
 	b, x := &b0, m0
 	_, _ = b, x
 	x.xxx_hidden_Success = b.Success
@@ -140,21 +140,25 @@ var File_authn_v1_linked_identity_proto protoreflect.FileDescriptor
 
 const file_authn_v1_linked_identity_proto_rawDesc = "" +
 	"\n" +
-	"\x1eauthn/v1/linked_identity.proto\x12\rmuid.authn.v1\x1a\x1bbuf/validate/validate.proto\"G\n" +
-	"\x1eRevokeFederatedIdentityRequest\x12%\n" +
-	"\bprovider\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x182R\bprovider\";\n" +
-	"\x1fRevokeFederatedIdentityResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccessB\xa6\x01\n" +
+	"\x1eauthn/v1/linked_identity.proto\x12\rmuid.authn.v1\x1a\x1bbuf/validate/validate.proto\"D\n" +
+	"\x1bRevokeLinkedIdentityRequest\x12%\n" +
+	"\bprovider\x18\x01 \x01(\tB\t\xbaH\x06r\x04\x10\x01\x182R\bprovider\"8\n" +
+	"\x1cRevokeLinkedIdentityResponse\x12\x18\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess2\x88\x01\n" +
+	"\x15LinkedIdentityService\x12o\n" +
+	"\x14RevokeLinkedIdentity\x12*.muid.authn.v1.RevokeLinkedIdentityRequest\x1a+.muid.authn.v1.RevokeLinkedIdentityResponseB\xa6\x01\n" +
 	"\x11com.muid.authn.v1B\x13LinkedIdentityProtoP\x01Z&sanzi.io/muid/api/proto/authn/v1;authn\xa2\x02\x03MAX\xaa\x02\rMuid.Authn.V1\xca\x02\rMuid\\Authn\\V1\xe2\x02\x19Muid\\Authn\\V1\\GPBMetadata\xea\x02\x0fMuid::Authn::V1b\x06proto3"
 
 var file_authn_v1_linked_identity_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_authn_v1_linked_identity_proto_goTypes = []any{
-	(*RevokeFederatedIdentityRequest)(nil),  // 0: muid.authn.v1.RevokeFederatedIdentityRequest
-	(*RevokeFederatedIdentityResponse)(nil), // 1: muid.authn.v1.RevokeFederatedIdentityResponse
+	(*RevokeLinkedIdentityRequest)(nil),  // 0: muid.authn.v1.RevokeLinkedIdentityRequest
+	(*RevokeLinkedIdentityResponse)(nil), // 1: muid.authn.v1.RevokeLinkedIdentityResponse
 }
 var file_authn_v1_linked_identity_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
+	0, // 0: muid.authn.v1.LinkedIdentityService.RevokeLinkedIdentity:input_type -> muid.authn.v1.RevokeLinkedIdentityRequest
+	1, // 1: muid.authn.v1.LinkedIdentityService.RevokeLinkedIdentity:output_type -> muid.authn.v1.RevokeLinkedIdentityResponse
+	1, // [1:2] is the sub-list for method output_type
+	0, // [0:1] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -173,7 +177,7 @@ func file_authn_v1_linked_identity_proto_init() {
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
-			NumServices:   0,
+			NumServices:   1,
 		},
 		GoTypes:           file_authn_v1_linked_identity_proto_goTypes,
 		DependencyIndexes: file_authn_v1_linked_identity_proto_depIdxs,

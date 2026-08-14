@@ -82,12 +82,12 @@ func enrichOptionalSessionPrincipal(iss issuer.SessionIssuer) grpcutils.RequestC
 func AuthnSessionPrincipalInterceptor(iss issuer.SessionIssuer) grpc.UnaryServerInterceptor {
 	required := enrichSessionPrincipal(iss)
 	routes := map[string]grpcutils.RequestContextFunc{
-		pb.AuthnService_RevokeFederatedIdentity_FullMethodName: required,
-		pb.AuthnService_RevokeSession_FullMethodName:           required,
-		pb.AuthnService_ExtendSession_FullMethodName:           required,
+		pb.LinkedIdentityService_RevokeLinkedIdentity_FullMethodName: required,
+		pb.SessionService_RevokeSession_FullMethodName:               required,
+		pb.SessionService_RefreshSession_FullMethodName:              required,
 		// The access-token exchange authenticates via the opaque session
 		// token only; the JWT it returns is never accepted back by authn.
-		pb.AuthnService_IssueAccessToken_FullMethodName: required,
+		pb.SessionService_IssueAccessToken_FullMethodName: required,
 
 		// OIDC provider surface. Authorize is the only optional-session
 		// route; token-style RPCs authenticate the client in-message and

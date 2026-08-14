@@ -34,26 +34,28 @@ const (
 // fakeAuthnFlow implements the auth-flow + session-lifecycle RPCs the GraphQL
 // resolvers use.
 type fakeAuthnFlow struct {
-	authnpb.AuthnServiceClient
+	authnpb.AuthenticationFlowServiceClient
+	authnpb.SessionServiceClient
+	authnpb.LinkedIdentityServiceClient
 	continueErr    error
-	rotatedTok     string // session token returned by ExtendSession
+	rotatedTok     string // session token returned by RefreshSession
 	issueAccessErr error
 }
 
-func (fakeAuthnFlow) StartAuthSession(_ context.Context, _ *authnpb.StartAuthSessionRequest, _ ...grpc.CallOption) (*authnpb.StartAuthSessionResponse, error) {
+func (fakeAuthnFlow) StartLogin(_ context.Context, _ *authnpb.StartLoginRequest, _ ...grpc.CallOption) (*authnpb.StartLoginResponse, error) {
 	ec := &challengepb.EmailChallenge{}
 	ec.SetEmailMasked("a***@test")
 	ec.SetResendCooldownMillis(60000)
 	ch := &challengepb.AuthChallenge{}
 	ch.SetChallengeId(uuid.NewString())
 	ch.SetEmailChallenge(ec)
-	resp := &authnpb.StartAuthSessionResponse{}
+	resp := &authnpb.StartLoginResponse{}
 	resp.SetTransitionId(uuid.NewString())
 	resp.SetChallenge(ch)
 	return resp, nil
 }
 
-func (f fakeAuthnFlow) ContinueAuthSession(_ context.Context, _ *authnpb.ContinueAuthSessionRequest, _ ...grpc.CallOption) (*authnpb.ContinueAuthSessionResponse, error) {
+func (f fakeAuthnFlow) ContinueLogin(_ context.Context, _ *authnpb.ContinueLoginRequest, _ ...grpc.CallOption) (*authnpb.ContinueLoginResponse, error) {
 	if f.continueErr != nil {
 		return nil, f.continueErr
 	}
@@ -67,18 +69,18 @@ func (f fakeAuthnFlow) ContinueAuthSession(_ context.Context, _ *authnpb.Continu
 	result.SetSessionContext(sctx)
 	success := &sessionpb.AuthSuccess{}
 	success.SetResult(result)
-	resp := &authnpb.ContinueAuthSessionResponse{}
+	resp := &authnpb.ContinueLoginResponse{}
 	resp.SetStatus(basicpb.AuthStatus_AUTH_STATUS_AUTHENTICATED)
 	resp.SetAuthSuccess(success)
 	return resp, nil
 }
 
-func (f fakeAuthnFlow) ExtendSession(_ context.Context, _ *authnpb.ExtendSessionRequest, _ ...grpc.CallOption) (*authnpb.ExtendSessionResponse, error) {
+func (f fakeAuthnFlow) RefreshSession(_ context.Context, _ *authnpb.RefreshSessionRequest, _ ...grpc.CallOption) (*authnpb.RefreshSessionResponse, error) {
 	tok := &sessionpb.SessionToken{}
 	tok.SetValue(f.rotatedTok)
 	sctx := &sessionpb.SessionContext{}
 	sctx.SetSessionToken(tok)
-	resp := &authnpb.ExtendSessionResponse{}
+	resp := &authnpb.RefreshSessionResponse{}
 	resp.SetSessionContext(sctx)
 	return resp, nil
 }
@@ -101,6 +103,28 @@ func (f fakeAuthnFlow) IssueAccessToken(ctx context.Context, _ *authnpb.IssueAcc
 	return resp, nil
 }
 
+func (fakeAuthnFlow) GetSessionPrincipal(
+	_ context.Context,
+	_ *authnpb.GetSessionPrincipalRequest,
+	_ ...grpc.CallOption,
+) (*authnpb.GetSessionPrincipalResponse, error) {
+	principal := &authnpb.SessionPrincipal{}
+	principal.SetUserId("550e8400-e29b-41d4-a716-446655440000")
+	principal.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_HIGH)
+	principal.SetIssuedAt(timestamppb.New(time.Now().Add(-time.Minute)))
+	principal.SetExpiresAt(timestamppb.New(time.Now().Add(time.Hour)))
+	resp := &authnpb.GetSessionPrincipalResponse{}
+	resp.SetValid(true)
+	resp.SetPrincipal(principal)
+	return resp, nil
+}
+
+type gatewayAuthnClient interface {
+	authnpb.AuthenticationFlowServiceClient
+	authnpb.SessionServiceClient
+	authnpb.LinkedIdentityServiceClient
+}
+
 func authFailureErr(reason string) error {
 	af := &sessionpb.AuthFailure{}
 	af.SetReason(reason)
@@ -112,17 +136,19 @@ func authFailureErr(reason string) error {
 	return st.Err()
 }
 
-func gqlInfra(authn authnpb.AuthnServiceClient, verifier turnstile.Verifier, csrfMgr *csrf.Manager, store kv.AtomicKVStore) *InfraDependencies {
+func gqlInfra(authn gatewayAuthnClient, verifier turnstile.Verifier, csrfMgr *csrf.Manager, store kv.AtomicKVStore) *InfraDependencies {
 	return &InfraDependencies{
 		// Debug enables ad-hoc queries so these tests can post operations
 		// directly without a persisted-operations manifest.
-		GlobalConfig: Config{Debug: true, Port: 8080, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 90, RiskPoWThreshold: 50, PoWDifficulty: 8},
-		Redis:        store,
-		Geo:          geoip.NewMockResolver(geoip.GeoInfo{CountryCode: "US", Resolved: true}),
-		Turnstile:    verifier,
-		CSRF:         csrfMgr,
-		OIDCClient:   fakeOIDC{},
-		AuthnClient:  authn,
+		GlobalConfig:         Config{Debug: true, Port: 8080, RateLimit: 100, RateLimitWindowSeconds: 60, RiskBlockThreshold: 90, RiskPoWThreshold: 50, PoWDifficulty: 8},
+		Redis:                store,
+		Geo:                  geoip.NewMockResolver(geoip.GeoInfo{CountryCode: "US", Resolved: true}),
+		Turnstile:            verifier,
+		CSRF:                 csrfMgr,
+		OIDCClient:           fakeOIDC{},
+		AuthFlowClient:       authn,
+		SessionClient:        authn,
+		LinkedIdentityClient: authn,
 	}
 }
 
@@ -312,6 +338,25 @@ func TestViewerSessionUnauthenticatedIsNull(t *testing.T) {
 	data, _ := out["data"].(map[string]any)
 	if data["viewerSession"] != nil {
 		t.Fatalf("expected null viewerSession, got %v", data["viewerSession"])
+	}
+}
+
+func TestViewerSessionUsesCredentialFreePrincipal(t *testing.T) {
+	t.Parallel()
+
+	h := newHandler(gqlInfra(fakeAuthnFlow{}, turnstile.AlwaysValid(), nil, mocked.NewMockKVStore()))
+	cur := &http.Cookie{Name: defaultCookieName, Value: testSessionToken}
+	_, out := postGraphQL(t, h, `query { viewerSession { userId authLevel expiresAt } }`, "", cur)
+	if _, ok := out["errors"]; ok {
+		t.Fatalf("viewerSession failed: %v", out)
+	}
+	data, _ := out["data"].(map[string]any)
+	viewer, _ := data["viewerSession"].(map[string]any)
+	if viewer["userId"] != "550e8400-e29b-41d4-a716-446655440000" {
+		t.Fatalf("viewerSession userId = %v", viewer["userId"])
+	}
+	if viewer["authLevel"] != "HIGH" || viewer["expiresAt"] == nil {
+		t.Fatalf("viewerSession principal mapping = %v", viewer)
 	}
 }
 

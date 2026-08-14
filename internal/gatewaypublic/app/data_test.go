@@ -150,17 +150,19 @@ var lastUpdateMask []string
 func dataInfra(t *testing.T, verifier *fakeVerifier, authzUser *fakeAuthzUser, authzOrg *fakeAuthzOrg, profile *fakeProfile) *InfraDependencies {
 	t.Helper()
 	return &InfraDependencies{
-		GlobalConfig:     Config{Debug: true, Port: 8080, RateLimit: 1000, RateLimitWindowSeconds: 60, RiskBlockThreshold: 90, RiskPoWThreshold: 50, PoWDifficulty: 8, AccessTokenCookieName: "__Secure-muid_at"},
-		Redis:            mocked.NewMockKVStore(),
-		Geo:              geoip.NewMockResolver(geoip.GeoInfo{CountryCode: "US", Resolved: true}),
-		Turnstile:        turnstile.AlwaysValid(),
-		OIDCClient:       fakeOIDC{},
-		AuthnClient:      fakeAuthnFlow{},
-		AuthzUserClient:  authzUser,
-		AuthzOrgClient:   authzOrg,
-		ProfileClient:    profile,
-		OrgProfileClient: nil,
-		Verifier:         verifier,
+		GlobalConfig:         Config{Debug: true, Port: 8080, RateLimit: 1000, RateLimitWindowSeconds: 60, RiskBlockThreshold: 90, RiskPoWThreshold: 50, PoWDifficulty: 8, AccessTokenCookieName: "__Secure-muid_at"},
+		Redis:                mocked.NewMockKVStore(),
+		Geo:                  geoip.NewMockResolver(geoip.GeoInfo{CountryCode: "US", Resolved: true}),
+		Turnstile:            turnstile.AlwaysValid(),
+		OIDCClient:           fakeOIDC{},
+		AuthFlowClient:       fakeAuthnFlow{},
+		SessionClient:        fakeAuthnFlow{},
+		LinkedIdentityClient: fakeAuthnFlow{},
+		AuthzUserClient:      authzUser,
+		AuthzOrgClient:       authzOrg,
+		ProfileClient:        profile,
+		OrgProfileClient:     nil,
+		Verifier:             verifier,
 	}
 }
 

@@ -6,6 +6,10 @@ import "authn/v1/certification.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
+service SigningKeyService {
+  rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
+}
+
 message GetPublicKeysRequest {}
 
 message GetPublicKeysResponse {

@@ -13,15 +13,15 @@ import (
 	"sanzi.io/muid/pkg/log"
 )
 
-func (g *GRPCHandler) ExtendSession(
+func (g *GRPCHandler) RefreshSession(
 	ctx context.Context,
-	req *pb.ExtendSessionRequest,
-) (*pb.ExtendSessionResponse, error) {
+	req *pb.RefreshSessionRequest,
+) (*pb.RefreshSessionResponse, error) {
 	// Wire token resolved and validated by AuthnSessionPrincipalInterceptor.
 	// ResolvedSession is already on ctx; the issuer still needs the raw wire token.
 	wire, _ := grpcutils.WireSessionTokenFromContext(ctx)
 
-	sctx, err := g.issuer.ExtendSession(ctx, wire)
+	sctx, err := g.issuer.RefreshSession(ctx, wire)
 	if errors.Is(err, session.ErrSessionNotFound) {
 		return nil, status.Error(codes.NotFound, "session not found")
 	}
@@ -39,7 +39,7 @@ func (g *GRPCHandler) ExtendSession(
 	resolved, _ := ResolvedSessionFromContext(ctx)
 	g.attachAccessToken(ctx, sctx, resolved.UserID, resolved.Email)
 
-	out := &pb.ExtendSessionResponse{}
+	out := &pb.RefreshSessionResponse{}
 	out.SetSessionContext(sctx)
 	return out, nil
 }

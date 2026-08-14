@@ -29,12 +29,12 @@ func (r *mutationResolver) StartAuth(ctx context.Context, input model.StartAuthI
 		return nil, gqlerror.Errorf("captcha verification failed")
 	}
 
-	req := &authnpb.StartAuthSessionRequest{}
+	req := &authnpb.StartLoginRequest{}
 	req.SetMethod(mapMethod(input.Method))
 	req.SetIdentifier(input.Identifier)
 	req.SetIntent(mapIntent(input.Intent))
 
-	resp, err := r.Authn.StartAuthSession(r.outgoing(ctx), req)
+	resp, err := r.AuthFlow.StartLogin(r.outgoing(ctx), req)
 	if err != nil {
 		return nil, mapAuthError(err)
 	}
@@ -51,11 +51,11 @@ func (r *mutationResolver) ContinueAuth(ctx context.Context, input model.Continu
 		return nil, err
 	}
 
-	req := &authnpb.ContinueAuthSessionRequest{}
+	req := &authnpb.ContinueLoginRequest{}
 	req.SetTransitionId(input.TransitionID)
 	req.SetProof(proof)
 
-	resp, err := r.Authn.ContinueAuthSession(r.outgoing(ctx), req)
+	resp, err := r.AuthFlow.ContinueLogin(r.outgoing(ctx), req)
 	if err != nil {
 		// Record the failed attempt so the risk model can spot brute force.
 		r.recordAuthFailure(ctx)
@@ -89,12 +89,12 @@ func (r *mutationResolver) RefreshSession(ctx context.Context) (*model.Session, 
 	if r.sessionTokenFromCookie(ctx) == "" {
 		return nil, gqlerror.Errorf("authentication required")
 	}
-	resp, err := r.Authn.ExtendSession(r.outgoing(ctx), &authnpb.ExtendSessionRequest{})
+	resp, err := r.Session.RefreshSession(r.outgoing(ctx), &authnpb.RefreshSessionRequest{})
 	if err != nil {
 		return nil, mapAuthError(err)
 	}
 	sc := resp.GetSessionContext()
-	// ExtendSession may rotate the token; refresh both cookies.
+	// RefreshSession may rotate the token; refresh both cookies.
 	r.setSessionCookie(ctx, sc.GetSessionToken().GetValue())
 	if at := sc.GetAccessToken(); at != nil {
 		r.setAccessTokenCookie(ctx, at.GetValue(), at.GetExpiresAt())
@@ -108,7 +108,7 @@ func (r *mutationResolver) Logout(ctx context.Context) (bool, error) {
 		r.clearAccessTokenCookie(ctx)
 		return true, nil // already signed out; idempotent
 	}
-	resp, err := r.Authn.RevokeSession(r.outgoing(ctx), &authnpb.RevokeSessionRequest{})
+	resp, err := r.Session.RevokeSession(r.outgoing(ctx), &authnpb.RevokeSessionRequest{})
 	// Clear local cookies regardless of the backend outcome.
 	r.clearSessionCookie(ctx)
 	r.clearAccessTokenCookie(ctx)
@@ -123,9 +123,9 @@ func (r *mutationResolver) UnlinkFederatedIdentity(ctx context.Context, input mo
 	if r.sessionTokenFromCookie(ctx) == "" {
 		return false, gqlerror.Errorf("authentication required")
 	}
-	req := &authnpb.RevokeFederatedIdentityRequest{}
+	req := &authnpb.RevokeLinkedIdentityRequest{}
 	req.SetProvider(input.Provider)
-	resp, err := r.Authn.RevokeFederatedIdentity(r.outgoing(ctx), req)
+	resp, err := r.LinkedIdentity.RevokeLinkedIdentity(r.outgoing(ctx), req)
 	if err != nil {
 		return false, mapAuthError(err)
 	}
@@ -142,14 +142,14 @@ func (r *queryResolver) ViewerSession(ctx context.Context) (*model.Session, erro
 	if r.sessionTokenFromCookie(ctx) == "" {
 		return nil, nil
 	}
-	resp, err := r.Authn.GetAuthorizedSession(r.outgoing(ctx), &authnpb.GetAuthorizedSessionRequest{})
+	resp, err := r.Session.GetSessionPrincipal(r.outgoing(ctx), &authnpb.GetSessionPrincipalRequest{})
 	if err != nil {
 		return nil, mapAuthError(err)
 	}
 	if !resp.GetValid() {
 		return nil, nil
 	}
-	return sessionFromResult(resp.GetSession()), nil
+	return sessionFromPrincipal(resp.GetPrincipal()), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

@@ -70,7 +70,7 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 	}
 
 	verifier := jwtauth.NewAuthnVerifier(
-		authnpb.NewAuthnServiceClient(authnConn),
+		authnpb.NewSigningKeyServiceClient(authnConn),
 		cfg.SessionAccessTokenIssuer,
 		time.Duration(cfg.JWKSCacheTTLSeconds)*time.Second,
 	)

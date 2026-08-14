@@ -91,7 +91,7 @@ type Config struct {
 
 	// SignatureSecretName names the GCP secret holding the JWT signing keys.
 	// Authn is the sole owner and rotator; the public keys are served via
-	// AuthnService.GetPublicKeys (JWKS source). Required when either the OIDC
+	// SigningKeyService.GetPublicKeys (JWKS source). Required when either the OIDC
 	// provider or session access tokens are enabled.
 	SignatureSecretName          string `envconfig:"SIGNATURE_SECRET_NAME"           default:""`
 	SignatureKeyBits             int    `envconfig:"SIGNATURE_KEY_BITS"              default:"2048"`

@@ -71,21 +71,21 @@ func TestOIDCAdminPlatformAuthorizationInterceptor(t *testing.T) {
 
 	userID := uuid.New()
 	tests := []struct {
-		name        string
-		checker     *fakePlatformPermissionChecker
-		withUser    bool
-		method      string
-		wantCode    codes.Code
-		wantCalled  bool
+		name       string
+		checker    *fakePlatformPermissionChecker
+		withUser   bool
+		method     string
+		wantCode   codes.Code
+		wantCalled bool
 		permission string
 	}{
 		{
-			name:        "allowed read",
-			checker:     &fakePlatformPermissionChecker{allowed: true},
-			withUser:    true,
-			method:      pb.OIDCClientAdminService_ListOIDCClients_FullMethodName,
-			wantCode:    codes.OK,
-			wantCalled:  true,
+			name:       "allowed read",
+			checker:    &fakePlatformPermissionChecker{allowed: true},
+			withUser:   true,
+			method:     pb.OIDCClientAdminService_ListOIDCClients_FullMethodName,
+			wantCode:   codes.OK,
+			wantCalled: true,
 			permission: authzmodel.PlatformPermissionOIDCClientRead,
 		},
 		{
@@ -174,7 +174,7 @@ func TestOIDCAdminPlatformAuthorizationInterceptorBypassesNonAdminMethod(t *test
 	_, err := OIDCAdminPlatformAuthorizationInterceptor(nil)(
 		context.Background(),
 		nil,
-		&grpc.UnaryServerInfo{FullMethod: pb.AuthnService_GetPublicKeys_FullMethodName},
+		&grpc.UnaryServerInfo{FullMethod: pb.SigningKeyService_GetPublicKeys_FullMethodName},
 		func(context.Context, any) (any, error) {
 			called = true
 			return nil, nil

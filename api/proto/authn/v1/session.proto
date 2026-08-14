@@ -16,7 +16,7 @@ enum AuthLevel {
 }
 
 // SessionToken is the long-lived opaque token (refresh-token role). It is the
-// only credential AuthnService RPCs accept for authentication; it can be
+// only credential SessionService RPCs accept for authentication; it can be
 // exchanged for a short-lived AccessToken via IssueAccessToken.
 message SessionToken {
   string value = 1 [(buf.validate.field).string = {
@@ -27,8 +27,8 @@ message SessionToken {
 
 // AccessToken is a short-lived (max 5 minutes) RS256 JWT for CDN / gateway
 // fast-path verification. Callers verify it locally against the JWKS served
-// by AuthnService.GetPublicKeys; it is NEVER accepted as authentication by
-// any AuthnService RPC and is distinct from OIDC provider access tokens
+// by SigningKeyService.GetPublicKeys; it is NEVER accepted as authentication by
+// any Authn RPC and is distinct from OIDC provider access tokens
 // (header typ "muid-session+jwt", claim token_use "session").
 message AccessToken {
   string value = 1; // compact JWS
@@ -52,15 +52,6 @@ message AuthenticatedResult {
 
   SessionContext session_context = 2;
   AuthLevel auth_level = 3;
-}
-
-message AuthenticatedPrincipal {
-  string user_id = 1 [(buf.validate.field).string.uuid = true];
-  AuthLevel auth_level = 2;
-  google.protobuf.Timestamp issued_at = 3;
-  google.protobuf.Timestamp expires_at = 4;
-  // Email address associated with the authenticated user. Empty when unavailable.
-  string email = 5;
 }
 
 message ChallengeRequired {

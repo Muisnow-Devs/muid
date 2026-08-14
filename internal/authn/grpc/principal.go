@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"google.golang.org/protobuf/types/known/timestamppb"
+
 	pb "sanzi.io/muid/api/proto/authn/v1"
+	sessionpb "sanzi.io/muid/api/proto/authn/v1/session"
 	"sanzi.io/muid/internal/identity/issuer"
 	"sanzi.io/muid/internal/session"
 	grpcutils "sanzi.io/muid/pkg/grpc_utils"
@@ -30,48 +33,27 @@ func (g *GRPCHandler) resolveSessionFromContext(
 	return resolved, true, nil
 }
 
-// GetAuthorizedSession validates the opaque session token sent via the
-// authorization metadata header ("Session <token>") and returns the resolved
-// session. JWT access tokens are never resolvable here — callers verify those
-// locally via the JWKS served by GetPublicKeys.
-// Returns valid=false instead of an error when the session is expired or not
-// found — this is the contract used by the gateway to check session validity.
-func (g *GRPCHandler) GetAuthorizedSession(
+// GetSessionPrincipal validates the opaque session token and returns only the
+// credential-free principal fields needed by callers. JWT access tokens are
+// verified locally by gateways and are never resolvable here.
+func (g *GRPCHandler) GetSessionPrincipal(
 	ctx context.Context,
-	req *pb.GetAuthorizedSessionRequest,
-) (*pb.GetAuthorizedSessionResponse, error) {
+	_ *pb.GetSessionPrincipalRequest,
+) (*pb.GetSessionPrincipalResponse, error) {
 	res, ok, err := g.resolveSessionFromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	out := &pb.GetAuthorizedSessionResponse{}
+	out := &pb.GetSessionPrincipalResponse{}
 	if ok {
+		principal := &pb.SessionPrincipal{}
+		principal.SetUserId(res.UserID.String())
+		principal.SetAuthLevel(sessionpb.AuthLevel_AUTH_LEVEL_MEDIUM)
+		principal.SetIssuedAt(timestamppb.New(res.IssuedAt.UTC()))
+		principal.SetExpiresAt(timestamppb.New(res.ExpiresAt.UTC()))
 		out.SetValid(true)
-		out.SetSession(g.issuer.AuthenticatedResultFromResolved(res))
-	} else {
-		out.SetValid(false)
-	}
-	return out, nil
-}
-
-// GetAuthenticatedPrincipal resolves the opaque session token sent via the
-// authorization metadata header into an authenticated principal for downstream
-// services. JWT access tokens are not accepted.
-// Returns valid=false instead of an error when the session is expired or not found.
-func (g *GRPCHandler) GetAuthenticatedPrincipal(
-	ctx context.Context,
-	req *pb.GetAuthenticatedPrincipalRequest,
-) (*pb.GetAuthenticatedPrincipalResponse, error) {
-	res, ok, err := g.resolveSessionFromContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	out := &pb.GetAuthenticatedPrincipalResponse{}
-	if ok {
-		out.SetValid(true)
-		out.SetPrincipal(g.issuer.AuthenticatedPrincipalFromResolved(res))
+		out.SetPrincipal(principal)
 	} else {
 		out.SetValid(false)
 	}

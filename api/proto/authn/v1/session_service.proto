@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package muid.authn.v1;
+
+import "authn/v1/session.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message GetAuthorizedSessionRequest {}
+
+message GetAuthorizedSessionResponse {
+  bool valid = 1;
+  muid.authn.v1.session.AuthenticatedResult session = 2;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message GetAuthenticatedPrincipalRequest {}
+
+message GetAuthenticatedPrincipalResponse {
+  bool valid = 1;
+  muid.authn.v1.session.AuthenticatedPrincipal principal = 2;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message RevokeSessionRequest {}
+
+message RevokeSessionResponse {
+  bool success = 1;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message ExtendSessionRequest {}
+
+message ExtendSessionResponse {
+  muid.authn.v1.session.SessionContext session_context = 1;
+}
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message IssueAccessTokenRequest {}
+
+message IssueAccessTokenResponse {
+  muid.authn.v1.session.AccessToken access_token = 1;
+}

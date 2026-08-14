@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package muid.authn.v1;
+
+import "authn/v1/certification.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
+
+message GetPublicKeysRequest {}
+
+message GetPublicKeysResponse {
+  repeated muid.authn.v1.certification.PublicKey public_keys = 1;
+}

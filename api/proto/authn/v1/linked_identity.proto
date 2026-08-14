@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package muid.authn.v1;
+
+import "buf/validate/validate.proto";
+
+option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
+
+// Session token is passed via the authorization metadata header: "Session <token>".
+message RevokeFederatedIdentityRequest {
+  string provider = 1 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 50
+  }];
+}
+
+message RevokeFederatedIdentityResponse {
+  bool success = 1;
+}

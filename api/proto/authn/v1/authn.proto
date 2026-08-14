@@ -2,12 +2,10 @@ syntax = "proto3";
 
 package muid.authn.v1;
 
-import "authn/v1/basic.proto";
-import "authn/v1/certification.proto";
-import "authn/v1/challenge.proto";
-import "authn/v1/proof.proto";
-import "authn/v1/session.proto";
-import "buf/validate/validate.proto";
+import "authn/v1/authentication_flow.proto";
+import "authn/v1/linked_identity.proto";
+import "authn/v1/session_service.proto";
+import "authn/v1/signing_key.proto";
 
 option go_package = "sanzi.io/muid/api/proto/authn/v1;authn";
 
@@ -40,95 +38,4 @@ service AuthnService {
   // and OIDC provider tokens. No authentication required; a gateway maps
   // GET /.well-known/jwks.json onto this RPC.
   rpc GetPublicKeys(GetPublicKeysRequest) returns (GetPublicKeysResponse);
-}
-
-message StartAuthSessionRequest {
-  muid.authn.v1.basic.AuthMethod method = 1;
-  string identifier = 2 [(buf.validate.field).string.max_len = 256];
-  // intent defaults to AUTH_INTENT_LOGIN when unset.
-  muid.authn.v1.basic.AuthIntent intent = 3;
-  // Session token for AUTH_INTENT_LINK_ACCOUNT and AUTH_INTENT_REAUTHENTICATE is
-  // passed via the authorization metadata header: "Session <token>".
-  // Client locale, timezone, device context, and IP are gRPC metadata only (see pkg/clientmeta):
-  // x-client-locale, x-client-timezone, x-client-device, x-client-location,
-  // x-client-user-agent, x-client-ip (set by the gateway). Login-alert secure_link is
-  // AUTHN_LOGIN_ALERT_SECURE_LINK, not client metadata.
-}
-
-message StartAuthSessionResponse {
-  string transition_id = 1 [(buf.validate.field).string.uuid = true];
-  muid.authn.v1.challenge.AuthChallenge challenge = 2;
-}
-
-message ContinueAuthSessionRequest {
-  string transition_id = 1 [(buf.validate.field).string.uuid = true];
-  muid.authn.v1.proof.AuthProof proof = 2;
-  // Session token for AUTH_INTENT_LINK_ACCOUNT is passed via the authorization
-  // metadata header: "Session <token>".
-}
-
-message ContinueAuthSessionResponse {
-  string transition_id = 1 [(buf.validate.field).string.uuid = true];
-  muid.authn.v1.basic.AuthStatus status = 2;
-
-  oneof result {
-    muid.authn.v1.session.ChallengeRequired challenge_required = 3;
-    muid.authn.v1.session.AuthSuccess auth_success = 4;
-    // field 5 (auth_failure) removed: failures are now gRPC errors with AuthFailure as error detail
-  }
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-message GetAuthorizedSessionRequest {}
-
-message GetAuthorizedSessionResponse {
-  bool valid = 1;
-  muid.authn.v1.session.AuthenticatedResult session = 2;
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-message GetAuthenticatedPrincipalRequest {}
-
-message GetAuthenticatedPrincipalResponse {
-  bool valid = 1;
-  muid.authn.v1.session.AuthenticatedPrincipal principal = 2;
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-message RevokeFederatedIdentityRequest {
-  string provider = 1 [(buf.validate.field).string = {
-    min_len: 1
-    max_len: 50
-  }];
-}
-
-message RevokeFederatedIdentityResponse {
-  bool success = 1;
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-message RevokeSessionRequest {}
-
-message RevokeSessionResponse {
-  bool success = 1;
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-message ExtendSessionRequest {}
-
-message ExtendSessionResponse {
-  muid.authn.v1.session.SessionContext session_context = 1;
-}
-
-// Session token is passed via the authorization metadata header: "Session <token>".
-message IssueAccessTokenRequest {}
-
-message IssueAccessTokenResponse {
-  muid.authn.v1.session.AccessToken access_token = 1;
-}
-
-message GetPublicKeysRequest {}
-
-message GetPublicKeysResponse {
-  repeated muid.authn.v1.certification.PublicKey public_keys = 1;
 }

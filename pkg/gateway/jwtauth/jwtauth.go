@@ -68,6 +68,8 @@ type jwtClaims struct {
 type Config struct {
 	// Issuer must match the token's iss claim.
 	Issuer string
+	// RequiredAudience, when non-empty, must be present in the token's aud claim.
+	RequiredAudience string
 	// CacheTTL bounds how long fetched keys are reused (default 5m).
 	CacheTTL time.Duration
 	// Leeway tolerates clock skew on exp/iat (default 60s).
@@ -76,10 +78,11 @@ type Config struct {
 
 // Verifier validates session access tokens against a cached KeySource.
 type Verifier struct {
-	source KeySource
-	issuer string
-	ttl    time.Duration
-	leeway time.Duration
+	source           KeySource
+	issuer           string
+	requiredAudience string
+	ttl              time.Duration
+	leeway           time.Duration
 
 	mu        sync.Mutex
 	cache     map[string]*rsa.PublicKey
@@ -96,10 +99,11 @@ func NewVerifier(source KeySource, cfg Config) *Verifier {
 		cfg.Leeway = time.Minute
 	}
 	return &Verifier{
-		source: source,
-		issuer: cfg.Issuer,
-		ttl:    cfg.CacheTTL,
-		leeway: cfg.Leeway,
+		source:           source,
+		issuer:           cfg.Issuer,
+		requiredAudience: strings.TrimSpace(cfg.RequiredAudience),
+		ttl:              cfg.CacheTTL,
+		leeway:           cfg.Leeway,
 	}
 }
 
@@ -118,6 +122,18 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (Claims, error) {
 	return parsed, err
 }
 
+// VerifyContext validates raw and returns a child context carrying both the
+// verified claims and the exact bearer value. Failed verification returns the
+// original context unchanged, so an invalid credential is never retained.
+func (v *Verifier) VerifyContext(ctx context.Context, raw string) (context.Context, error) {
+	claims, err := v.Verify(ctx, raw)
+	if err != nil {
+		return ctx, err
+	}
+	ctx = WithClaims(ctx, claims)
+	return withRawBearer(ctx, raw), nil
+}
+
 func (v *Verifier) parse(ctx context.Context, raw string, forceRefresh bool) (Claims, error) {
 	keys, err := v.keys(ctx, forceRefresh)
 	if err != nil {
@@ -125,13 +141,17 @@ func (v *Verifier) parse(ctx context.Context, raw string, forceRefresh bool) (Cl
 	}
 
 	var claims jwtClaims
-	parser := jwt.NewParser(
+	parserOptions := []jwt.ParserOption{
 		jwt.WithValidMethods([]string{"RS256"}),
 		jwt.WithIssuer(v.issuer),
 		jwt.WithExpirationRequired(),
 		jwt.WithIssuedAt(),
 		jwt.WithLeeway(v.leeway),
-	)
+	}
+	if v.requiredAudience != "" {
+		parserOptions = append(parserOptions, jwt.WithAudience(v.requiredAudience))
+	}
+	parser := jwt.NewParser(parserOptions...)
 
 	_, err = parser.ParseWithClaims(raw, &claims, func(token *jwt.Token) (any, error) {
 		if typ, _ := token.Header["typ"].(string); typ != sessionAccessTokenTyp {

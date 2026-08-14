@@ -20,6 +20,9 @@ const (
 	sessionAccessTokenTyp = "muid-session+jwt"
 	// sessionTokenUse is the token_use claim value, a second discriminator.
 	sessionTokenUse = "session"
+	// Session access tokens declare both first-party consumer audiences.
+	sessionAudienceGatewayServices = "gateway-services"
+	sessionAudienceAuthnAccount    = "authn-account"
 
 	// MaxSessionAccessTokenTTL caps the session access token lifetime.
 	MaxSessionAccessTokenTTL = 5 * time.Minute
@@ -77,8 +80,12 @@ func (s *Signer) CreateSessionAccessToken(
 		Name:              strings.TrimSpace(claims.Name),
 		Picture:           strings.TrimSpace(claims.Picture),
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   claims.UserID.String(),
-			Issuer:    s.issuer,
+			Subject: claims.UserID.String(),
+			Issuer:  s.issuer,
+			Audience: jwt.ClaimStrings{
+				sessionAudienceGatewayServices,
+				sessionAudienceAuthnAccount,
+			},
 			IssuedAt:  jwt.NewNumericDate(claims.IssuedAt),
 			ExpiresAt: jwt.NewNumericDate(claims.ExpiresAt),
 		},

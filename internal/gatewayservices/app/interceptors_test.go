@@ -34,12 +34,21 @@ func newVerifier(t *testing.T) (*jwtauth.Verifier, *rsa.PrivateKey, string) {
 	kid := uuid.NewString()
 	v := jwtauth.NewVerifier(
 		staticKeySource{keys: map[string]*rsa.PublicKey{kid: &key.PublicKey}},
-		jwtauth.Config{Issuer: testIssuer},
+		jwtauth.Config{
+			Issuer:           testIssuer,
+			RequiredAudience: requiredSessionAudience,
+		},
 	)
 	return v, key, kid
 }
 
-func mintToken(t *testing.T, key *rsa.PrivateKey, kid, sub string) string {
+func mintToken(
+	t *testing.T,
+	key *rsa.PrivateKey,
+	kid string,
+	sub string,
+	audience []string,
+) string {
 	t.Helper()
 	claims := jwt.MapClaims{
 		"token_use": "session",
@@ -47,6 +56,9 @@ func mintToken(t *testing.T, key *rsa.PrivateKey, kid, sub string) string {
 		"iss":       testIssuer,
 		"iat":       jwt.NewNumericDate(time.Now()),
 		"exp":       jwt.NewNumericDate(time.Now().Add(2 * time.Minute)),
+	}
+	if len(audience) > 0 {
+		claims["aud"] = audience
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
 	token.Header["typ"] = "muid-session+jwt"
@@ -63,14 +75,23 @@ func TestAuthInterceptorValidToken(t *testing.T) {
 
 	verifier, key, kid := newVerifier(t)
 	sub := uuid.NewString()
+	raw := mintToken(
+		t,
+		key,
+		kid,
+		sub,
+		[]string{requiredSessionAudience, "authn-account"},
+	)
 	ctx := metadata.NewIncomingContext(context.Background(),
-		metadata.Pairs("authorization", "Bearer "+mintToken(t, key, kid, sub)))
+		metadata.Pairs("authorization", "Bearer "+raw))
 
 	var seen uuid.UUID
+	var seenRaw string
 	_, err := authInterceptor(verifier)(ctx, nil, &grpc.UnaryServerInfo{}, func(ctx context.Context, _ any) (any, error) {
 		if claims, ok := jwtauth.ClaimsFromContext(ctx); ok {
 			seen = claims.UserID
 		}
+		seenRaw, _ = jwtauth.RawBearerFromContext(ctx)
 		return "ok", nil
 	})
 	if err != nil {
@@ -78,6 +99,43 @@ func TestAuthInterceptorValidToken(t *testing.T) {
 	}
 	if seen.String() != sub {
 		t.Fatalf("claims user id = %s, want %s", seen, sub)
+	}
+	if seenRaw != raw {
+		t.Fatalf("raw bearer = %q, want exact token", seenRaw)
+	}
+}
+
+func TestAuthInterceptorRejectsInvalidAudience(t *testing.T) {
+	t.Parallel()
+
+	verifier, key, kid := newVerifier(t)
+	tests := []struct {
+		name     string
+		audience []string
+	}{
+		{name: "missing audience"},
+		{name: "wrong audience", audience: []string{"authn-account"}},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			raw := mintToken(t, key, kid, uuid.NewString(), test.audience)
+			ctx := metadata.NewIncomingContext(
+				context.Background(),
+				metadata.Pairs("authorization", "Bearer "+raw),
+			)
+			_, err := authInterceptor(verifier)(
+				ctx,
+				nil,
+				&grpc.UnaryServerInfo{},
+				func(context.Context, any) (any, error) {
+					t.Fatal("handler should not run for invalid audience")
+					return nil, nil
+				},
+			)
+			if status.Code(err) != codes.Unauthenticated {
+				t.Fatalf("authInterceptor() error = %v, want Unauthenticated", err)
+			}
+		})
 	}
 }
 

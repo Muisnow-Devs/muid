@@ -2,6 +2,7 @@ package oidctoken
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 
@@ -53,6 +54,10 @@ func TestSessionAccessTokenRoundTrip(t *testing.T) {
 		if payload[key] != want {
 			t.Fatalf("claim %q = %v, want %v", key, payload[key], want)
 		}
+	}
+	wantAudience := []any{sessionAudienceGatewayServices, sessionAudienceAuthnAccount}
+	if audience, ok := payload["aud"].([]any); !ok || !reflect.DeepEqual(audience, wantAudience) {
+		t.Fatalf("claim %q = %v, want %v", "aud", payload["aud"], wantAudience)
 	}
 
 	claims, err := verifier.VerifySessionAccessToken(ctx, token)

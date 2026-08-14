@@ -39,7 +39,13 @@ func NewAuthnKeySource(client SigningKeyClient) KeySource {
 // single constructor the gateways use instead of re-wiring NewVerifier +
 // NewAuthnKeySource + Config each.
 func NewAuthnVerifier(client SigningKeyClient, issuer string, cacheTTL time.Duration) *Verifier {
-	return NewVerifier(NewAuthnKeySource(client), Config{Issuer: issuer, CacheTTL: cacheTTL})
+	return NewAuthnVerifierWithConfig(client, Config{Issuer: issuer, CacheTTL: cacheTTL})
+}
+
+// NewAuthnVerifierWithConfig builds an authn-backed Verifier with the complete
+// verification policy, including an optional required audience.
+func NewAuthnVerifierWithConfig(client SigningKeyClient, cfg Config) *Verifier {
+	return NewVerifier(NewAuthnKeySource(client), cfg)
 }
 
 // Keys implements KeySource, converting the JWKS RSA entries into public keys.

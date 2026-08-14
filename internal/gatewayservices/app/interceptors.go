@@ -27,11 +27,11 @@ func authInterceptor(verifier *jwtauth.Verifier) grpc.UnaryServerInterceptor {
 		if token == "" {
 			return nil, status.Error(codes.Unauthenticated, "authentication required")
 		}
-		claims, err := verifier.Verify(ctx, token)
+		verifiedCtx, err := verifier.VerifyContext(ctx, token)
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "invalid session token")
 		}
-		return handler(jwtauth.WithClaims(ctx, claims), req)
+		return handler(verifiedCtx, req)
 	}
 }
 

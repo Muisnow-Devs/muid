@@ -18,6 +18,8 @@ import (
 	"sanzi.io/muid/pkg/shared/kv"
 )
 
+const requiredSessionAudience = "gateway-services"
+
 // InfraDependencies holds the services gateway's wired infrastructure.
 type InfraDependencies struct {
 	GlobalConfig Config
@@ -69,10 +71,13 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 		return nil, fmt.Errorf("profile grpc dial: %w", err)
 	}
 
-	verifier := jwtauth.NewAuthnVerifier(
+	verifier := jwtauth.NewAuthnVerifierWithConfig(
 		authnpb.NewSigningKeyServiceClient(authnConn),
-		cfg.SessionAccessTokenIssuer,
-		time.Duration(cfg.JWKSCacheTTLSeconds)*time.Second,
+		jwtauth.Config{
+			Issuer:           cfg.SessionAccessTokenIssuer,
+			RequiredAudience: requiredSessionAudience,
+			CacheTTL:         time.Duration(cfg.JWKSCacheTTLSeconds) * time.Second,
+		},
 	)
 
 	deps := &InfraDependencies{

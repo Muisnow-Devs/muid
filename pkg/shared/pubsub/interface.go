@@ -10,6 +10,9 @@ import (
 const (
 	// SubscribeTaskTimeout is the maximum duration for a subscription handler to run before timing out.
 	SubscribeTaskTimeout = 30 * time.Second
+	// ReliableDeliveryHorizon bounds transport deduplication and retry timing.
+	// Consumers must still provide inbox idempotency because transport deduplication is best-effort.
+	ReliableDeliveryHorizon = 10 * time.Minute
 )
 
 // SubscribeOptions configures subscription behavior. The zero value is valid.
@@ -26,6 +29,9 @@ type SubscribeOptions struct {
 
 // PublishOptions configures message publishing behavior. The zero value is valid.
 type PublishOptions struct {
+	// MessageID identifies a best-effort transport deduplication key. Empty disables it;
+	// consumers must still provide inbox idempotency.
+	MessageID string
 	// Reliable asks the backend to persist the message before acknowledging publish success.
 	Reliable bool
 	// RetryPolicy is encoded with the message so subscribers can apply publisher intent.
@@ -35,6 +41,7 @@ type PublishOptions struct {
 type PubSub interface {
 	Publish(topic topics.Topic, message []byte) error
 	PublishWithOptions(topic topics.Topic, message []byte, opts PublishOptions) error
+	PublishWithContext(ctx context.Context, topic topics.Topic, message []byte, opts PublishOptions) error
 	Subscribe(
 		ctx context.Context,
 		topic topics.Topic,

@@ -108,6 +108,15 @@ func (f *fakeSubPubSub) PublishWithOptions(
 	return nil
 }
 
+func (f *fakeSubPubSub) PublishWithContext(
+	_ context.Context,
+	topic topics.Topic,
+	message []byte,
+	opts pubsub.PublishOptions,
+) error {
+	return f.PublishWithOptions(topic, message, opts)
+}
+
 func (f *fakeSubPubSub) Subscribe(
 	_ context.Context,
 	_ topics.Topic,

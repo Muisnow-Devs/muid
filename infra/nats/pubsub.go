@@ -45,23 +45,63 @@ func (n *NATSPubSub) PublishWithOptions(
 	message []byte,
 	opts pubsub.PublishOptions,
 ) error {
-	msg := &natsio.Msg{
-		Subject: string(topic),
-		Header:  natsio.Header{},
-		Data:    message,
-	}
-	pubsub.EncodeRetryPolicyHeaders(msg.Header, opts.RetryPolicy)
+	return n.PublishWithContext(context.Background(), topic, message, opts)
+}
+
+func (n *NATSPubSub) PublishWithContext(
+	ctx context.Context,
+	topic topics.Topic,
+	message []byte,
+	opts pubsub.PublishOptions,
+) error {
+	msg := newPublishMessage(topic, message, opts)
 
 	if !opts.Reliable {
 		return n.conn.PublishMsg(msg)
 	}
 
-	_, err := n.ensureStream(topic)
+	js, err := n.jetStreamForContext(ctx)
 	if err != nil {
 		return err
 	}
-	_, err = n.js.PublishMsg(msg)
+	_, err = n.ensureStream(ctx, js, topic)
+	if err != nil {
+		return err
+	}
+	_, err = js.PublishMsg(msg, natsio.Context(ctx))
 	return err
+}
+
+func (n *NATSPubSub) jetStreamForContext(ctx context.Context) (natsio.JetStreamContext, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return n.js, nil
+	}
+	remaining := time.Until(deadline)
+	if remaining <= 0 {
+		return nil, context.DeadlineExceeded
+	}
+	return n.conn.JetStream(natsio.MaxWait(remaining))
+}
+
+func newPublishMessage(
+	topic topics.Topic,
+	message []byte,
+	opts pubsub.PublishOptions,
+) *natsio.Msg {
+	msg := &natsio.Msg{
+		Subject: string(topic),
+		Header:  natsio.Header{},
+		Data:    message,
+	}
+	if opts.MessageID != "" {
+		msg.Header.Set(natsio.MsgIdHdr, opts.MessageID)
+	}
+	pubsub.EncodeRetryPolicyHeaders(msg.Header, opts.RetryPolicy)
+	return msg
 }
 
 func (n *NATSPubSub) Subscribe(
@@ -106,7 +146,11 @@ func (n *NATSPubSub) subscribeReliable(
 	opts pubsub.SubscribeOptions,
 	handler func(ctx context.Context, message []byte) error,
 ) error {
-	stream, err := n.ensureStream(topic)
+	js, err := n.jetStreamForContext(ctx)
+	if err != nil {
+		return err
+	}
+	stream, err := n.ensureStream(ctx, js, topic)
 	if err != nil {
 		return err
 	}
@@ -130,11 +174,11 @@ func (n *NATSPubSub) subscribeReliable(
 	}
 
 	if opts.QueueGroup != "" {
-		_, err = n.js.QueueSubscribe(string(topic), opts.QueueGroup, cb, subOpts...)
+		_, err = js.QueueSubscribe(string(topic), opts.QueueGroup, cb, subOpts...)
 		return err
 	}
 
-	_, err = n.js.Subscribe(string(topic), cb, subOpts...)
+	_, err = js.Subscribe(string(topic), cb, subOpts...)
 	return err
 }
 
@@ -222,11 +266,15 @@ func (n *NATSPubSub) retryOrTerminate(
 	return msg.NakWithDelay(policy.DelayForAttempt(attempt))
 }
 
-func (n *NATSPubSub) ensureStream(topic topics.Topic) (string, error) {
+func (n *NATSPubSub) ensureStream(
+	ctx context.Context,
+	js natsio.JetStreamContext,
+	topic topics.Topic,
+) (string, error) {
 	subject := string(topic)
-	foundStream, err := n.js.StreamNameBySubject(subject)
+	foundStream, err := js.StreamNameBySubject(subject, natsio.Context(ctx))
 	if err == nil && foundStream != "" {
-		return foundStream, nil
+		return n.ensureDuplicateWindow(ctx, js, foundStream)
 	}
 	if err != nil &&
 		!errors.Is(err, natsio.ErrStreamNotFound) &&
@@ -235,22 +283,45 @@ func (n *NATSPubSub) ensureStream(topic topics.Topic) (string, error) {
 	}
 
 	stream := streamName(topic)
-	_, err = n.js.StreamInfo(stream)
+	_, err = js.StreamInfo(stream, natsio.Context(ctx))
 	if err == nil {
-		return stream, nil
+		return n.ensureDuplicateWindow(ctx, js, stream)
 	}
 	if !errors.Is(err, natsio.ErrStreamNotFound) {
 		return "", err
 	}
 
-	_, err = n.js.AddStream(&natsio.StreamConfig{
-		Name:      stream,
-		Subjects:  []string{subject},
-		Retention: natsio.LimitsPolicy,
-		Storage:   natsio.FileStorage,
-		MaxAge:    7 * 24 * time.Hour,
-	})
+	_, err = js.AddStream(&natsio.StreamConfig{
+		Name:       stream,
+		Subjects:   []string{subject},
+		Retention:  natsio.LimitsPolicy,
+		Storage:    natsio.FileStorage,
+		MaxAge:     7 * 24 * time.Hour,
+		Duplicates: pubsub.ReliableDeliveryHorizon,
+	}, natsio.Context(ctx))
 	if err != nil && !errors.Is(err, natsio.ErrStreamNameAlreadyInUse) {
+		return "", err
+	}
+	return n.ensureDuplicateWindow(ctx, js, stream)
+}
+
+func (n *NATSPubSub) ensureDuplicateWindow(
+	ctx context.Context,
+	js natsio.JetStreamContext,
+	stream string,
+) (string, error) {
+	info, err := js.StreamInfo(stream, natsio.Context(ctx))
+	if err != nil {
+		return "", err
+	}
+	if info.Config.Duplicates >= pubsub.ReliableDeliveryHorizon {
+		return stream, nil
+	}
+
+	config := info.Config
+	config.Duplicates = pubsub.ReliableDeliveryHorizon
+	_, err = js.UpdateStream(&config, natsio.Context(ctx))
+	if err != nil {
 		return "", err
 	}
 	return stream, nil

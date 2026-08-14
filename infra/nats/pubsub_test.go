@@ -1,8 +1,12 @@
 package nats
 
 import (
+	"context"
+	"errors"
 	"testing"
+	"time"
 
+	natsio "github.com/nats-io/nats.go"
 	"sanzi.io/muid/pkg/shared/pubsub"
 	"sanzi.io/muid/pkg/shared/topics"
 )
@@ -49,6 +53,56 @@ func TestReliableNames(t *testing.T) {
 			}
 			if got := durableName(tc.topic, tc.opts); got != tc.wantDurable {
 				t.Fatalf("durableName() = %q, want %q", got, tc.wantDurable)
+			}
+		})
+	}
+}
+
+func TestJetStreamForContextRejectsExpiredDeadline(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
+	defer cancel()
+	ps := &NATSPubSub{}
+	_, err := ps.jetStreamForContext(ctx)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("jetStreamForContext error = %v, want DeadlineExceeded", err)
+	}
+}
+
+func TestJetStreamForContextRejectsCanceledContext(t *testing.T) {
+	t.Parallel()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	ps := &NATSPubSub{}
+	_, err := ps.jetStreamForContext(ctx)
+	if !errors.Is(err, context.Canceled) {
+		t.Fatalf("jetStreamForContext error = %v, want Canceled", err)
+	}
+}
+
+func TestPublishOptionsMessageIDHeader(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		messageID string
+		want      string
+	}{
+		{name: "set", messageID: "event-123", want: "event-123"},
+		{name: "empty omitted"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			msg := newPublishMessage(topics.TopicSendOTP, nil, pubsub.PublishOptions{
+				MessageID: tc.messageID,
+			})
+			if got := msg.Header.Get(natsio.MsgIdHdr); got != tc.want {
+				t.Fatalf("message id header = %q, want %q", got, tc.want)
 			}
 		})
 	}

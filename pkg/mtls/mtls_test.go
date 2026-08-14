@@ -100,10 +100,7 @@ func TestServerTLSConfigAcceptsValidClient(t *testing.T) {
 		t.Fatalf("ServerTLSConfig: %v", err)
 	}
 
-	clientCfg := &tls.Config{
-		Certificates:       []tls.Certificate{client.tls},
-		InsecureSkipVerify: true, // we are testing client-auth, not server-name
-	}
+	clientCfg := verifiedClientConfig(t, server, &client.tls)
 	if err := handshake(t, serverCfg, clientCfg); err != nil {
 		t.Fatalf("expected successful mTLS handshake, got %v", err)
 	}
@@ -124,10 +121,28 @@ func TestServerTLSConfigRejectsMissingClientCert(t *testing.T) {
 		t.Fatalf("ServerTLSConfig: %v", err)
 	}
 
-	clientCfg := &tls.Config{InsecureSkipVerify: true} // no client cert presented
+	clientCfg := verifiedClientConfig(t, server, nil)
 	if err := handshake(t, serverCfg, clientCfg); err == nil {
 		t.Fatal("expected handshake to fail without a client certificate")
 	}
+}
+
+func verifiedClientConfig(t *testing.T, server certPair, client *tls.Certificate) *tls.Config {
+	t.Helper()
+
+	roots := x509.NewCertPool()
+	if !roots.AppendCertsFromPEM(server.caPEM) {
+		t.Fatal("append server root")
+	}
+	config := &tls.Config{
+		MinVersion: tls.VersionTLS12,
+		RootCAs:    roots,
+		ServerName: "localhost",
+	}
+	if client != nil {
+		config.Certificates = []tls.Certificate{*client}
+	}
+	return config
 }
 
 func TestNewStaticRootsRejectsGarbage(t *testing.T) {

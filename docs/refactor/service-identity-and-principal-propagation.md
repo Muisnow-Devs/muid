@@ -1,6 +1,6 @@
 # Service Identity and Principal Propagation
 
-Status: Planned
+Status: Implemented
 
 Classification: S/B (protocol and trust-boundary redesign)
 
@@ -205,3 +205,22 @@ cut over.
   before plaintext paths are removed.
 - `make check`, full tests, affected `-race` suites, vet, build, Buf/generation
   checks, and root/API vulnerability scans pass.
+
+# Implemented Result
+
+All seven workload identities now use strict mTLS and an exact per-method
+workload/user policy. Authn, Authz, and Profile require inbound and outbound
+TLS groups in every mode; the three gateways require their applicable ingress
+and outbound groups. The shared interceptor is the only parser for delegated
+`x-user-id`, and handlers consume the typed request principal. Plaintext dials,
+optional TLS server branches, the Authz metadata identity interceptor, and the
+Profile metadata parser were removed.
+
+Certificate loader/handshake tests use verified roots and names without a TLS
+verification bypass. Principal tests cover the recognized SPIFFE identities,
+verified-chain requirement, exact URI SAN shape, per-workload user modes, and
+malformed/duplicate/zero metadata. Per-service policy tests enumerate the full
+registered method matrices. The final cleanup passed 168 focused tests under
+the race detector, focused vet, and 919 repository tests across 148 packages;
+stale-path searches found no plaintext dial, legacy identity interceptor, or
+metadata-derived handler identity.

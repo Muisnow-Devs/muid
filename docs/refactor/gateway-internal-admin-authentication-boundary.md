@@ -1,6 +1,6 @@
 # Internal Gateway Administrator Authentication Boundary
 
-Status: Planned
+Status: Implemented
 
 Classification: S/B (transport and authority redesign)
 
@@ -178,3 +178,19 @@ This record uses the atomic sequence in
   dial/listener, or backend admin handler lacking policy.
 - Coordinated rollout and `make check`, full tests, affected race tests, vet,
   build, generation, and vulnerability scans pass.
+
+# Implemented Result
+
+Gateway Internal now requires a verified `admin-ingress` client certificate for
+health and admin traffic, and additionally requires a valid user JWT plus a
+live Authz platform permission for every admin route. Its backend calls use the
+`gateway-internal` workload certificate. The gateway-local UUID allowlist was
+removed. Authz admin RPCs independently recheck their platform permission, and
+Authn OIDC administration requires both platform and organization authority.
+
+Tests cover exact ingress workload enforcement (including dynamically selected
+TLS configs), JWT outcomes, fail-closed unknown routes, live allow/deny/error
+platform decisions, identity forwarding, backend permission rechecks, and both
+OIDC authorization dimensions. The affected gateway suite passed under the
+race detector before the final repository-wide 919-test pass; stale-path
+searches found no `AdminUserIDs`, plaintext admin dial, or local allowlist.

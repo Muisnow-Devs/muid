@@ -38,8 +38,8 @@ microservice.
 | 0 | [Gateway HTTP resource budget](gateway-http-resource-budget.md) | Implemented | B | Public web security configuration, runtime configuration |
 | 0 | [Generated-code reproducibility](generated-code-reproducibility.md) | Implemented | S | None |
 | 0 | [Gateway lifecycle ownership](gateway-lifecycle-ownership.md) | Implemented | S then B | None |
-| 1 | [Service identity and principal propagation](service-identity-and-principal-propagation.md) | Planned | S/B | Administrator allowlist fail-close, runtime configuration |
-| 1 | [Internal administrator authentication boundary](gateway-internal-admin-authentication-boundary.md) | Planned | S/B | Administrator allowlist fail-close, service identity |
+| 1 | [Service identity and principal propagation](service-identity-and-principal-propagation.md) | Implemented | S/B | Administrator allowlist fail-close, runtime configuration |
+| 1 | [Internal administrator authentication boundary](gateway-internal-admin-authentication-boundary.md) | Implemented | S/B | Administrator allowlist fail-close, service identity |
 | 2 | [Public and private profile contracts](profile-read-contracts-and-private-claims.md) | Planned | S/B | Service identity |
 | 2 | [Domain event inventory and delivery](domain-event-inventory-and-delivery.md) | Planned | S/B | Generated-code reproducibility |
 | 2 | [Authn gRPC service cohesion](authn-grpc-service-cohesion.md) | Planned | S | Profile contracts, service identity |

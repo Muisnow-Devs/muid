@@ -15,7 +15,7 @@ type App struct {
 
 // NewApp wires the BFF handler and gRPC server from infra.
 func NewApp(infra *InfraDependencies) (*App, error) {
-	handler := servicesgrpc.NewHandler(infra.Profile)
+	handler := servicesgrpc.NewHandler(infra.Account, infra.Profile)
 	server, err := NewServicesGRPC(infra, handler, nil)
 	if err != nil {
 		return nil, err

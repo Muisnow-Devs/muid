@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package muid.event.v1.lifecycle;
+
+import "buf/validate/validate.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "sanzi.io/muid/api/proto/event/v1/lifecycle;lifecycleevent";
+
+// AccountRegistered records that Authn has created an account.
+message AccountRegistered {
+  string event_id = 1 [(buf.validate.field).string.uuid = true];
+  string user_id = 2 [(buf.validate.field).string.uuid = true];
+  google.protobuf.Timestamp occurred_at = 3 [(buf.validate.field).required = true];
+}
+
+// OrganizationCreated records that Authz has created an organization.
+message OrganizationCreated {
+  string event_id = 1 [(buf.validate.field).string.uuid = true];
+  string organization_id = 2 [(buf.validate.field).string.uuid = true];
+  string display_name = 3 [(buf.validate.field).string = {
+    min_len: 1
+    max_len: 255
+  }];
+  // Optional requested slug. Profile deterministically derives and uniquifies
+  // it when empty.
+  string slug = 4 [(buf.validate.field).string = {
+    pattern: "^$|^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$"
+    max_len: 63
+  }];
+  string description = 5 [(buf.validate.field).string.max_len = 255];
+  google.protobuf.Timestamp occurred_at = 6 [(buf.validate.field).required = true];
+}

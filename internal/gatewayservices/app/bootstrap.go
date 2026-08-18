@@ -26,6 +26,7 @@ type InfraDependencies struct {
 
 	Redis     kv.AtomicKVStore
 	Verifier  *jwtauth.Verifier
+	Account   authnpb.AccountServiceClient
 	Profile   profilepb.ProfileServiceClient
 	TLSConfig *tls.Config // nil unless mTLS is configured
 
@@ -84,6 +85,7 @@ func NewInfra(_ context.Context, cfg Config) (*InfraDependencies, error) {
 		GlobalConfig: cfg,
 		Redis:        redisKV,
 		Verifier:     verifier,
+		Account:      authnpb.NewAccountServiceClient(authnConn),
 		Profile:      profilepb.NewProfileServiceClient(profileConn),
 		TLSConfig:    tlsConfig,
 		authnConn:    authnConn,
